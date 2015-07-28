@@ -103,6 +103,7 @@
 #include <AP_HAL_Linux.h>
 #include <AP_HAL_Empty.h>
 #include <AP_HAL_VRBRAIN.h>
+#include <AP_HAL_Quan.h>
 
 /*
   a plane specific arming class
