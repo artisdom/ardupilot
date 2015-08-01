@@ -1,79 +1,79 @@
 
 #include "Scheduler.h"
 
-using namespace Empty;
+using namespace Quan;
 
 extern const AP_HAL::HAL& hal;
 
-EmptyScheduler::EmptyScheduler()
+QuanScheduler::QuanScheduler()
 {}
 
-void EmptyScheduler::init(void* machtnichts)
+void QuanScheduler::init(void* machtnichts)
 {}
 
-void EmptyScheduler::delay(uint16_t ms)
+void QuanScheduler::delay(uint16_t ms)
 {}
 
-uint64_t EmptyScheduler::millis64() {
+uint64_t QuanScheduler::millis64() {
     return 10000;
 }
 
-uint64_t EmptyScheduler::micros64() {
+uint64_t QuanScheduler::micros64() {
     return 200000;
 }
 
-uint32_t EmptyScheduler::millis() {
+uint32_t QuanScheduler::millis() {
     return millis64();
 }
 
-uint32_t EmptyScheduler::micros() {
+uint32_t QuanScheduler::micros() {
     return micros64();
 }
 
-void EmptyScheduler::delay_microseconds(uint16_t us)
+void QuanScheduler::delay_microseconds(uint16_t us)
 {}
 
-void EmptyScheduler::register_delay_callback(AP_HAL::Proc k,
+void QuanScheduler::register_delay_callback(AP_HAL::Proc k,
             uint16_t min_time_ms)
 {}
 
-void EmptyScheduler::register_timer_process(AP_HAL::MemberProc k)
+void QuanScheduler::register_timer_process(AP_HAL::MemberProc k)
 {}
 
-void EmptyScheduler::register_io_process(AP_HAL::MemberProc k)
+void QuanScheduler::register_io_process(AP_HAL::MemberProc k)
 {}
 
-void EmptyScheduler::register_timer_failsafe(AP_HAL::Proc, uint32_t period_us)
+void QuanScheduler::register_timer_failsafe(AP_HAL::Proc, uint32_t period_us)
 {}
 
-void EmptyScheduler::suspend_timer_procs()
+void QuanScheduler::suspend_timer_procs()
 {}
 
-void EmptyScheduler::resume_timer_procs()
+void QuanScheduler::resume_timer_procs()
 {}
 
-bool EmptyScheduler::in_timerprocess() {
+bool QuanScheduler::in_timerprocess() {
     return false;
 }
 
-void EmptyScheduler::begin_atomic()
+void QuanScheduler::begin_atomic()
 {}
 
-void EmptyScheduler::end_atomic()
+void QuanScheduler::end_atomic()
 {}
 
-bool EmptyScheduler::system_initializing() {
+bool QuanScheduler::system_initializing() {
     return false;
 }
 
-void EmptyScheduler::system_initialized()
+void QuanScheduler::system_initialized()
 {}
 
-void EmptyScheduler::panic(const prog_char_t *errormsg) {
+void QuanScheduler::panic(const prog_char_t *errormsg) {
     hal.console->println_P(errormsg);
     for(;;);
 }
 
-void EmptyScheduler::reboot(bool hold_in_bootloader) {
+void QuanScheduler::reboot(bool hold_in_bootloader) {
     for(;;);
 }

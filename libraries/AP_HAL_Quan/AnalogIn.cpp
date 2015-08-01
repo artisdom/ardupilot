@@ -1,47 +1,47 @@
 #include "AnalogIn.h"
 
-using namespace Empty;
+using namespace Quan;
 
-EmptyAnalogSource::EmptyAnalogSource(float v) :
+QuanAnalogSource::QuanAnalogSource(float v) :
     _v(v)
 {}
 
-float EmptyAnalogSource::read_average() {
+float QuanAnalogSource::read_average() {
     return _v;
 }
 
-float EmptyAnalogSource::voltage_average() {
+float QuanAnalogSource::voltage_average() {
     return 5.0f * _v / 1024.0f;
 }
 
-float EmptyAnalogSource::voltage_latest() {
+float QuanAnalogSource::voltage_latest() {
     return 5.0f * _v / 1024.0f;
 }
 
-float EmptyAnalogSource::read_latest() {
+float QuanAnalogSource::read_latest() {
     return _v;
 }
 
-void EmptyAnalogSource::set_pin(uint8_t p)
+void QuanAnalogSource::set_pin(uint8_t p)
 {}
 
-void EmptyAnalogSource::set_stop_pin(uint8_t p)
+void QuanAnalogSource::set_stop_pin(uint8_t p)
 {}
 
-void EmptyAnalogSource::set_settle_time(uint16_t settle_time_ms)
+void QuanAnalogSource::set_settle_time(uint16_t settle_time_ms)
 {}
 
-EmptyAnalogIn::EmptyAnalogIn()
+QuanAnalogIn::QuanAnalogIn()
 {}
 
-void EmptyAnalogIn::init(void* machtnichts)
+void QuanAnalogIn::init(void* machtnichts)
 {}
 
-AP_HAL::AnalogSource* EmptyAnalogIn::channel(int16_t n) {
-    return new EmptyAnalogSource(1.11);
+AP_HAL::AnalogSource* QuanAnalogIn::channel(int16_t n) {
+    return new QuanAnalogSource(1.11);
 }
 
-float EmptyAnalogIn::board_voltage(void)
+float QuanAnalogIn::board_voltage(void)
 {
     return 0;
 }

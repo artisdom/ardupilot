@@ -1,12 +1,12 @@
 
-#ifndef __AP_HAL_EMPTY_RCINPUT_H__
-#define __AP_HAL_EMPTY_RCINPUT_H__
+#ifndef __AP_HAL_QUAN_RCINPUT_H__
+#define __AP_HAL_QUAN_RCINPUT_H__
 
-#include <AP_HAL_Empty.h>
+#include <AP_HAL_Quan.h>
 
-class Empty::EmptyRCInput : public AP_HAL::RCInput {
+class Quan::QuanRCInput : public AP_HAL::RCInput {
 public:
-    EmptyRCInput();
+    QuanRCInput();
     void init(void* machtnichts);
     bool  new_input();
     uint8_t num_channels();
@@ -18,4 +18,4 @@ public:
     void clear_overrides();
 };
 
-#endif // __AP_HAL_EMPTY_RCINPUT_H__
+#endif // __AP_HAL_QUAN_RCINPUT_H__

@@ -1,13 +1,13 @@
 
-#ifndef __AP_HAL_EMPTY_SPIDRIVER_H__
-#define __AP_HAL_EMPTY_SPIDRIVER_H__
+#ifndef __AP_HAL_QUAN_SPIDRIVER_H__
+#define __AP_HAL_QUAN_SPIDRIVER_H__
 
-#include <AP_HAL_Empty.h>
+#include <AP_HAL_Quan.h>
 #include "Semaphores.h"
 
-class Empty::EmptySPIDeviceDriver : public AP_HAL::SPIDeviceDriver {
+class Quan::QuanSPIDeviceDriver : public AP_HAL::SPIDeviceDriver {
 public:
-    EmptySPIDeviceDriver();
+    QuanSPIDeviceDriver();
     void init();
     AP_HAL::Semaphore* get_semaphore();
     void transaction(const uint8_t *tx, uint8_t *rx, uint16_t len);
@@ -17,16 +17,16 @@ public:
     uint8_t transfer (uint8_t data);
     void transfer (const uint8_t *data, uint16_t len);
 private:
-    EmptySemaphore _semaphore;
+    QuanSemaphore _semaphore;
 };
 
-class Empty::EmptySPIDeviceManager : public AP_HAL::SPIDeviceManager {
+class Quan::QuanSPIDeviceManager : public AP_HAL::SPIDeviceManager {
 public:
-    EmptySPIDeviceManager();
+    QuanSPIDeviceManager();
     void init(void *);
     AP_HAL::SPIDeviceDriver* device(enum AP_HAL::SPIDevice);
 private:
-    EmptySPIDeviceDriver _device;
+    QuanSPIDeviceDriver _device;
 };
 
-#endif // __AP_HAL_EMPTY_SPIDRIVER_H__
+#endif // __AP_HAL_QUAN_SPIDRIVER_H__

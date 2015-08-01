@@ -2,37 +2,37 @@
 #include <AP_HAL.h>
 #include "I2CDriver.h"
 
-using namespace Empty;
+using namespace Quan;
 
-void EmptyI2CDriver::begin() {}
-void EmptyI2CDriver::end() {}
-void EmptyI2CDriver::setTimeout(uint16_t ms) {}
-void EmptyI2CDriver::setHighSpeed(bool active) {}
+void QuanI2CDriver::begin() {}
+void QuanI2CDriver::end() {}
+void QuanI2CDriver::setTimeout(uint16_t ms) {}
+void QuanI2CDriver::setHighSpeed(bool active) {}
 
-uint8_t EmptyI2CDriver::write(uint8_t addr, uint8_t len, uint8_t* data)
+uint8_t QuanI2CDriver::write(uint8_t addr, uint8_t len, uint8_t* data)
 {return 1;} 
-uint8_t EmptyI2CDriver::writeRegister(uint8_t addr, uint8_t reg, uint8_t val)
+uint8_t QuanI2CDriver::writeRegister(uint8_t addr, uint8_t reg, uint8_t val)
 {return 1;}
-uint8_t EmptyI2CDriver::writeRegisters(uint8_t addr, uint8_t reg,
+uint8_t QuanI2CDriver::writeRegisters(uint8_t addr, uint8_t reg,
                                uint8_t len, uint8_t* data)
 {return 1;}
 
-uint8_t EmptyI2CDriver::read(uint8_t addr, uint8_t len, uint8_t* data)
+uint8_t QuanI2CDriver::read(uint8_t addr, uint8_t len, uint8_t* data)
 {
     memset(data, 0, len);
     return 0;
 }
-uint8_t EmptyI2CDriver::readRegister(uint8_t addr, uint8_t reg, uint8_t* data)
+uint8_t QuanI2CDriver::readRegister(uint8_t addr, uint8_t reg, uint8_t* data)
 {
     *data = 0;
     return 1;
 }
 
-uint8_t EmptyI2CDriver::readRegisters(uint8_t addr, uint8_t reg,
+uint8_t QuanI2CDriver::readRegisters(uint8_t addr, uint8_t reg,
                                       uint8_t len, uint8_t* data)
 {
     memset(data, 0, len);    
     return 1;
 }
 
-uint8_t EmptyI2CDriver::lockup_count() {return 0;}
+uint8_t QuanI2CDriver::lockup_count() {return 0;}

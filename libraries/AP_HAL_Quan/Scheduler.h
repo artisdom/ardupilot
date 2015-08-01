@@ -1,12 +1,12 @@
 
-#ifndef __AP_HAL_EMPTY_SCHEDULER_H__
-#define __AP_HAL_EMPTY_SCHEDULER_H__
+#ifndef __AP_HAL_QUAN_SCHEDULER_H__
+#define __AP_HAL_QUAN_SCHEDULER_H__
 
-#include <AP_HAL_Empty.h>
+#include <AP_HAL_Quan.h>
 
-class Empty::EmptyScheduler : public AP_HAL::Scheduler {
+class Quan::QuanScheduler : public AP_HAL::Scheduler {
 public:
-    EmptyScheduler();
+    QuanScheduler();
     void     init(void* machtnichts);
     void     delay(uint16_t ms);
     uint32_t millis();
@@ -37,4 +37,4 @@ public:
 
 };
 
-#endif // __AP_HAL_EMPTY_SCHEDULER_H__
+#endif // __AP_HAL_QUAN_SCHEDULER_H__

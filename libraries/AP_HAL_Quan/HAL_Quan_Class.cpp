@@ -1,27 +1,30 @@
 
 #include <AP_HAL.h>
-#if CONFIG_HAL_BOARD == HAL_BOARD_EMPTY
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 
-#include "HAL_Empty_Class.h"
-#include "AP_HAL_Empty_Private.h"
+#include "HAL_Quan_Class.h"
+#include "AP_HAL_Quan_Private.h"
 
-using namespace Empty;
+#include <AP_HAL_Quan.h>
+#include <AP_HAL_Quan_Private.h>
 
-static EmptyUARTDriver uartADriver;
-static EmptyUARTDriver uartBDriver;
-static EmptyUARTDriver uartCDriver;
-static EmptySemaphore  i2cSemaphore;
-static EmptyI2CDriver  i2cDriver(&i2cSemaphore);
-static EmptySPIDeviceManager spiDeviceManager;
-static EmptyAnalogIn analogIn;
-static EmptyStorage storageDriver;
-static EmptyGPIO gpioDriver;
-static EmptyRCInput rcinDriver;
-static EmptyRCOutput rcoutDriver;
-static EmptyScheduler schedulerInstance;
-static EmptyUtil utilInstance;
+using namespace Quan;
 
-HAL_Empty::HAL_Empty() :
+static QuanUARTDriver uartADriver;
+static QuanUARTDriver uartBDriver;
+static QuanUARTDriver uartCDriver;
+static QuanSemaphore  i2cSemaphore;
+static QuanI2CDriver  i2cDriver(&i2cSemaphore);
+static QuanSPIDeviceManager spiDeviceManager;
+static QuanAnalogIn analogIn;
+static QuanStorage storageDriver;
+static QuanGPIO gpioDriver;
+static QuanRCInput rcinDriver;
+static QuanRCOutput rcoutDriver;
+static QuanScheduler schedulerInstance;
+static QuanUtil utilInstance;
+
+HAL_Quan::HAL_Quan() :
     AP_HAL::HAL(
         &uartADriver,
         &uartBDriver,
@@ -40,10 +43,10 @@ HAL_Empty::HAL_Empty() :
         &rcoutDriver,
         &schedulerInstance,
         &utilInstance),
-    _member(new EmptyPrivateMember(123))
+    _member(new QuanPrivateMember(123))
 {}
 
-void HAL_Empty::init(int argc,char* const argv[]) const {
+void HAL_Quan::init(int argc,char* const argv[]) const {
     /* initialize all drivers and private members here.
      * up to the programmer to do this in the correct order.
      * Scheduler should likely come first. */
@@ -52,6 +55,6 @@ void HAL_Empty::init(int argc,char* const argv[]) const {
     _member->init();
 }
 
-const HAL_Empty AP_HAL_Empty;
+const HAL_Quan AP_HAL_Quan;
 
 #endif

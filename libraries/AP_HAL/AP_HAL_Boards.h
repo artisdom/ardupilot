@@ -264,7 +264,7 @@
 //############################################################################
 //##############################################################################
 #elif CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-#define AP_HAL_BOARD_DRIVER AP_HAL_Empty
+#define AP_HAL_BOARD_DRIVER AP_HAL_Quan
 #define HAL_BOARD_NAME "QUAN"
 #define HAL_CPU_CLASS HAL_CPU_CLASS_150
 #define HAL_STORAGE_SIZE            4096

@@ -1,12 +1,12 @@
 
-#ifndef __AP_HAL_EMPTY_I2CDRIVER_H__
-#define __AP_HAL_EMPTY_I2CDRIVER_H__
+#ifndef __AP_HAL_QUAN_I2CDRIVER_H__
+#define __AP_HAL_QUAN_I2CDRIVER_H__
 
-#include <AP_HAL_Empty.h>
+#include <AP_HAL_Quan.h>
 
-class Empty::EmptyI2CDriver : public AP_HAL::I2CDriver {
+class Quan::QuanI2CDriver : public AP_HAL::I2CDriver {
 public:
-    EmptyI2CDriver(AP_HAL::Semaphore* semaphore) : _semaphore(semaphore) {}
+    QuanI2CDriver(AP_HAL::Semaphore* semaphore) : _semaphore(semaphore) {}
     void begin();
     void end();
     void setTimeout(uint16_t ms);
@@ -38,4 +38,4 @@ private:
     AP_HAL::Semaphore* _semaphore;
 };
 
-#endif // __AP_HAL_EMPTY_I2CDRIVER_H__
+#endif // __AP_HAL_QUAN_I2CDRIVER_H__

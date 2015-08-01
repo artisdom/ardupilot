@@ -138,7 +138,6 @@ bool AVRGPIO::attach_interrupt(
     }
 }
 
-
 AP_HAL::DigitalSource* AVRGPIO::channel(uint16_t pin) {
     uint8_t bit = digitalPinToBitMask(pin);
     uint8_t port = digitalPinToPort(pin);

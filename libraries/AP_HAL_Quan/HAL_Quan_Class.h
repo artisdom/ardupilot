@@ -1,6 +1,6 @@
 
-#ifndef __AP_HAL_EMPTY_CLASS_H__
-#define __AP_HAL_EMPTY_CLASS_H__
+#ifndef __AP_HAL_QUAN_CLASS_H__
+#define __AP_HAL_QUAN_CLASS_H__
 
 #include <AP_HAL.h>
 
@@ -17,5 +17,5 @@ private:
 
 extern const HAL_Quan AP_HAL_Quan;
 
-#endif // __AP_HAL_EMPTY_CLASS_H__
+#endif // __AP_HAL_QUAN_CLASS_H__
 

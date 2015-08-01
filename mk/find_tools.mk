@@ -57,14 +57,14 @@ ARM_GDB     :=  $(call FIND_TOOL,arm-none-eabi-gdb)
 ARM_OBJCOPY :=  $(call FIND_TOOL,arm-none-eabi-objcopy)
 
 
-QUAN_TOOLPATH = /opt/gcc-arm-none-eabi-4_7-2013q2/bin/
-QUAN_ARM_CXX     :=  $(QUAN_TOOLPATH)arm-none-eabi-g++
-QUAN_ARM_CC      :=  $(QUAN_TOOLPATH)arm-none-eabi-gcc
-QUAN_ARM_AS      :=  $(QUAN_TOOLPATH)arm-none-eabi-gcc
-QUAN_ARM_AR      :=  $(QUAN_TOOLPATH)arm-none-eabi-ar
-QUAN_ARM_LD      :=  $(QUAN_TOOLPATH)arm-none-eabi-g++
-QUAN_ARM_GDB     :=  $(QUAN_TOOLPATH)arm-none-eabi-gdb
-QUAN_ARM_OBJCOPY :=  $(QUAN_TOOLPATH)arm-none-eabi-objcopy
+#$(TOOLCHAIN_PREFIX) from <root-quantracker-directory>/Dependencies.mk
+QUAN_ARM_CXX     :=  $(TOOLCHAIN_PREFIX)bin/arm-none-eabi-g++
+QUAN_ARM_CC      :=  $(TOOLCHAIN_PREFIX)bin/arm-none-eabi-gcc
+QUAN_ARM_AS      :=  $(TOOLCHAIN_PREFIX)bin/arm-none-eabi-gcc
+QUAN_ARM_AR      :=  $(TOOLCHAIN_PREFIX)bin/arm-none-eabi-ar
+QUAN_ARM_LD      :=  $(TOOLCHAIN_PREFIX)bin/arm-none-eabi-g++
+QUAN_ARM_GDB     :=  $(TOOLCHAIN_PREFIX)bin/arm-none-eabi-gdb
+QUAN_ARM_OBJCOPY :=  $(TOOLCHAIN_PREFIX)bin/arm-none-eabi-objcopy
 
 # toolchains for beagleboneblack
 BBONE_CXX     :=  arm-linux-gnueabihf-g++

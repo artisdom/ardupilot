@@ -6,6 +6,8 @@
 // Note: use new/delete with caution.  The heap is small and
 // easily fragmented.
 
+#if 0
+
 #include <AP_HAL.h>
 #include <stdlib.h>
 
@@ -16,6 +18,8 @@
   of flash space. On APM1/APM2 it would mean we wouldn't fit on the
   board at all.
  */
+
+##iv CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 void * operator new(size_t size)
 {
     if (size < 1) {
@@ -41,9 +45,10 @@ void operator delete[](void * ptr)
 {
     if (ptr) free(ptr);
 }
+#endif
 
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_APM1 || CONFIG_HAL_BOARD == HAL_BOARD_APM2 || CONFIG_HAL_BOARD == HAL_BOARD_FLYMAPLE
+#if CONFIG_HAL_BOARD == HAL_BOARD_APM1 || CONFIG_HAL_BOARD == HAL_BOARD_APM2 || CONFIG_HAL_BOARD == HAL_BOARD_FLYMAPLE || CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 
 // Conflicts with libmaple wirish/cxxabi-compat.cpp
 #if CONFIG_HAL_BOARD != HAL_BOARD_FLYMAPLE

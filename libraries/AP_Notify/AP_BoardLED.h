@@ -69,11 +69,11 @@
  # define HAL_GPIO_LED_OFF          LOW
 #elif CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 // heartbeat led PB12 pin 33
- # define HAL_GPIO_A_LED_PIN        33
+ # define HAL_GPIO_A_LED_PIN        1
 // swdio PA13 pin 46
- # define HAL_GPIO_B_LED_PIN        46
+ # define HAL_GPIO_B_LED_PIN        2
 // swclk  PA14  pin 49
- # define HAL_GPIO_C_LED_PIN        49
+ # define HAL_GPIO_C_LED_PIN        3
  # define HAL_GPIO_LED_ON           HIGH
  # define HAL_GPIO_LED_OFF          LOW
 #else

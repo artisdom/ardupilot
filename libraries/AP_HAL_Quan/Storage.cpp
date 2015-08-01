@@ -2,18 +2,18 @@
 #include <string.h>
 #include "Storage.h"
 
-using namespace Empty;
+using namespace Quan;
 
-EmptyStorage::EmptyStorage()
+QuanStorage::QuanStorage()
 {}
 
-void EmptyStorage::init(void*)
+void QuanStorage::init(void*)
 {}
 
-void EmptyStorage::read_block(void* dst, uint16_t src, size_t n) {
+void QuanStorage::read_block(void* dst, uint16_t src, size_t n) {
     memset(dst, 0, n);
 }
 
-void EmptyStorage::write_block(uint16_t loc, const void* src, size_t n)
+void QuanStorage::write_block(uint16_t loc, const void* src, size_t n)
 {}
 
