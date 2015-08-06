@@ -88,6 +88,8 @@ LIBRARY_PATH=
 
 include $(MK_DIR)/find_tools.mk
 
+
+
 # specific flags for stm32f4
 QUAN_DEFINES = QUAN_STM32F4 QUAN_FREERTOS $(TELEMETRY_DIRECTION) STM32F40_41xxx \
 QUAN_OSD_SOFTWARE_SYNCSEP HSE_VALUE=8000000 QUAN_OSD_BOARD_TYPE=4
@@ -111,7 +113,7 @@ QUAN_LINKER_FLAGS  = -T$(LINKER_SCRIPT) -$(OPTIMISATION_LEVEL) -nostartfiles -no
 
 #------------------------------------------- ardupilot stuff --------
 
-VERBOSE = True
+#VERBOSE = True
 #
 # Tool options
 #
@@ -178,7 +180,9 @@ endif
 
 LIBS += -Wl,--undefined=_sbrk  \
 $(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_system.a  \
-$(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_osd.a
+$(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_graphics_api.a\
+$(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_osd.a 
+
 
 ifeq ($(VERBOSE),)
 v = @
@@ -189,6 +193,7 @@ endif
 # Library object files
 LIBOBJS			:=	$(SKETCHLIBOBJS)
 
+QUAN_OBJS  := fonts.o
 
 ################################################################################
 # Built products
@@ -230,14 +235,17 @@ print-%:
 -include $(ALLDEPS)
 
 # Link the final object
-$(SKETCHELF): $(SKETCHOBJS) $(LIBOBJS) 
+$(SKETCHELF): $(SKETCHOBJS) $(LIBOBJS) $(BUILDROOT)/fonts.o
 	@echo "Building $(SKETCHELF)"
 	$(RULEHDR)
-	$(v)$(LD) $(LDFLAGS) -o $@ $(INIT_LIBS)  $(SKETCHOBJS) $(LIBOBJS) $(LIBS)
+	$(v)$(LD) $(LDFLAGS) -o $@ $(INIT_LIBS)  $(SKETCHOBJS) $(LIBOBJS) $(LIBS) $(BUILDROOT)/fonts.o
 	$(v)cp $(SKETCHELF) .
 	@echo "Firmware is in $(BUILDELF)"
 
-SKETCH_INCLUDES	=	$(SKETCHLIBINCLUDES) 
+SKETCH_INCLUDES	=	$(SKETCHLIBINCLUDES) $(patsubst %,-I%,$(QUAN_INCLUDES))
 SLIB_INCLUDES	=	-I$(dir $<)utility $(SKETCHLIBINCLUDES) $(patsubst %,-I%,$(QUAN_INCLUDES))
 
 include $(MK_DIR)/build_rules.mk
+
+$(BUILDROOT)/fonts.o : $(QUANTRACKER_ROOT_DIR)/examples/osd_example1/board/fonts.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $< $(SLIB_INCLUDES)

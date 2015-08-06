@@ -27,6 +27,8 @@
  * `void setup()` and `void loop()`, ala Arduino.
  */
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <quan/min.hpp>
+#include <quan/max.hpp>
 #include "HAL_Quan_Class.h"
 #include "AP_HAL_Quan_Main.h"
 #endif

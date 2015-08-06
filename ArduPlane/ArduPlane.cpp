@@ -31,6 +31,9 @@
   often they should be called (in 20ms units) and the maximum time
   they are expected to take (in microseconds)
  */
+/*
+   modify the max time they ar expected to take to add a 1ms context switch
+*/
 const AP_Scheduler::Task Plane::scheduler_tasks[] PROGMEM = {
     { SCHED_TASK(read_radio),             1,    700 }, // 0
     { SCHED_TASK(check_short_failsafe),   1,   1000 },
@@ -931,6 +934,8 @@ void Plane::update_optical_flow(void)
 /*
   compatibility with old pde style build
  */
+// for HAL_BOARD_QUAN will prob put in a task
+//#if  CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 void setup(void);
 void loop(void);
 
@@ -944,3 +949,5 @@ void loop(void)
 }
 
 AP_HAL_MAIN();
+
+//#endif  // CONFIG_HAL_BOARD != HAL_BOARD_QUAN

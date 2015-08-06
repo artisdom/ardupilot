@@ -6,7 +6,6 @@
 // Note: use new/delete with caution.  The heap is small and
 // easily fragmented.
 
-#if 0
 
 #include <AP_HAL.h>
 #include <stdlib.h>
@@ -19,7 +18,7 @@
   board at all.
  */
 
-##iv CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 void * operator new(size_t size)
 {
     if (size < 1) {
@@ -51,12 +50,13 @@ void operator delete[](void * ptr)
 #if CONFIG_HAL_BOARD == HAL_BOARD_APM1 || CONFIG_HAL_BOARD == HAL_BOARD_APM2 || CONFIG_HAL_BOARD == HAL_BOARD_FLYMAPLE || CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 
 // Conflicts with libmaple wirish/cxxabi-compat.cpp
-#if CONFIG_HAL_BOARD != HAL_BOARD_FLYMAPLE
+#if (CONFIG_HAL_BOARD != HAL_BOARD_FLYMAPLE) && (CONFIG_HAL_BOARD != HAL_BOARD_QUAN)
 extern "C" void __cxa_pure_virtual(){
     while (1){}
 }
 #endif
 
+#if (CONFIG_HAL_BOARD != HAL_BOARD_QUAN)
 __extension__ typedef int __guard __attribute__((mode (__DI__)));
 
 int __cxa_guard_acquire(__guard *g)
@@ -70,6 +70,7 @@ void __cxa_guard_release (__guard *g){
 
 void __cxa_guard_abort (__guard *) {
 };
+#endif
 
 #endif // CONFIG_HAL_BOARD
 

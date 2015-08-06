@@ -632,7 +632,11 @@ bool Plane::verify_loiter_to_alt()
 bool Plane::verify_RTL()
 {
     update_loiter();
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   if (auto_state.wp_distance <= (uint32_t)quan::max(static_cast<uint32_t>(g.waypoint_radius),0U) ||
+#else
 	if (auto_state.wp_distance <= (uint32_t)max(g.waypoint_radius,0) || 
+#endif
         nav_controller->reached_loiter_target()) {
 			gcs_send_text_P(SEVERITY_LOW,PSTR("Reached home"));
 			return true;
@@ -748,7 +752,11 @@ bool Plane::verify_change_alt()
 
 bool Plane::verify_within_distance()
 {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    if (auto_state.wp_distance < quan::max(condition_value,0)) {
+#else
     if (auto_state.wp_distance < max(condition_value,0)) {
+#endif
         condition_value = 0;
         return true;
     }
