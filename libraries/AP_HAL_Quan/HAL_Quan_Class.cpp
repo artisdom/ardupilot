@@ -10,9 +10,13 @@
 
 using namespace Quan;
 
-static QuanUARTDriver uartADriver;
-static QuanUARTDriver uartBDriver;
-static QuanUARTDriver uartCDriver;
+//static QuanUARTDriver uartADriver;
+//static QuanUARTDriver uartBDriver;
+//static QuanUARTDriver uartCDriver;
+
+namespace Quan{
+  AP_HAL::UARTDriver * get_serial_port(uint32_t i);
+}
 static QuanSemaphore  i2cSemaphore;
 static QuanI2CDriver  i2cDriver(&i2cSemaphore);
 static QuanSPIDeviceManager spiDeviceManager;
@@ -24,11 +28,13 @@ static QuanRCOutput rcoutDriver;
 static QuanScheduler schedulerInstance;
 static QuanUtil utilInstance;
 
+
+
 HAL_Quan::HAL_Quan() :
     AP_HAL::HAL(
-        &uartADriver,
-        &uartBDriver,
-        &uartCDriver,
+        Quan::get_serial_port(0),  //       &uartADriver,
+        Quan::get_serial_port(1),//        &uartBDriver,
+        Quan::get_serial_port(2),//        &uartCDriver,
         NULL,            /* no uartD */
         NULL,            /* no uartE */
         &i2cDriver,
@@ -37,14 +43,16 @@ HAL_Quan::HAL_Quan() :
         &spiDeviceManager,
         &analogIn,
         &storageDriver,
-        &uartADriver,
+        Quan::get_serial_port(0),
         &gpioDriver,
         &rcinDriver,
         &rcoutDriver,
         &schedulerInstance,
         &utilInstance),
     _member(new QuanPrivateMember(123))
-{}
+{
+  
+}
 
 void HAL_Quan::init(int argc,char* const argv[]) const {
     /* initialize all drivers and private members here.

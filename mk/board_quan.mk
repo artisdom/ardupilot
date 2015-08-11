@@ -1,5 +1,5 @@
 
-QUANTRACKER_ROOT_DIR = ../../../quantracker/
+QUANTRACKER_ROOT_DIR = /home/andy/cpp/projects/quantracker/
 ifeq ($(QUANTRACKER_ROOT_DIR), )
 $(error "QUANTRACKER_ROOT_DIR must be defined to the path to the quantracker root directory.")
 endif
@@ -87,8 +87,6 @@ C_INCLUDE_PATH=
 LIBRARY_PATH=
 
 include $(MK_DIR)/find_tools.mk
-
-
 
 # specific flags for stm32f4
 QUAN_DEFINES = QUAN_STM32F4 QUAN_FREERTOS $(TELEMETRY_DIRECTION) STM32F40_41xxx \
