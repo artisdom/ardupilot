@@ -18,6 +18,7 @@
 #define HAL_BOARD_FLYMAPLE 6
 #define HAL_BOARD_LINUX    7
 #define HAL_BOARD_VRBRAIN  8
+#define HAL_BOARD_QUAN     9
 #define HAL_BOARD_EMPTY    99
 
 // default board subtype is -1
@@ -259,6 +260,20 @@
 #define HAL_BARO_DEFAULT HAL_BARO_HIL
 #define HAL_COMPASS_DEFAULT HAL_COMPASS_HIL
 #define CONFIG_HAL_BOARD_SUBTYPE HAL_BOARD_SUBTYPE_NONE
+
+//############################################################################
+//##############################################################################
+#elif CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#define AP_HAL_BOARD_DRIVER AP_HAL_Quan
+#define HAL_BOARD_NAME "QUAN"
+#define HAL_CPU_CLASS HAL_CPU_CLASS_150
+#define HAL_STORAGE_SIZE            4096
+#define HAL_STORAGE_SIZE_AVAILABLE  HAL_STORAGE_SIZE
+#define HAL_INS_DEFAULT HAL_INS_MPU60XX_SPI
+#define HAL_BARO_DEFAULT HAL_BARO_BMP085
+#define HAL_COMPASS_DEFAULT HAL_COMPASS_HMC5843
+#define CONFIG_HAL_BOARD_SUBTYPE HAL_BOARD_SUBTYPE_NONE
+//########################################################
 
 #elif CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
 #define AP_HAL_BOARD_DRIVER AP_HAL_VRBRAIN

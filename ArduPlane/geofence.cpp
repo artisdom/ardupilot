@@ -49,7 +49,11 @@ static const StorageAccess fence_storage(StorageManager::StorageFence);
  */
 uint8_t Plane::max_fencepoints(void)
 {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    return quan::min(255U, fence_storage.size() / sizeof(Vector2l));
+#else
     return min(255, fence_storage.size() / sizeof(Vector2l));
+#endif
 }
 
 /*

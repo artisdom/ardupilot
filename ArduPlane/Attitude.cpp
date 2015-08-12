@@ -123,7 +123,11 @@ void Plane::stick_mix_channel(RC_Channel *channel, int16_t &servo_out)
         
     ch_inf = (float)channel->radio_in - (float)channel->radio_trim;
     ch_inf = fabsf(ch_inf);
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    ch_inf = quan::min(ch_inf, 400.0f);
+#else
     ch_inf = min(ch_inf, 400.0f);
+#endif
     ch_inf = ((400.0f - ch_inf) / 400.0f);
     servo_out *= ch_inf;
     servo_out += channel->pwm_to_angle();

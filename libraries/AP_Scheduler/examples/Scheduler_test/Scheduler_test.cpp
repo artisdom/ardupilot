@@ -34,11 +34,11 @@
 #include <AP_BattMonitor/AP_BattMonitor.h>
 #include <AP_Scheduler/AP_Scheduler.h>
 #include <AP_RangeFinder/AP_RangeFinder.h>
-
 #include <AP_HAL_AVR/AP_HAL_AVR.h>
 #include <AP_HAL_SITL/AP_HAL_SITL.h>
 #include <AP_HAL_Empty/AP_HAL_Empty.h>
 #include <AP_HAL_PX4/AP_HAL_PX4.h>
+#include <AP_HAL_Quan/AP_HAL_Quan.h>
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 
