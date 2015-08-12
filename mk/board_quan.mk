@@ -210,6 +210,10 @@ SKETCHEEP		=	$(BUILDROOT)/$(SKETCH).eep
 # Map file
 SKETCHMAP		=	$(BUILDROOT)/$(SKETCH).map
 
+QUANSKETCHBIN =	$(BUILDROOT)/$(SKETCH).bin
+
+QUANSKETCHLST   = $(BUILDROOT)/$(SKETCH).lst
+
 # All of the objects that may be built
 ALLOBJS			=	$(SKETCHOBJS) $(LIBOBJS)
 
@@ -239,6 +243,11 @@ $(SKETCHELF): $(SKETCHOBJS) $(LIBOBJS) $(BUILDROOT)/fonts.o
 	$(v)$(LD) $(LDFLAGS) -o $@ $(INIT_LIBS)  $(SKETCHOBJS) $(LIBOBJS) $(LIBS) $(BUILDROOT)/fonts.o
 	$(v)cp $(SKETCHELF) .
 	@echo "Firmware is in $(BUILDELF)"
+	$(QUAN_ARM_OBJCOPY) -Obinary $(SKETCHELF) $(QUANSKETCHBIN)
+	$(v)cp $(QUANSKETCHBIN) .
+	$(QUAN_ARM_OBJDUMP) -d $(SKETCHELF) > $(QUANSKETCHLST)
+	$(v)cp $(QUANSKETCHLST) .
+	$(QUAN_ARM_SIZE)    -A $(SKETCHELF)
 
 SKETCH_INCLUDES	=	$(SKETCHLIBINCLUDES) $(patsubst %,-I%,$(QUAN_INCLUDES))
 SLIB_INCLUDES	=	-I$(dir $<)utility $(SKETCHLIBINCLUDES) $(patsubst %,-I%,$(QUAN_INCLUDES))

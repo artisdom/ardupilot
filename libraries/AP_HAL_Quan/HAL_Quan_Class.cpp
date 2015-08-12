@@ -15,7 +15,8 @@ using namespace Quan;
 //static QuanUARTDriver uartCDriver;
 
 namespace Quan{
-  AP_HAL::UARTDriver * get_serial_port(uint32_t i);
+  template <uint32_t I>
+  AP_HAL::UARTDriver * get_serial_port();
 }
 static QuanSemaphore  i2cSemaphore;
 static QuanI2CDriver  i2cDriver(&i2cSemaphore);
@@ -29,12 +30,11 @@ static QuanScheduler schedulerInstance;
 static QuanUtil utilInstance;
 
 
-
 HAL_Quan::HAL_Quan() :
     AP_HAL::HAL(
-        Quan::get_serial_port(0),  //       &uartADriver,
-        Quan::get_serial_port(1),//        &uartBDriver,
-        Quan::get_serial_port(2),//        &uartCDriver,
+        Quan::get_serial_port<0>(),//   console ( hal.uartA)
+        Quan::get_serial_port<1>(),//   1st GPS
+        Quan::get_serial_port<2>(),//   telemetry
         NULL,            /* no uartD */
         NULL,            /* no uartE */
         &i2cDriver,
@@ -43,7 +43,7 @@ HAL_Quan::HAL_Quan() :
         &spiDeviceManager,
         &analogIn,
         &storageDriver,
-        Quan::get_serial_port(0),
+        Quan::get_serial_port<0>(),    // console  member
         &gpioDriver,
         &rcinDriver,
         &rcoutDriver,
@@ -54,11 +54,14 @@ HAL_Quan::HAL_Quan() :
   
 }
 
+// called in APM in
 void HAL_Quan::init(int argc,char* const argv[]) const {
     /* initialize all drivers and private members here.
      * up to the programmer to do this in the correct order.
      * Scheduler should likely come first. */
+    gpio->init();
     scheduler->init(NULL);
+    
     uartA->begin(115200);
     _member->init();
 }

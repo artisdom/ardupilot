@@ -65,6 +65,8 @@ QUAN_ARM_AR      :=  $(TOOLCHAIN_PREFIX)bin/arm-none-eabi-ar
 QUAN_ARM_LD      :=  $(TOOLCHAIN_PREFIX)bin/arm-none-eabi-g++
 QUAN_ARM_GDB     :=  $(TOOLCHAIN_PREFIX)bin/arm-none-eabi-gdb
 QUAN_ARM_OBJCOPY :=  $(TOOLCHAIN_PREFIX)bin/arm-none-eabi-objcopy
+QUAN_ARM_SIZE    :=  $(TOOLCHAIN_PREFIX)bin/arm-none-eabi-size
+QUAN_ARM_OBJDUMP :=  $(TOOLCHAIN_PREFIX)bin/arm-none-eabi-objdump
 
 # toolchains for beagleboneblack
 BBONE_CXX     :=  arm-linux-gnueabihf-g++

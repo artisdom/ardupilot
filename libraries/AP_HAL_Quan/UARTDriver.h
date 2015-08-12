@@ -30,7 +30,8 @@
 //#endif // __AP_HAL_QUAN_UARTDRIVER_H__
 
 namespace Quan{
-   AP_HAL::UARTDriver * get_serial_port(uint32_t i);
+   template <uint32_t I>
+   AP_HAL::UARTDriver * get_serial_port();
 }
 
 #endif

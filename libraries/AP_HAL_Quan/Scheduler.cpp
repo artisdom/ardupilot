@@ -92,6 +92,8 @@ extern "C" void TIM8_TRG_COM_TIM14_IRQHandler()
 QuanScheduler::QuanScheduler()
 {}
 
+// called in HAL_Quan::init( int argc, char * const * argv)
+// with NULL arg
 void QuanScheduler::init(void* )
 {
    m_usec_delay_semaphore = xSemaphoreCreateBinary();

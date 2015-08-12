@@ -11,7 +11,6 @@ QuanGPIO::QuanGPIO()
 {}
 
 
-
 namespace {
 
    template <typename Pin> struct gpio_pin : QuanDigitalSource{
@@ -57,11 +56,7 @@ namespace {
 
       void write(uint8_t value)
       {
-         if ( value  != 0){
-            quan::stm32::set<Pin>();
-         }else{
-            quan::stm32::clear<Pin>();
-         }
+         quan::stm32::put<Pin>(value);
       }
 
       void  toggle()
@@ -71,8 +66,8 @@ namespace {
       
   };
    gpio_pin<heartbeat_led_pin>       pin1;
-   gpio_pin<quan::mcu::pin<quan::stm32::gpioa,13> > pin2;
-   gpio_pin<quan::mcu::pin<quan::stm32::gpioa,14> > pin3;
+   gpio_pin<quan::mcu::pin<quan::stm32::gpioa,8> > pin2;
+   gpio_pin<quan::mcu::pin<quan::stm32::gpioc,9> > pin3;
 
    QuanDigitalSource * const pins_array[] =
    {
@@ -135,7 +130,6 @@ void Quan::QuanGPIO::write(uint8_t pin, uint8_t value)
 
 void Quan::QuanGPIO::toggle(uint8_t pin)
 {
-
    uint8_t pin_idx = 0;
    if ( map_pin_to_array(pin,pin_idx)){
       pins_array[pin_idx]->toggle();

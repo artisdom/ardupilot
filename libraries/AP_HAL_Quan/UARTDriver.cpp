@@ -1,5 +1,11 @@
 
 #include "UARTDriver.h"
+
+/*
+   TODO If code size becomes an issue REDO
+   put the non template data and no template dep fns in a non template member struct
+   of QuanUARTDriver<Usart>. Since it is not global should be fine to do
+*/
 #include <quan/stm32/freertos/apm/freertos_usart_task.hpp>
 
 using namespace Quan;
@@ -62,7 +68,7 @@ namespace {
 
       int16_t available(void) 
       {
-         return static_cast<uint16_t>(SerialPort::in_avail());
+         return static_cast<int16_t>(SerialPort::in_avail());
       }
       
       bool tx_pending()
@@ -103,10 +109,53 @@ namespace {
 
 }// namespace
 
-AP_HAL::UARTDriver * Quan::get_serial_port(uint32_t i)
+template <uint32_t I>
+AP_HAL::UARTDriver * Quan::get_serial_port()
 {
-  return serial_ports[i];
+  return serial_ports[I];
 }
+
+template AP_HAL::UARTDriver * Quan::get_serial_port<0>();
+template AP_HAL::UARTDriver * Quan::get_serial_port<1>();
+template AP_HAL::UARTDriver * Quan::get_serial_port<2>();
+
+// interrupts
+
+extern "C" void USART1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
+extern "C" void USART1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
+extern "C" void UART4_IRQHandler() __attribute__ ((interrupt ("IRQ")));
+
+extern "C" void USART1_IRQHandler()
+{
+
+   static_assert(
+   std::is_same<
+      sp1::usart,quan::stm32::usart1
+   >::value
+   ,"invalid usart for serial_port irq");
+   sp1::serial_port::irq_handler();
+}
+
+extern "C" void USART3_IRQHandler()
+{
+   static_assert(
+   std::is_same<
+      sp2::usart,quan::stm32::usart3
+   >::value
+   ,"invalid usart for serial_port irq");
+   sp2::serial_port::irq_handler();
+}
+
+extern "C" void UART4_IRQHandler()
+{
+   static_assert(
+   std::is_same<
+      sp3::usart,quan::stm32::uart4
+   >::value
+   ,"invalid usart for serial_port irq");
+   sp3::serial_port::irq_handler();
+}
+   
 
 
   
