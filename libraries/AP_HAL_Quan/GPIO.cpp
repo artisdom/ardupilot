@@ -65,9 +65,11 @@ namespace {
       }
       
   };
+
+   //
    gpio_pin<heartbeat_led_pin>       pin1;
-   gpio_pin<quan::mcu::pin<quan::stm32::gpioa,8> > pin2;
-   gpio_pin<quan::mcu::pin<quan::stm32::gpioc,9> > pin3;
+   gpio_pin<quan::mcu::pin<quan::stm32::gpioc,14> > pin2;
+   gpio_pin<quan::mcu::pin<quan::stm32::gpioc,15> > pin3;
 
    QuanDigitalSource * const pins_array[] =
    {

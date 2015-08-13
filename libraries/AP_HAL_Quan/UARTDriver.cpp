@@ -2,11 +2,20 @@
 #include "UARTDriver.h"
 
 /*
-   TODO If code size becomes an issue REDO
+   TODO needs a REDO
+   can be local since all in anon namespace
+   then can get panic error messages
    put the non template data and no template dep fns in a non template member struct
    of QuanUARTDriver<Usart>. Since it is not global should be fine to do
 */
 #include <quan/stm32/freertos/apm/freertos_usart_task.hpp>
+
+/*
+ Though technically Usart can be read/written by multiple threads
+ In practise when things are working correctly
+  Will be used by one thread
+  use a mutex to ensure this?
+*/
 
 using namespace Quan;
 

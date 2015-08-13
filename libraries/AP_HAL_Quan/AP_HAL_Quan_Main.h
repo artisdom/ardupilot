@@ -25,23 +25,15 @@ extern "C" {\
    }\
 }\
 \
-void quan::uav::osd::on_draw() \
-{ \
-   quan::uav::osd::draw_text("Hello APM World",{-100,0}); \
-}\
-\
 namespace { \
    char dummy_param = 0; \
    TaskHandle_t task_handle = NULL; \
-   TickType_t prev_wake_time= 0; \
    void apm_task(void * params) \
    { \
       hal.init(0, NULL);\
       setup();\
       hal.scheduler->system_initialized(); \
       for(;;){ \
-         vTaskDelayUntil(&prev_wake_time,20); \
-         asm volatile("nop":::); \
          loop(); \
       } \
 \

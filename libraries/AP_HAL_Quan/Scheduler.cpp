@@ -17,7 +17,6 @@ extern const AP_HAL::HAL& hal;
 namespace {
 
    typedef quan::stm32::tim13 usec_timer;
-   typedef quan::stm32::tim14 usec_delay_timer;
    void setup_usec_timer()
    {
       quan::stm32::module_enable<usec_timer>();
@@ -34,21 +33,6 @@ namespace {
       NVIC_EnableIRQ(TIM8_UP_TIM13_IRQn);
    }
 
-   void setup_usec_delay_timer()
-   {
-      quan::stm32::module_enable<usec_delay_timer>();
-      constexpr uint32_t timer_freq = quan::stm32::get_raw_timer_frequency<usec_timer>();
-      constexpr uint32_t psc = (timer_freq / static_cast<uint32_t>(1000000U)) - 1U;
-      static_assert((timer_freq % static_cast<uint32_t>(1000000U))==0U,"unexpected raw timer frequency");
-      usec_delay_timer::get()->psc = psc;
-      usec_delay_timer::get()->arr = 0;
-      usec_delay_timer::get()->cnt = 0;
-      usec_delay_timer::get()->sr = 0;
-      usec_delay_timer::get()->dier.setbit<0>(); //(UIE)  
-      NVIC_SetPriority(TIM8_TRG_COM_TIM14_IRQn,tskIDLE_PRIORITY + 1);
-      NVIC_EnableIRQ(TIM8_TRG_COM_TIM14_IRQn);
-   }
-
    void start_usec_timer()
    {
       usec_timer::get()->cr1.bb_setbit<0>(); // (CEN)
@@ -56,9 +40,6 @@ namespace {
    
    // overflow after  approx 9 years
    volatile uint32_t timer_micros_ovflo_count = 0U;
-
-   // add some number of AP_HAL:::MemberProcs
-   
  
 } // namespace
 
@@ -70,23 +51,7 @@ extern "C" void TIM8_UP_TIM13_IRQHandler()
       usec_timer::get()->sr = 0;
       ++ timer_micros_ovflo_count;
    }
-
    //otherwise maybe other timer irq
-}
-
-namespace {
-   BaseType_t higher_priority_task_woken = 0;
-   SemaphoreHandle_t m_usec_delay_semaphore = 0;
-}
-
-extern "C" void TIM8_TRG_COM_TIM14_IRQHandler() __attribute__ ( (interrupt ("IRQ")));
-extern "C" void TIM8_TRG_COM_TIM14_IRQHandler()
-{
-   usec_delay_timer::get()->cr1.bb_clearbit<0>(); // (CEN)
-   usec_delay_timer::get()->sr = 0;
-   usec_delay_timer::get()->cnt = 0;
-   xSemaphoreGiveFromISR(m_usec_delay_semaphore,&higher_priority_task_woken);
-   portEND_SWITCHING_ISR(higher_priority_task_woken);
 }
 
 QuanScheduler::QuanScheduler()
@@ -94,11 +59,11 @@ QuanScheduler::QuanScheduler()
 
 // called in HAL_Quan::init( int argc, char * const * argv)
 // with NULL arg
+// TODO check singleton
 void QuanScheduler::init(void* )
 {
-   m_usec_delay_semaphore = xSemaphoreCreateBinary();
+   setup_usec_timer();
    start_usec_timer();
-   setup_usec_delay_timer();
 }
 
 namespace{
@@ -109,9 +74,9 @@ namespace{
 
 void QuanScheduler::delay(uint16_t ms)
 {
+   
    int64_t const end_of_delay_ms = static_cast<int64_t>(millis64()) + static_cast<int64_t>(ms) ;
-   // Think need to call any callback  that has been registered
-   // continuously,  if its minimun_delay_time is <= time_left
+   // TODO Prob better to just put the timer_proc in a task!
    while( 
       (timer_proc != nullptr ) 
       && 
@@ -126,7 +91,7 @@ void QuanScheduler::delay(uint16_t ms)
    int64_t const time_left_ms = end_of_delay_ms - static_cast<int64_t>(millis64());
    // try to yield whenever we can!
    if ( time_left_ms > 0){
-      vTaskDelayUntil(&last_wake_time,static_cast<TickType_t>(end_of_delay_ms));
+      vTaskDelayUntil(&last_wake_time,static_cast<TickType_t>(time_left_ms));
    }
 }
 
@@ -158,34 +123,18 @@ uint32_t QuanScheduler::micros() {
     return micros64();
 }
 
+//N.B granularity is 1 ms! so just here for completeness
+ // delay will in fact yield to other tasks
 void QuanScheduler::delay_microseconds(uint16_t us)
 {
-   uint64_t const start_of_delay_us = micros64();
-   uint64_t const wake_up_time_us = start_of_delay_us + us;
-   uint16_t const wake_up_time_ms = wake_up_time_us / 1000;
-   // yield if possible
-   if ( wake_up_time_ms > 0){
-      delay(wake_up_time_ms);
-   }
-   taskENTER_CRITICAL();
-   int32_t const delay_so_far = static_cast<int32_t>(micros64() - start_of_delay_us);
-   int32_t const delay_left = delay_so_far - static_cast<int32_t>(us);
-   if ( delay_left > 1){
-      usec_delay_timer::get()->arr = delay_left -1;
-      usec_delay_timer::get()->cr1.bb_setbit<0>(); // (CEN)
-      TickType_t millisecs = quan::max(delay_left/1000,1);
-      taskEXIT_CRITICAL();
-      xSemaphoreTake( m_usec_delay_semaphore,millisecs);
-   }else{
-      taskEXIT_CRITICAL();
-      // wait max 1 us
-      while ( wake_up_time_us > micros64()) {;} 
-   }
+   delay((us + 999U) / 1000U);
 }
 
 /*
 a function to do useful stuff during the delay function
- Actually look like only used during init
+ Actually  called during Plane::init_ardupilot fun
+ to run Mavlink in a delay process
+ May be easier to run Mavlink in its own task
 */
 void QuanScheduler::register_delay_callback(AP_HAL::Proc k,
             uint16_t min_time_ms)
@@ -194,22 +143,30 @@ void QuanScheduler::register_delay_callback(AP_HAL::Proc k,
    timer_proc_min_delay = static_cast<int32_t>(min_time_ms);
 }
 
+// needs impl
 void QuanScheduler::register_timer_process(AP_HAL::MemberProc k)
 {}
 
+//"not supported on AVR"
 void QuanScheduler::register_io_process(AP_HAL::MemberProc k)
 {}
 
+// TODO register a function to call on failsafe
 void QuanScheduler::register_timer_failsafe(AP_HAL::Proc, uint32_t period_us)
 {}
 
+// NEEDS impl
+ // 
 void QuanScheduler::suspend_timer_procs()
 {}
 
+// needs impl
 void QuanScheduler::resume_timer_procs()
 {}
 
-bool QuanScheduler::in_timerprocess() {
+// 
+bool QuanScheduler::in_timerprocess() 
+{
     return false;
 }
 
@@ -238,6 +195,7 @@ void QuanScheduler::panic(const prog_char_t *errormsg) {
     for(;;);
 }
 
+// TODO
 void QuanScheduler::reboot(bool hold_in_bootloader) 
 {
     for(;;);
