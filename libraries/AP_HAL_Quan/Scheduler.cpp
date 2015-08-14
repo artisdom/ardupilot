@@ -71,6 +71,8 @@ namespace {
    AP_HAL::MemberProc new_scheduler_timer_task_proc = nullptr;
    // the array of timer procs to call in the slot
    AP_HAL::MemberProc timer_procs[max_scheduler_timer_procs] = {nullptr};
+
+   bool m_in_timer_process = false;
    
    void scheduler_timer_task(void * params)
    {
@@ -110,7 +112,11 @@ namespace {
          // run all the functions
          for ( auto& pfn : timer_procs){
             if ( (pfn == nullptr) == false){
+               taskENTER_CRITICAL();
+               m_in_timer_process = true;
                pfn();
+               m_in_timer_process = false;
+               taskEXIT_CRITICAL();
             }
          } 
          // and sleep 1 ms till next time
@@ -263,10 +269,10 @@ void QuanScheduler::resume_timer_procs()
     vTaskResume(scheduler_timer_task_handle);
 }
 
-//timer_procs in a separate task so false
+// call from interrupt?
 bool QuanScheduler::in_timerprocess() 
 {
-    return false;
+    return  m_in_timer_process; 
 }
 
 namespace {
