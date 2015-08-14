@@ -19,7 +19,7 @@ namespace Quan {
     class QuanDigitalSource;
     class QuanRCInput;
     class QuanRCOutput;
-    class QuanSemaphore;
+    struct QuanSemaphore;
     class QuanScheduler;
     class QuanUtil;
     class QuanPrivateMember;
