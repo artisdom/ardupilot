@@ -56,13 +56,11 @@ HAL_Quan::HAL_Quan() :
 
 // called in APM in
 void HAL_Quan::init(int argc,char* const argv[]) const {
-    /* initialize all drivers and private members here.
-     * up to the programmer to do this in the correct order.
-     * Scheduler should likely come first. */
+    /* initialize all drivers and private members here.*/
     gpio->init();
+    uartA->begin(115200);
     scheduler->init(NULL);
     
-    uartA->begin(115200);
     _member->init();
 }
 
