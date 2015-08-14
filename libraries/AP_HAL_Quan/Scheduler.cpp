@@ -9,6 +9,8 @@
 #include <quan/stm32/tim/temp_reg.hpp>
 #include <quan/stm32/get_raw_timer_frequency.hpp>
 #include <quan/max.hpp>
+//#include <quan/stm32/gpio.hpp>
+//#include <resources.hpp>
 
 using namespace Quan;
 
@@ -51,47 +53,125 @@ extern "C" void TIM8_UP_TIM13_IRQHandler()
       usec_timer::get()->sr = 0;
       ++ timer_micros_ovflo_count;
    }
-   //otherwise maybe other timer irq
 }
+
+namespace {
+
+   // for vTaskDelayUntil
+   TickType_t last_scheduler_timer_task_wake_time = 0;
+   // The queue for task messages
+   // could be more sophisticated
+   // to remove tasks as well as add
+   QueueHandle_t scheduler_timer_task_message_queue = nullptr;
+   // max number of timer task procs
+   constexpr uint32_t max_scheduler_timer_procs = 4;
+   constexpr uint32_t scheduler_timer_task_queue_length = max_scheduler_timer_procs;
+
+   // static temp for new task from queue
+   AP_HAL::MemberProc new_scheduler_timer_task_proc = nullptr;
+   // the array of timer procs to call in the slot
+   AP_HAL::MemberProc timer_procs[max_scheduler_timer_procs] = {nullptr};
+   
+   void scheduler_timer_task(void * params)
+   {
+      scheduler_timer_task_message_queue = xQueueCreate(2,sizeof(AP_HAL::MemberProc));
+      if ( scheduler_timer_task_message_queue == nullptr){
+         hal.scheduler->panic("Create Sched timer_task Q failed");
+      }
+
+      for(;;){
+
+         while ( uxQueueMessagesWaiting(scheduler_timer_task_message_queue) != 0){
+            xQueueReceive(scheduler_timer_task_message_queue,&new_scheduler_timer_task_proc,0);
+            if ( (new_scheduler_timer_task_proc == nullptr) == false){
+               bool new_proc_installed = false;
+               // check for duplicate
+               for ( auto const & pfn : timer_procs){
+                  if ( new_scheduler_timer_task_proc == pfn){
+                     new_proc_installed = true;
+                     break;
+                  }
+               }
+               // check for free slot
+               if (!new_proc_installed){
+                  for (auto & pfn : timer_procs){
+                     if (pfn == nullptr){
+                        pfn = new_scheduler_timer_task_proc;
+                        new_proc_installed = true;
+                        break;
+                     }
+                  }
+               }
+               if (! new_proc_installed){
+                   hal.console->printf("Install Sched timer task proc failed\n");
+               }
+            }
+         }
+         // run all the functions
+         for ( auto& pfn : timer_procs){
+            if ( (pfn == nullptr) == false){
+               pfn();
+            }
+         } 
+         // and sleep 1 ms till next time
+         vTaskDelayUntil(&last_scheduler_timer_task_wake_time, 1);
+      }
+   }
+
+   TaskHandle_t scheduler_timer_task_handle;
+   void * dummy_params;
+} // namespace
+
+/*
+ TODO look at functions to assess how much memory to allocate
+  Check for task safe etc
+*/
+   void create_scheduler_timer_task()
+   {
+      xTaskCreate(
+         scheduler_timer_task,"scheduler_timer_task",
+         1000,
+         &dummy_params,
+         tskIDLE_PRIORITY + 2, // want slightly higher than apm task priority
+         & scheduler_timer_task_handle
+      ) ;
+   }
 
 QuanScheduler::QuanScheduler()
 {}
 
 // called in HAL_Quan::init( int argc, char * const * argv)
-// with NULL arg
-// TODO check singleton
+// after console and GPIO inited
 void QuanScheduler::init(void* )
 {
    setup_usec_timer();
    start_usec_timer();
+   create_scheduler_timer_task();
 }
 
 namespace{
-   TickType_t last_wake_time;
-   AP_HAL::Proc timer_proc = nullptr;
-   int32_t timer_proc_min_delay = 0;
+   AP_HAL::Proc m_delay_callback = nullptr;
+   uint16_t m_delay_callback_min_delay_ms = 0;
 }
 
-void QuanScheduler::delay(uint16_t ms)
+void QuanScheduler::delay(uint16_t delay_length_ms)
 {
-   
-   int64_t const end_of_delay_ms = static_cast<int64_t>(millis64()) + static_cast<int64_t>(ms) ;
-   // TODO Prob better to just put the timer_proc in a task!
-   while( 
-      (timer_proc != nullptr ) 
-      && 
-      (
-         timer_proc_min_delay < static_cast<int32_t>(
-            (end_of_delay_ms - static_cast<int64_t>(millis64()))
-         ) 
-      )
-    ){
-      timer_proc();
-    }
-   int64_t const time_left_ms = end_of_delay_ms - static_cast<int64_t>(millis64());
-   // try to yield whenever we can!
-   if ( time_left_ms > 0){
-      vTaskDelayUntil(&last_wake_time,static_cast<TickType_t>(time_left_ms));
+   uint64_t const end_of_delay_ms  = millis64() + delay_length_ms;
+   for (;;){
+      uint64_t const time_now_ms = millis64();
+      if ( m_delay_callback && (( time_now_ms + m_delay_callback_min_delay_ms) < end_of_delay_ms)){
+         m_delay_callback();
+         if ( millis64() < end_of_delay_ms){
+            vTaskDelay(1);
+         }else{
+            break; // end of delay
+         }
+      }else{
+         if ( time_now_ms < end_of_delay_ms){
+            vTaskDelay(end_of_delay_ms - time_now_ms );
+         }
+         break; // end of delay
+      }
    }
 }
 
@@ -123,58 +203,71 @@ uint32_t QuanScheduler::micros() {
     return micros64();
 }
 
-//N.B granularity is 1 ms! so just here for completeness
- // delay will in fact yield to other tasks
+ // delay longer than 1 ms will in fact actively yield to other tasks
 void QuanScheduler::delay_microseconds(uint16_t us)
 {
-   delay((us + 999U) / 1000U);
+   uint64_t const end_of_delay_us = micros64() + us;
+   uint64_t const delay_ms = us / 1000;
+   // yields
+   if ( delay_ms > 0){
+      delay(delay_ms);
+   }
+   // not going critical here. yield away!
+   while (micros64() < end_of_delay_us){ 
+      asm volatile ("nop":::);
+   }
 }
 
 /*
 a function to do useful stuff during the delay function
- Actually  called during Plane::init_ardupilot fun
- to run Mavlink in a delay process
- May be easier to run Mavlink in its own task
+ maybe be null
+ called during Plane::init_ardupilot fun
+ to run Mavlink output fun
 */
-void QuanScheduler::register_delay_callback(AP_HAL::Proc k,
+void QuanScheduler::register_delay_callback(AP_HAL::Proc pfn,
             uint16_t min_time_ms)
 {
-   timer_proc = k;
-   timer_proc_min_delay = static_cast<int32_t>(min_time_ms);
+   m_delay_callback = pfn;
+   m_delay_callback_min_delay_ms = min_time_ms;
 }
 
-// needs impl
-void QuanScheduler::register_timer_process(AP_HAL::MemberProc k)
-{}
+namespace{
+     AP_HAL::MemberProc new_scheduler_timer_task_proc_in = nullptr;
+}
+void QuanScheduler::register_timer_process(AP_HAL::MemberProc mp)
+{
+   if ( (mp == nullptr) == false){
+      new_scheduler_timer_task_proc_in = mp;
+      if (xQueueSendToBack(scheduler_timer_task_message_queue,&new_scheduler_timer_task_proc_in,2) == errQUEUE_FULL){
+          hal.console->printf("failed to add new scheduler_timer_task proc\n");
+      }
+   }
+}
 
-//"not supported on AVR"
+//"not supported on AVR" so wont bother yet
 void QuanScheduler::register_io_process(AP_HAL::MemberProc k)
 {}
 
-// TODO register a function to call on failsafe
+// TODO register a function to call on failsafe ( eg. WDT timeout)
+// and sort failsafe watchdog etc
 void QuanScheduler::register_timer_failsafe(AP_HAL::Proc, uint32_t period_us)
 {}
 
-// NEEDS impl
- // 
 void QuanScheduler::suspend_timer_procs()
-{}
+{
+   vTaskSuspend(scheduler_timer_task_handle);
+}
 
-// needs impl
 void QuanScheduler::resume_timer_procs()
-{}
+{
+    vTaskResume(scheduler_timer_task_handle);
+}
 
-// 
+//timer_procs in a separate task so false
 bool QuanScheduler::in_timerprocess() 
 {
     return false;
 }
-
-//void QuanScheduler::begin_atomic()
-//{}
-//
-//void QuanScheduler::end_atomic()
-//{}
 
 namespace {
   bool m_system_initialised = false;
@@ -195,7 +288,7 @@ void QuanScheduler::panic(const prog_char_t *errormsg) {
     for(;;);
 }
 
-// TODO
+// TODO wdt
 void QuanScheduler::reboot(bool hold_in_bootloader) 
 {
     for(;;);
