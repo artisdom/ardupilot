@@ -1,30 +1,25 @@
 
 #include "Semaphores.h"
-#include "FreeRTOS.h"
-#include <task.h>
-#include <queue.h>
 
-using namespace Quan;
+extern const AP_HAL::HAL& hal;
 
-bool QuanSemaphore::give() {
-    if (_taken) {
-        _taken = false;
-        return true;
-    } else {
-        return false;
-    }
+Quan::QuanSemaphore::QuanSemaphore()
+:  m_mutex_handle{ xSemaphoreCreateMutex()}
+{
+  if(m_mutex_handle == nullptr){
+      hal.scheduler->panic("create semaphore failed");
+  }
 }
 
-bool QuanSemaphore::take(uint32_t timeout_ms) {
-    return take_nonblocking();
+bool Quan::QuanSemaphore:: give()
+{ 
+   return xSemaphoreGive(m_mutex_handle) == pdTRUE;
 }
 
-bool QuanSemaphore::take_nonblocking() {
-    /* No syncronisation primitives to garuntee this is correct */
-    if (!_taken) {
-        _taken = true;
-        return true;
-    } else {
-        return false;
-    }
+bool Quan::QuanSemaphore::take(uint32_t timeout_ms) 
+{ 
+   return xSemaphoreTake(m_mutex_handle,timeout_ms) == pdTRUE;
 }
+bool Quan::QuanSemaphore::take_nonblocking() 
+{ return this->take(0);}
+

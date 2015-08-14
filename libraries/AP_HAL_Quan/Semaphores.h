@@ -4,14 +4,17 @@
 
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
 
-class Quan::QuanSemaphore : public AP_HAL::Semaphore {
+#include "FreeRTOS.h"
+#include <semphr.h>
+
+struct Quan::QuanSemaphore : public AP_HAL::Semaphore {
 public:
-    QuanSemaphore() : _taken(false) {}
+    QuanSemaphore() ;
     bool give();
-    bool take(uint32_t timeout_ms);
-    bool take_nonblocking();
+    bool take(uint32_t timeout_ms) ; ;
+    bool take_nonblocking(); ;
 private:
-    bool _taken;
+    SemaphoreHandle_t m_mutex_handle;
 };
 
 #endif // __AP_HAL_QUAN_SEMAPHORE_H__
