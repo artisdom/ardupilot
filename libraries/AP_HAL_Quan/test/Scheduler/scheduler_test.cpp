@@ -43,12 +43,6 @@ void quan::uav::osd::on_draw()
 }
 #endif
 
-// called forever in apm_task
-//  This will output a square wave with 500 Hz frequency on PC14
-//##########################################################
-// baecause N.B. minimum time  granularity of timer is 1 ms
-//##########################################################
-// so call hal.scheduler->delay_microseconds for 1 us --> 1 ms in practise
 
 void loop() 
 {
