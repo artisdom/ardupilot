@@ -164,7 +164,7 @@ namespace {
       ADC1->CR2  |= (1 << 9); //  (DDS) dma request continue sfter all done in sequence
       // set up regular channels
 #if 1
-  //    ADC1->CR1  |= ( 1<< 5); // (EOCIE)
+      ADC1->CR1  |= ( 1<< 5); // (EOCIE)
 #endif
       // ADC1 DMA ------------------------------------------------------------------------
       // USE DMA2.Stream4.Channel0  
@@ -212,7 +212,7 @@ namespace {
       DMA2->HIFCR |= (0b111101 << 0) ; // clear flags for Dma2 Stream 4
       DMA2->HIFCR &= ~(0b111101 << 0) ; // flags for Dma2 Stream 4
        // enable DMA
-      DMA2_Stream4->CR |= (1 << 0); // (EN)
+     // DMA2_Stream4->CR |= (1 << 0); // (EN)
 
    }
    void start_adc_timer()
