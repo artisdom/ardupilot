@@ -8,6 +8,8 @@ template <typename Coefficients>
 class Butter2
 {
 public:
+
+  void reset(float init){ hist[0] = init; hist[1] =init;}
   float filter(float input)
   {
         float newhist = input + Coefficients::A1*hist[1] + Coefficients::A2*hist[0];
@@ -15,6 +17,7 @@ public:
         hist[0] = hist[1]; hist[1] = newhist;
         return ret;
   }
+   
 private:
     float hist[2];
 };

@@ -31,7 +31,7 @@ namespace {
       usec_timer::get()->sr = 0;
       usec_timer::get()->dier.setbit<0>(); //(UIE)  
 
-      NVIC_SetPriority(TIM8_UP_TIM13_IRQn,tskIDLE_PRIORITY + 1);
+      NVIC_SetPriority(TIM8_UP_TIM13_IRQn,14);
       NVIC_EnableIRQ(TIM8_UP_TIM13_IRQn);
    }
 
@@ -45,6 +45,10 @@ namespace {
  
 } // namespace
 
+#if 0
+// test adc_timer UP interrupt
+void adc_timer_fun();
+#endif
 extern "C" void TIM8_UP_TIM13_IRQHandler() __attribute__ ( (interrupt ("IRQ")));
 
 extern "C" void TIM8_UP_TIM13_IRQHandler()
@@ -53,6 +57,13 @@ extern "C" void TIM8_UP_TIM13_IRQHandler()
       usec_timer::get()->sr = 0;
       ++ timer_micros_ovflo_count;
    }
+#if 0
+   typedef quan::stm32::tim8 adc_timer;
+   if ( adc_timer::get()->sr & (1 << 0) ) {// UIF
+      adc_timer::get()->sr = 0;
+         adc_timer_fun();
+    }
+#endif
 }
 
 namespace {
@@ -119,6 +130,8 @@ namespace {
                taskEXIT_CRITICAL();
             }
          } 
+         // can add other tasks here
+         // e.g A2D
          // and sleep 1 ms till next time
          vTaskDelayUntil(&last_scheduler_timer_task_wake_time, 1);
       }
@@ -126,7 +139,6 @@ namespace {
 
    TaskHandle_t scheduler_timer_task_handle;
    void * dummy_params;
-} // namespace
 
 /*
  TODO look at functions to assess how much memory to allocate
@@ -143,16 +155,18 @@ namespace {
       ) ;
    }
 
+} // namespace
+
 QuanScheduler::QuanScheduler()
 {}
-
+void create_adc_task();
 // called in HAL_Quan::init( int argc, char * const * argv)
 // after console and GPIO inited
 void QuanScheduler::init(void* )
 {
    setup_usec_timer();
-   start_usec_timer();
    create_scheduler_timer_task();
+   start_usec_timer();
 }
 
 namespace{

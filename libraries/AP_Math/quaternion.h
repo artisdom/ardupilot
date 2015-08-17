@@ -20,7 +20,8 @@
 #ifndef QUATERNION_H
 #define QUATERNION_H
 
-#include <math.h>
+//#include <math.h>
+#include <cmath>
 #if defined(MATH_CHECK_INDEXES) && (MATH_CHECK_INDEXES == 1)
 #include <assert.h>
 #endif
@@ -50,6 +51,7 @@ public:
     // check if any elements are NAN
     bool        is_nan(void) const
     {
+        using std::isnan;
         return isnan(q1) || isnan(q2) || isnan(q3) || isnan(q4);
     }
 

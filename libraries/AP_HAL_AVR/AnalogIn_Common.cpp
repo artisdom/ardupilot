@@ -116,6 +116,7 @@ AP_HAL::AnalogSource* AVRAnalogIn::channel(int16_t ch)
 
 /*
   return board voltage in volts
+  only used by ArduCopter
  */
 float AVRAnalogIn::board_voltage(void)
 {

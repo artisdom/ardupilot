@@ -6,7 +6,7 @@
 // returned.
 float safe_asin(float v)
 {
-    if (isnan(v)) {
+    if (std::isnan(v)) {
         return 0.0f;
     }
     if (v >= 1.0f) {
@@ -26,7 +26,7 @@ float safe_asin(float v)
 float safe_sqrt(float v)
 {
     float ret = sqrtf(v);
-    if (isnan(ret)) {
+    if (std::isnan(ret)) {
         return 0;
     }
     return ret;
@@ -77,7 +77,7 @@ float constrain_float(float amt, float low, float high)
 	// floating point errors through any function that uses
 	// constrain_float(). The normal float semantics already handle -Inf
 	// and +Inf
-	if (isnan(amt)) {
+	if (std::isnan(amt)) {
 		return (low+high)*0.5f;
 	}
 	return ((amt)<(low)?(low):((amt)>(high)?(high):(amt)));

@@ -139,6 +139,7 @@ void Quan::QuanGPIO::toggle(uint8_t pin)
 }
 
 /* Alternative interface: */
+// could point invalid idx at dummy channel to avoid nullptr?
 AP_HAL::DigitalSource* 
 Quan::QuanGPIO::channel(uint16_t n) 
 {
@@ -152,7 +153,8 @@ Quan::QuanGPIO::channel(uint16_t n)
 
 /* Interrupt interface: */
 bool Quan::QuanGPIO::attach_interrupt(uint8_t interrupt_num, AP_HAL::Proc p,
-        uint8_t mode) {
+        uint8_t mode) 
+{
     return true;
 }
 
