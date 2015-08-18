@@ -87,7 +87,7 @@ const AP_Param::Info Copter::var_info[] PROGMEM = {
     // @DisplayName: Takeoff trigger deadzone
     // @Description: Offset from mid stick at which takeoff is triggered
     // @User: Standard
-    // @Range 0.0 500.0
+    // @Range: 0.0 500.0
     // @Increment: 10
     GSCALAR(takeoff_trigger_dz, "PILOT_TKOFF_DZ", THR_DZ_DEFAULT),
 
@@ -229,7 +229,7 @@ const AP_Param::Info Copter::var_info[] PROGMEM = {
 
     // @Param: RTL_LOIT_TIME
     // @DisplayName: RTL loiter time
-    // @Description: Time (in milliseconds) to loiter above home before begining final descent
+    // @Description: Time (in milliseconds) to loiter above home before beginning final descent
     // @Units: ms
     // @Range: 0 60000
     // @Increment: 1000
@@ -451,7 +451,7 @@ const AP_Param::Info Copter::var_info[] PROGMEM = {
     // @DisplayName: Angle Max
     // @Description: Maximum lean angle in all flight modes
     // @Units: Centi-degrees
-    // @Range 1000 8000
+    // @Range: 1000 8000
     // @User: Advanced
     ASCALAR(angle_max, "ANGLE_MAX",                 DEFAULT_ANGLE_MAX),
 
