@@ -89,17 +89,14 @@ namespace {
       adc_timer::get()->cnt = 0;
       adc_timer::get()->sr = 0;
 
-      // trgo
+      // trgo of adc_timer is use to fire adc conversion sequence
       {
          quan::stm32::tim::cr2_t cr2 = adc_timer::get()->cr2.get();
-         cr2.mms = 0b010; // TRGO is update, used to start an ADC conversion sequence
+         cr2.mms = 0b010; // TRGO is timer update
          adc_timer::get()->cr2.set(cr2.value);
       }
 
       // setup adc
-      // All Analog pins available on channels ADC1 & ADC2 so
-      // use say ADC1 for the moment
-
       // enable  and reset the adc1 module
       quan::stm32::rcc::get()->apb2enr |= (1 << 8); //( ADC1)
       quan::stm32::rcc::get()->apb2rstr |= ( 1 << 8 ); // (ADC1)
@@ -182,11 +179,10 @@ extern "C" void DMA2_Stream4_IRQHandler() __attribute__ ( (interrupt ("IRQ")));
 
 extern "C" void DMA2_Stream4_IRQHandler() 
 {   
-  
    DMA2_Stream4->CR &= ~(1 << 0); // (EN)
    while(DMA2_Stream4->CR & (1 << 0)){;}
    DMA2->HIFCR |= (0b111101 << 0) ; // clear flags for Dma2 Stream 4
-   DMA2->HIFCR &= ~(0b111101 << 0) ; // flags for Dma2 Stream 4
+   DMA2->HIFCR &= ~(0b111101 << 0) ; 
    DMA2_Stream4->M0AR = (uint32_t)adc_results;
    DMA2_Stream4->NDTR = 4;
    DMA2_Stream4->CR |= (1 << 0); // (EN)
@@ -238,16 +234,8 @@ namespace {
    float raw_adc_voltages[5] {0.f,0.f,0.f,0.f,0.f};
    float filtered_adc_values[5] = {0.f,0.f,0.f,0.f,0.f};
 
-//debug
-  // int32_t adc_count =0;
-
    void process_adc()
    {
-// debug
-//      if (++ adc_count == 50){
-//         adc_count = 0;
-//         hal.gpio->toggle(1);
-//      }
       for (uint8_t i = 0; i < 4 ; ++i)
       {
          float const voltage = (adc_results[i] * 3.3f) / 4096;
@@ -284,7 +272,7 @@ namespace {
    struct analog_source : public AP_HAL::AnalogSource{
 
       float voltage_latest(){return raw_adc_voltages[Pin];}
-     // float voltage_latest(){return adc_results[Pin];}
+   
       float voltage_average() {return filtered_adc_values[Pin];}
 
       float voltage_average_ratiometric(){ return voltage_average();}
