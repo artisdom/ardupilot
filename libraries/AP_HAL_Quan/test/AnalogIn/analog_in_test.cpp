@@ -71,7 +71,7 @@ namespace {
              // uint32_t voltage = ADC1->DR;
              // hal.console->printf("adc result =%d\n",static_cast<int>(voltage));
                for ( int i = 0; i < 4; ++i){
-                float voltage = hal.analogin->channel(i)->voltage_latest();
+                float voltage = hal.analogin->channel(i)->voltage_average();
                 hal.console->printf("voltage[%d] = %f V\n",i,static_cast<double>(voltage));
                }
             //hal.gpio->toggle(red_led_pin);
