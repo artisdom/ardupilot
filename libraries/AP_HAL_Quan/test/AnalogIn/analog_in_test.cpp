@@ -11,6 +11,7 @@
 #include <quantracker/osd/osd.hpp>
 #include <task.h>
 #include <cstring>
+#include <stm32f4xx.h>
 
 /*
    Test of the Timer task
@@ -35,9 +36,42 @@ namespace {
       void fun()
       {
           if (++m_count == 500){
-            m_count = 0;
-            float voltage = hal.analogin->channel(0)->voltage_latest();
-            hal.console->printf("voltage = %f V\n",static_cast<double>(voltage));
+              m_count = 0;
+          
+              uint32_t flags =  DMA2->HISR;
+              if( flags & (1 << 0)){
+                  hal.console->printf("Stream X fifo error\n");
+              }
+              if (flags & (1<<2)){
+                  hal.console->printf("direct mode error\n");
+              }
+              if (flags & (1<<3)){
+                  hal.console->printf("stream transfer error\n");
+              }
+              if (flags & (1<<4)){
+                  hal.console->printf("half transfer interrupt\n");
+              }
+              if (flags & (1<<4)){
+                  hal.console->printf("transfer complete interrupt\n");
+              }
+              uint32_t ndtr = DMA2_Stream4->NDTR;
+                   hal.console->printf("ndtr = %d\n", static_cast<int>(ndtr));
+           
+              uint32_t adc_flags = ADC1->SR;
+              if (adc_flags & (1<<5)){
+                  hal.console->printf("adc overrun\n");
+              }
+              if (adc_flags & (1<<1)){
+                  hal.console->printf("adc eoc\n");
+              }
+              if (adc_flags & (1<<4)){
+                  hal.console->printf("adc start\n");
+              }
+
+             // uint32_t voltage = ADC1->DR;
+             // hal.console->printf("adc result =%d\n",static_cast<int>(voltage));
+                float voltage = hal.analogin->channel(0)->voltage_latest();
+               hal.console->printf("voltage = %f V\n",static_cast<double>(voltage));
             //hal.gpio->toggle(red_led_pin);
           }
       };

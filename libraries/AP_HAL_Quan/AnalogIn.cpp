@@ -58,21 +58,7 @@ Frequency 100 Hz? need an irq or task to recalc filters etcHi
 */
 
 // timer8
-#if 0
-// test timer interrupt
-namespace{
-      int32_t adc_count =0;
-}
-void adc_timer_fun()
-{
 
-   if ( ++ adc_count == 12){
-      adc_count = 0;
-      hal.gpio->toggle(1);
-   }
-
-}
-#endif
 
 namespace {
    
@@ -119,9 +105,7 @@ namespace {
       adc_timer::get()->arr = 10000U-1U;  // 100Hz overflow
       adc_timer::get()->cnt = 0;
       adc_timer::get()->sr = 0;
-#if 0
-      adc_timer::get()->dier.setbit<0>();
-#endif
+
       // trgo
       {
          quan::stm32::tim::cr2_t cr2 = adc_timer::get()->cr2.get();
@@ -145,47 +129,28 @@ namespace {
       // TODO verify which it is!
       ADC->CCR |= (0b11 << 16);
 
-      ADC1->CR1 &= ~(0b11 << 24); // 12 bit conversion
-
       ADC1->CR2  |= (0b01 << 28); // (EXTEN) external trigger rising edge
       ADC1->CR2  |= (0b1110 << 24) ;// (EXTSEL) TIM8 TRGO
 
-    //  constexpr uint32_t num_channels = 4;
+      ADC1->CR1 &= ~(0b11 << 24); // 12 bit conversion
+    //  ADC1->CR1 |= (1 << 8);     // (SCAN)
+
+  //    constexpr uint32_t num_channels = 4;
       constexpr uint32_t sati_bits = 0b011; // reg sampling time bits
        // individaul channel timings all the same
-        ADC1->SMPR1 = ( sati_bits << 0);
-        ADC1->SQR3 = 10;
-     // ADC1->SMPR1 |= ( sati_bits << 0) | ( sati_bits << 3) | ( sati_bits << 9) | ( sati_bits << 12);
-   //   ADC1->SQR1 |= ((num_channels-1) << 20); // ( L ) conversion sequence length
-           // sequence  ADC123_IN10,ADC123_IN11,ADC123_IN1,ADC12_IN14
+  //    ADC1->SMPR1 |= ( sati_bits << 0) | ( sati_bits << 3) | ( sati_bits << 9) | ( sati_bits << 12);
+   //   ADC1->SQR1 |= ((num_channels-1) << 20); // (L) conversion sequence length
+        // sequence  ADC123_IN10,ADC123_IN11,ADC123_IN1,ADC12_IN14
        // == ch10, ch11, ch13, ch14
    //   ADC1->SQR3 = (10 << 0) | ( 11 << 5) | ( 13 << 10) | ( 14 << 15);
-   //   ADC1->CR2  |= (1<< 10);// (EOCS)
-#if 0
-       //          
 
-      constexpr uint32_t num_channels = 4;
-      constexpr uint32_t sati_bits = 0b011; // reg sampling time bits
-       // individaul channel timings all the same
-      ADC1->SMPR1 |= ( sati_bits << 0) | ( sati_bits << 3) | ( sati_bits << 9) | ( sati_bits << 12);
-      ADC1->SQR1 |= ((num_channels-1) << 20); // ( L ) conversion sequence length
-      // channel conversion sequence
-      ADC1->SQR3 |= (10 << 0) | ( 11 << 5) | ( 13 << 10) | ( 14 << 15);
-      ADC1->CR1  |= (1 << 11);  // (DISCEN) 
-      ADC1->CR1  |= ((num_channels-1) << 13); // (DISCNUM)
+      ADC1->CR2  |= (1 << 9); //  (DDS) dma request continue sfter all done in sequence
+      ADC1->SMPR1 |= ( sati_bits << 0);
+      ADC1->SQR3 = (10 << 0);
 
-      ADC1->CR2  |= (0b01 << 28); // (EXTEN) external trigger rising edge
-      ADC1->CR2  |= (0b1110 << 24) ;// (EXTSEL) TIM8 TRGO
-      ADC1->CR2  |= (1 << 8); //  (DMA) enable DMA
-    //  ADC1->CR2  |= (1 << 9); //  (DDS) dma request continue sfter all done in sequence
-      // set up regular channels
-#endif
-      
-   // single conv
-#if 1
-      ADC1->CR1  |= ( 1<< 5); // (EOCIE)
-#endif
-#if 0
+      ADC1->CR1 |= (0b1 << 13); // (DISNUM)
+      ADC1->CR1 |= (0b1 << 12); // (DISCEN)
+
       // ADC1 DMA ------------------------------------------------------------------------
       // USE DMA2.Stream4.Channel0  
       // Enable and reset DMA2 module
@@ -196,47 +161,43 @@ namespace {
       quan::stm32::rcc::get()->ahb1rstr |= (1 << 22);
       quan::stm32::rcc::get()->ahb1rstr &= ~(1 << 22);
 
+      
       // DMA setup
       // Do 4 16 bit transfers
       // med priority
-      // 16 bit
       DMA_Stream_TypeDef * dma_stream = DMA2_Stream4;
       constexpr uint32_t  dma_channel = 0;
-      constexpr uint8_t dma_priority = 0b01; // medium
-      dma_stream->CR = (dma_stream->CR & ~(0b11 << 25)) | ( dma_channel << 25); //(CHSEL) select channel
-      dma_stream->CR = (dma_stream->CR & ~(0b11 << 16)) | (dma_priority << 16); // (PL) priority
+      constexpr uint32_t  dma_priority = 0b11; // medium
+     // dma_stream->CR = (dma_stream->CR & ~(0b111 << 25)) | ( dma_channel << 25); //(CHSEL) select channel
+      dma_stream->CR = (dma_stream->CR & ~(0b11 << 16)) | (dma_priority << 16U); // (PL) priority
       dma_stream->CR = (dma_stream->CR & ~(0b11 << 13)) | (01 << 13); // (MSIZE) 16 bit memory transfer
       dma_stream->CR = (dma_stream->CR & ~(0b11 << 11)) | (01 << 11); // (PSIZE) 16 bit transfer
       dma_stream->CR |= (1 << 10);// (MINC)
-      dma_stream->CR |= (1 << 8);// (CIRC)
       dma_stream->CR &= ~(0b11 << 6) ; // (DIR ) peripheral to memory
       dma_stream->CR |= ( 1 << 4) ; // (TCIE)
-     
-      dma_stream->FCR |= (1 << 2) ;// (DMDIS)
+
+   
    // set threshold full
-      dma_stream->FCR |= (0b11 << 0);
+    //  dma_stream->FCR |= (0b11 << 0);
    // setup periph_reg
       dma_stream->PAR = (uint32_t)&ADC1->DR;  // periph addr
       dma_stream->M0AR = (uint32_t)adc_results; 
-      dma_stream->NDTR = 4;
-#endif
-      // start the shebang...
-      // enable adc
-      ADC1->CR2 |= (1 << 0); // (ADON)
-#if 0
-      // enable dma
-      // NVIC irq etc
-      NVIC_SetPriority(DMA2_Stream4_IRQn,14);  // low prio
+      dma_stream->NDTR = 1;
+
+      NVIC_SetPriority(DMA2_Stream4_IRQn,15);  // low prio
       NVIC_EnableIRQ(DMA2_Stream4_IRQn);
-#endif
+#if 0
       NVIC_SetPriority(ADC_IRQn,14);  // low prio
       NVIC_EnableIRQ(ADC_IRQn);
-#if 0
+#endif
       DMA2->HIFCR |= (0b111101 << 0) ; // clear flags for Dma2 Stream 4
       DMA2->HIFCR &= ~(0b111101 << 0) ; // flags for Dma2 Stream 4
-#endif
-       // enable DMA
-     // DMA2_Stream4->CR |= (1 << 0); // (EN)
+
+      ADC1->CR2 |= (1 << 8);    //  (DMA) enable DMA
+             // enable DMA
+      DMA2_Stream4->CR |= (1 << 0); // (EN)
+      ADC1->CR2 |= (1 << 0); // (ADON)
+
 
    }
    void start_adc_timer()
@@ -251,46 +212,31 @@ namespace {
  
 }
 
-#if 1
-extern "C" void ADC_IRQHandler() __attribute__ ( (interrupt ("IRQ")));
-
-// test adc interrupt
-namespace{
-      int32_t adc_count =0;
-}
-void adc_irq_fun()
-{
-   if ( ++ adc_count == 75){
-      adc_count = 0;
-      hal.gpio->toggle(1);
-      
-   }
-}
-
-extern "C" void ADC_IRQHandler()
-{
-      if ( ADC1->SR & ( 1 << 1) ){ // (EOC)
-         adc_results[0] = ADC1->DR;
-        //  ADC1->SR &= ~( 1 << 1);
-          adc_irq_fun();
-      }
-     // ADC1->SR = 0;
-}
-#endif
-
       // TODO add ADC Overrun interrupt
       // clear and reset adc and dma
 
 // adc dma interrupt
 extern "C" void DMA2_Stream4_IRQHandler() __attribute__ ( (interrupt ("IRQ")));
 
+namespace{
+      int32_t adc_count =0;
+}
+
 extern "C" void DMA2_Stream4_IRQHandler() 
 {   
+  
+   DMA2_Stream4->CR &= ~(1 << 0); // (EN)
+   while(DMA2_Stream4->CR & (1 << 0)){;}
    DMA2->HIFCR |= (0b111101 << 0) ; // clear flags for Dma2 Stream 4
    DMA2->HIFCR &= ~(0b111101 << 0) ; // flags for Dma2 Stream 4
    DMA2_Stream4->M0AR = (uint32_t)adc_results;
+   DMA2_Stream4->NDTR = 1;
    DMA2_Stream4->CR |= (1 << 0); // (EN)
 
+   if (++ adc_count == 50){
+      adc_count = 0;
+      hal.gpio->toggle(1);
+   }
   
    xSemaphoreGiveFromISR(adc_semaphore,&higherPriorityTaskWoken );
 }
@@ -353,7 +299,7 @@ namespace {
 
       for (;;){
          xSemaphoreTake(adc_semaphore, portMAX_DELAY);
-        // process_adc();
+         process_adc();
       }
    }
 
