@@ -70,8 +70,10 @@ namespace {
 
              // uint32_t voltage = ADC1->DR;
              // hal.console->printf("adc result =%d\n",static_cast<int>(voltage));
-                float voltage = hal.analogin->channel(0)->voltage_latest();
-               hal.console->printf("voltage = %f V\n",static_cast<double>(voltage));
+               for ( int i = 0; i < 4; ++i){
+                float voltage = hal.analogin->channel(i)->voltage_latest();
+                hal.console->printf("voltage[%d] = %f V\n",i,static_cast<double>(voltage));
+               }
             //hal.gpio->toggle(red_led_pin);
           }
       };
@@ -92,7 +94,7 @@ namespace {
 void setup() 
 {
    float const test_val = 1.2345;
- 	hal.console->printf("Quan APM Scheduler1 test %f\n", static_cast<double>(test_val));
+ 	hal.console->printf("Quan APM Analogin test %f\n", static_cast<double>(test_val));
    hal.gpio->pinMode(test_pin,HAL_GPIO_OUTPUT);
    hal.gpio->write(test_pin,pin_off);
 }

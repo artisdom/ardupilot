@@ -13,17 +13,13 @@
 #include <quan/stm32/get_raw_timer_frequency.hpp>
 #include <quan/stm32/gpio.hpp>
 #include <quan/stm32/push_pop_fp.hpp>
-
-
-/*
-
-*/
+#include <quan/constrain.hpp>
 
 extern const AP_HAL::HAL& hal;
 
 //using namespace Quan;
 /*
-APM analog inputs detecteed
+APM analog inputs available
 
 
 g.rssi_pin
@@ -35,30 +31,16 @@ ANALOG_INPUT_NONE
  pin number 254 == vcc whether 3.3 V or 5v?
  pin number 255 == ANALOG_INPUT_NONE
 
-
-
 function pins 
 board_voltage
 servo_rail_voltage
-
 
 PC0   ADC123_IN10
 PC1   ADC123_IN11
 PC3   ADC123_IN13
 PC4   ADC123_IN13
 
-Use Regular Group Conversion
-Use DMA to a memory array
-
-Timer Trigger
-
-use TIM8_CH1 or TIM8_TRGO ( can be update of TIM8)
-
-Frequency 100 Hz? need an irq or task to recalc filters etcHi
 */
-
-// timer8
-
 
 namespace {
    
@@ -66,13 +48,12 @@ namespace {
 
    // raw A2D values updated by DMA
    // N.B. last index is a dummy to trap out of range
-
    volatile uint16_t adc_results [4 +1] __attribute__((section(".telem_buffer")))  
    = {0,0,0,0,0};
 
-   typedef quan::mcu::pin<quan::stm32::gpioc,0> analog_pin1;
-   typedef quan::mcu::pin<quan::stm32::gpioc,1> analog_pin2;
-   typedef quan::mcu::pin<quan::stm32::gpioc,3> analog_pin3;
+   typedef quan::mcu::pin<quan::stm32::gpioc,0> analog_pin1;  // battery voltage
+   typedef quan::mcu::pin<quan::stm32::gpioc,1> analog_pin2;  // battery current
+   typedef quan::mcu::pin<quan::stm32::gpioc,3> analog_pin3;  // 
    typedef quan::mcu::pin<quan::stm32::gpioc,4> analog_pin4;
 
    template <typename Pin>
@@ -86,7 +67,7 @@ namespace {
       >();
    };
 
-   // setup to overflow at 100 Hz
+   // setup adc timer to overflow at 100 Hz
    // setup TRGO --> ADC on overflow
    void setup_adc_timer()
    {
@@ -104,7 +85,7 @@ namespace {
       // presc to 1 MHz
       adc_timer::get()->cr1 = 0;
       adc_timer::get()->psc = psc;
-      adc_timer::get()->arr = 10000U-1U;  // 100Hz overflow
+      adc_timer::get()->arr = 10000U-1U;  // 100Hz overflow 
       adc_timer::get()->cnt = 0;
       adc_timer::get()->sr = 0;
 
@@ -135,23 +116,17 @@ namespace {
       ADC1->CR2  |= (0b1110 << 24) ;// (EXTSEL) TIM8 TRGO
 
       ADC1->CR1 &= ~(0b11 << 24); // 12 bit conversion
-    //  ADC1->CR1 |= (1 << 8);     // (SCAN)
+      ADC1->CR1 |= (1 << 8);     // (SCAN)
 
-  //    constexpr uint32_t num_channels = 4;
+      constexpr uint32_t num_channels = 4;
       constexpr uint32_t sati_bits = 0b011; // reg sampling time bits
-       // individaul channel timings all the same
-  //    ADC1->SMPR1 |= ( sati_bits << 0) | ( sati_bits << 3) | ( sati_bits << 9) | ( sati_bits << 12);
-   //   ADC1->SQR1 |= ((num_channels-1) << 20); // (L) conversion sequence length
-        // sequence  ADC123_IN10,ADC123_IN11,ADC123_IN1,ADC12_IN14
-       // == ch10, ch11, ch13, ch14
-   //   ADC1->SQR3 = (10 << 0) | ( 11 << 5) | ( 13 << 10) | ( 14 << 15);
+       // sequence  ADC123_IN10,ADC123_IN11,ADC123_IN1,ADC12_IN14
+       // == ch10, ch11, ch13, ch14  
 
       ADC1->CR2  |= (1 << 9); //  (DDS) dma request continue sfter all done in sequence
-      ADC1->SMPR1 |= ( sati_bits << 0);
-      ADC1->SQR3 = (10 << 0);
-
-      ADC1->CR1 |= (0b1 << 13); // (DISNUM)
-      ADC1->CR1 |= (0b1 << 12); // (DISCEN)
+      ADC1->SMPR1 = ( sati_bits << 0) | ( sati_bits << 3) | ( sati_bits << 9) | ( sati_bits << 12);
+      ADC1->SQR3 = (10 << 0) | ( 11 << 5) | ( 13 << 10) | ( 14 << 15);
+      ADC1->SQR1 |= ((num_channels-1) << 20);
 
       // ADC1 DMA ------------------------------------------------------------------------
       // USE DMA2.Stream4.Channel0  
@@ -163,14 +138,11 @@ namespace {
       quan::stm32::rcc::get()->ahb1rstr |= (1 << 22);
       quan::stm32::rcc::get()->ahb1rstr &= ~(1 << 22);
 
-      
       // DMA setup
-      // Do 4 16 bit transfers
-      // med priority
       DMA_Stream_TypeDef * dma_stream = DMA2_Stream4;
       constexpr uint32_t  dma_channel = 0;
       constexpr uint32_t  dma_priority = 0b11; // medium
-     // dma_stream->CR = (dma_stream->CR & ~(0b111 << 25)) | ( dma_channel << 25); //(CHSEL) select channel
+      dma_stream->CR = (dma_stream->CR & ~(0b111 << 25)) | ( dma_channel << 25); //(CHSEL) select channel
       dma_stream->CR = (dma_stream->CR & ~(0b11 << 16)) | (dma_priority << 16U); // (PL) priority
       dma_stream->CR = (dma_stream->CR & ~(0b11 << 13)) | (01 << 13); // (MSIZE) 16 bit memory transfer
       dma_stream->CR = (dma_stream->CR & ~(0b11 << 11)) | (01 << 11); // (PSIZE) 16 bit transfer
@@ -178,33 +150,22 @@ namespace {
       dma_stream->CR &= ~(0b11 << 6) ; // (DIR ) peripheral to memory
       dma_stream->CR |= ( 1 << 4) ; // (TCIE)
 
-   
-   // set threshold full
-    //  dma_stream->FCR |= (0b11 << 0);
-   // setup periph_reg
       dma_stream->PAR = (uint32_t)&ADC1->DR;  // periph addr
       dma_stream->M0AR = (uint32_t)adc_results; 
-      dma_stream->NDTR = 1;
+      dma_stream->NDTR = 4;
 
       NVIC_SetPriority(DMA2_Stream4_IRQn,15);  // low prio
       NVIC_EnableIRQ(DMA2_Stream4_IRQn);
-#if 0
-      NVIC_SetPriority(ADC_IRQn,14);  // low prio
-      NVIC_EnableIRQ(ADC_IRQn);
-#endif
+
       DMA2->HIFCR |= (0b111101 << 0) ; // clear flags for Dma2 Stream 4
-      DMA2->HIFCR &= ~(0b111101 << 0) ; // flags for Dma2 Stream 4
+      DMA2->HIFCR &= ~(0b111101 << 0) ; 
 
-      ADC1->CR2 |= (1 << 8);    //  (DMA) enable DMA
-             // enable DMA
-      DMA2_Stream4->CR |= (1 << 0); // (EN)
+      ADC1->CR2 |= (1 << 8);    //  (DMA) enable adc DMA
+      DMA2_Stream4->CR |= (1 << 0); // (EN)  enable DMA
       ADC1->CR2 |= (1 << 0); // (ADON)
-
-
    }
    void start_adc_timer()
    {
-      // enable timer
       adc_timer::get()->cr1.bb_setbit<0>(); //(CEN)
    }
 
@@ -214,15 +175,10 @@ namespace {
  
 }
 
-      // TODO add ADC Overrun interrupt
-      // clear and reset adc and dma
+// TODO add ADC Overrun interrupt
 
 // adc dma interrupt
 extern "C" void DMA2_Stream4_IRQHandler() __attribute__ ( (interrupt ("IRQ")));
-
-namespace{
-      int32_t adc_count =0;
-}
 
 extern "C" void DMA2_Stream4_IRQHandler() 
 {   
@@ -232,18 +188,15 @@ extern "C" void DMA2_Stream4_IRQHandler()
    DMA2->HIFCR |= (0b111101 << 0) ; // clear flags for Dma2 Stream 4
    DMA2->HIFCR &= ~(0b111101 << 0) ; // flags for Dma2 Stream 4
    DMA2_Stream4->M0AR = (uint32_t)adc_results;
-   DMA2_Stream4->NDTR = 1;
+   DMA2_Stream4->NDTR = 4;
    DMA2_Stream4->CR |= (1 << 0); // (EN)
 
-   if (++ adc_count == 50){
-      adc_count = 0;
-      hal.gpio->toggle(1);
-   }
-  
    xSemaphoreGiveFromISR(adc_semaphore,&higherPriorityTaskWoken );
 }
 
 namespace {
+
+   // various filters
 
    typedef Filter<float> filter;
 
@@ -285,8 +238,16 @@ namespace {
    float raw_adc_voltages[5] {0.f,0.f,0.f,0.f,0.f};
    float filtered_adc_values[5] = {0.f,0.f,0.f,0.f,0.f};
 
+//debug
+  // int32_t adc_count =0;
+
    void process_adc()
    {
+// debug
+//      if (++ adc_count == 50){
+//         adc_count = 0;
+//         hal.gpio->toggle(1);
+//      }
       for (uint8_t i = 0; i < 4 ; ++i)
       {
          float const voltage = (adc_results[i] * 3.3f) / 4096;
@@ -322,8 +283,8 @@ namespace {
    template <uint8_t Pin>
    struct analog_source : public AP_HAL::AnalogSource{
 
-     //  float voltage_latest(){return raw_adc_voltages[Pin];}
-      float voltage_latest(){return adc_results[Pin];}
+      float voltage_latest(){return raw_adc_voltages[Pin];}
+     // float voltage_latest(){return adc_results[Pin];}
       float voltage_average() {return filtered_adc_values[Pin];}
 
       float voltage_average_ratiometric(){ return voltage_average();}
@@ -363,16 +324,15 @@ namespace {
 
       AP_HAL::AnalogSource* channel(int16_t n) 
       {
-         return analog_sources[quan::min(n,4)];
+         // set out of range chennels to channels[4] (dummy channel)
+         return analog_sources[(((n >= 0 ) && ( n < 4 ))?n:4)];
       }
 
-      /*
-         only sent to mavlink
-      */
       float board_voltage(void)
       {
           return 3.3f;
       }
+
    } analog_in;
 
 }// namespace 
