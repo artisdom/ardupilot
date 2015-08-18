@@ -66,7 +66,9 @@ namespace {
 
    // raw A2D values updated by DMA
    // N.B. last index is a dummy to trap out of range
-   volatile uint16_t adc_results [4 +1] = {0,0,0,0,0};
+
+   volatile uint16_t adc_results [4 +1] __attribute__((section(".telem_buffer")))  
+   = {0,0,0,0,0};
 
    typedef quan::mcu::pin<quan::stm32::gpioc,0> analog_pin1;
    typedef quan::mcu::pin<quan::stm32::gpioc,1> analog_pin2;
