@@ -3,8 +3,7 @@
 
 using namespace Quan;
 
-QuanPrivateMember::QuanPrivateMember(uint16_t foo) :
-    _foo(foo)
+QuanPrivateMember::QuanPrivateMember(uint16_t) 
 {}
 
 void QuanPrivateMember::init() {}

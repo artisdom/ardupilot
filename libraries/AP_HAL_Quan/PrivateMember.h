@@ -11,8 +11,7 @@ class Quan::QuanPrivateMember {
 public:
     QuanPrivateMember(uint16_t foo);
     void init();
-private:
-    uint16_t _foo;
+
 };
 
 #endif // __AP_HAL_QUAN_PRIVATE_MEMBER_H__
