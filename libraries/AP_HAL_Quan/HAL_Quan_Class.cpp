@@ -19,9 +19,10 @@ namespace Quan{
   AP_HAL::UARTDriver * get_serial_port();
 
   AP_HAL::AnalogIn* get_analog_in();
+  AP_HAL::I2CDriver * get_i2c_driver();
 }
-static QuanSemaphore  i2cSemaphore;
-static QuanI2CDriver  i2cDriver(&i2cSemaphore);
+//static QuanSemaphore  i2cSemaphore;
+//static QuanI2CDriver  i2cDriver(&i2cSemaphore);
 static QuanSPIDeviceManager spiDeviceManager;
 //static QuanAnalogIn analogIn;
 static QuanStorage storageDriver;
@@ -39,7 +40,7 @@ HAL_Quan::HAL_Quan() :
         Quan::get_serial_port<2>(),//   telemetry
         NULL,            /* no uartD */
         NULL,            /* no uartE */
-        &i2cDriver,
+        Quan::get_i2c_driver(),
         NULL, /* only one i2c */
         NULL, /* only one i2c */
         &spiDeviceManager,

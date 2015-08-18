@@ -3,7 +3,7 @@
 #define __AP_HAL_QUAN_I2CDRIVER_H__
 
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
-
+#if 0
 class Quan::QuanI2CDriver : public AP_HAL::I2CDriver {
 public:
     QuanI2CDriver(AP_HAL::Semaphore* semaphore) : _semaphore(semaphore) {}
@@ -38,4 +38,5 @@ private:
     AP_HAL::Semaphore* _semaphore;
 };
 
+#endif
 #endif // __AP_HAL_QUAN_I2CDRIVER_H__
