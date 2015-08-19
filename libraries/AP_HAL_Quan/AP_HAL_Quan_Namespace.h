@@ -9,7 +9,7 @@
 
 namespace Quan {
     //class QuanUARTDriver;
-    class QuanI2CDriver;
+   // class QuanI2CDriver;
     class QuanSPIDeviceManager;
     class QuanSPIDeviceDriver;
    // class QuanAnalogSource;

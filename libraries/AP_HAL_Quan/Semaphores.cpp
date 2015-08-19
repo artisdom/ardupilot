@@ -4,14 +4,19 @@
 extern const AP_HAL::HAL& hal;
 
 Quan::QuanSemaphore::QuanSemaphore()
-:  m_mutex_handle{ xSemaphoreCreateMutex()}
+:  m_mutex_handle{nullptr}{}
+
+void Quan::QuanSemaphore::init()
 {
-  if(m_mutex_handle == nullptr){
-      hal.scheduler->panic("create semaphore failed");
-  }
+   if(m_mutex_handle == nullptr){
+      m_mutex_handle = xSemaphoreCreateMutex(); 
+      if(m_mutex_handle == nullptr){ 
+         hal.scheduler->panic("create semaphore failed");
+      }
+   }
 }
 
-bool Quan::QuanSemaphore:: give()
+bool Quan::QuanSemaphore::give()
 { 
    return xSemaphoreGive(m_mutex_handle) == pdTRUE;
 }

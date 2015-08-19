@@ -89,7 +89,7 @@ namespace {
       adc_timer::get()->cnt = 0;
       adc_timer::get()->sr = 0;
 
-      // trgo of adc_timer is use to fire adc conversion sequence
+      // trgo of adc_timer is used to fire adc conversion sequence
       {
          quan::stm32::tim::cr2_t cr2 = adc_timer::get()->cr2.get();
          cr2.mms = 0b010; // TRGO is timer update
@@ -188,6 +188,8 @@ extern "C" void DMA2_Stream4_IRQHandler()
    DMA2_Stream4->CR |= (1 << 0); // (EN)
 
    xSemaphoreGiveFromISR(adc_semaphore,&higherPriorityTaskWoken );
+
+   portEND_SWITCHING_ISR(higherPriorityTaskWoken);
 }
 
 namespace {

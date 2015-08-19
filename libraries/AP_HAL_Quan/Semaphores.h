@@ -11,8 +11,9 @@ struct Quan::QuanSemaphore : public AP_HAL::Semaphore {
 public:
     QuanSemaphore() ;
     bool give();
-    bool take(uint32_t timeout_ms) ; ;
-    bool take_nonblocking(); ;
+    bool take(uint32_t timeout_ms) ; 
+    bool take_nonblocking();
+    void init();
 private:
     SemaphoreHandle_t m_mutex_handle;
 };

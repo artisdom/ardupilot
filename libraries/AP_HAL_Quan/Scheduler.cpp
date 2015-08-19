@@ -123,11 +123,11 @@ namespace {
          // run all the functions
          for ( auto& pfn : timer_procs){
             if ( (pfn == nullptr) == false){
-               taskENTER_CRITICAL();
+            //   taskENTER_CRITICAL();
                m_in_timer_process = true;
                pfn();
                m_in_timer_process = false;
-               taskEXIT_CRITICAL();
+             //  taskEXIT_CRITICAL();
             }
          } 
          // can add other tasks here
