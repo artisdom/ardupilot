@@ -132,6 +132,7 @@ void AP_Mission::reset()
     _nav_cmd.index         = AP_MISSION_CMD_INDEX_NONE;
     _do_cmd.index          = AP_MISSION_CMD_INDEX_NONE;
     _prev_nav_cmd_index    = AP_MISSION_CMD_INDEX_NONE;
+    _prev_nav_cmd_wp_index = AP_MISSION_CMD_INDEX_NONE;
     init_jump_tracking();
 }
 
@@ -312,6 +313,7 @@ bool AP_Mission::set_current_cmd(uint16_t index)
     // if index is zero then the user wants to completely restart the mission
     if (index == 0 || _flags.state == MISSION_COMPLETE) {
         _prev_nav_cmd_index = AP_MISSION_CMD_INDEX_NONE;
+        _prev_nav_cmd_wp_index = AP_MISSION_CMD_INDEX_NONE;
         // reset the jump tracking to zero
         init_jump_tracking();
         if (index == 0) {
@@ -372,6 +374,10 @@ bool AP_Mission::set_current_cmd(uint16_t index)
         if (is_nav_cmd(cmd)) {
             // save previous nav command index
             _prev_nav_cmd_index = _nav_cmd.index;
+            // save separate previous nav command index if it contains lat,long,alt
+            if (!(cmd.content.location.lat == 0 && cmd.content.location.lng == 0)) {
+                _prev_nav_cmd_wp_index = _nav_cmd.index;
+            }
             // set current navigation command and start it
             _nav_cmd = cmd;
             _flags.nav_cmd_loaded = true;
@@ -531,6 +537,10 @@ bool AP_Mission::mavlink_to_mission_cmd(const mavlink_mission_item_t& packet, AP
 
     case MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT:           // MAV ID: 30
         copy_location = true;                           // only using alt
+        cmd.p1 = packet.param1;                         // Climb/Descend
+                        // 0 = Neutral, cmd complete at +/- 5 of indicated alt.
+                        // 1 = Climb, cmd complete at or above indicated alt.
+                        // 2 = Descend, cmd complete at or below indicated alt.
         break;
 
     case MAV_CMD_NAV_LOITER_TO_ALT:                     // MAV ID: 31
@@ -705,6 +715,14 @@ bool AP_Mission::mavlink_to_mission_cmd(const mavlink_mission_item_t& packet, AP
 
     // copy location from mavlink to command
     if (copy_location || copy_alt) {
+
+        // sanity check location
+        if (copy_location) {
+            if (fabsf(packet.x) > 90.0f || fabsf(packet.y) > 180.0f) {
+                return false;
+            }
+        }
+
         switch (packet.frame) {
 
         case MAV_FRAME_MISSION:
@@ -849,7 +867,11 @@ bool AP_Mission::mission_cmd_to_mavlink(const AP_Mission::Mission_Command& cmd, 
         break;
 
     case MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT:           // MAV ID: 30
-        copy_location = true;                           //only using alt.
+        copy_location = true;                           //only using alt
+        packet.param1 = cmd.p1;                         // Climb/Descend
+                        // 0 = Neutral, cmd complete at +/- 5 of indicated alt.
+                        // 1 = Climb, cmd complete at or above indicated alt.
+                        // 2 = Descend, cmd complete at or below indicated alt.
         break;
 
     case MAV_CMD_NAV_LOITER_TO_ALT:                     // MAV ID: 31
@@ -1117,6 +1139,10 @@ bool AP_Mission::advance_current_nav_cmd()
         if (is_nav_cmd(cmd)) {
             // save previous nav command index
             _prev_nav_cmd_index = _nav_cmd.index;
+            // save separate previous nav command index if it contains lat,long,alt
+            if (!(cmd.content.location.lat == 0 && cmd.content.location.lng == 0)) {
+                _prev_nav_cmd_wp_index = _nav_cmd.index;
+            }
             // set current navigation command and start it
             _nav_cmd = cmd;
             _flags.nav_cmd_loaded = true;

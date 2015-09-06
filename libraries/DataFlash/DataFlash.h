@@ -19,19 +19,29 @@
 #include <AP_BattMonitor/AP_BattMonitor.h>
 #include <AP_RPM/AP_RPM.h>
 #include <stdint.h>
-#include "DataFlash_Backend.h"
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_PX4
 #include <uORB/topics/esc_status.h>
 #endif
 
+#include "DFMessageWriter.h"
 
 class DataFlash_Backend;
+class DFMessageWriter;
 
 class DataFlash_Class
 {
+    friend class DFMessageWriter_DFLogStart; // for access to _num_types etc
+
 public:
     FUNCTOR_TYPEDEF(print_mode_fn, void, AP_HAL::BetterStream*, uint8_t);
+    FUNCTOR_TYPEDEF(vehicle_startup_message_Log_Writer, void);
+    DataFlash_Class(const prog_char_t *firmware_string) :
+        _startup_messagewriter(DFMessageWriter_DFLogStart(*this,firmware_string)),
+        _vehicle_messages(NULL)
+        { }
+
+    void set_mission(const AP_Mission *mission);
 
     // initialisation
     void Init(const struct LogStructure *structure, uint8_t num_types);
@@ -42,7 +52,9 @@ public:
     void EraseAll();
 
     /* Write a block of data at current offset */
-    void WriteBlock(const void *pBuffer, uint16_t size);
+    bool WriteBlock(const void *pBuffer, uint16_t size);
+    /* Write an *important* block of data at current offset */
+    bool WriteCriticalBlock(const void *pBuffer, uint16_t size);
 
     // high level interface
     uint16_t find_last_log(void);
@@ -60,13 +72,16 @@ public:
     void ListAvailableLogs(AP_HAL::BetterStream *port);
 #endif // DATAFLASH_NO_CLI
 
-    /* logging methods common to all vehicles */
+    uint16_t bufferspace_available();
+
+    void setVehicle_Startup_Log_Writer(vehicle_startup_message_Log_Writer writer);
+
     uint16_t StartNewLog(void);
     void AddLogFormats(const struct LogStructure *structures, uint8_t num_types);
     void EnableWrites(bool enable);
     void Log_Write_SysInfo(const prog_char_t *firmware_string);
-    void Log_Write_Format(const struct LogStructure *structure);
-    void Log_Write_Parameter(const char *name, float value);
+    bool Log_Write_Format(const struct LogStructure *structure);
+    bool Log_Write_Parameter(const char *name, float value);
     void Log_Write_GPS(const AP_GPS &gps, uint8_t instance, int32_t relative_alt);
     void Log_Write_IMU(const AP_InertialSensor &ins);
     void Log_Write_IMUDT(const AP_InertialSensor &ins);
@@ -80,21 +95,21 @@ public:
 #if AP_AHRS_NAVEKF_AVAILABLE
     void Log_Write_EKF(AP_AHRS_NavEKF &ahrs, bool optFlowEnabled);
 #endif
-    void Log_Write_MavCmd(uint16_t cmd_total, const mavlink_mission_item_t& mav_cmd);
+    bool Log_Write_MavCmd(uint16_t cmd_total, const mavlink_mission_item_t& mav_cmd);
     void Log_Write_Radio(const mavlink_radio_t &packet);
-    void Log_Write_Message(const char *message);
-    void Log_Write_Message_P(const prog_char_t *message);
+    bool Log_Write_Message(const char *message);
+    bool Log_Write_Message_P(const prog_char_t *message);
     void Log_Write_Camera(const AP_AHRS &ahrs, const AP_GPS &gps, const Location &current_loc);
     void Log_Write_ESC(void);
     void Log_Write_Airspeed(AP_Airspeed &airspeed);
     void Log_Write_Attitude(AP_AHRS &ahrs, const Vector3f &targets);
     void Log_Write_Current(const AP_BattMonitor &battery, int16_t throttle);
     void Log_Write_Compass(const Compass &compass);
-    void Log_Write_Mode(uint8_t mode);
+    bool Log_Write_Mode(uint8_t mode);
     void Log_Write_Parameters(void);
 
     void Log_Write_EntireMission(const AP_Mission &mission);
-    void Log_Write_Mission_Cmd(const AP_Mission &mission,
+    bool Log_Write_Mission_Cmd(const AP_Mission &mission,
                                const AP_Mission::Mission_Command &cmd);
     void Log_Write_Origin(uint8_t origin_type, const Location &loc);
     void Log_Write_RPM(const AP_RPM &rpm_sensor);
@@ -118,14 +133,31 @@ public:
     void flush(void);
 #endif
 
+    void periodic_tasks(); // may want to split this into GCS/non-GCS duties
+
+    // this is out here for the trickle-startup-messages logging.
+    // Think before calling.
+    bool Log_Write_Parameter(const AP_Param *ap, const AP_Param::ParamToken &token, 
+                             enum ap_var_type type);
+
+    DFMessageWriter_DFLogStart _startup_messagewriter;
+    vehicle_startup_message_Log_Writer _vehicle_messages;
+
 protected:
     void Log_Fill_Format(const struct LogStructure *structure, struct log_Format &pkt);
-    void Log_Write_Parameter(const AP_Param *ap, const AP_Param::ParamToken &token, 
-                             enum ap_var_type type);
     uint16_t start_new_log(void);
+
+    void WroteStartupFormat();
+    void WroteStartupParam();
 
     const struct LogStructure *_structures;
     uint8_t _num_types;
+
+    /* Write a block with specified importance */
+    /* might be useful if you have a boolean indicating a message is
+     * important... */
+    bool WritePrioritisedBlock(const void *pBuffer, uint16_t size,
+                               bool is_critical);
 
 private:
     DataFlash_Backend *backend;
@@ -560,6 +592,23 @@ struct PACKED log_GPS_RAWS {
     uint8_t trkStat;
 };
 
+struct PACKED log_GPS_SBF_EVENT {  
+	LOG_PACKET_HEADER; 
+	uint64_t time_us;
+	uint32_t TOW;
+	uint16_t WNc;
+	uint8_t Mode;
+	uint8_t Error;
+	double Latitude;
+	double Longitude;
+	double Height;
+	float Undulation;
+	float Vn;
+	float Ve;
+	float Vu;
+	float COG;
+};
+
 struct PACKED log_Esc {
     LOG_PACKET_HEADER;
     uint64_t time_us;     
@@ -705,6 +754,8 @@ Format characters in the format string for binary log messages
       "GRXH", "QdHbBB", "TimeUS,rcvTime,week,leapS,numMeas,recStat" }, \
     { LOG_GPS_RAWS_MSG, sizeof(log_GPS_RAWS), \
       "GRXS", "QddfBBBHBBBBB", "TimeUS,prMes,cpMes,doMes,gnss,sv,freq,lock,cno,prD,cpD,doD,trk" }, \
+    { LOG_GPS_SBF_EVENT_MSG, sizeof(log_GPS_SBF_EVENT), \
+      "SBFE", "QIHBBdddfffff", "TimeUS,TOW,WN,Mode,Err,Lat,Long,Height,Undul,Vn,Ve,Vu,COG" }, \
     { LOG_ESC1_MSG, sizeof(log_Esc), \
       "ESC1",  "Qcccc", "TimeUS,RPM,Volt,Curr,Temp" }, \
     { LOG_ESC2_MSG, sizeof(log_Esc), \
@@ -820,6 +871,7 @@ enum LogMessages {
     LOG_GPS_RAW_MSG,
     LOG_GPS_RAWH_MSG,
     LOG_GPS_RAWS_MSG,
+	LOG_GPS_SBF_EVENT_MSG,
     LOG_ACC1_MSG,
     LOG_ACC2_MSG,
     LOG_ACC3_MSG,
@@ -847,8 +899,5 @@ enum LogOriginType {
 
 // message types 200 to 210 reversed for GPS driver use
 // message types 211 to 220 reversed for autotune use
-
-#include "DataFlash_Block.h"
-#include "DataFlash_File.h"
 
 #endif

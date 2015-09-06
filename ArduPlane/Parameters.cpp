@@ -912,21 +912,6 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
     GSCALAR(override_channel,      "OVERRIDE_CHAN",  0),
 #endif
 
-    // @Param: RSSI_PIN
-    // @DisplayName: Receiver RSSI sensing pin
-    // @Description: This selects an analog pin for the receiver RSSI voltage. It assumes the voltage is 5V for max rssi, 0V for minimum
-    // @Values: -1:Disabled, 0:APM2 A0, 1:APM2 A1, 13:APM2 A13, 103:Pixhawk SBUS
-    // @User: Standard
-    GSCALAR(rssi_pin,            "RSSI_PIN",         -1),
-
-    // @Param: RSSI_RANGE
-    // @DisplayName: Receiver RSSI voltage range
-    // @Description: Receiver RSSI voltage range
-    // @Units: Volt
-    // @Values: 3.3:3.3V, 5.0:5V
-    // @User: Standard
-    GSCALAR(rssi_range,          "RSSI_RANGE",         5.0),
-
     // @Param: INVERTEDFLT_CH
     // @DisplayName: Inverted flight channel
     // @Description: A RC input channel number to enable inverted flight. If this is non-zero then the APM will monitor the corresponding RC input channel and will enable inverted flight when the channel goes above 1750.
@@ -972,6 +957,14 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
     // @Values: 0:Disable,1:Enable
     // @User: Standard
     GSCALAR(trim_rc_at_start,     "TRIM_RC_AT_START",    0), 
+
+    // @Param: CRASH_DETECT
+    // @DisplayName: Crash Detection
+    // @Description: Automatically detect a crash during AUTO flight and perform the bitmask selected action(s). Disarm will turn off motor for saftey and to help against burning out ESC and motor. Setting the mode to manual will help save the servos from burning out by overexerting if the aircraft crashed in an odd orientation such as upsidedown.
+    // @Values: 0:Disabled,1:Disarm
+    // @Bitmask: 0:Disarm
+    // @User: Advanced
+    GSCALAR(crash_detection_enable,         "CRASH_DETECT",   0),
 
     // barometer ground calibration. The GND_ prefix is chosen for
     // compatibility with previous releases of ArduPlane
@@ -1157,7 +1150,7 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
     GOBJECT(camera_mount,           "MNT",  AP_Mount),
 #endif
 
-    // @Group: BATT_
+    // @Group: BATT
     // @Path: ../libraries/AP_BattMonitor/AP_BattMonitor.cpp
     GOBJECT(battery,                "BATT", AP_BattMonitor),
 
@@ -1196,6 +1189,10 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
     // @Path: ../libraries/AP_NavEKF/AP_NavEKF.cpp
     GOBJECTN(EKF, NavEKF, "EKF_", NavEKF),
 #endif
+    
+    // @Group: RSSI_
+    // @Path: ../libraries/AP_RSSI/AP_RSSI.cpp
+    GOBJECT(rssi, "RSSI_",  AP_RSSI),
 
     AP_VAREND
 };

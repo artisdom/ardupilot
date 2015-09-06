@@ -265,6 +265,106 @@ const AP_Param::GroupInfo Compass::var_info[] PROGMEM = {
     AP_GROUPINFO("EXTERN3",23, Compass, _state[2].external, 0),
 #endif
 
+    // @Param: DIA_X
+    // @DisplayName: Compass soft-iron diagonal X component
+    // @Description: DIA_X in the compass soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+
+    // @Param: DIA_Y
+    // @DisplayName: Compass soft-iron diagonal Y component
+    // @Description: DIA_Y in the compass soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+
+    // @Param: DIA_Z
+    // @DisplayName: Compass soft-iron diagonal Z component
+    // @Description: DIA_Z in the compass soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+    AP_GROUPINFO("DIA",    24, Compass, _state[0].diagonals, 0),
+
+    // @Param: ODI_X
+    // @DisplayName: Compass soft-iron off-diagonal X component
+    // @Description: ODI_X in the compass soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+
+    // @Param: ODI_Y
+    // @DisplayName: Compass soft-iron off-diagonal Y component
+    // @Description: ODI_Y in the compass soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+
+    // @Param: ODI_Z
+    // @DisplayName: Compass soft-iron off-diagonal Z component
+    // @Description: ODI_Z in the compass soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+    AP_GROUPINFO("ODI",    25, Compass, _state[0].offdiagonals, 0),
+
+#if COMPASS_MAX_INSTANCES > 1
+    // @Param: DIA2_X
+    // @DisplayName: Compass2 soft-iron diagonal X component
+    // @Description: DIA_X in the compass2 soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+
+    // @Param: DIA2_Y
+    // @DisplayName: Compass2 soft-iron diagonal Y component
+    // @Description: DIA_Y in the compass2 soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+
+    // @Param: DIA2_Z
+    // @DisplayName: Compass2 soft-iron diagonal Z component
+    // @Description: DIA_Z in the compass2 soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+    AP_GROUPINFO("DIA2",    26, Compass, _state[1].diagonals, 0),
+
+    // @Param: ODI2_X
+    // @DisplayName: Compass2 soft-iron off-diagonal X component
+    // @Description: ODI_X in the compass2 soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+
+    // @Param: ODI2_Y
+    // @DisplayName: Compass2 soft-iron off-diagonal Y component
+    // @Description: ODI_Y in the compass2 soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+
+    // @Param: ODI2_Z
+    // @DisplayName: Compass2 soft-iron off-diagonal Z component
+    // @Description: ODI_Z in the compass2 soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+    AP_GROUPINFO("ODI2",    27, Compass, _state[1].offdiagonals, 0),
+#endif
+
+#if COMPASS_MAX_INSTANCES > 2
+    // @Param: DIA3_X
+    // @DisplayName: Compass3 soft-iron diagonal X component
+    // @Description: DIA_X in the compass3 soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+
+    // @Param: DIA3_Y
+    // @DisplayName: Compass3 soft-iron diagonal Y component
+    // @Description: DIA_Y in the compass3 soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+
+    // @Param: DIA3_Z
+    // @DisplayName: Compass3 soft-iron diagonal Z component
+    // @Description: DIA_Z in the compass3 soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+    AP_GROUPINFO("DIA3",    28, Compass, _state[2].diagonals, 0),
+
+    // @Param: ODI3_X
+    // @DisplayName: Compass3 soft-iron off-diagonal X component
+    // @Description: ODI_X in the compass3 soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+
+    // @Param: ODI3_Y
+    // @DisplayName: Compass3 soft-iron off-diagonal Y component
+    // @Description: ODI_Y in the compass3 soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+
+    // @Param: ODI3_Z
+    // @DisplayName: Compass3 soft-iron off-diagonal Z component
+    // @Description: ODI_Z in the compass3 soft-iron calibration matrix: [[DIA_X, ODI_X, ODI_Y], [ODI_X, DIA_Y, ODI_Z], [ODI_Y, ODI_Z, DIA_Z]]
+    // @User: Advanced
+    AP_GROUPINFO("ODI3",    29, Compass, _state[2].offdiagonals, 0),
+#endif
+
     AP_GROUPEND
 };
 
@@ -278,13 +378,16 @@ Compass::Compass(void) :
     _board_orientation(ROTATION_NONE),
     _null_init_done(false),
     _thr_or_curr(0.0f),
-    _hil_mode(false)
+    _hil_mode(false),
+    _cal_complete_requires_reboot(false),
+    _cal_has_run(false)
 {
     AP_Param::setup_object_defaults(this, var_info);
     for (uint8_t i=0; i<COMPASS_MAX_BACKEND; i++) {
         _backends[i] = NULL;
         _state[i].last_update_usec = 0;
-    }    
+        _reports_sent[i] = 0;
+    }
 
 #if COMPASS_MAX_INSTANCES > 1
     // default device ids to zero.  init() method will overwrite with the actual device ids
@@ -321,43 +424,39 @@ uint8_t Compass::register_compass(void)
     return _compass_count++;
 }
 
-/*
-  try to load a backend
- */
-void 
-Compass::_add_backend(AP_Compass_Backend *(detect)(Compass &))
+void Compass::_add_backend(AP_Compass_Backend *backend)
 {
-    if (_backend_count == COMPASS_MAX_BACKEND) {
+    if (!backend)
+        return;
+    if (_backend_count == COMPASS_MAX_BACKEND)
         hal.scheduler->panic(PSTR("Too many compass backends"));
-    }
-    _backends[_backend_count] = detect(*this);
-    if (_backends[_backend_count] != NULL) {
-        _backend_count++;
-    }
+    _backends[_backend_count++] = backend;
 }
 
 /*
   detect available backends for this board
  */
-void 
-Compass::_detect_backends(void)
+void Compass::_detect_backends(void)
 {
     if (_hil_mode) {
-        _add_backend(AP_Compass_HIL::detect);
+        _add_backend(AP_Compass_HIL::detect(*this));
         return;
     }
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_LINUX && CONFIG_HAL_BOARD_SUBTYPE != HAL_BOARD_SUBTYPE_LINUX_NONE && CONFIG_HAL_BOARD_SUBTYPE != HAL_BOARD_SUBTYPE_LINUX_BEBOP
-    _add_backend(AP_Compass_HMC5843::detect);
-    _add_backend(AP_Compass_AK8963::detect_mpu9250);
+    _add_backend(AP_Compass_HMC5843::detect_i2c(*this, hal.i2c));
+    _add_backend(AP_Compass_AK8963::detect_mpu9250(*this));
 #elif HAL_COMPASS_DEFAULT == HAL_COMPASS_HIL
-    _add_backend(AP_Compass_HIL::detect);
+    _add_backend(AP_Compass_HIL::detect(*this));
 #elif HAL_COMPASS_DEFAULT == HAL_COMPASS_HMC5843
-    _add_backend(AP_Compass_HMC5843::detect);
+    _add_backend(AP_Compass_HMC5843::detect_i2c(*this, hal.i2c));
+#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_HMC5843_MPU6000
+    _add_backend(AP_Compass_HMC5843::detect_mpu6000(*this));
 #elif  HAL_COMPASS_DEFAULT == HAL_COMPASS_AK8963_I2C && HAL_INS_AK8963_I2C_BUS == 1
-    _add_backend(AP_Compass_AK8963::detect_i2c1);
+    _add_backend(AP_Compass_AK8963::detect_i2c(*this, hal.i2c1,
+                                               HAL_COMPASS_AK8963_I2C_ADDR));
 #elif HAL_COMPASS_DEFAULT == HAL_COMPASS_PX4 || HAL_COMPASS_DEFAULT == HAL_COMPASS_VRBRAIN
-    _add_backend(AP_Compass_PX4::detect);
+    _add_backend(AP_Compass_PX4::detect(*this));
 #else
     #error Unrecognised HAL_COMPASS_TYPE setting
 #endif
@@ -390,6 +489,18 @@ Compass::read(void)
     return healthy();
 }
 
+uint8_t
+Compass::get_healthy_mask() const
+{
+    uint8_t healthy_mask = 0;
+    for(uint8_t i=0; i<COMPASS_MAX_INSTANCES; i++) {
+        if(healthy(i)) {
+            healthy_mask |= 1 << i;
+        }
+    }
+    return healthy_mask;
+}
+
 void
 Compass::set_offsets(uint8_t i, const Vector3f &offsets)
 {
@@ -406,6 +517,24 @@ Compass::set_and_save_offsets(uint8_t i, const Vector3f &offsets)
     if (i < COMPASS_MAX_INSTANCES) {
         _state[i].offset.set(offsets);
         save_offsets(i);
+    }
+}
+
+void
+Compass::set_and_save_diagonals(uint8_t i, const Vector3f &diagonals)
+{
+    // sanity check compass instance provided
+    if (i < COMPASS_MAX_INSTANCES) {
+        _state[i].diagonals.set_and_save(diagonals);
+    }
+}
+
+void
+Compass::set_and_save_offdiagonals(uint8_t i, const Vector3f &offdiagonals)
+{
+    // sanity check compass instance provided
+    if (i < COMPASS_MAX_INSTANCES) {
+        _state[i].offdiagonals.set_and_save(offdiagonals);
     }
 }
 
@@ -559,7 +688,7 @@ bool Compass::configured(void)
 {
     bool all_configured = true;
     for(uint8_t i=0; i<get_count(); i++) {
-        all_configured = all_configured && configured(i);
+        all_configured = all_configured && (!use_for_yaw(i) || configured(i));
     }
     return all_configured;
 }

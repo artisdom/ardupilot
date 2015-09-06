@@ -79,10 +79,6 @@
 #endif
 #endif
 
-#if !defined(HAL_COMPASS_AK8963_I2C_ADDR)
-#define HAL_COMPASS_AK8963_I2C_ADDR 0xC
-#endif
-
 extern const AP_HAL::HAL& hal;
 
 AP_Compass_AK8963::AP_Compass_AK8963(Compass &compass, AP_AK8963_SerialBus *bus) :
@@ -97,13 +93,30 @@ AP_Compass_AK8963::AP_Compass_AK8963(Compass &compass, AP_AK8963_SerialBus *bus)
 
 AP_Compass_Backend *AP_Compass_AK8963::detect_mpu9250(Compass &compass)
 {
-    AP_Compass_AK8963 *sensor = new AP_Compass_AK8963(compass,
-                                                  new AP_AK8963_SerialBus_MPU9250());
+    AP_AK8963_SerialBus *bus = new AP_AK8963_SerialBus_MPU9250();
+    if (!bus)
+        return nullptr;
+    return _detect(compass, bus);
+}
 
+AP_Compass_Backend *AP_Compass_AK8963::detect_i2c(Compass &compass,
+                                                  AP_HAL::I2CDriver *i2c,
+                                                  uint8_t addr)
+{
+    AP_AK8963_SerialBus *bus = new AP_AK8963_SerialBus_I2C(i2c, addr);
+    if (!bus)
+        return nullptr;
+    return _detect(compass, bus);
+}
+
+AP_Compass_Backend *AP_Compass_AK8963::_detect(Compass &compass,
+                                               AP_AK8963_SerialBus *bus)
+{
+    AP_Compass_AK8963 *sensor = new AP_Compass_AK8963(compass, bus);
     if (sensor == nullptr) {
+        delete bus;
         return nullptr;
     }
-
     if (!sensor->init()) {
         delete sensor;
         return nullptr;
@@ -112,22 +125,9 @@ AP_Compass_Backend *AP_Compass_AK8963::detect_mpu9250(Compass &compass)
     return sensor;
 }
 
-AP_Compass_Backend *AP_Compass_AK8963::detect_i2c1(Compass &compass)
+AP_Compass_AK8963::~AP_Compass_AK8963()
 {
-    AP_Compass_AK8963 *sensor = new AP_Compass_AK8963(compass,
-                                                  new AP_AK8963_SerialBus_I2C(
-                                                  hal.i2c1, HAL_COMPASS_AK8963_I2C_ADDR));
-
-    if (sensor == nullptr) {
-        return nullptr;
-    }
-
-    if (!sensor->init()) {
-        delete sensor;
-        return nullptr;
-    }
-
-    return sensor;
+    delete _bus;
 }
 
 /* stub to satisfy Compass API*/
@@ -211,8 +211,7 @@ void AP_Compass_AK8963::read()
 #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP
     field.rotate(ROTATION_YAW_90);
 #endif
-
-    publish_field(field, _compass_instance);
+    publish_filtered_field(field, _compass_instance);
 }
 
 Vector3f AP_Compass_AK8963::_get_filtered_field() const
@@ -240,6 +239,10 @@ void AP_Compass_AK8963::_update()
 {
     struct AP_AK8963_SerialBus::raw_value rv;
     float mag_x, mag_y, mag_z;
+    // get raw_field - sensor frame, uncorrected
+    Vector3f raw_field;
+    uint32_t time_us = hal.scheduler->micros();
+
 
     if (hal.scheduler->micros() - _last_update_timestamp < 10000) {
         goto end;
@@ -265,9 +268,23 @@ void AP_Compass_AK8963::_update()
         goto fail;
     }
 
-    _mag_x_accum += mag_x;
-    _mag_y_accum += mag_y;
-    _mag_z_accum += mag_z;
+    raw_field = Vector3f(mag_x, mag_y, mag_z);
+    
+    // rotate raw_field from sensor frame to body frame
+    rotate_field(raw_field, _compass_instance);
+
+    // publish raw_field (uncorrected point sample) for calibration use
+    publish_raw_field(raw_field, time_us, _compass_instance);
+
+    // correct raw_field for known errors
+    correct_field(raw_field, _compass_instance);
+
+    // publish raw_field (corrected point sample) for EKF use
+    publish_unfiltered_field(raw_field, time_us, _compass_instance);
+
+    _mag_x_accum += raw_field.x;
+    _mag_y_accum += raw_field.y;
+    _mag_z_accum += raw_field.z;
     _accum_count++;
     if (_accum_count == 10) {
         _mag_x_accum /= 2;

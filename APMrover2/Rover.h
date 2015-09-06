@@ -21,6 +21,7 @@
 #define _ROVER_H_
 
 #define THISFIRMWARE "ArduRover v2.51-beta"
+#define FIRMWARE_VERSION 2,51,0,FIRMWARE_VERSION_TYPE_BETA
 
 #include <math.h>
 #include <stdarg.h>
@@ -83,6 +84,7 @@
 #include <AP_Notify/AP_Notify.h>      // Notify library
 #include <AP_BattMonitor/AP_BattMonitor.h> // Battery monitor library
 #include <AP_OpticalFlow/AP_OpticalFlow.h>     // Optical Flow library
+#include <AP_RSSI/AP_RSSI.h>                   // RSSI Library
 
 // Configuration
 #include "config.h"
@@ -133,7 +135,7 @@ private:
     RC_Channel *channel_throttle;
     RC_Channel *channel_learn;
 
-    DataFlash_Class DataFlash;
+    DataFlash_Class DataFlash{FIRMWARE_STRING};
 
     bool in_log_download;
 
@@ -167,6 +169,9 @@ private:
     AP_Mission mission;
 
     OpticalFlow optflow;
+    
+    // RSSI 
+    AP_RSSI rssi;          
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     SITL sitl;
@@ -176,10 +181,6 @@ private:
     AP_SerialManager serial_manager;
     const uint8_t num_gcs;
     GCS_MAVLINK gcs[MAVLINK_COMM_NUM_BUFFERS];
-
-    // a pin for reading the receiver RSSI voltage. The scaling by 0.25 
-    // is to take the 0 to 1024 range down to an 8 bit range for MAVLink
-    AP_HAL::AnalogSource *rssi_analog_source;
 
     // relay support
     AP_Relay relay;
@@ -371,6 +372,7 @@ private:
     void update_alt();
     void gcs_failsafe_check(void);
     void compass_accumulate(void);
+    void compass_cal_update(void);
     void update_compass(void);
     void update_logging1(void);
     void update_logging2(void);
@@ -396,14 +398,16 @@ private:
     void send_statustext(mavlink_channel_t chan);
     bool telemetry_delayed(mavlink_channel_t chan);
     void gcs_send_message(enum ap_message id);
+    void gcs_send_mission_item_reached_message(uint16_t mission_index);
     void gcs_data_stream_send(void);
     void gcs_update(void);
-    void gcs_send_text_P(gcs_severity severity, const prog_char_t *str);
+    void gcs_send_text_P(MAV_SEVERITY severity, const prog_char_t *str);
     void gcs_retry_deferred(void);
+
     void do_erase_logs(void);
     void Log_Write_Performance();
     void Log_Write_Steering();
-    void Log_Write_Startup(uint8_t type);
+    bool Log_Write_Startup(uint8_t type);
     void Log_Write_Control_Tuning();
     void Log_Write_Nav_Tuning();
     void Log_Write_Sonar();
@@ -412,9 +416,11 @@ private:
     void Log_Write_RC(void);
     void Log_Write_Baro(void);
     void Log_Write_Home_And_Origin();
+    void Log_Write_Vehicle_Startup_Messages();
     void Log_Read(uint16_t log_num, uint16_t start_page, uint16_t end_page);
     void log_init(void);
     void start_logging() ;
+
     void load_parameters(void);
     void throttle_slew_limit(int16_t last_throttle);
     bool auto_check_trigger(void);
@@ -490,6 +496,7 @@ private:
     void print_mode(AP_HAL::BetterStream *port, uint8_t mode);
     bool start_command(const AP_Mission::Mission_Command& cmd);
     bool verify_command(const AP_Mission::Mission_Command& cmd);
+    bool verify_command_callback(const AP_Mission::Mission_Command& cmd);
     void do_nav_wp(const AP_Mission::Mission_Command& cmd);
     bool verify_nav_wp(const AP_Mission::Mission_Command& cmd);
     void do_wait_delay(const AP_Mission::Mission_Command& cmd);
@@ -530,6 +537,8 @@ public:
 #if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
     int8_t test_shell(uint8_t argc, const Menu::arg *argv);
 #endif
+
+    void dataflash_periodic(void);
 };
 
 #define MENU_FUNC(func) FUNCTOR_BIND(&rover, &Rover::func, int8_t, uint8_t, const Menu::arg *)

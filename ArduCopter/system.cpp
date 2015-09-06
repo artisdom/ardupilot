@@ -122,9 +122,10 @@ void Copter::init_ardupilot()
 
     // initialise battery monitor
     battery.init();
-    
-    rssi_analog_source      = hal.analogin->channel(g.rssi_pin);
 
+    // Init RSSI
+    rssi.init();
+    
     barometer.init();
 
     // Register the mavlink service callback. This will run
@@ -165,6 +166,11 @@ void Copter::init_ardupilot()
     log_init();
 #endif
 
+#if FRAME_CONFIG == HELI_FRAME
+    // trad heli specific initialisation
+    heli_init();
+#endif
+    
     init_rc_in();               // sets up rc channels from radio
     init_rc_out();              // sets up motors and output to escs
 
@@ -202,6 +208,11 @@ void Copter::init_ardupilot()
     camera_mount.init(serial_manager);
 #endif
 
+#if PRECISION_LANDING == ENABLED
+    // initialise precision landing
+    init_precland();
+#endif
+
 #ifdef USERHOOK_INIT
     USERHOOK_INIT
 #endif
@@ -223,7 +234,7 @@ void Copter::init_ardupilot()
     while (barometer.get_last_update() == 0) {
         // the barometer begins updating when we get the first
         // HIL_STATE message
-        gcs_send_text_P(SEVERITY_LOW, PSTR("Waiting for first HIL_STATE message"));
+        gcs_send_text_P(MAV_SEVERITY_WARNING, PSTR("Waiting for first HIL_STATE message"));
         delay(1000);
     }
 
@@ -250,11 +261,6 @@ void Copter::init_ardupilot()
     // ---------------------------
     reset_control_switch();
     init_aux_switches();
-
-#if FRAME_CONFIG == HELI_FRAME
-    // trad heli specific initialisation
-    heli_init();
-#endif
 
     startup_ground(true);
 
@@ -284,7 +290,7 @@ void Copter::init_ardupilot()
 //******************************************************************************
 void Copter::startup_ground(bool force_gyro_cal)
 {
-    gcs_send_text_P(SEVERITY_LOW,PSTR("GROUND START"));
+    gcs_send_text_P(MAV_SEVERITY_WARNING,PSTR("GROUND START"));
 
     // initialise ahrs (may push imu calibration into the mpu6000 if using that device).
     ahrs.init();
@@ -353,7 +359,13 @@ bool Copter::optflow_position_ok()
 
     // get filter status from EKF
     nav_filter_status filt_status = inertial_nav.get_filter_status();
-    return (filt_status.flags.horiz_pos_rel || filt_status.flags.pred_horiz_pos_rel);
+
+    // if disarmed we accept a predicted horizontal relative position
+    if (!motors.armed()) {
+        return (filt_status.flags.pred_horiz_pos_rel);
+    } else {
+        return (filt_status.flags.horiz_pos_rel && !filt_status.flags.const_pos_mode);
+    }
 #endif
 }
 
@@ -426,8 +438,6 @@ bool Copter::should_log(uint32_t mask)
     }
     bool ret = motors.armed() || (g.log_bitmask & MASK_LOG_WHEN_DISARMED) != 0;
     if (ret && !DataFlash.logging_started() && !in_log_download) {
-        // we have to set in_mavlink_delay to prevent logging while
-        // writing headers
         start_logging();
     }
     return ret;

@@ -64,6 +64,10 @@ public:
     /// init_loiter_target - initialize's loiter position and feed-forward velocity from current pos and velocity
     void init_loiter_target();
 
+    /// shift_loiter_target - shifts the loiter target by the given pos_adjustment
+    ///     used by precision landing to adjust horizontal position target
+    void shift_loiter_target(const Vector3f &pos_adjustment);
+
     /// loiter_soften_for_landing - reduce response for landing
     void loiter_soften_for_landing();
 
@@ -84,6 +88,9 @@ public:
 
     /// get_loiter_bearing_to_target - get bearing to loiter target in centi-degrees
     int32_t get_loiter_bearing_to_target() const;
+
+    /// get_loiter_target - returns loiter target position
+    const Vector3f& get_loiter_target() const { return _pos_control.get_pos_target(); }
 
     /// update_loiter - run the loiter controller - should be called at 10hz
     void update_loiter(float ekfGndSpdLimit, float ekfNavVelGainScaler);
@@ -120,9 +127,6 @@ public:
 
     /// get_speed_z - returns target descent speed in cm/s during missions.  Note: always positive
     float get_accel_z() const { return _wp_accel_z_cms; }
-
-    /// get_wp_radius - access for waypoint radius in cm
-    float get_wp_radius() const { return _wp_radius_cm; }
 
     /// get_wp_acceleration - returns acceleration in cm/s/s during missions
     float get_wp_acceleration() const { return _wp_accel_cms.get(); }

@@ -25,6 +25,8 @@
 
 #include <AP_Param/AP_Param.h>
 
+#define AP_SCHEDULER_NAME_INITIALIZER(_name) .name = #_name,
+
 /*
   A task scheduler for APM main loops
 
@@ -45,6 +47,7 @@ public:
 
     struct Task {
         task_fn_t function;
+        const char *name;
         uint16_t interval_ticks;
         uint16_t max_time_micros;
     };

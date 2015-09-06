@@ -1,6 +1,11 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
-#define THISFIRMWARE "ArduPlane V3.3.1beta1"
+#ifndef _PLANE_H
+#define _PLANE_H
+
+#define THISFIRMWARE "ArduPlane V3.4.0beta1"
+#define FIRMWARE_VERSION 3,4,0,FIRMWARE_VERSION_TYPE_BETA
+
 /*
    Lead developer: Andrew Tridgell
  
@@ -87,6 +92,7 @@
 #include <AP_Rally/AP_Rally.h>
 
 #include <AP_OpticalFlow/AP_OpticalFlow.h>     // Optical Flow library
+#include <AP_RSSI/AP_RSSI.h>                   // RSSI Library
 
 // Configuration
 #include "config.h"
@@ -159,7 +165,7 @@ private:
     // notification object for LEDs, buzzers etc (parameter set to false disables external leds)
     AP_Notify notify;
 
-    DataFlash_Class DataFlash;
+    DataFlash_Class DataFlash{FIRMWARE_STRING};
 
     // has a log download started?
     bool in_log_download;
@@ -245,10 +251,6 @@ private:
     // selected navigation controller
     AP_SpdHgtControl *SpdHgt_Controller = &TECS_controller;
 
-    // Analog Inputs
-    // a pin for reading the receiver RSSI voltage. 
-    AP_HAL::AnalogSource *rssi_analog_source;
-
     // Relay
     AP_Relay relay;
 
@@ -267,6 +269,9 @@ private:
 
     // Rally Ponints
     AP_Rally rally {ahrs};
+    
+    // RSSI 
+    AP_RSSI rssi;      
 
     // remember if USB is connected, so we can adjust baud rate
     bool usb_connected;
@@ -470,7 +475,22 @@ private:
 
         // once landed, post some landing statistics to the GCS
         bool post_landing_stats;
+
+        // time stamp of when we start flying while in auto mode in milliseconds
+        uint32_t started_flying_in_auto_ms;
     } auto_state;
+
+    struct {
+        // on hard landings, only check once after directly a landing so you
+        // don't trigger a crash when picking up the aircraft
+        bool checkHardLanding:1;
+
+        // crash detection. True when we are crashed
+        bool is_crashed:1;
+
+        // debounce timer
+        uint32_t debounce_timer_ms;
+    } crash_state;
 
     // true if we are in an auto-throttle mode, which means
     // we need to run the speed/height controller
@@ -484,6 +504,9 @@ private:
     // probability of aircraft is currently in flight. range from 0 to
     // 1 where 1 is 100% sure we're in flight
     float isFlyingProbability;
+
+    // previous value of is_flying()
+    bool previous_is_flying;
 
     // Navigation control variables
     // The instantaneous desired bank angle.  Hundredths of a degree
@@ -632,7 +655,7 @@ private:
 
     // Arming/Disarming mangement class
     AP_Arming_Plane arming {ahrs, barometer, compass, home_is_set, 
-            FUNCTOR_BIND_MEMBER(&Plane::gcs_send_text_P, void, gcs_severity, const prog_char_t *)};
+            FUNCTOR_BIND_MEMBER(&Plane::gcs_send_text_P, void, MAV_SEVERITY, const prog_char_t *)};
 
     AP_Param param_loader {var_info};
 
@@ -671,15 +694,17 @@ private:
     void send_statustext(mavlink_channel_t chan);
     bool telemetry_delayed(mavlink_channel_t chan);
     void gcs_send_message(enum ap_message id);
+    void gcs_send_mission_item_reached_message(uint16_t mission_index);
     void gcs_data_stream_send(void);
     void gcs_update(void);
-    void gcs_send_text_P(gcs_severity severity, const prog_char_t *str);
+    void gcs_send_text_P(MAV_SEVERITY severity, const prog_char_t *str);
     void gcs_send_airspeed_calibration(const Vector3f &vg);
     void gcs_retry_deferred(void);
+
     void do_erase_logs(void);
     void Log_Write_Attitude(void);
     void Log_Write_Performance();
-    void Log_Write_Startup(uint8_t type);
+    bool Log_Write_Startup(uint8_t type);
     void Log_Write_Control_Tuning();
     void Log_Write_TECS_Tuning(void);
     void Log_Write_Nav_Tuning();
@@ -694,8 +719,10 @@ private:
     void Log_Write_Baro(void);
     void Log_Write_Airspeed(void);
     void Log_Write_Home_And_Origin();
+    void Log_Write_Vehicle_Startup_Messages();
     void Log_Read(uint16_t log_num, int16_t start_page, int16_t end_page);
     void start_logging();
+
     void load_parameters(void);
     void adjust_altitude_target();
     void setup_glide_slope(void);
@@ -848,6 +875,7 @@ private:
     void update_alt(void);
     void obc_fs_check(void);
     void compass_accumulate(void);
+    void compass_cal_update();
     void barometer_accumulate(void);
     void update_optical_flow(void);
     void one_second_loop(void);
@@ -863,7 +891,8 @@ private:
     void set_servos_idle(void);
     void set_servos();
     void update_aux();
-    void determine_is_flying(void);
+    void update_is_flying_5Hz(void);
+    void crash_detection_update(void);
     void gcs_send_text_fmt(const prog_char_t *fmt, ...);
     void handle_auto_mode(void);
     void calc_throttle();
@@ -915,10 +944,12 @@ private:
     bool verify_command_callback(const AP_Mission::Mission_Command& cmd);
     void print_flight_mode(AP_HAL::BetterStream *port, uint8_t mode);
     void run_cli(AP_HAL::UARTDriver *port);
+    void restart_landing_sequence();
     void log_init();
     uint32_t millis() const;
     uint32_t micros() const;
     void init_capabilities(void);
+    void dataflash_periodic(void);
 
 public:
     void mavlink_delay_cb();
@@ -956,3 +987,5 @@ public:
 
 extern const AP_HAL::HAL& hal;
 extern Plane plane;
+
+#endif // _PLANE_H_

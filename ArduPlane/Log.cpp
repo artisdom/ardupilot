@@ -153,9 +153,9 @@ int8_t Plane::process_logs(uint8_t argc, const Menu::arg *argv)
 
 void Plane::do_erase_logs(void)
 {
-    gcs_send_text_P(SEVERITY_LOW, PSTR("Erasing logs"));
+    gcs_send_text_P(MAV_SEVERITY_WARNING, PSTR("Erasing logs"));
     DataFlash.EraseAll();
-    gcs_send_text_P(SEVERITY_LOW, PSTR("Log erase complete"));
+    gcs_send_text_P(MAV_SEVERITY_WARNING, PSTR("Log erase complete"));
 }
 
 
@@ -228,7 +228,8 @@ struct PACKED log_Startup {
     uint16_t command_total;
 };
 
-void Plane::Log_Write_Startup(uint8_t type)
+// do not add any extra log writes to this function; see LogStartup.cpp
+bool Plane::Log_Write_Startup(uint8_t type)
 {
     struct log_Startup pkt = {
         LOG_PACKET_HEADER_INIT(LOG_STARTUP_MSG),
@@ -236,12 +237,7 @@ void Plane::Log_Write_Startup(uint8_t type)
         startup_type    : type,
         command_total   : mission.num_commands()
     };
-    DataFlash.WriteBlock(&pkt, sizeof(pkt));
-
-    // write all commands to the dataflash as well
-    if (should_log(MASK_LOG_CMD)) {
-        DataFlash.Log_Write_EntireMission(mission);
-    }
+    return DataFlash.WriteBlock(&pkt, sizeof(pkt));
 }
 
 struct PACKED log_Control_Tuning {
@@ -318,6 +314,8 @@ struct PACKED log_Status {
     float is_flying_probability;
     uint8_t armed;
     uint8_t safety;
+    bool is_crashed;
+    bool is_still;
 };
 
 void Plane::Log_Write_Status()
@@ -329,7 +327,9 @@ void Plane::Log_Write_Status()
         ,is_flying_probability : isFlyingProbability
         ,armed       : hal.util->get_soft_armed()
         ,safety      : hal.util->safety_switch_state()
-    };
+        ,is_crashed  : crash_state.is_crashed
+        ,is_still    : plane.ins.is_still()
+        };
 
     DataFlash.WriteBlock(&pkt, sizeof(pkt));
 }
@@ -337,7 +337,7 @@ void Plane::Log_Write_Status()
 struct PACKED log_Sonar {
     LOG_PACKET_HEADER;
     uint64_t time_us;
-    float distance;
+    uint16_t distance;
     float voltage;
     float baro_alt;
     float groundspeed;
@@ -350,10 +350,15 @@ struct PACKED log_Sonar {
 void Plane::Log_Write_Sonar()
 {
 #if RANGEFINDER_ENABLED == ENABLED
+    uint16_t distance = 0;
+    if (rangefinder.status() == RangeFinder::RangeFinder_Good) {
+        distance = rangefinder.distance_cm();
+    }
+
     struct log_Sonar pkt = {
         LOG_PACKET_HEADER_INIT(LOG_SONAR_MSG),
         time_us     : hal.scheduler->micros64(),
-        distance    : (float)rangefinder.distance_cm(),
+        distance    : distance,
         voltage     : rangefinder.voltage_mv()*0.001f,
         baro_alt    : barometer.get_altitude(),
         groundspeed : gps.ground_speed(),
@@ -478,13 +483,13 @@ static const struct LogStructure log_structure[] PROGMEM = {
     { LOG_NTUN_MSG, sizeof(log_Nav_Tuning),         
       "NTUN", "QCfccccfI",   "TimeUS,Yaw,WpDist,TargBrg,NavBrg,AltErr,Arspd,Alt,GSpdCM" },
     { LOG_SONAR_MSG, sizeof(log_Sonar),             
-      "SONR", "QffffBBf",   "TimeUS,DistCM,Volt,BaroAlt,GSpd,Thr,Cnt,Corr" },
+      "SONR", "QHfffBBf",   "TimeUS,DistCM,Volt,BaroAlt,GSpd,Thr,Cnt,Corr" },
     { LOG_ARM_DISARM_MSG, sizeof(log_Arm_Disarm),
       "ARM", "QBH", "TimeUS,ArmState,ArmChecks" },
     { LOG_ATRP_MSG, sizeof(AP_AutoTune::log_ATRP),
       "ATRP", "QBBcfff",  "TimeUS,Type,State,Servo,Demanded,Achieved,P" },
     { LOG_STATUS_MSG, sizeof(log_Status),
-      "STAT", "QBfBB",  "TimeUS,isFlying,isFlyProb,Armed,Safety" },
+      "STAT", "QBfBBBB",  "TimeUS,isFlying,isFlyProb,Armed,Safety,Crash,Still" },
 #if OPTFLOW == ENABLED
     { LOG_OPTFLOW_MSG, sizeof(log_Optflow),
       "OF",   "QBffff",   "TimeUS,Qual,flowX,flowY,bodyX,bodyY" },
@@ -508,14 +513,21 @@ void Plane::Log_Read(uint16_t log_num, int16_t start_page, int16_t end_page)
 }
 #endif // CLI_ENABLED
 
+void Plane::Log_Write_Vehicle_Startup_Messages()
+{
+    // only 200(?) bytes are guaranteed by DataFlash
+    Log_Write_Startup(TYPE_GROUNDSTART_MSG);
+}
+
 // start a new log
 void Plane::start_logging() 
 {
+    DataFlash.set_mission(&mission);
+    DataFlash.setVehicle_Startup_Log_Writer(
+        FUNCTOR_BIND(&plane, &Plane::Log_Write_Vehicle_Startup_Messages, void)
+        );
+
     DataFlash.StartNewLog();
-
-    DataFlash.Log_Write_SysInfo(PSTR(FIRMWARE_STRING));
-
-    Log_Write_Startup(TYPE_GROUNDSTART_MSG);
 }
 
 /*
@@ -525,10 +537,10 @@ void Plane::log_init(void)
 {
     DataFlash.Init(log_structure, ARRAY_SIZE(log_structure));
     if (!DataFlash.CardInserted()) {
-        gcs_send_text_P(SEVERITY_LOW, PSTR("No dataflash card inserted"));
+        gcs_send_text_P(MAV_SEVERITY_WARNING, PSTR("No dataflash card inserted"));
         g.log_bitmask.set(0);
     } else if (DataFlash.NeedErase()) {
-        gcs_send_text_P(SEVERITY_LOW, PSTR("ERASING LOGS"));
+        gcs_send_text_P(MAV_SEVERITY_WARNING, PSTR("ERASING LOGS"));
         do_erase_logs();
         for (uint8_t i=0; i<num_gcs; i++) {
             gcs[i].reset_cli_timeout();

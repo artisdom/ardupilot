@@ -149,9 +149,9 @@ int8_t Copter::process_logs(uint8_t argc, const Menu::arg *argv)
 
 void Copter::do_erase_logs(void)
 {
-    gcs_send_text_P(SEVERITY_HIGH, PSTR("Erasing logs\n"));
+    gcs_send_text_P(MAV_SEVERITY_CRITICAL, PSTR("Erasing logs\n"));
     DataFlash.EraseAll();
-    gcs_send_text_P(SEVERITY_HIGH, PSTR("Log erase complete\n"));
+    gcs_send_text_P(MAV_SEVERITY_CRITICAL, PSTR("Log erase complete\n"));
 }
 
 #if AUTOTUNE_ENABLED == ENABLED
@@ -664,7 +664,7 @@ struct PACKED log_Heli {
     LOG_PACKET_HEADER;
     uint64_t time_us;
     int16_t   desired_rotor_speed;
-    int16_t   estimated_rotor_speed;
+    int16_t   main_rotor_speed;
 };
 
 #if FRAME_CONFIG == HELI_FRAME
@@ -675,11 +675,51 @@ void Copter::Log_Write_Heli()
         LOG_PACKET_HEADER_INIT(LOG_HELI_MSG),
         time_us                 : hal.scheduler->micros64(),
         desired_rotor_speed     : motors.get_desired_rotor_speed(),
-        estimated_rotor_speed   : motors.get_estimated_rotor_speed(),
+        main_rotor_speed        : motors.get_main_rotor_speed(),
     };
     DataFlash.WriteBlock(&pkt_heli, sizeof(pkt_heli));
 }
 #endif
+
+// precision landing logging
+struct PACKED log_Precland {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint8_t healthy;
+    float bf_angle_x;
+    float bf_angle_y;
+    float ef_angle_x;
+    float ef_angle_y;
+    float pos_x;
+    float pos_y;
+};
+
+// Write an optical flow packet
+void Copter::Log_Write_Precland()
+{
+ #if PRECISION_LANDING == ENABLED
+    // exit immediately if not enabled
+    if (!precland.enabled()) {
+        return;
+    }
+
+    const Vector2f &bf_angle = precland.last_bf_angle_to_target();
+    const Vector2f &ef_angle = precland.last_ef_angle_to_target();
+    const Vector3f &target_pos_ofs = precland.last_target_pos_offset();
+    struct log_Precland pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_PRECLAND_MSG),
+        time_us         : hal.scheduler->micros64(),
+        healthy         : precland.healthy(),
+        bf_angle_x      : degrees(bf_angle.x),
+        bf_angle_y      : degrees(bf_angle.y),
+        ef_angle_x      : degrees(ef_angle.x),
+        ef_angle_y      : degrees(ef_angle.y),
+        pos_x           : target_pos_ofs.x,
+        pos_y           : target_pos_ofs.y
+    };
+    DataFlash.WriteBlock(&pkt, sizeof(pkt));
+ #endif     // PRECISION_LANDING == ENABLED
+}
 
 const struct LogStructure Copter::log_structure[] PROGMEM = {
     LOG_COMMON_STRUCTURES,
@@ -721,6 +761,8 @@ const struct LogStructure Copter::log_structure[] PROGMEM = {
       "ERR",   "QBB",         "TimeUS,Subsys,ECode" },
     { LOG_HELI_MSG, sizeof(log_Heli),
       "HELI",  "Qhh",         "TimeUS,DRRPM,ERRPM" },
+    { LOG_PRECLAND_MSG, sizeof(log_Precland),
+      "PL",    "QBffffff",    "TimeUS,Heal,bX,bY,eX,eY,pX,pY" },
 };
 
 #if CLI_ENABLED == ENABLED
@@ -740,28 +782,23 @@ void Copter::Log_Read(uint16_t log_num, uint16_t start_page, uint16_t end_page)
 }
 #endif // CLI_ENABLED
 
+void Copter::Log_Write_Vehicle_Startup_Messages()
+{
+    // only 200(?) bytes are guaranteed by DataFlash
+    DataFlash.Log_Write_Message_P(PSTR("Frame: " FRAME_CONFIG_STRING));
+    DataFlash.Log_Write_Mode(control_mode);
+}
+
+
 // start a new log
 void Copter::start_logging() 
 {
     if (g.log_bitmask != 0) {
         if (!ap.logging_started) {
             ap.logging_started = true;
-            in_mavlink_delay = true;
+            DataFlash.set_mission(&mission);
+            DataFlash.setVehicle_Startup_Log_Writer(FUNCTOR_BIND(&copter, &Copter::Log_Write_Vehicle_Startup_Messages, void));
             DataFlash.StartNewLog();
-            DataFlash.Log_Write_SysInfo(PSTR(FIRMWARE_STRING));
-            in_mavlink_delay = false;
-
-            DataFlash.Log_Write_Message_P(PSTR("Frame: " FRAME_CONFIG_STRING));
-
-            // write mission commands
-            if (MASK_LOG_CMD & g.log_bitmask) {
-                DataFlash.Log_Write_EntireMission(mission);
-            }
-
-            Log_Write_Startup();
-
-            // log the flight mode
-            DataFlash.Log_Write_Mode(control_mode);
         }
         // enable writes
         DataFlash.EnableWrites(true);
@@ -772,10 +809,10 @@ void Copter::log_init(void)
 {
     DataFlash.Init(log_structure, ARRAY_SIZE(log_structure));
     if (!DataFlash.CardInserted()) {
-        gcs_send_text_P(SEVERITY_HIGH, PSTR("No dataflash inserted"));
+        gcs_send_text_P(MAV_SEVERITY_CRITICAL, PSTR("No dataflash inserted"));
         g.log_bitmask.set(0);
     } else if (DataFlash.NeedErase()) {
-        gcs_send_text_P(SEVERITY_HIGH, PSTR("ERASING LOGS"));
+        gcs_send_text_P(MAV_SEVERITY_CRITICAL, PSTR("ERASING LOGS"));
         do_erase_logs();
         gcs[0].reset_cli_timeout();
     }

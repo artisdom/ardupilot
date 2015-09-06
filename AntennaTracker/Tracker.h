@@ -1,6 +1,8 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
-#define THISFIRMWARE "AntennaTracker V0.7.2"
+#define THISFIRMWARE "AntennaTracker V0.7.3"
+#define FIRMWARE_VERSION 0,7,3,FIRMWARE_VERSION_TYPE_DEV
+
 /*
    Lead developers: Matthew Ridley and Andrew Tridgell
  
@@ -200,7 +202,7 @@ private:
     void gcs_send_message(enum ap_message id);
     void gcs_data_stream_send(void);
     void gcs_update(void);
-    void gcs_send_text_P(gcs_severity severity, const prog_char_t *str);
+    void gcs_send_text_P(MAV_SEVERITY severity, const prog_char_t *str);
     void gcs_retry_deferred(void);
     void load_parameters(void);
     void update_auto(void);
@@ -245,6 +247,7 @@ private:
     void update_armed_disarmed();
     void gcs_send_text_fmt(const prog_char_t *fmt, ...);
     void init_capabilities(void);
+    void compass_cal_update();
 
 public:
     void mavlink_snoop(const mavlink_message_t* msg);

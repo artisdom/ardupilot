@@ -770,10 +770,15 @@ private:
     float meaHgtAtTakeOff;            // height measured at commencement of takeoff
 
     // monitoring IMU quality
-    uint32_t lastClipCount1;    // previous value of clip counter for IMU 1
-    uint32_t lastClipCount2;    // previous value of clip counter for IMU 2
-    float clipRateFilt1;        // filtered clip rate for IMU 1
-    float clipRateFilt2;        // filtered clip rate for IMU 2
+    float imuNoiseFiltState1;       // peak hold noise estimate for IMU 1
+    float imuNoiseFiltState2;       // peak hold noise estimate for IMU 2
+    Vector3f accelDiffFilt;         // filtered difference between IMU 1 and 2
+    enum ImuSwitchState {
+        IMUSWITCH_MIXED=0,          // IMU 0 & 1 are mixed
+        IMUSWITCH_IMU0,             // only IMU 0 is used
+        IMUSWITCH_IMU1              // only IMU 1 is used
+    };
+    ImuSwitchState lastImuSwitchState;  // last switch state (see imuSwitchState enum)
 
     // states held by optical flow fusion across time steps
     // optical flow X,Y motion compensated rate measurements are fused across two time steps

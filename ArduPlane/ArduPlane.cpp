@@ -24,7 +24,12 @@
 
 #include "Plane.h"
 
-#define SCHED_TASK(func) FUNCTOR_BIND(&plane, &Plane::func, void)
+#define SCHED_TASK(func, _interval_ticks, _max_time_micros) {\
+    .function = FUNCTOR_BIND(&plane, &Plane::func, void),\
+    AP_SCHEDULER_NAME_INITIALIZER(func)\
+    .interval_ticks = _interval_ticks,\
+    .max_time_micros = _max_time_micros,\
+}
 
 /*
   scheduler table - all regular tasks are listed here, along with how
@@ -35,48 +40,51 @@
    modify the max time they ar expected to take to add a 1ms context switch
 */
 const AP_Scheduler::Task Plane::scheduler_tasks[] PROGMEM = {
-    { SCHED_TASK(read_radio),             1,    700 }, // 0
-    { SCHED_TASK(check_short_failsafe),   1,   1000 },
-    { SCHED_TASK(ahrs_update),            1,   6400 },
-    { SCHED_TASK(update_speed_height),    1,   1600 },
-    { SCHED_TASK(update_flight_mode),     1,   1400 },
-    { SCHED_TASK(stabilize),              1,   3500 },
-    { SCHED_TASK(set_servos),             1,   1600 },
-    { SCHED_TASK(read_control_switch),    7,   1000 },
-    { SCHED_TASK(gcs_retry_deferred),     1,   1000 },
-    { SCHED_TASK(update_GPS_50Hz),        1,   2500 },
-    { SCHED_TASK(update_GPS_10Hz),        5,   2500 }, // 10
-    { SCHED_TASK(navigate),               5,   3000 },
-    { SCHED_TASK(update_compass),         5,   1200 },
-    { SCHED_TASK(read_airspeed),          5,   1200 },
-    { SCHED_TASK(update_alt),             5,   3400 },
-    { SCHED_TASK(adjust_altitude_target), 5,   1000 },
-    { SCHED_TASK(obc_fs_check),           5,   1000 },
-    { SCHED_TASK(gcs_update),             1,   1700 },
-    { SCHED_TASK(gcs_data_stream_send),   1,   3000 },
-    { SCHED_TASK(update_events),		  1,   1500 }, // 20
-    { SCHED_TASK(check_usb_mux),          5,    300 },
-    { SCHED_TASK(read_battery),           5,   1000 },
-    { SCHED_TASK(compass_accumulate),     1,   1500 },
-    { SCHED_TASK(barometer_accumulate),   1,    900 },
-    { SCHED_TASK(update_notify),          1,    300 },
-    { SCHED_TASK(read_rangefinder),       1,    500 },
+    SCHED_TASK(read_radio,              1,    700),
+    SCHED_TASK(check_short_failsafe,    1,   1000),
+    SCHED_TASK(ahrs_update,             1,   6400),
+    SCHED_TASK(update_speed_height,     1,   1600),
+    SCHED_TASK(update_flight_mode,      1,   1400),
+    SCHED_TASK(stabilize,               1,   3500),
+    SCHED_TASK(set_servos,              1,   1600),
+    SCHED_TASK(read_control_switch,     7,   1000),
+    SCHED_TASK(gcs_retry_deferred,      1,   1000),
+    SCHED_TASK(update_GPS_50Hz,         1,   2500),
+    SCHED_TASK(update_GPS_10Hz,         5,   2500),
+    SCHED_TASK(navigate,                5,   3000),
+    SCHED_TASK(update_compass,          5,   1200),
+    SCHED_TASK(read_airspeed,           5,   1200),
+    SCHED_TASK(update_alt,              5,   3400),
+    SCHED_TASK(adjust_altitude_target,  5,   1000),
+    SCHED_TASK(obc_fs_check,            5,   1000),
+    SCHED_TASK(gcs_update,              1,   1700),
+    SCHED_TASK(gcs_data_stream_send,    1,   3000),
+    SCHED_TASK(update_events,           1,   1500),
+    SCHED_TASK(check_usb_mux,           5,    300),
+    SCHED_TASK(read_battery,            5,   1000),
+    SCHED_TASK(compass_accumulate,      1,   1500),
+    SCHED_TASK(barometer_accumulate,    1,    900),
+    SCHED_TASK(update_notify,           1,    300),
+    SCHED_TASK(read_rangefinder,        1,    500),
+    SCHED_TASK(compass_cal_update,      1,    100),
 #if OPTFLOW == ENABLED
-    { SCHED_TASK(update_optical_flow),    1,    500 },
+    SCHED_TASK(update_optical_flow,     1,    500),
 #endif
-    { SCHED_TASK(one_second_loop),       50,   1000 },
-    { SCHED_TASK(check_long_failsafe),   15,   1000 },
-    { SCHED_TASK(read_receiver_rssi),     5,   1000 },
-    { SCHED_TASK(airspeed_ratio_update), 50,   1000 }, // 30
-    { SCHED_TASK(update_mount),           1,   1500 },
-    { SCHED_TASK(log_perf_info),        500,   1000 },
-    { SCHED_TASK(compass_save),        3000,   2500 },
-    { SCHED_TASK(update_logging1),        5,   1700 },
-    { SCHED_TASK(update_logging2),        5,   1700 },
+    SCHED_TASK(one_second_loop,        50,   1000),
+    SCHED_TASK(check_long_failsafe,    15,   1000),
+    SCHED_TASK(read_receiver_rssi,      5,   1000),
+    SCHED_TASK(airspeed_ratio_update,  50,   1000),
+    SCHED_TASK(update_mount,            1,   1500),
+    SCHED_TASK(log_perf_info,         500,   1000),
+    SCHED_TASK(compass_save,         3000,   2500),
+    SCHED_TASK(update_logging1,         5,   1700),
+    SCHED_TASK(update_logging2,         5,   1700),
 #if FRSKY_TELEM_ENABLED == ENABLED
-    { SCHED_TASK(frsky_telemetry_send),  10,    100 },
+    SCHED_TASK(frsky_telemetry_send,   10,    100),
 #endif
-    { SCHED_TASK(terrain_update),         5,    500 },
+    SCHED_TASK(terrain_update,          5,    500),
+    SCHED_TASK(update_is_flying_5Hz,   10,    100),
+    SCHED_TASK(dataflash_periodic,      1,    300),
 };
 
 void Plane::setup() 
@@ -90,7 +98,7 @@ void Plane::setup()
 
     notify.init(false);
 
-    rssi_analog_source = hal.analogin->channel(ANALOG_INPUT_NONE);
+    rssi.init();
 
     init_ardupilot();
 
@@ -306,13 +314,12 @@ void Plane::one_second_loop()
 
     update_aux();
 
-    // determine if we are flying or not
-    determine_is_flying();
-
     // update notify flags
     AP_Notify::flags.pre_arm_check = arming.pre_arm_checks(false);
     AP_Notify::flags.pre_arm_gps_check = true;
     AP_Notify::flags.armed = arming.is_armed() || arming.arming_required() == AP_Arming::NO;
+
+    crash_detection_update();
 
 #if AP_TERRAIN_AVAILABLE
     if (should_log(MASK_LOG_GPS)) {
@@ -366,6 +373,11 @@ void Plane::terrain_update(void)
 #endif
 }
 
+void Plane::dataflash_periodic(void)
+{
+    DataFlash.periodic_tasks();
+}
+
 /*
   once a second update the airspeed calibration ratio
  */
@@ -385,7 +397,7 @@ void Plane::airspeed_ratio_update(void)
         // never coming up again
         return;
     }
-    if (abs(ahrs.roll_sensor) > roll_limit_cd ||
+    if (labs(ahrs.roll_sensor) > roll_limit_cd ||
         ahrs.pitch_sensor > aparm.pitch_limit_max_cd ||
         ahrs.pitch_sensor < pitch_limit_min_cd) {
         // don't calibrate when going beyond normal flight envelope
@@ -628,7 +640,7 @@ void Plane::update_flight_mode(void)
             if (tdrag_mode && !auto_state.fbwa_tdrag_takeoff_mode) {
                 if (auto_state.highest_airspeed < g.takeoff_tdrag_speed1) {
                     auto_state.fbwa_tdrag_takeoff_mode = true;
-                    gcs_send_text_P(SEVERITY_LOW, PSTR("FBWA tdrag mode\n"));
+                    gcs_send_text_P(MAV_SEVERITY_WARNING, PSTR("FBWA tdrag mode\n"));
                 }
             }
         }
@@ -772,15 +784,15 @@ void Plane::set_flight_stage(AP_SpdHgtControl::FlightStage fs)
 #if GEOFENCE_ENABLED == ENABLED 
         if (g.fence_autoenable == 1) {
             if (! geofence_set_enabled(false, AUTO_TOGGLED)) {
-                gcs_send_text_P(SEVERITY_HIGH, PSTR("Disable fence failed (autodisable)"));
+                gcs_send_text_P(MAV_SEVERITY_CRITICAL, PSTR("Disable fence failed (autodisable)"));
             } else {
-                gcs_send_text_P(SEVERITY_HIGH, PSTR("Fence disabled (autodisable)"));
+                gcs_send_text_P(MAV_SEVERITY_CRITICAL, PSTR("Fence disabled (autodisable)"));
             }
         } else if (g.fence_autoenable == 2) {
             if (! geofence_set_floor_enabled(false)) {
-                gcs_send_text_P(SEVERITY_HIGH, PSTR("Disable fence floor failed (autodisable)"));
+                gcs_send_text_P(MAV_SEVERITY_CRITICAL, PSTR("Disable fence floor failed (autodisable)"));
             } else {
-                gcs_send_text_P(SEVERITY_HIGH, PSTR("Fence floor disabled (auto disable)"));
+                gcs_send_text_P(MAV_SEVERITY_CRITICAL, PSTR("Fence floor disabled (auto disable)"));
             }
         }
 #endif
@@ -854,66 +866,6 @@ void Plane::update_flight_stage(void)
 }
 
 
-
-/*
-  Do we think we are flying?
-  Probabilistic method where a bool is low-passed and considered a probability.
-*/
-void Plane::determine_is_flying(void)
-{
-    float aspeed;
-    bool isFlyingBool;
-
-    bool airspeedMovement = ahrs.airspeed_estimate(&aspeed) && (aspeed >= 5);
-
-    // If we don't have a GPS lock then don't use GPS for this test
-    bool gpsMovement = (gps.status() < AP_GPS::GPS_OK_FIX_2D ||
-                        gps.ground_speed() >= 5);
-
-
-    if (hal.util->get_soft_armed()) {
-        // when armed, we need overwhelming evidence that we ARE NOT flying
-        isFlyingBool = airspeedMovement || gpsMovement;
-
-        /*
-          make is_flying() more accurate for landing approach
-         */
-        if (flight_stage == AP_SpdHgtControl::FLIGHT_LAND_APPROACH &&
-            fabsf(auto_state.sink_rate) > 0.2f) {
-            isFlyingBool = true;
-        }
-    } else {
-        // when disarmed, we need overwhelming evidence that we ARE flying
-        isFlyingBool = airspeedMovement && gpsMovement;
-    }
-
-    // low-pass the result.
-    isFlyingProbability = (0.6f * isFlyingProbability) + (0.4f * (float)isFlyingBool);
-
-    /*
-      update last_flying_ms so we always know how long we have not
-      been flying for. This helps for crash detection and auto-disarm
-     */
-    if (is_flying()) {
-        auto_state.last_flying_ms = millis();
-    }
-}
-
-/*
-  return true if we think we are flying. This is a probabilistic
-  estimate, and needs to be used very carefully. Each use case needs
-  to be thought about individually.
- */
-bool Plane::is_flying(void)
-{
-    if (hal.util->get_soft_armed()) {
-        // when armed, assume we're flying unless we probably aren't
-        return (isFlyingProbability >= 0.1f);
-    }
-
-    // when disarmed, assume we're not flying unless we probably are
-    return (isFlyingProbability >= 0.9f);
-}
 
 
 #if OPTFLOW == ENABLED

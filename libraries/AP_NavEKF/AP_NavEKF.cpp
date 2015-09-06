@@ -1129,6 +1129,12 @@ void NavEKF::UpdateStrapdownEquationsNED()
     correctedDelVel2.z -= state.accel_zbias2;
 
     // use weighted average of both IMU units for delta velocities
+    // Over-ride accelerometer blend weighting using a hard switch based on the IMU consistency and vibration monitoring checks
+    if (lastImuSwitchState == IMUSWITCH_IMU0) {
+        IMU1_weighting = 1.0f;
+    } else if (lastImuSwitchState == IMUSWITCH_IMU1) {
+        IMU1_weighting = 0.0f;
+    }
     correctedDelVel12 = correctedDelVel1 * IMU1_weighting + correctedDelVel2 * (1.0f - IMU1_weighting);
 
     // apply correction for earths rotation rate
@@ -1148,6 +1154,7 @@ void NavEKF::UpdateStrapdownEquationsNED()
     state.quat.rotation_matrix(Tbn_temp);
     prevTnb = Tbn_temp.transposed();
 
+    // calculate earth frame delta velocity due to gravity
     float delVelGravity1_z = GRAVITY_MSS*dtDelVel1;
     float delVelGravity2_z = GRAVITY_MSS*dtDelVel2;
     float delVelGravity_z = delVelGravity1_z * IMU1_weighting + delVelGravity2_z * (1.0f - IMU1_weighting);
@@ -2082,19 +2089,11 @@ void NavEKF::FuseVelPosNED()
             // this is used to detect and compensate for aliasing errors with the accelerometers
             // provide for a first order lowpass filter to reduce noise on the weighting if required
             // set weighting to 0.5 when on ground to allow more rapid learning of bias errors without 'ringing' in bias estimates
+            // NOTE: this weighting can be overwritten in UpdateStrapdownEquationsNED
             if (vehicleArmed) {
                 IMU1_weighting = 1.0f * (K1 / (K1 + K2)) + 0.0f * IMU1_weighting; // filter currently inactive
             } else {
                 IMU1_weighting = 0.5f;
-            }
-            // If either of the IMU's has experienced clipping within the last two filter time constants (approx 0.4 seconds) we apply a hard switch away from that sensor
-            // to the IMU with the lower
-            if (clipRateFilt1 > 0.1f || clipRateFilt2 > 0.1f) {
-                if (clipRateFilt1 > clipRateFilt2) {
-                    IMU1_weighting = 0.0f;
-                } else {
-                    IMU1_weighting = 1.0f;
-                }
             }
             // apply an innovation consistency threshold test, but don't fail if bad IMU data
             // calculate the test ratio
@@ -2241,20 +2240,16 @@ void NavEKF::FuseVelPosNED()
                     Kfusion[i+23] = Kfusion[i+4]; // IMU1 velNED
                     Kfusion[i+27] = Kfusion[i+4]; // IMU2 velNED
                 }
-                // Don't update Z accel bias values if we have clipping
-                // we achieve this by setting the corresponding Kalman gains to zero
-                if (clipRateFilt1 < 0.1f && clipRateFilt2 < 0.1f) {
-                    // no clipping
+                // Don't update Z accel bias values for an acceleraometer we have hard switched away from
+                if ((IMU1_weighting >= 0.1f) && (IMU1_weighting <= 0.9f)) {
+                    // both IMU's OK
                     Kfusion[22] = Kfusion[13];
-                } else if (clipRateFilt1 >0.1f && clipRateFilt2 > 0.1f) {
-                    // both clipping;
-                    Kfusion[22] = Kfusion[13] = 0.0f;
-                } else if (clipRateFilt1 > clipRateFilt2) {
-                    // IMU1 clipping
+                } else if (IMU1_weighting < 0.1f) {
+                    // IMU1 bad
                     Kfusion[22] = Kfusion[13];
                     Kfusion[13] = 0.0f;
                 } else {
-                    // IMU2 clipping
+                    // IMU2 bad
                     Kfusion[22] = 0.0f;
                 }
 
@@ -4130,34 +4125,86 @@ void NavEKF::readIMUData()
     // the imu sample time is used as a common time reference throughout the filter
     imuSampleTime_ms = hal.scheduler->millis();
 
-    if (ins.get_accel_health(0) && ins.get_accel_health(1)) {
+    if (ins.use_accel(0) && ins.use_accel(1)) {
         // dual accel mode
+
         // read IMU1 delta velocity data
         readDeltaVelocity(0, dVelIMU1, dtDelVel1);
-        // apply a peak hold decaying envelope filter to the rate of increase if clip events on IMU1
+
+        // apply a peak hold 0.2 second time constant decaying envelope filter to the noise length on IMU1
         float alpha = 1.0f - 5.0f*dtDelVel1;
-        clipRateFilt1 = max(float(ins.get_accel_clip_count(0) - lastClipCount1), alpha*clipRateFilt1);
-        lastClipCount1 = ins.get_accel_clip_count(0);
+        imuNoiseFiltState1 = maxf(ins.get_vibration_levels(0).length(), alpha*imuNoiseFiltState1);
+
         // read IMU2 delta velocity data
         readDeltaVelocity(1, dVelIMU2, dtDelVel2);
-        // apply a peak hold decaying envelope filter to the rate of increase if clip events on IMU2
+
+        // apply a peak hold 0.2 second time constant decaying envelope filter to the noise length on IMU2
         alpha = 1.0f - 5.0f*dtDelVel2;
-        clipRateFilt2 = max(float(ins.get_accel_clip_count(1) - lastClipCount2), alpha*clipRateFilt2);
-        lastClipCount2 = ins.get_accel_clip_count(1);
+        imuNoiseFiltState2 = maxf(ins.get_vibration_levels(1).length(), alpha*imuNoiseFiltState2);
+
+        // calculate the filtered difference between acceleration vectors from IMU1 and 2
+        // apply a LPF filter with a 1.0 second time constant
+        alpha = constrain_float(0.5f*(dtDelVel1 + dtDelVel2),0.0f,1.0f);
+        accelDiffFilt = (ins.get_accel(0) - ins.get_accel(1)) * alpha + accelDiffFilt * (1.0f - alpha);
+        float accelDiffLength = accelDiffFilt.length();
+
+        // Check the difference for excessive error and use the IMU with less noise
+        // Apply hysteresis to prevent rapid switching
+        if (accelDiffLength > 1.8f || (accelDiffLength > 1.2f && lastImuSwitchState != IMUSWITCH_MIXED)) {
+            if (lastImuSwitchState == IMUSWITCH_MIXED) {
+                // no previous fail so switch to the IMU with least noise
+                if (imuNoiseFiltState1 < imuNoiseFiltState2) {
+                    lastImuSwitchState = IMUSWITCH_IMU0;
+                } else {
+                    lastImuSwitchState = IMUSWITCH_IMU1;
+                }
+            } else if (lastImuSwitchState == IMUSWITCH_IMU0) {
+                // IMU1 previously failed so require 5 m/s/s less noise on IMU2 to switch across
+                if (imuNoiseFiltState1 - imuNoiseFiltState2 > 5.0f) {
+                    // IMU2 is significantly less noisy, so switch
+                    lastImuSwitchState = IMUSWITCH_IMU1;
+                }
+            } else {
+                // IMU2 previously failed so require 5 m/s/s less noise on IMU1 to switch across
+                if (imuNoiseFiltState2 - imuNoiseFiltState1 > 5.0f) {
+                    // IMU1 is significantly less noisy, so switch
+                    lastImuSwitchState = IMUSWITCH_IMU0;
+                }
+            }
+        } else {
+            lastImuSwitchState = IMUSWITCH_MIXED;
+        }
+
     } else {
-        // single accel mode - one of the first two accelerometers are unhealthy
-        // read primary accelerometer into dVelIMU1 and copy to dVelIMU2
-        readDeltaVelocity(ins.get_primary_accel(), dVelIMU1, dtDelVel1);
-        // apply a peak hold decaying envelope filter to the rate of increase if clip events on IMU1
-        float alpha = 1.0f - 5.0f*dtDelVel1;
-        clipRateFilt1 = max(float(ins.get_accel_clip_count(0) - lastClipCount1), alpha*clipRateFilt1);
-        lastClipCount1 = ins.get_accel_clip_count(0);
-        clipRateFilt2 = clipRateFilt1;
+        // single accel mode - one of the first two accelerometers are unhealthy, not available or de-selected by the user
+        // read good accelerometer into dVelIMU1 and copy to dVelIMU2
+        // set the switch state based on the IMU we are using to make the data source selection visible
+        if (ins.use_accel(0)) {
+            readDeltaVelocity(0, dVelIMU1, dtDelVel1);
+            lastImuSwitchState = IMUSWITCH_IMU0;
+        } else if (ins.use_accel(1)) {
+            readDeltaVelocity(1, dVelIMU1, dtDelVel1);
+            lastImuSwitchState = IMUSWITCH_IMU1;
+        } else {
+            readDeltaVelocity(ins.get_primary_accel(), dVelIMU1, dtDelVel1);
+            switch (ins.get_primary_accel()) {
+                case 0:
+                    lastImuSwitchState = IMUSWITCH_IMU0;
+                    break;
+                case 1:
+                    lastImuSwitchState = IMUSWITCH_IMU1;
+                    break;
+                default:
+                    // we must be using IMU2 which can't be properly represented so we set to "mixed"
+                    lastImuSwitchState = IMUSWITCH_MIXED;
+                    break;
+            }
+        }
         dtDelVel2 = dtDelVel1;
         dVelIMU2 = dVelIMU1;
     }
 
-    if (ins.get_gyro_health(0) && ins.get_gyro_health(1)) {
+    if (ins.use_gyro(0) && ins.use_gyro(1)) {
         // dual gyro mode - average first two gyros
         Vector3f dAng;
         dAngIMU.zero();
@@ -4731,9 +4778,9 @@ void NavEKF::InitialiseVariables()
     yawRateFilt = 0.0f;
     yawResetAngle = 0.0f;
     yawResetAngleWaiting = false;
-    const AP_InertialSensor &ins = _ahrs->get_ins();
-    lastClipCount1 = ins.get_accel_clip_count(0);
-    lastClipCount2 = ins.get_accel_clip_count(1);
+    imuNoiseFiltState1 = 0.0f;
+    imuNoiseFiltState2 = 0.0f;
+    lastImuSwitchState = IMUSWITCH_MIXED;
 }
 
 // return true if we should use the airspeed sensor
@@ -5244,18 +5291,7 @@ void NavEKF::readRangeFinder(void)
 void NavEKF::detectOptFlowTakeoff(void)
 {
     if (vehicleArmed && !takeOffDetected && (imuSampleTime_ms - timeAtArming_ms) > 1000) {
-        const AP_InertialSensor &ins = _ahrs->get_ins();
-        Vector3f angRateVec;
-        Vector3f gyroBias;
-        getGyroBias(gyroBias);
-        bool dual_ins = ins.get_gyro_health(0) && ins.get_gyro_health(1);
-        if (dual_ins) {
-                angRateVec = (ins.get_gyro(0) + ins.get_gyro(1)) * 0.5f - gyroBias;
-        } else {
-                angRateVec = ins.get_gyro() - gyroBias;
-        }
-
-        takeOffDetected = (takeOffDetected || (angRateVec.length() > 0.1f) || (rngMea > (rangeAtArming + 0.1f)));
+        takeOffDetected = (takeOffDetected || (rngMea > (rangeAtArming + 0.1f)));
     }
 }
 
