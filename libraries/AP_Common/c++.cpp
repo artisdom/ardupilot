@@ -8,6 +8,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 /*
   globally override new and delete to ensure that we always start with
@@ -43,6 +44,19 @@ void operator delete[](void * ptr)
 {
     if (ptr) free(ptr);
 }
+#endif
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+extern "C" int _kill(int pid) { return 0;}
+extern "C" int _getpid(void) {return 0;}
+extern "C" ssize_t _write(int fd,const void* buf, size_t size) { return -1;}
+extern "C" int _close(int fd) { return 0;}
+extern "C" int _fstat(int fd, void* buf) { return 0;}
+extern "C" int _lseek (int fd,int count) { return 0;}
+extern "C" int _read(int fd, char* buf, int count){return 0;}
+extern "C" int _isatty(int fd){return 0;}
+
+
 #endif
 
 

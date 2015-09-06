@@ -14,8 +14,8 @@ AP_HAL::Semaphore* QuanSPIDeviceDriver::get_semaphore()
     return &_semaphore;
 }
 
-void QuanSPIDeviceDriver::transaction(const uint8_t *tx, uint8_t *rx, uint16_t len)
-{}
+bool QuanSPIDeviceDriver::transaction(const uint8_t *tx, uint8_t *rx, uint16_t len)
+{return false;}
 
 
 void QuanSPIDeviceDriver::cs_assert()

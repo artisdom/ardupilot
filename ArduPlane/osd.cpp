@@ -17,7 +17,7 @@ namespace quan{ namespace stm32{ namespace freertos{
 
   template <typename T>
   inline
-  typename quan::where_c< (sizeof(T) > 4)>,T >::type 
+  typename quan::where_c< (sizeof(T) > 4),T >::type 
   atomic_read( T const & value)
   {
       taskENTER_CRITICAL();
@@ -28,7 +28,7 @@ namespace quan{ namespace stm32{ namespace freertos{
 
   template <typename T>
   inline
-  typename quan::where_c<(sizeof(T) <= 4)>,T const & >::type 
+  typename quan::where_c<(sizeof(T) <= 4),T const & >::type 
   atomic_read( T const & value)
   {
      return value;

@@ -157,6 +157,11 @@ void CompassCalibrator::update(bool &failure) {
         return;
     }
 
+    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    using std::isnan;
+   // using std::isinf;
+    #endif
+
     if(_status == COMPASS_CAL_RUNNING_STEP_ONE) {
         if (_fit_step >= 10) {
             if(_fitness == _initial_fitness || isnan(_fitness)) {           //if true, means that fitness is diverging instead of converging
@@ -313,7 +318,10 @@ bool CompassCalibrator::set_status(compass_cal_status_t status) {
             return false;
     };
 }
-
+    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    using std::isnan;
+   // using std::isinf;
+    #endif
 bool CompassCalibrator::fit_acceptable() {
     if( !isnan(_fitness) &&
         _params.radius > 150 && _params.radius < 950 && //Earth's magnetic field strength range: 250-850mG

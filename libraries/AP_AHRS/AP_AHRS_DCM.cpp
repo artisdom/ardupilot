@@ -140,6 +140,11 @@ AP_AHRS_DCM::reset(bool recover_eulers)
     _omega_yaw_P.zero();
     _omega.zero();
 
+    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    using std::isnan;
+    ///using std::isinf;
+    #endif
+
     // if the caller wants us to try to recover to the current
     // attitude then calculate the dcm matrix from the current
     // roll/pitch/yaw values
