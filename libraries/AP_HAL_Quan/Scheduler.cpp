@@ -309,7 +309,9 @@ void QuanScheduler::panic(const prog_char_t *errormsg) {
 }
 
 // TODO wdt
+// no bootloader
 void QuanScheduler::reboot(bool hold_in_bootloader) 
 {
-    for(;;);
+    NVIC_SystemReset();
+   // for(;;);
 }
