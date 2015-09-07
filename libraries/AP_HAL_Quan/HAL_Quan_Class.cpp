@@ -13,16 +13,17 @@ using namespace Quan;
 
 namespace Quan{
   template <uint32_t I>
-  AP_HAL::UARTDriver * get_serial_port();
+  AP_HAL::UARTDriver*  get_serial_port();
   AP_HAL::AnalogIn*    get_analog_in();
-  AP_HAL::I2CDriver *  get_i2c_driver();
-  AP_HAL::RCInput *    get_rc_inputs();
+  AP_HAL::I2CDriver*   get_i2c_driver();
+  AP_HAL::RCInput*     get_rc_inputs();
+  AP_HAL::RCOutput*    get_rc_outputs();
 }
 
 static QuanSPIDeviceManager spiDeviceManager;
 static QuanStorage storageDriver;
 static QuanGPIO gpioDriver;
-static QuanRCOutput rcoutDriver;
+//static QuanRCOutput rcoutDriver;
 static QuanScheduler schedulerInstance;
 static QuanUtil utilInstance;
 
@@ -42,7 +43,7 @@ HAL_Quan::HAL_Quan()
    Quan::get_serial_port<0>(),    // console  member
    &gpioDriver,
    Quan::get_rc_inputs(),
-   &rcoutDriver,
+   Quan::get_rc_outputs(),
    &schedulerInstance,
    &utilInstance
 )
@@ -54,6 +55,7 @@ void HAL_Quan::init(int argc,char* const argv[]) const
    uartA->begin(115200);
    gpio->init();
    rcin->init(NULL);
+   rcout->init(NULL);
    analogin->init(NULL);
    i2c->begin();
    scheduler->init(NULL);

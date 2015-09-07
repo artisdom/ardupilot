@@ -76,7 +76,7 @@ namespace {
 
    bool have_sync()
    {
-      return channel_idx < max_num_channels;
+      return channel_idx <= max_num_channels;
    }
 
    volatile uint16_t m_input_rc_channels [max_num_channels] ;
@@ -88,7 +88,7 @@ namespace {
       uint16_t const pulse = edge - last_edge;
       last_edge = edge;
       if (pulse < min_sync_pulse ) {
-         if (have_sync()){
+         if (channel_idx < max_num_channels){
             m_input_rc_channels[channel_idx++]
             = quan::constrain(
                pulse
