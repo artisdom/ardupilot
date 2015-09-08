@@ -22,40 +22,34 @@ const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 
 namespace {
 
-   constexpr uint8_t red_led_pin = 1U;
-   // Pin2 == PC14
-   constexpr uint8_t test_pin = 2U;
-
-   constexpr uint8_t pin_off = 0U;
-   constexpr uint8_t pin_on = 1U;
-
    struct test_task_t{
 
       test_task_t(): m_count{0}{}
 
       void fun()
       {
-          if (++m_count == 500){
-              m_count = 0;
-          
-               uint8_t num_rc_in_channels = hal.rcin->num_channels();
-               for ( int i = 0; i < num_rc_in_channels; ++i){
-                uint16_t const value = hal.rcin->read(i);
-                hal.console->printf("rc in ch[%d] = %u usec\n",i,static_cast<unsigned int>(value));
-               }
-               hal.gpio->toggle(red_led_pin);
-          }
+         if (hal.rcin->new_input()){
+            uint8_t num_rc_in_channels = hal.rcin->num_channels();
+            for ( uint8_t i = 0; i < num_rc_in_channels; ++i){
+               hal.rcout->write(i,hal.rcin->read(i));
+            }
+         }
       };
 
       void init()
       {
-          hal.gpio->pinMode(red_led_pin,HAL_GPIO_OUTPUT);
-          hal.gpio->write(red_led_pin,pin_off);
           hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&test_task_t::fun, void));
+          for (uint8_t i =0; i < 4; ++i){
+             hal.rcout->enable_ch(i);
+          }
       }
    private:
       uint32_t m_count ;
    } test_task;
+
+   constexpr uint8_t red_led_pin = 1U;
+   constexpr uint8_t pin_off = 0U;
+   constexpr uint8_t pin_on = 1U;
 
 }
 
@@ -63,26 +57,28 @@ namespace {
 void setup() 
 {
    float const test_val = 1.2345;
- 	hal.console->printf("Quan APM RC Input test %f\n", static_cast<double>(test_val));
-   hal.gpio->pinMode(test_pin,HAL_GPIO_OUTPUT);
-   hal.gpio->write(test_pin,pin_off);
+ 	hal.console->printf("Quan APM RC Output test %f\n", static_cast<double>(test_val));
+   hal.gpio->pinMode(red_led_pin,HAL_GPIO_OUTPUT);
+   hal.gpio->write(red_led_pin,pin_off);
+   
 }
 
 void quan::uav::osd::on_draw() 
 { 
-   draw_text("Quan APM Sched RC Input test",{-140,50});
+   draw_text("Quan APM Sched RC Output test",{-140,50});
 }
 
 namespace {
-   uint64_t next_event = 10U;
+   constexpr uint32_t incr_ms  =  333;
+   uint64_t next_event = incr_ms;
 }
 // called forever in apm_task
 void loop() 
 {
    uint64_t const now = hal.scheduler->millis64();
    if ( next_event <= now ){
-      hal.gpio->toggle(test_pin);
-      next_event = now + 10U;
+      hal.gpio->toggle(red_led_pin);
+      next_event = now + incr_ms;
    }
 }
 
