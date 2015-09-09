@@ -155,7 +155,7 @@ namespace {
       NVIC_EnableIRQ(DMA2_Stream4_IRQn);
 
       DMA2->HIFCR |= (0b111101 << 0) ; // clear flags for Dma2 Stream 4
-      DMA2->HIFCR &= ~(0b111101 << 0) ; 
+   //   DMA2->HIFCR &= ~(0b111101 << 0) ; 
 
       ADC1->CR2 |= (1 << 8);    //  (DMA) enable adc DMA
       DMA2_Stream4->CR |= (1 << 0); // (EN)  enable DMA
@@ -182,7 +182,7 @@ extern "C" void DMA2_Stream4_IRQHandler()
    DMA2_Stream4->CR &= ~(1 << 0); // (EN)
    while(DMA2_Stream4->CR & (1 << 0)){;}
    DMA2->HIFCR |= (0b111101 << 0) ; // clear flags for Dma2 Stream 4
-   DMA2->HIFCR &= ~(0b111101 << 0) ; 
+   //DMA2->HIFCR &= ~(0b111101 << 0) ; 
    DMA2_Stream4->M0AR = (uint32_t)adc_results;
    DMA2_Stream4->NDTR = 4;
    DMA2_Stream4->CR |= (1 << 0); // (EN)
