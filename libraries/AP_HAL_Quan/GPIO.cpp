@@ -13,17 +13,17 @@ QuanGPIO::QuanGPIO()
 
 namespace {
 
-   template <typename Pin> struct gpio_pin : QuanDigitalSource{
+   template <typename Pin> struct gpio_pin final : public AP_HAL::DigitalSource{
       static_assert(quan::is_model_of<quan::stm32::gpio::Pin,Pin>::value,"not a port pin");
-      void init()
-      {
-         quan::stm32::module_enable<typename Pin::port_type>();
-         quan::stm32::apply<
-            Pin 
-            ,quan::stm32::gpio::mode::input
-            ,quan::stm32::gpio::pupd::pull_down
-         >();
-      }
+//      void init()
+//      {
+//         quan::stm32::module_enable<typename Pin::port_type>();
+//         quan::stm32::apply<
+//            Pin 
+//            ,quan::stm32::gpio::mode::input
+//            ,quan::stm32::gpio::pupd::pull_down
+//         >();
+//      }
 
       void mode(uint8_t mode_in)
       {
@@ -67,18 +67,18 @@ namespace {
   };
 
    //
-   gpio_pin<heartbeat_led_pin>       pin1;
+   gpio_pin<heartbeat_led_pin>                      pin1;
    gpio_pin<quan::mcu::pin<quan::stm32::gpioc,14> > pin2;
    gpio_pin<quan::mcu::pin<quan::stm32::gpioc,15> > pin3;
 
-   QuanDigitalSource * const pins_array[] =
+   AP_HAL::DigitalSource * const pins_array[] =
    {
      &pin1
      ,&pin2
      ,&pin3
    };
 
-   constexpr uint8_t num_pins() { return sizeof(pins_array) / sizeof(QuanDigitalSource *); }
+   constexpr uint8_t num_pins() { return sizeof(pins_array) / sizeof(AP_HAL::DigitalSource*); }
 
    bool map_pin_to_array( uint8_t val_in , uint8_t & val_out)
    {
@@ -92,12 +92,7 @@ namespace {
 } // namespace
 
 
-void Quan::QuanGPIO::init()
-{
-   for( auto p : pins_array){
-      p->init();
-   }
-}
+void Quan::QuanGPIO::init(){}
 
 void Quan::QuanGPIO::pinMode(uint8_t pin, uint8_t pin_mode)
 {
@@ -162,27 +157,5 @@ bool Quan::QuanGPIO::usb_connected(void)
 {
     return false;
 }
-
-//Quan::QuanDigitalSource::QuanDigitalSource(uint8_t v) :
-//    _v(v)
-//{}
-//
-//void Quan::QuanDigitalSource::mode(uint8_t output)
-//{}
-//
-//uint8_t Quan::QuanDigitalSource::read() 
-//{
-//    return _v;
-//}
-//
-//void Quan::QuanDigitalSource::write(uint8_t value) 
-//{
-//    _v = value;
-//}
-//
-//void Quan::QuanDigitalSource::toggle() 
-//{
-//    _v = !_v;
-//}
 
 #endif

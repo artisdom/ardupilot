@@ -4,8 +4,7 @@
 
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
 
-
-   class Quan::QuanGPIO : public AP_HAL::GPIO {
+   class Quan::QuanGPIO final : public AP_HAL::GPIO {
    public:
        QuanGPIO();
        void    init();
@@ -25,18 +24,5 @@
        /* return true if USB cable is connected */
        bool    usb_connected(void);
    };
-
-   struct Quan::QuanDigitalSource : public AP_HAL::DigitalSource {
-     virtual void init() = 0;
-//       QuanDigitalSource(uint8_t v);
-//       void    mode(uint8_t output);
-//       uint8_t read();
-//       void    write(uint8_t value); 
-//       void    toggle();
-//   private:
-      // uint8_t _v;
-   };
-
-
 
 #endif // __AP_HAL_QUAN_GPIO_H__
