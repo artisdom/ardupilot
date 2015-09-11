@@ -71,7 +71,6 @@ namespace {
    // setup TRGO --> ADC on overflow
    void setup_adc_timer()
    {
-
       setup_adc_pin<analog_pin1>();
       setup_adc_pin<analog_pin2>();
       setup_adc_pin<analog_pin3>();
@@ -198,18 +197,18 @@ namespace {
 
    typedef Filter<float> filter;
 
-   struct dummy_filter_t : public Filter<float>{
+   struct dummy_filter_t final : public Filter<float>{
       float apply(float sample){ return 0.f;}
       void reset(){;}
    };
 
-   struct simple_filter_t : public Filter<float>{
+   struct simple_filter_t final : public Filter<float>{
        float apply(float sample){ return sample;}
        void reset(){;}
    };
 
    template <typename Coefficients>
-   struct butterworth_filter_t : public Filter<float>{
+   struct butterworth_filter_t final : public Filter<float>{
       butterworth_filter_t() {m_filter.reset(1.65f);}
       float apply(float sample){ return m_filter.filter(sample);}
       void reset(){;}
@@ -271,7 +270,7 @@ namespace {
    }   
 
    template <uint8_t Pin>
-   struct analog_source : public AP_HAL::AnalogSource{
+   struct analog_source  final : public AP_HAL::AnalogSource{
 
       float voltage_latest(){return raw_adc_voltages[Pin];}
    
@@ -303,7 +302,7 @@ namespace {
      ,& dummy
    };
 
-   struct analog_in_t : public AP_HAL::AnalogIn{
+   struct analog_in_t final : public AP_HAL::AnalogIn{
       analog_in_t(){}
       void init(void* )
       {

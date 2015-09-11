@@ -27,42 +27,13 @@ namespace {
    // connect a HMC5883 mag to i2c3 on pA8 scl, pa9 sda to test
 
    constexpr uint8_t red_led_pin = 1U;
-   // Pin2 == PC14
-   constexpr uint8_t test_pin = 2U;
 
    constexpr uint8_t pin_off = 0U;
    constexpr uint8_t pin_on = 1U;
 
-   constexpr uint8_t mag_addr = 0x1E;
-   static const uint8_t configA = 0x0;
-   static const uint8_t configB = 0x1;
-   static const uint8_t modereg =  0x02;
-   static uint8_t msb_x = 0x03;
-   static const uint8_t single_measurement = 0x01;
-   uint8_t values [6] = {0,0,0,0,0,0};
-
-
-   int16_t convert_to_int16(uint8_t * d)
-   {
-      union{
-         uint8_t in[2] ;
-         int16_t out;
-      }u;
-      u.in[0] = d[1];
-      u.in[1] = d[0];
-      return u.out;
-   }
-
-   void copy_new_values(Vector3<int> & result_out)
-   {
-      result_out.x = convert_to_int16(values);
-      result_out.y = convert_to_int16(values + 4);
-      result_out.z = convert_to_int16(values + 2);
-   }
-
    struct test_task_t{
 
-      test_task_t(): m_count{0}{}
+      test_task_t():m_count{0}{}
 
       void fun()
       {
@@ -71,44 +42,67 @@ namespace {
 
             hal.gpio->toggle(red_led_pin);
 
-            auto * sem = hal.i2c->get_semaphore();
-            
-            if ( sem && sem->take_nonblocking() ){
-
-               if (  hal.i2c->writeRegister(mag_addr,modereg,single_measurement) != 0){
-                  return; // should report on error
+            auto * mpu6 = hal.spi->device(AP_HAL::SPIDevice_MPU6000);
+            if ( mpu6){
+               auto * sem = mpu6->get_semaphore();
+               if ( sem && sem->take_nonblocking() ){
+                 // do something with mpu
+                  uint8_t who_am_i = reg_read(mpu6,117);
+                  hal.console->printf("Who am i = %u\n",static_cast<unsigned int>(who_am_i));
+                  sem->give();
+               }else{
+                  hal.console->printf("couldnt get spi semaphore\n");
                }
-               if ( hal.i2c->write(mag_addr,1,&msb_x) !=0 ){
-                  return;
-               }
-               if ( hal.i2c->read(mag_addr,6,values) != 0){
-                  return;
-               }
-
-               hal.console->printf("read success\n");
-
-               Vector3<int> result;
-
-               copy_new_values(result);
-
-               hal.console->printf("result = [%d, %d,%d]\n",result.x,result.y,result.z);
-               
-               sem->give();
-
             }else{
-               hal.console->printf("couldnt get semaphore\n");
+               hal.console->printf("couldnt get mpu6000 ptr\n");
             }
          }
       };
 
+      void reg_write(AP_HAL::SPIDeviceDriver* dev, uint8_t reg, uint8_t value)
+      {
+          uint8_t arr[2] = {reg, value};
+          dev->transaction( arr, nullptr, 2);
+      }
+
+      uint8_t reg_read(AP_HAL::SPIDeviceDriver* dev, uint8_t reg)
+      {
+         uint8_t arr_out[2] = {static_cast<uint8_t>(reg | (1 << 7)),0};
+         uint8_t arr_in [2] = {0,0};
+         dev->transaction(arr_out,arr_in, 2);
+         return arr_in[1];
+      }
+
+      void mpu6000_init()
+      {
+         auto * mpu6 = hal.spi->device(AP_HAL::SPIDevice_MPU6000);
+         if (mpu6){
+            auto * sem = mpu6->get_semaphore();
+            if ( sem && sem->take_nonblocking() ){
+               //disable i2c
+               reg_write(mpu6, 106 , (1 << 4));
+               hal.scheduler->delay(10);
+               // reset
+               reg_write(mpu6, 107 , (1 << 7));
+               hal.scheduler->delay(100);
+
+               sem->give();
+            }else{
+               hal.console->printf("(init) couldnt get spi semaphore\n");
+            }
+         }else{
+            hal.console->printf("(init) couldnt get mpu6000\n");
+         }
+      }
+
       void init()
       {
-          hal.gpio->pinMode(red_led_pin,HAL_GPIO_OUTPUT);
-          hal.gpio->write(red_led_pin,pin_off);
-          hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&test_task_t::fun, void));
+     
+       mpu6000_init();
+       hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&test_task_t::fun, void));
       }
    private:
-      uint32_t m_count ;
+       uint32_t m_count;
    } test_task;
 
 }
@@ -116,14 +110,13 @@ namespace {
 // called once after init of hal before startup of apm task
 void setup() 
 {
- 	hal.console->printf("Quan APM I2C test\n");
-   hal.gpio->pinMode(test_pin,HAL_GPIO_OUTPUT);
-   hal.gpio->write(test_pin,pin_off);
+   hal.gpio->pinMode(red_led_pin,HAL_GPIO_OUTPUT);
+   hal.gpio->write(red_led_pin,pin_off);
 }
 
 void quan::uav::osd::on_draw() 
 { 
-   draw_text("Quan APM I2C test",{-140,50});
+   draw_text("Quan APM SPI test",{-140,50});
 }
 
 namespace {
@@ -135,7 +128,7 @@ void loop()
 {
    uint64_t const now = hal.scheduler->millis64();
    if ( next_event <= now ){
-      hal.gpio->toggle(test_pin);
+      hal.gpio->toggle(red_led_pin);
       next_event = now + interval;
    }
 }

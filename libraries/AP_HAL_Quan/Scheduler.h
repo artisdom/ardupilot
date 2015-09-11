@@ -4,7 +4,7 @@
 
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
 
-class Quan::QuanScheduler : public AP_HAL::Scheduler {
+class Quan::QuanScheduler final : public AP_HAL::Scheduler {
 public:
     QuanScheduler();
     void     init(void* machtnichts);

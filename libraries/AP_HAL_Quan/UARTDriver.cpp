@@ -43,7 +43,7 @@ namespace {
    };
 
    template <typename SerialPort>
-   class QuanUARTDriver : public AP_HAL::UARTDriver {
+   class QuanUARTDriver final : public AP_HAL::UARTDriver {
    public:
       void begin(uint32_t b, uint16_t rxbufsize, uint16_t txbufsize) 
       {

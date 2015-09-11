@@ -126,7 +126,7 @@ namespace {
       rc_out_timer::get()->cr1.bb_setbit<0>(); // (CEN)
    }
   
-   struct rc_outputs_t : public AP_HAL::RCOutput {
+   struct rc_outputs_t final : public AP_HAL::RCOutput {
       void     init(void*)
       {
          rc_out_timer_setup();

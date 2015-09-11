@@ -13,7 +13,8 @@ using namespace Quan;
 /*
 it appears that APM address in is to be shifted left 1
  then if its a write address ored with 1
- (See the AP_HALAVR::AVRI2CDriver source)
+ (See the AP_HAL_AVR::AVRI2CDriver source)
+ Note may need to increase the GPIO speed for fast modes
 */
 
 namespace {
@@ -85,7 +86,7 @@ namespace {
    }
 
    template <typename I2CPort>
-   struct QuanI2CDriver : public AP_HAL::I2CDriver {
+   struct i2c_driver_t final : public AP_HAL::I2CDriver {
    
       typedef I2CPort i2c_port;
       /*
@@ -200,18 +201,17 @@ namespace {
    };
 
    template <typename I2CPort>
-   Quan::QuanSemaphore QuanI2CDriver<I2CPort>::m_mutex{};
+   Quan::QuanSemaphore i2c_driver_t<I2CPort>::m_mutex{};
 
    template <typename I2CPort>
-   uint8_t QuanI2CDriver<I2CPort>::m_lockup_count = 0;
+   uint8_t i2c_driver_t<I2CPort>::m_lockup_count = 0;
 
  /*
    todo
    for multiple i2c ports lookup the port based on the address?
    addresses must have been registered with a particular port
 */
-   QuanI2CDriver<i2c3_task> i2c3; 
-
+   i2c_driver_t<i2c3_task> i2c3; 
 
 }// namespace
 
@@ -220,5 +220,3 @@ namespace Quan{
     { return &i2c3;}
 }
 
-
-///

@@ -7,7 +7,7 @@
 #include "FreeRTOS.h"
 #include <semphr.h>
 
-struct Quan::QuanSemaphore : public AP_HAL::Semaphore {
+struct Quan::QuanSemaphore final : public AP_HAL::Semaphore {
 public:
     QuanSemaphore() ;
     bool give();

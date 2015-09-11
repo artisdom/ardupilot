@@ -7,7 +7,7 @@
 
 
 
-class Quan::QuanSPIDeviceManager : public AP_HAL::SPIDeviceManager {
+class Quan::QuanSPIDeviceManager final : public AP_HAL::SPIDeviceManager {
 public:
     QuanSPIDeviceManager();
     void init(void *);

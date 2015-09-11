@@ -13,6 +13,7 @@
 #include <AP_HAL_Linux/AP_HAL_Linux.h>
 #include <AP_HAL_FLYMAPLE/AP_HAL_FLYMAPLE.h>
 #include <AP_HAL_PX4/AP_HAL_PX4.h>
+#include <AP_HAL_Quan/AP_HAL_Quan.h>
 #include <AP_HAL_Empty/AP_HAL_Empty.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_Param/AP_Param.h>
@@ -41,6 +42,12 @@
 #include <AP_BattMonitor/AP_BattMonitor.h>
 #include <AP_RangeFinder/AP_RangeFinder.h>
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <quantracker/osd/osd.hpp>
+#else
+#error def not wkg
+#endif
+
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 
 AP_InertialSensor ins;
@@ -52,6 +59,14 @@ AP_ADC_ADS7844 apm1_adc;
 static void display_offsets_and_scaling();
 static void run_test();
 static void run_calibration();
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
+void quan::uav::osd::on_draw() 
+{ 
+   draw_text("Quan APM INS_generic test",{-140,50});
+}
+#endif
 
 void setup(void)
 {

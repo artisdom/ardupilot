@@ -120,7 +120,7 @@ extern "C" void TIM1_CC_IRQHandler()
 }
 
 namespace {
-   struct rc_inputs_t : public AP_HAL::RCInput{
+   struct rc_inputs_t final : public AP_HAL::RCInput{
       void init(void* )
       {
          for ( auto & pulse : m_input_rc_channels)
