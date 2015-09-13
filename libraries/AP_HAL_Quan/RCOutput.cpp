@@ -10,6 +10,10 @@
 #include <quan/min.hpp>
 
 #include "RCOutput.h"
+/*
+ Problem with the simple option is that all outputs go high
+at same time, so may try 
+*/
 
 namespace {
 
