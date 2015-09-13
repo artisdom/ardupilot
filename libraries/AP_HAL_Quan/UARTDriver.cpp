@@ -131,7 +131,7 @@ template AP_HAL::UARTDriver * Quan::get_serial_port<2>();
 // interrupts
 
 extern "C" void USART1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
-extern "C" void USART1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
+extern "C" void USART3_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void UART4_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 
 extern "C" void USART1_IRQHandler()
