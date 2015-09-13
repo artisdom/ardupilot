@@ -162,6 +162,11 @@ namespace {
        // send and receive 1 byte no nss so not really interface
        uint8_t transfer(uint8_t data)
        {
+            // do we need to add a fail timeout?
+            // and set an errno
+            // OTOH since this is master and sending clock
+            // then failure is unlikely
+            // unless mpu has failed..
             ll_write(data);
             while ( (!txe()) || ( busy()) || (!rxne()) ){;}
             return ll_read();
@@ -179,7 +184,8 @@ namespace {
          // make sure not in middle of a transfer obviously!
          // set a flag?
          switch (speed){
-
+            // The change of speed of the IO's is cos
+            // should think a bit about power saving
             case SPI_SPEED_LOW: 
                if ( m_fast_speed){
                   quan::stm32::apply<spi1_mosi,quan::stm32::gpio::ospeed::slow>();
@@ -203,7 +209,7 @@ namespace {
                break;
          }
       }
-
+// TODO
 //       void set_state(State state) { };
 //       State get_state() { return State::UNKNOWN; }
    private:
