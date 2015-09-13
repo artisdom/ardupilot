@@ -34,14 +34,20 @@ namespace {
    constexpr uint8_t pin_on = 1U;
 
    constexpr uint8_t mag_addr = 0x1E;
-   static const uint8_t configA = 0x0;
-   static const uint8_t configB = 0x1;
-   static const uint8_t modereg =  0x02;
-   static uint8_t msb_x = 0x03;
-   static const uint8_t single_measurement = 0x01;
+  // static const uint8_t mag_configA = 0x0;
+  // static const uint8_t configB = 0x1;
+   constexpr uint8_t mag_modereg =  0x02;
+   uint8_t mag_msb_x = 0x03;
+   constexpr uint8_t mag_single_measurement = 0x01;
    uint8_t values [6] = {0,0,0,0,0,0};
 
-
+   constexpr uint8_t baro_addr = 0x77;
+   // convert pressure
+   // takes 
+   static uint8_t baro_start_pressure_conv = 0x48;
+   static uint8_t baro_read_adc = 0x00;
+   
+    
    int16_t convert_to_int16(uint8_t * d)
    {
       union{
@@ -62,7 +68,9 @@ namespace {
 
    struct test_task_t{
 
-      test_task_t(): m_count{0}{}
+      enum baro_state_t{ idle, conv_requested};
+   
+      test_task_t(): m_count{0}, m_baro_count{0}, m_baro_state{idle}{}
 
       void fun()
       {
@@ -75,31 +83,51 @@ namespace {
             
             if ( sem && sem->take_nonblocking() ){
 
-               if (  hal.i2c->writeRegister(mag_addr,modereg,single_measurement) != 0){
+               if (  hal.i2c->writeRegister(mag_addr,mag_modereg,mag_single_measurement) != 0){
+                  sem->give();
                   return; // should report on error
                }
-               if ( hal.i2c->write(mag_addr,1,&msb_x) !=0 ){
+               if ( hal.i2c->write(mag_addr,1,&mag_msb_x) !=0 ){
+                  sem->give();
                   return;
                }
                if ( hal.i2c->read(mag_addr,6,values) != 0){
+                  sem->give();
                   return;
                }
-
-               hal.console->printf("read success\n");
-
+               hal.console->printf("read mag success\n");
                Vector3<int> result;
-
                copy_new_values(result);
-
-               hal.console->printf("result = [%d, %d,%d]\n",result.x,result.y,result.z);
-               
+               hal.console->printf("mag result = [%d, %d,%d]\n",result.x,result.y,result.z);
+               // baro test --------------------
+               if ( m_baro_state == idle){
+                  // request a conversion
+                  if ( hal.i2c->write(baro_addr,1,&baro_start_pressure_conv) != 0){
+                      sem->give();
+                     return;
+                  }
+                  m_baro_state = conv_requested;
+                  m_baro_count = 0;
+               }else{ // baro not idle doing a conv
+                  // after 10 ms can read
+                  if ( ++m_baro_count == 10){
+                    // uint8_t arr [3];
+                     if (  hal.i2c->readRegisters(baro_addr,baro_read_adc,3,values) != 0){
+                        sem->give();
+                        return;
+                     }
+                     hal.console->printf("read baro success\n");
+                     uint32_t value = (values[0] << 16) | ( values[1] << 8) | ( values[2]);
+                     hal.console->printf("baro result = %u\n",static_cast<unsigned int>(value));
+                     m_baro_state = idle;
+                  }
+               }
                sem->give();
-
             }else{
                hal.console->printf("couldnt get semaphore\n");
             }
          }
-      };
+      }
 
       void init()
       {
@@ -109,6 +137,8 @@ namespace {
       }
    private:
       uint32_t m_count ;
+      uint32_t m_baro_count;
+      baro_state_t m_baro_state;
    } test_task;
 
 }
@@ -137,6 +167,7 @@ void loop()
    if ( next_event <= now ){
       hal.gpio->toggle(test_pin);
       next_event = now + interval;
+      
    }
 }
 
