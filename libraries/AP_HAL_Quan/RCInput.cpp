@@ -10,6 +10,15 @@
 
 #include "RCInput.h"
 
+/*
+TODO  need to detect overflows
+More than one overflow between pulses
+clearly means the pulse is invalid
+so should detect that.
+Possibly also detetct no input and sync lost
+Though I guess the main code is doing that
+*/
+
 namespace {
    // resources
    // tim1 : 16 bit 168 MHz clk
@@ -125,12 +134,8 @@ namespace {
       {
          for ( auto & pulse : m_input_rc_channels)
          { pulse = (min_pulsewidth + max_pulsewidth)/2;}
-
          rc_input_timer_setup();
          start_timer();
-      // TODO timeout?
-      // wait for rc values to be filled
-         while (! have_sync()){;}
       }
 
     /**
@@ -188,11 +193,15 @@ namespace {
 
       uint8_t read(uint16_t* periods, uint8_t len_in)
       {
-         uint8_t const len = quan::min(len_in,max_num_channels);
-         for ( uint8_t i = 0; i < len ; ++i){
-            periods[i] = this->read(i);
+         if ( have_sync()){
+            uint8_t const len = quan::min(len_in,max_num_channels);
+            for ( uint8_t i = 0; i < len ; ++i){
+               periods[i] = this->read(i);
+            }
+            return len;
+         }else{
+            return 0U;
          }
-         return len;
       }
 
       bool set_overrides(int16_t *overrides, uint8_t len_in) 
