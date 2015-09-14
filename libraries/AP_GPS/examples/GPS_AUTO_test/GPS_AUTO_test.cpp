@@ -12,6 +12,7 @@
 #include <AP_HAL_AVR/AP_HAL_AVR.h>
 #include <AP_HAL_SITL/AP_HAL_SITL.h>
 #include <AP_HAL_PX4/AP_HAL_PX4.h>
+#include <AP_HAL_Quan/AP_HAL_Quan.h>
 #include <AP_HAL_Linux/AP_HAL_Linux.h>
 #include <AP_HAL_Empty/AP_HAL_Empty.h>
 #include <AP_GPS/AP_GPS.h>
@@ -65,6 +66,13 @@ void setup()
     serial_manager.init();
     gps.init(NULL, serial_manager);
 }
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+void quan::uav::osd::on_draw() 
+{ 
+   draw_text("Quan APM GPS Auto test",{-140,50});
+}
+#endif
 
 void loop()
 {
