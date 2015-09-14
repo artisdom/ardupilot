@@ -16,68 +16,58 @@ const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 
 namespace {
    constexpr uint8_t heartbeat_led = 1U;
+   constexpr uint8_t orange_led =  2U;
+   constexpr uint8_t green_led = 3U;
+
    constexpr uint8_t led_off = 0U;
    constexpr uint8_t led_on = 1U;
+
+   constexpr char text[] = "Quan APM GPIO test\n";
 }
 
 // called once at startup of apm task
 void setup() 
 {
    // test gpio
-   hal.gpio->pinMode(heartbeat_led,HAL_GPIO_OUTPUT);
-   hal.gpio->write(heartbeat_led,led_off);
-
-   const char text[] = "Quan APM GPIO test\n";
+   for ( uint8_t i = 1; i < 4; ++i){
+      hal.gpio->pinMode(i,HAL_GPIO_OUTPUT);
+      hal.gpio->write(i,led_off);
+   }
 
 	hal.console->write((uint8_t const*)text,strlen(text));
 
 }
 
-namespace {
-   // shared resource
-   // shared between apm_task and draw_task
-   // use taskENTER_CRITICAL to read/write
-   // or mutex
-   // could be a problem with apm code
-   // will require mutex
-   // variables of length 32 bits or less are ok though
-   
-   char buffer[20] = {'\0'};
-}
-
 void quan::uav::osd::on_draw() 
 { 
-   // local atomic copy
-   char buffer1[20];
-   taskENTER_CRITICAL();
-   strncpy(buffer1, buffer,19);
-   taskEXIT_CRITICAL();
-   buffer1[19] = '\0';
-   quan::uav::osd::draw_text(buffer1,{-100,0}); 
+   quan::uav::osd::draw_text(text,{-140,50}); 
 }
 
 namespace{
    TickType_t prev_wake_time= 0; 
 
+   uint32_t red_count = 0;
+   uint32_t green_count = 0;
+   uint32_t orange_count = 0;
 }
 // called forever in apm_task
 void loop() 
 {
-   vTaskDelayUntil(&prev_wake_time,750); 
-   hal.gpio->toggle(heartbeat_led);
-   if ( hal.gpio->read(heartbeat_led) == 0){
-      taskENTER_CRITICAL();
-      strcpy(buffer,"Led Off");
-      taskEXIT_CRITICAL();
-   }else{
-      taskENTER_CRITICAL();
-      strcpy(buffer,"Led On");
-      taskEXIT_CRITICAL();
-   }
-   
-	hal.console->write((uint8_t const*)buffer,strlen(buffer));
-   hal.console->write((uint8_t const)'\n');
+   vTaskDelayUntil(&prev_wake_time,1); 
 
+   if ( ++red_count == 200 ){
+      red_count = 0;
+      hal.gpio->toggle(heartbeat_led);
+   } 
+   if (++orange_count == 330){
+      orange_count = 0;
+      hal.gpio->toggle(orange_led);
+   }
+
+   if ( ++green_count == 500){
+      green_count = 0;
+      hal.gpio->toggle(green_led);
+   }
 }
 
 AP_HAL_MAIN();
