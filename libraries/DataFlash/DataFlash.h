@@ -18,6 +18,7 @@
 #include <AP_Airspeed/AP_Airspeed.h>
 #include <AP_BattMonitor/AP_BattMonitor.h>
 #include <AP_RPM/AP_RPM.h>
+#include <AP_RangeFinder/AP_RangeFinder.h>
 #include <stdint.h>
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_PX4
@@ -51,6 +52,10 @@ public:
     bool NeedErase(void);
     void EraseAll();
 
+    // possibly expensive calls to start log system:
+    bool NeedPrep();
+    void Prep();
+
     /* Write a block of data at current offset */
     bool WriteBlock(const void *pBuffer, uint16_t size);
     /* Write an *important* block of data at current offset */
@@ -83,6 +88,7 @@ public:
     bool Log_Write_Format(const struct LogStructure *structure);
     bool Log_Write_Parameter(const char *name, float value);
     void Log_Write_GPS(const AP_GPS &gps, uint8_t instance, int32_t relative_alt);
+    void Log_Write_RFND(const RangeFinder &rangefinder);
     void Log_Write_IMU(const AP_InertialSensor &ins);
     void Log_Write_IMUDT(const AP_InertialSensor &ins);
     void Log_Write_Vibration(const AP_InertialSensor &ins);
@@ -219,6 +225,15 @@ struct PACKED log_GPS {
     int32_t  ground_course;
     float    vel_z;
     uint8_t  used;
+};
+
+struct PACKED log_GPA {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint16_t vdop;
+    uint16_t hacc;
+    uint16_t vacc;
+    uint16_t sacc;
 };
 
 struct PACKED log_Message {
@@ -503,6 +518,18 @@ struct PACKED log_Mode {
 };
 
 /*
+  rangefinder - support for 4 sensors
+ */
+struct PACKED log_RFND {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    uint16_t dist1;
+    uint16_t dist2;
+    uint16_t dist3;
+    uint16_t dist4;
+};
+
+/*
   terrain log structure
  */
 struct PACKED log_TERRAIN {
@@ -689,6 +716,12 @@ Format characters in the format string for binary log messages
       "PARM", "QNf",        "TimeUS,Name,Value" },    \
     { LOG_GPS_MSG, sizeof(log_GPS), \
       "GPS",  "QBIHBcLLeeEefB", "TimeUS,Status,GMS,GWk,NSats,HDop,Lat,Lng,RAlt,Alt,Spd,GCrs,VZ,U" }, \
+    { LOG_GPS2_MSG, sizeof(log_GPS), \
+      "GPS2", "QBIHBcLLeeEefB", "TimeUS,Status,GMS,GWk,NSats,HDop,Lat,Lng,RAlt,Alt,Spd,GCrs,VZ,U" }, \
+    { LOG_GPA_MSG,  sizeof(log_GPA), \
+      "GPA",  "QCCCC", "TimeUS,VDop,HAcc,VAcc,SAcc" }, \
+    { LOG_GPA2_MSG, sizeof(log_GPA), \
+      "GPA2", "QCCCC", "TimeUS,VDop,HAcc,VAcc,SAcc" }, \
     { LOG_IMU_MSG, sizeof(log_IMU), \
       "IMU",  "QffffffIIfBB",     "TimeUS,GyrX,GyrY,GyrZ,AccX,AccY,AccZ,ErrG,ErrA,Temp,GyHlt,AcHlt" }, \
     { LOG_MESSAGE_MSG, sizeof(log_Message), \
@@ -716,12 +749,12 @@ Format characters in the format string for binary log messages
     { LOG_COMPASS_MSG, sizeof(log_Compass), \
       "MAG", "QhhhhhhhhhB",    "TimeUS,MagX,MagY,MagZ,OfsX,OfsY,OfsZ,MOfsX,MOfsY,MOfsZ,Health" }, \
     { LOG_MODE_MSG, sizeof(log_Mode), \
-      "MODE", "QMB",         "TimeUS,Mode,ModeNum" }
+      "MODE", "QMB",         "TimeUS,Mode,ModeNum" }, \
+    { LOG_RFND_MSG, sizeof(log_RFND), \
+      "RFND", "QCCCC",         "TimeUS,Dist1,Dist2,Dist3,Dist4" }
 
 // messages for more advanced boards
 #define LOG_EXTRA_STRUCTURES \
-    { LOG_GPS2_MSG, sizeof(log_GPS), \
-      "GPS2",  "QBIHBcLLeeEefB", "TimeUS,Status,GMS,GWk,NSats,HDop,Lat,Lng,RAlt,Alt,Spd,GCrs,VZ,U" }, \
     { LOG_IMU2_MSG, sizeof(log_IMU), \
       "IMU2",  "QffffffIIfBB",     "TimeUS,GyrX,GyrY,GyrZ,AccX,AccY,AccZ,ErrG,ErrA,Temp,GyHlt,AcHlt" }, \
     { LOG_IMU3_MSG, sizeof(log_IMU), \
@@ -802,6 +835,8 @@ Format characters in the format string for binary log messages
       "PIDS", "Qffffff",  "TimeUS,Des,P,I,D,FF,AFF" }, \
     { LOG_BAR2_MSG, sizeof(log_BARO), \
       "BAR2",  "Qffcf", "TimeUS,Alt,Press,Temp,CRt" }, \
+    { LOG_BAR3_MSG, sizeof(log_BARO), \
+      "BAR3",  "Qffcf", "TimeUS,Alt,Press,Temp,CRt" }, \
     { LOG_VIBE_MSG, sizeof(log_Vibe), \
       "VIBE", "QfffIII",     "TimeUS,VibeX,VibeY,VibeZ,Clip0,Clip1,Clip2" }, \
     { LOG_IMUDT_MSG, sizeof(log_IMUDT), \
@@ -889,7 +924,11 @@ enum LogMessages {
     LOG_IMUDT2_MSG,
     LOG_IMUDT3_MSG,
     LOG_ORGN_MSG,
-    LOG_RPM_MSG
+    LOG_RPM_MSG,
+    LOG_GPA_MSG,
+    LOG_GPA2_MSG,
+    LOG_RFND_MSG,
+    LOG_BAR3_MSG,
 };
 
 enum LogOriginType {

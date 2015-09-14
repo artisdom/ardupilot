@@ -151,6 +151,11 @@ float wrap_180_cd_float(float angle);
 float wrap_PI(float angle_in_radians);
 
 /*
+ * check if lat and lng match. Ignore altitude and options
+ */
+bool locations_are_same(const struct Location &loc1, const struct Location &loc2);
+
+/*
   print a int32_t lat/long in decimal degrees
  */
 void print_latlon(AP_HAL::BetterStream *s, int32_t lat_or_lon);
@@ -168,36 +173,82 @@ void wgsecef2llh(const Vector3d &ecef, Vector3d &llh);
 #endif
 
 // constrain a value
-float   constrain_float(float amt, float low, float high);
-int16_t constrain_int16(int16_t amt, int16_t low, int16_t high);
-int32_t constrain_int32(int32_t amt, int32_t low, int32_t high);
+// constrain a value
+static inline float constrain_float(float amt, float low, float high)
+{
+	// the check for NaN as a float prevents propogation of
+	// floating point errors through any function that uses
+	// constrain_float(). The normal float semantics already handle -Inf
+	// and +Inf
+	if (std::isnan(amt)) {
+		return (low+high)*0.5f;
+	}
+	return ((amt)<(low)?(low):((amt)>(high)?(high):(amt)));
+}
+// constrain a int16_t value
+static inline int16_t constrain_int16(int16_t amt, int16_t low, int16_t high) {
+	return ((amt)<(low)?(low):((amt)>(high)?(high):(amt)));
+}
+
+// constrain a int32_t value
+static inline int32_t constrain_int32(int32_t amt, int32_t low, int32_t high) {
+	return ((amt)<(low)?(low):((amt)>(high)?(high):(amt)));
+}
 
 //matrix algebra
 bool inverse(float x[], float y[], uint16_t dim);
 
 // degrees -> radians
-float radians(float deg);
+static inline float radians(float deg) {
+	return deg * DEG_TO_RAD;
+}
 
 // radians -> degrees
-float degrees(float rad);
+static inline float degrees(float rad) {
+	return rad * RAD_TO_DEG;
+}
 
 // square
-float sq(float v);
+static inline float sq(float v) {
+	return v*v;
+}
 
-// sqrt of sum of squares
-float pythagorous2(float a, float b);
-float pythagorous3(float a, float b, float c);
+// 2D vector length
+static inline float pythagorous2(float a, float b) {
+	return sqrtf(sq(a)+sq(b));
+}
+
+// 3D vector length
+static inline float pythagorous3(float a, float b, float c) {
+	return sqrtf(sq(a)+sq(b)+sq(c));
+}
 
 #ifdef radians
 #error "Build is including Arduino base headers"
 #endif
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <quan/min.hpp>
+#include <quan/max.hpp>
+using quan::min;
+using quan::max;
+#else
 /* The following three functions used to be arduino core macros */
 #define max(a,b) ((a)>(b)?(a):(b))
 #define min(a,b) ((a)<(b)?(a):(b))
 
-float maxf(float a, float b);
-float minf(float a, float b);
+#endif
 
+static inline float maxf(float a, float b)
+{
+    return (a>b?a:b);
+}
+
+static inline float minf(float a, float b)
+{
+    return (a<b?a:b);
+}
+
+#undef INLINE
 #endif // AP_MATH_H
 

@@ -116,7 +116,7 @@ const AP_Param::GroupInfo AP_GPS::var_info[] PROGMEM = {
     // @Param: GNSS_MODE
     // @DisplayName: GNSS system configuration
     // @Description: Bitmask for what GNSS system to use (all unchecked or zero to leave GPS as configured)
-    // @Values: 0:Leave as currently configured 1:GPS 2:SBAS 4:Galileo 8:Beidou 16:IMES 32:QZSS 64:GLONASS
+    // @Values: 0:Leave as currently configured, 1:GPS-NoSBAS, 3:GPS+SBAS, 4:Galileo-NoSBAS, 6:Galileo+SBAS, 8:Beidou, 51:GPS+IMES+QZSS+SBAS (Japan Only), 64:GLONASS, 66:GLONASS+SBAS, 67:GPS+GLONASS+SBAS
     // @Bitmask: 0:GPS, 1:SBAS, 2:Galileo, 3:Beidou, 4:IMES, 5:QZSS, 6:GLOSNASS
     // @User: Advanced
     // @RebootRequired: True
@@ -215,6 +215,14 @@ AP_GPS::detect_instance(uint8_t instance)
     state[instance].status = NO_GPS;
     state[instance].hdop = 9999;
 
+	#if GPS_RTK_AVAILABLE
+	// by default the sbf gps outputs no data on its port, until configured.
+	if (_type[instance] == GPS_TYPE_SBF) {
+		hal.console->print_P(PSTR(" SBF "));
+		new_gps = new AP_GPS_SBF(*this, state[instance], _port[instance]);
+	}
+	#endif // GPS_RTK_AVAILABLE
+	
     // record the time when we started detection. This is used to try
     // to avoid initialising a uBlox as a NMEA GPS
     if (dstate->detect_started_ms == 0) {
@@ -272,10 +280,6 @@ AP_GPS::detect_instance(uint8_t instance)
                  AP_GPS_SBP::_detect(dstate->sbp_detect_state, data)) {
             hal.console->print_P(PSTR(" SBP "));
             new_gps = new AP_GPS_SBP(*this, state[instance], _port[instance]);
-        }
-        else if (_type[instance] == GPS_TYPE_SBF) {
-            hal.console->print_P(PSTR(" SBF "));
-            new_gps = new AP_GPS_SBF(*this, state[instance], _port[instance]);
         }
 #endif // HAL_CPU_CLASS
 #if !defined(GPS_SKIP_SIRF_NMEA)
@@ -547,7 +551,7 @@ AP_GPS::send_mavlink_gps_raw(mavlink_channel_t chan)
         loc.lng,        // in 1E7 degrees
         loc.alt * 10UL, // in mm
         get_hdop(0),
-        65535,
+        get_vdop(0),
         ground_speed(0)*100,  // cm/s
         ground_course_cd(0), // 1/100 degrees,
         num_sats(0));
@@ -576,7 +580,7 @@ AP_GPS::send_mavlink_gps2_raw(mavlink_channel_t chan)
         loc.lng,
         loc.alt * 10UL,
         get_hdop(1),
-        65535,
+        get_vdop(1),
         ground_speed(1)*100,  // cm/s
         ground_course_cd(1), // 1/100 degrees,
         num_sats(1),

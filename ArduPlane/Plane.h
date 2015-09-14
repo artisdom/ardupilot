@@ -3,8 +3,8 @@
 #ifndef _PLANE_H
 #define _PLANE_H
 
-#define THISFIRMWARE "ArduPlane V3.4.0beta1"
-#define FIRMWARE_VERSION 3,4,0,FIRMWARE_VERSION_TYPE_BETA
+#define THISFIRMWARE "ArduPlane V3.4.0beta2"
+#define FIRMWARE_VERSION 3,4,0,FIRMWARE_VERSION_TYPE_BETA+1
 
 /*
    Lead developer: Andrew Tridgell
@@ -118,9 +118,14 @@ class AP_Arming_Plane : public AP_Arming
 {
 public:
     AP_Arming_Plane(const AP_AHRS &ahrs_ref, const AP_Baro &baro, Compass &compass,
-                    const enum HomeState &home_set, gcs_send_t_p gcs_send) :
-        AP_Arming(ahrs_ref, baro, compass, home_set, gcs_send) {}
+                    const enum HomeState &home_set) :
+        AP_Arming(ahrs_ref, baro, compass, home_set) {
+            AP_Param::setup_object_defaults(this, var_info);
+    }
     bool pre_arm_checks(bool report);
+
+    // var_info for holding Parameter information
+    static const struct AP_Param::GroupInfo var_info[];
 };
 
 /*
@@ -187,7 +192,7 @@ private:
 
 #if RANGEFINDER_ENABLED == ENABLED
     // rangefinder
-    RangeFinder rangefinder;
+    RangeFinder rangefinder {serial_manager};
 
     struct {
         bool in_range;
@@ -508,6 +513,9 @@ private:
     // previous value of is_flying()
     bool previous_is_flying;
 
+    // time since started flying in any mode in milliseconds
+    uint32_t started_flying_ms;
+
     // Navigation control variables
     // The instantaneous desired bank angle.  Hundredths of a degree
     int32_t nav_roll_cd;
@@ -654,8 +662,7 @@ private:
 #endif
 
     // Arming/Disarming mangement class
-    AP_Arming_Plane arming {ahrs, barometer, compass, home_is_set, 
-            FUNCTOR_BIND_MEMBER(&Plane::gcs_send_text_P, void, MAV_SEVERITY, const prog_char_t *)};
+    AP_Arming_Plane arming {ahrs, barometer, compass, home_is_set };
 
     AP_Param param_loader {var_info};
 
@@ -944,13 +951,14 @@ private:
     bool verify_command_callback(const AP_Mission::Mission_Command& cmd);
     void print_flight_mode(AP_HAL::BetterStream *port, uint8_t mode);
     void run_cli(AP_HAL::UARTDriver *port);
-    void restart_landing_sequence();
+    bool restart_landing_sequence();
     void log_init();
     uint32_t millis() const;
     uint32_t micros() const;
     void init_capabilities(void);
     void dataflash_periodic(void);
-
+    uint16_t throttle_min(void) const;
+    
 public:
     void mavlink_delay_cb();
     void failsafe_check(void);

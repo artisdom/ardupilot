@@ -180,7 +180,7 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: TKOFF_TDRAG_SPD1
     // @DisplayName: Takeoff tail dragger speed1
-    // @Description: This parameter sets the airspeed at which to stop holding the tail down and transition to rudder control of steering on the ground. When TKOFF_TDRAG_SPD1 is reached the pitch of the aircraft will be held level until TKOFF_ROTATE_SPD is reached, at which point the takeoff pitch specified in the mission will be used to "rotate" the pitch for takeoff climb. Set TKOFF_TDRAG_SPD1 to zero to go straight to rotation. This should be set to zero for hand launch and catapult launch. It should also be set to zero for tricycle undercarriages. For tail dragger aircraft it should be set just below the stall speed.
+    // @Description: This parameter sets the airspeed at which to stop holding the tail down and transition to rudder control of steering on the ground. When TKOFF_TDRAG_SPD1 is reached the pitch of the aircraft will be held level until TKOFF_ROTATE_SPD is reached, at which point the takeoff pitch specified in the mission will be used to "rotate" the pitch for takeoff climb. Set TKOFF_TDRAG_SPD1 to zero to go straight to rotation. This should be set to zero for hand launch and catapult launch. It should also be set to zero for tricycle undercarriages unless you are using the method above to genetly hold the nose wheel down. For tail dragger aircraft it should be set just below the stall speed.
     // @Units: m/s
     // @Range: 0 30
     // @Increment: 0.1
@@ -259,6 +259,13 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
     // @Range: 0 127
     // @User: Advanced
     GSCALAR(land_disarm_delay,       "LAND_DISARMDELAY",  20),
+
+    // @Param: LAND_ABORT_THR
+    // @DisplayName: Landing abort using throttle
+    // @Description: Allow a landing abort to trigger with a throttle > 95%
+    // @Values: 0:Disabled, 1:Enabled
+    // @User: Advanced
+    GSCALAR(land_abort_throttle_enable,       "LAND_ABORT_THR",  0),
 
 	// @Param: NAV_CONTROLLER
 	// @DisplayName: Navigation controller selection
@@ -984,8 +991,8 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 #endif
 
     // @Group: ARMING_
-    // @Path: ../libraries/AP_Arming/AP_Arming.cpp
-    GOBJECT(arming,                 "ARMING_", AP_Arming),
+    // @Path: arming_checks.cpp
+    GOBJECT(arming,                 "ARMING_", AP_Arming_Plane),
 
     // @Group: RELAY_
     // @Path: ../libraries/AP_Relay/AP_Relay.cpp

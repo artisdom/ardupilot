@@ -365,6 +365,14 @@ const AP_Param::GroupInfo Compass::var_info[] PROGMEM = {
     AP_GROUPINFO("ODI3",    29, Compass, _state[2].offdiagonals, 0),
 #endif
 
+    // @Param: CAL_FIT
+    // @DisplayName: Compass calibration fitness
+    // @Description: This controls the fitness level required for a successful compass calibration. A lower value makes for a stricter fit (less likely to pass). This is the value used for the primary magnetometer. Other magnetometers get double the value.
+    // @Range: 4 20
+    // @Increment: 0.1
+    // @User: Advanced
+    AP_GROUPINFO("CAL_FIT", 30, Compass, _calibration_threshold, 8.0f),
+    
     AP_GROUPEND
 };
 
@@ -443,7 +451,10 @@ void Compass::_detect_backends(void)
         return;
     }
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX && CONFIG_HAL_BOARD_SUBTYPE != HAL_BOARD_SUBTYPE_LINUX_NONE && CONFIG_HAL_BOARD_SUBTYPE != HAL_BOARD_SUBTYPE_LINUX_BEBOP
+#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX && CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RASPILOT
+    _add_backend(AP_Compass_HMC5843::detect_i2c(*this, hal.i2c));
+    _add_backend(AP_Compass_LSM303D::detect_spi(*this));
+#elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX && CONFIG_HAL_BOARD_SUBTYPE != HAL_BOARD_SUBTYPE_LINUX_NONE && CONFIG_HAL_BOARD_SUBTYPE != HAL_BOARD_SUBTYPE_LINUX_BEBOP
     _add_backend(AP_Compass_HMC5843::detect_i2c(*this, hal.i2c));
     _add_backend(AP_Compass_AK8963::detect_mpu9250(*this));
 #elif HAL_COMPASS_DEFAULT == HAL_COMPASS_HIL
@@ -624,7 +635,7 @@ Compass::calculate_heading(const Matrix3f &dcm_matrix) const
     float cos_pitch_sq = 1.0f-(dcm_matrix.c.x*dcm_matrix.c.x);
 
     // Tilt compensated magnetic field Y component:
-    const Vector3f &field = get_field();
+    const Vector3f &field = get_field_milligauss();
 
     float headY = field.y * dcm_matrix.c.z - field.z * dcm_matrix.c.y;
 
@@ -661,6 +672,11 @@ bool Compass::configured(uint8_t i)
 
     // exit immediately if all offsets are zero
     if (is_zero(get_offsets(i).length())) {
+        return false;
+    }
+
+    // exit immediately if all offsets (mG) are zero
+    if (is_zero(get_offsets_milligauss(i).length())) {
         return false;
     }
 

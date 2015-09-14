@@ -11,12 +11,16 @@ float Copter::get_smoothing_gain()
 
 // get_pilot_desired_angle - transform pilot's roll or pitch input into a desired lean angle
 // returns desired angle in centi-degrees
-void Copter::get_pilot_desired_lean_angles(float roll_in, float pitch_in, float &roll_out, float &pitch_out)
+void Copter::get_pilot_desired_lean_angles(float roll_in, float pitch_in, float &roll_out, float &pitch_out, float angle_max)
 {
-    float angle_max = constrain_float(aparm.angle_max,1000,8000);
-    float scaler = (float)angle_max/(float)ROLL_PITCH_INPUT_MAX;
+    // sanity check angle max parameter
+    aparm.angle_max = constrain_int16(aparm.angle_max,1000,8000);
 
-    // scale roll_in, pitch_in to correct units
+    // limit max lean angle
+    angle_max = constrain_float(angle_max, 1000, aparm.angle_max);
+
+    // scale roll_in, pitch_in to ANGLE_MAX parameter range
+    float scaler = aparm.angle_max/(float)ROLL_PITCH_INPUT_MAX;
     roll_in *= scaler;
     pitch_in *= scaler;
 
@@ -136,7 +140,7 @@ int16_t Copter::get_pilot_desired_throttle(int16_t throttle_control)
 
     // ensure reasonable throttle values
     throttle_control = constrain_int16(throttle_control,0,1000);
-    g.throttle_mid = constrain_int16(g.throttle_mid,300,700);
+    g.throttle_mid = constrain_int16(g.throttle_mid,g.throttle_min+50,700);
 
     // check throttle is above, below or in the deadband
     if (throttle_control < mid_stick) {
@@ -214,7 +218,7 @@ float Copter::get_throttle_pre_takeoff(float input_thr)
     }
 
     // TODO: does this parameter sanity check really belong here?
-    g.throttle_mid = constrain_int16(g.throttle_mid,300,700);
+    g.throttle_mid = constrain_int16(g.throttle_mid,g.throttle_min+50,700);
 
     float in_min = g.throttle_min;
     float in_max = get_takeoff_trigger_throttle();

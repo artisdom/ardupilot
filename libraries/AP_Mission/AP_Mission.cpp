@@ -528,6 +528,7 @@ bool AP_Mission::mavlink_to_mission_cmd(const mavlink_mission_item_t& packet, AP
 
     case MAV_CMD_NAV_LAND:                              // MAV ID: 21
         copy_location = true;
+        cmd.p1 = packet.param1;                         // abort target altitude(m)  (plane only)
         break;
 
     case MAV_CMD_NAV_TAKEOFF:                           // MAV ID: 22
@@ -536,7 +537,7 @@ bool AP_Mission::mavlink_to_mission_cmd(const mavlink_mission_item_t& packet, AP
         break;
 
     case MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT:           // MAV ID: 30
-        copy_location = true;                           // only using alt
+        copy_location = true;                           // lat/lng used for heading lock
         cmd.p1 = packet.param1;                         // Climb/Descend
                         // 0 = Neutral, cmd complete at +/- 5 of indicated alt.
                         // 1 = Climb, cmd complete at or above indicated alt.
@@ -859,6 +860,7 @@ bool AP_Mission::mission_cmd_to_mavlink(const AP_Mission::Mission_Command& cmd, 
 
     case MAV_CMD_NAV_LAND:                              // MAV ID: 21
         copy_location = true;
+        packet.param1 = cmd.p1;                        // abort target altitude(m)  (plane only)
         break;
 
     case MAV_CMD_NAV_TAKEOFF:                           // MAV ID: 22
@@ -867,7 +869,7 @@ bool AP_Mission::mission_cmd_to_mavlink(const AP_Mission::Mission_Command& cmd, 
         break;
 
     case MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT:           // MAV ID: 30
-        copy_location = true;                           //only using alt
+        copy_location = true;                           // lat/lng used for heading lock
         packet.param1 = cmd.p1;                         // Climb/Descend
                         // 0 = Neutral, cmd complete at +/- 5 of indicated alt.
                         // 1 = Climb, cmd complete at or above indicated alt.

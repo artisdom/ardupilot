@@ -1048,7 +1048,7 @@ void NavEKF::SelectFlowFusion()
         memset(&flowIncrStateDelta[0], 0, sizeof(flowIncrStateDelta));
         flowUpdateCount = 0;
         // Set the flow noise used by the fusion processes
-        R_LOS = sq(max(_flowNoise, 0.05f));
+        R_LOS = sq(max(_flowNoise.get(), 0.05f));
         // ensure that the covariance prediction is up to date before fusing data
         if (!covPredStep) CovariancePrediction();
         // Fuse the optical flow X and Y axis data into the main filter sequentially
@@ -3827,10 +3827,10 @@ bool NavEKF::getMagOffsets(Vector3f &magOffsets) const
 {
     // compass offsets are valid if we have finalised magnetic field initialisation and magnetic field learning is not prohibited and primary compass is valid
     if (secondMagYawInit && (_magCal != 2) && _ahrs->get_compass()->healthy()) {
-        magOffsets = _ahrs->get_compass()->get_offsets() - state.body_magfield*1000.0f;
+        magOffsets = _ahrs->get_compass()->get_offsets_milligauss() - state.body_magfield*1000.0f;
         return true;
     } else {
-        magOffsets = _ahrs->get_compass()->get_offsets();
+        magOffsets = _ahrs->get_compass()->get_offsets_milligauss();
         return false;
     }
 }
@@ -4223,7 +4223,6 @@ void NavEKF::readIMUData()
 // check for new valid GPS data and update stored measurement if available
 void NavEKF::readGpsData()
 {
-    bool goodToAlign = false;
     // check for new GPS data
     if ((_ahrs->get_gps().last_message_time_ms() != lastFixTime_ms) &&
             (_ahrs->get_gps().status() >= AP_GPS::GPS_OK_FIX_3D))
@@ -4272,15 +4271,12 @@ void NavEKF::readGpsData()
             useGpsVertVel = false;
         }
 
-        // Monitor quality of the GPS velocity data for alignment
-        goodToAlign = calcGpsGoodToAlign();
-
         // read latitutde and longitude from GPS and convert to local NE position relative to the stored origin
         // If we don't have an origin, then set it to the current GPS coordinates
         const struct Location &gpsloc = _ahrs->get_gps().location();
         if (validOrigin) {
             gpsPosNE = location_diff(EKF_origin, gpsloc);
-        } else if (goodToAlign){
+        } else if (calcGpsGoodToAlign()){
             // Set the NE origin to the current GPS position
             setOrigin();
             // Now we know the location we have an estimate for the magnetic field declination and adjust the earth field accordingly
@@ -4381,7 +4377,7 @@ void NavEKF::readMagData()
         lastMagUpdate = _ahrs->get_compass()->last_update_usec();
 
         // read compass data and scale to improve numerical conditioning
-        magData = _ahrs->get_compass()->get_field() * 0.001f;
+        magData = _ahrs->get_compass()->get_field_milligauss() * 0.001f;
 
         // get states stored at time closest to measurement time after allowance for measurement delay
         RecallStates(statesAtMagMeasTime, (imuSampleTime_ms - msecMagDelay));
@@ -4391,7 +4387,7 @@ void NavEKF::readMagData()
 
         // check if compass offsets have ben changed and adjust EKF bias states to maintain consistent innovations
         if (_ahrs->get_compass()->healthy()) {
-            Vector3f nowMagOffsets = _ahrs->get_compass()->get_offsets();
+            Vector3f nowMagOffsets = _ahrs->get_compass()->get_offsets_milligauss();
             bool changeDetected = (!is_equal(nowMagOffsets.x,lastMagOffsets.x) || !is_equal(nowMagOffsets.y,lastMagOffsets.y) || !is_equal(nowMagOffsets.z,lastMagOffsets.z));
             // Ignore bias changes before final mag field and yaw initialisation, as there may have been a compass calibration
             if (changeDetected && secondMagYawInit) {
@@ -5180,9 +5176,13 @@ void NavEKF::setTouchdownExpected(bool val)
     expectGndEffectTouchdown = val;
 }
 
-// Monitor GPS data to see if quality is good enough to initialise the EKF
-// Monitor magnetometer innovations to to see if the heading is good enough to use GPS
-// Return true if all criteria pass for 10 seconds
+/* Monitor GPS data to see if quality is good enough to initialise the EKF
+   Monitor magnetometer innovations to to see if the heading is good enough to use GPS
+   Return true if all criteria pass for 10 seconds
+   
+   We also record the failure reason so that prearm_failure_reason()
+   can give a good report to the user on why arming is failing
+*/
 bool NavEKF::calcGpsGoodToAlign(void)
 {
     // calculate absolute difference between GPS vert vel and inertial vert vel
@@ -5192,10 +5192,21 @@ bool NavEKF::calcGpsGoodToAlign(void)
     } else {
         velDiffAbs = 0.0f;
     }
+    
     // fail if velocity difference or reported speed accuracy greater than threshold
     bool gpsVelFail = (velDiffAbs > 1.0f) || (gpsSpdAccuracy > 1.0f);
-    // fail if not enough sats
-    bool numSatsFail = _ahrs->get_gps().num_sats() < 6;
+
+    if (velDiffAbs > 1.0f) {
+        hal.util->snprintf(prearm_fail_string,
+                           sizeof(prearm_fail_string),
+                           "GPS vert vel error %.1f", (double)velDiffAbs);
+    }
+    if (gpsSpdAccuracy > 1.0f) {
+        hal.util->snprintf(prearm_fail_string,
+                           sizeof(prearm_fail_string),
+                           "GPS speed error %.1f", (double)gpsSpdAccuracy);
+    }
+    
     // fail if horiziontal position accuracy not sufficient
     float hAcc = 0.0f;
     bool hAccFail;
@@ -5204,6 +5215,12 @@ bool NavEKF::calcGpsGoodToAlign(void)
     } else {
         hAccFail =  false;
     }
+    if (hAccFail) {
+        hal.util->snprintf(prearm_fail_string,
+                           sizeof(prearm_fail_string),
+                           "GPS horiz error %.1f", (double)hAcc);
+    }
+    
     // fail if magnetometer innovations are outside limits indicating bad yaw
     // with bad yaw we are unable to use GPS
     bool yawFail;
@@ -5212,19 +5229,52 @@ bool NavEKF::calcGpsGoodToAlign(void)
     } else {
         yawFail = false;
     }
-    // record time of fail
-    // assume  fail first time called
-    if (gpsVelFail || numSatsFail || hAccFail || yawFail || lastGpsVelFail_ms == 0) {
+    if (yawFail) {
+        hal.util->snprintf(prearm_fail_string,
+                           sizeof(prearm_fail_string),
+                           "Mag yaw error x=%.1f y=%.1f",
+                           (double)magTestRatio.x,
+                           (double)magTestRatio.y);
+    }
+
+    // fail if not enough sats
+    bool numSatsFail = _ahrs->get_gps().num_sats() < 6;
+    if (numSatsFail) {
+        hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string),
+                           "GPS numsats %u (needs 6)", _ahrs->get_gps().num_sats());
+    }
+    
+    // record time of fail if failing
+    if (gpsVelFail || numSatsFail || hAccFail || yawFail) {
         lastGpsVelFail_ms = imuSampleTime_ms;
     }
+
+    if (lastGpsVelFail_ms == 0) {
+        // first time through, start with a failure
+        lastGpsVelFail_ms = imuSampleTime_ms;
+        hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string), "EKF warmup");
+    }
+    
     // DEBUG PRINT
     //hal.console->printf("velDiff = %5.2f, nSats = %i, hAcc = %5.2f, sAcc = %5.2f, delTime = %i\n", velDiffAbs, _ahrs->get_gps().num_sats(), hAcc, gpsSpdAccuracy, imuSampleTime_ms - lastGpsVelFail_ms);
     // continuous period without fail required to return healthy
+
     if (imuSampleTime_ms - lastGpsVelFail_ms > 10000) {
+        // we have not failed in the last 10 seconds
         return true;
-    } else {
-        return false;
     }
+
+    return false;
+}
+
+// report the reason for why the backend is refusing to initialise
+const char *NavEKF::prearm_failure_reason(void) const
+{
+    if (imuSampleTime_ms - lastGpsVelFail_ms > 10000) {
+        // we are not failing
+        return nullptr;
+    }
+    return prearm_fail_string;
 }
 
 // Read the range finder and take new measurements if available

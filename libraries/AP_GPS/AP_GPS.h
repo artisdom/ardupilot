@@ -131,6 +131,7 @@ public:
         float ground_speed;                 ///< ground speed in m/sec
         int32_t ground_course_cd;           ///< ground course in 100ths of a degree
         uint16_t hdop;                      ///< horizontal dilution of precision in cm
+        uint16_t vdop;                      ///< vertical dilution of precision in cm
         uint8_t num_sats;                   ///< Number of visible satelites        
         Vector3f velocity;                  ///< 3D velocitiy in m/s, in NED format
         float speed_accuracy;
@@ -279,6 +280,14 @@ public:
     }
     uint16_t get_hdop() const {
         return get_hdop(primary_instance);
+    }
+
+    // vertical dilution of precision
+    uint16_t get_vdop(uint8_t instance) const {
+        return _GPS_STATE(instance).vdop;
+    }
+    uint16_t get_vdop() const {
+        return get_vdop(primary_instance);
     }
 
     // the time we got our last fix in system milliseconds. This is

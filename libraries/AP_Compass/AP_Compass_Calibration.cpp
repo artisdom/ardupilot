@@ -2,6 +2,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include "Compass.h"
 #include <AP_Notify/AP_Notify.h>
+#include <GCS_MAVLink/GCS.h>
 
 extern AP_HAL::HAL& hal;
 
@@ -46,12 +47,16 @@ Compass::start_calibration(uint8_t i, bool retry, bool autosave, float delay, bo
         AP_Notify::events.initiated_compass_cal = 1;
     }
     if (i == get_primary()) {
-        _calibrator[i].set_tolerance(8);
+        _calibrator[i].set_tolerance(_calibration_threshold);
     } else {
-        _calibrator[i].set_tolerance(16);
+        _calibrator[i].set_tolerance(_calibration_threshold*2);
     }
     _calibrator[i].start(retry, autosave, delay);
     _compass_cal_autoreboot = autoreboot;
+
+    // disable compass learning both for calibration and after completion
+    _learn.set_and_save(0);
+
     return true;
 }
 
@@ -182,6 +187,11 @@ Compass::send_mag_cal_progress(mavlink_channel_t chan)
 
             memset(completion_mask, 0, sizeof(completion_mask));
 
+            // ensure we don't try to send with no space available
+            if (!HAVE_PAYLOAD_SPACE(chan, MAG_CAL_PROGRESS)) {
+                return;
+            }
+            
             mavlink_msg_mag_cal_progress_send(
                 chan,
                 compass_id, cal_mask,
@@ -207,6 +217,11 @@ void Compass::send_mag_cal_report(mavlink_channel_t chan)
             _calibrator[compass_id].get_calibration(ofs, diag, offdiag);
             uint8_t autosaved = _calibrator[compass_id].get_autosave();
 
+            // ensure we don't try to send with no space available
+            if (!HAVE_PAYLOAD_SPACE(chan, MAG_CAL_REPORT)) {
+                return;
+            }
+            
             mavlink_msg_mag_cal_report_send(
                 chan,
                 compass_id, cal_mask,

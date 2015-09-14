@@ -320,6 +320,10 @@ void Plane::do_takeoff(const AP_Mission::Mission_Command& cmd)
     set_next_WP(cmd.content.location);
     // pitch in deg, airspeed  m/s, throttle %, track WP 1 or 0
     auto_state.takeoff_pitch_cd        = (int16_t)cmd.p1 * 100;
+    if (auto_state.takeoff_pitch_cd <= 0) {
+        // if the mission doesn't specify a pitch use 4 degrees
+        auto_state.takeoff_pitch_cd = 400;
+    }
     auto_state.takeoff_altitude_rel_cm = next_WP_loc.alt - home.alt;
     next_WP_loc.lat = home.lat + 10;
     next_WP_loc.lng = home.lng + 10;
@@ -329,7 +333,7 @@ void Plane::do_takeoff(const AP_Mission::Mission_Command& cmd)
 
     // zero locked course
     steer_state.locked_course_err = 0;
-    
+    steer_state.hold_course_cd = -1;
 }
 
 void Plane::do_nav_wp(const AP_Mission::Mission_Command& cmd)
@@ -341,6 +345,19 @@ void Plane::do_land(const AP_Mission::Mission_Command& cmd)
 {
     auto_state.commanded_go_around = false;
     set_next_WP(cmd.content.location);
+
+    // configure abort altitude and pitch
+    // if NAV_LAND has an abort altitude then use it, else use last takeoff, else use 50m
+    if (cmd.p1 > 0) {
+        auto_state.takeoff_altitude_rel_cm = (int16_t)cmd.p1 * 100;
+    } else if (auto_state.takeoff_altitude_rel_cm <= 0) {
+        auto_state.takeoff_altitude_rel_cm = 3000;
+    }
+
+    if (auto_state.takeoff_pitch_cd <= 0) {
+        // If no takeoff command has ever been used, default to a conservative 10deg
+        auto_state.takeoff_pitch_cd = 1000;
+    }
 }
 
 void Plane::loiter_set_direction_wp(const AP_Mission::Mission_Command& cmd)
@@ -376,6 +393,26 @@ void Plane::do_loiter_time(const AP_Mission::Mission_Command& cmd)
 
 void Plane::do_continue_and_change_alt(const AP_Mission::Mission_Command& cmd)
 {
+    // select heading method. Either mission, gps bearing projection or yaw based
+    // If prev_WP_loc and next_WP_loc are different then an accurate wp based bearing can
+    // be computed. However, if we had just changed modes before this, such as an aborted landing
+    // via mode change, the prev and next wps are the same.
+    float bearing;
+    if (!locations_are_same(prev_WP_loc, next_WP_loc)) {
+        // use waypoint based bearing, this is the usual case
+        steer_state.hold_course_cd = -1;
+    } else if (ahrs.get_gps().status() >= AP_GPS::GPS_OK_FIX_2D) {
+        // use gps ground course based bearing hold
+        steer_state.hold_course_cd = -1;
+        bearing = ahrs.get_gps().ground_course_cd() * 0.01f;
+        location_update(next_WP_loc, bearing, 1000); // push it out 1km
+    } else {
+        // use yaw based bearing hold
+        steer_state.hold_course_cd = wrap_360_cd(ahrs.yaw_sensor);
+        bearing = ahrs.yaw_sensor * 0.01f;
+        location_update(next_WP_loc, bearing, 1000); // push it out 1km
+    }
+
     next_WP_loc.alt = cmd.content.location.alt + home.alt;
     condition_value = cmd.p1;
     reset_offset_altitude();
@@ -649,6 +686,24 @@ bool Plane::verify_RTL()
 
 bool Plane::verify_continue_and_change_alt()
 {
+    // is waypoint info not available and heading hold is?
+    if (locations_are_same(prev_WP_loc, next_WP_loc) &&
+        steer_state.hold_course_cd != -1) {
+        //keep flying the same course with fixed steering heading computed at start if cmd
+        nav_controller->update_heading_hold(steer_state.hold_course_cd);
+    }
+    else {
+        // Is the next_WP less than 200 m away?
+        if (get_distance(current_loc, next_WP_loc) < 200.0f) {
+            //push another 300 m down the line
+            int32_t next_wp_bearing_cd = get_bearing_cd(prev_WP_loc, next_WP_loc);
+            location_update(next_WP_loc, next_wp_bearing_cd * 0.01f, 300.0f);
+        }
+
+        //keep flying the same course
+        nav_controller->update_waypoint(prev_WP_loc, next_WP_loc);
+    }
+
     //climbing?
     if (condition_value == 1 && adjusted_altitude_cm() >= next_WP_loc.alt) {
         return true;
@@ -662,16 +717,6 @@ bool Plane::verify_continue_and_change_alt()
     else if (labs(adjusted_altitude_cm() - next_WP_loc.alt) <= 500) {
         return true;
     }
-   
-    // Is the next_WP less than 200 m away?
-    if (get_distance(current_loc, next_WP_loc) < 200.0f) {
-        //push another 300 m down the line
-        int32_t next_wp_bearing_cd = get_bearing_cd(prev_WP_loc, next_WP_loc);
-        location_update(next_WP_loc, next_wp_bearing_cd * 0.01f, 300.0f);
-    }
-
-    //keep flying the same course
-    nav_controller->update_waypoint(prev_WP_loc, next_WP_loc);
 
     return false;
 }

@@ -21,6 +21,7 @@
 #define AP_COMPASS_TYPE_VRBRAIN         0x05
 #define AP_COMPASS_TYPE_AK8963_MPU9250  0x06
 #define AP_COMPASS_TYPE_AK8963_I2C      0x07
+#define AP_COMPASS_TYPE_LSM303D         0x08
 
 // motor compensation types (for use with motor_comp_enabled)
 #define AP_COMPASS_MOT_COMP_DISABLED    0x00
@@ -29,6 +30,8 @@
 
 // setup default mag orientation for some board types
 #if CONFIG_HAL_BOARD == HAL_BOARD_APM1
+# define MAG_BOARD_ORIENTATION ROTATION_ROLL_180
+#elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX && CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RASPILOT
 # define MAG_BOARD_ORIENTATION ROTATION_ROLL_180
 #else
 # define MAG_BOARD_ORIENTATION ROTATION_NONE
@@ -113,6 +116,8 @@ public:
     /// Return the current field as a Vector3f
     const Vector3f &get_field(uint8_t i) const { return _state[i].field; }
     const Vector3f &get_field(void) const { return get_field(get_primary()); }
+    const Vector3f get_field_milligauss(uint8_t i) const { return get_field(i) * _state[i].milligauss_ratio; }
+    const Vector3f get_field_milligauss(void) const { return get_field_milligauss(get_primary()); }
 
     // raw/unfiltered measurement interface
     uint32_t raw_meas_time_us(uint8_t i) const { return _state[i].raw_meas_time_us; }
@@ -127,7 +132,7 @@ public:
     bool has_unfiltered_field() const { return has_unfiltered_field(get_primary()); }
 
     const Vector3f &get_raw_field(uint8_t i) const { return _state[i].raw_field; }
-    const Vector3f &get_raw_field(void) const { return get_unfiltered_field(get_primary()); }
+    const Vector3f &get_raw_field(void) const { return get_raw_field(get_primary()); }
 
     const Vector3f &get_unfiltered_field(uint8_t i) const { return _state[i].unfiltered_field; }
     const Vector3f &get_unfiltered_field(void) const { return get_unfiltered_field(get_primary()); }
@@ -171,6 +176,8 @@ public:
     ///
     const Vector3f &get_offsets(uint8_t i) const { return _state[i].offset; }
     const Vector3f &get_offsets(void) const { return get_offsets(get_primary()); }
+    const Vector3f get_offsets_milligauss(uint8_t i) const { return get_offsets(i) * _state[i].milligauss_ratio; }
+    const Vector3f get_offsets_milligauss(void) const { return get_offsets_milligauss(get_primary()); }
 
     /// Sets the initial location used to get declination
     ///
@@ -380,6 +387,7 @@ private:
 
         // corrected magnetic field strength
         Vector3f    field;
+        float       milligauss_ratio;
 
         // when we last got data
         uint32_t    last_update_ms;
@@ -398,6 +406,8 @@ private:
 
     // if we want HIL only
     bool _hil_mode:1;
+
+    AP_Float _calibration_threshold;
 };
 
 #include "AP_Compass_Backend.h"
@@ -405,4 +415,5 @@ private:
 #include "AP_Compass_HIL.h"
 #include "AP_Compass_AK8963.h"
 #include "AP_Compass_PX4.h"
+#include "AP_Compass_LSM303D.h"
 #endif

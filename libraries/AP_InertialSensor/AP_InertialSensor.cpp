@@ -344,6 +344,7 @@ AP_InertialSensor::AP_InertialSensor() :
 #endif
 
         _accel_max_abs_offsets[i] = 3.5f;
+        _accel_sample_rates[i] = 0;
     }
 #if INS_VIBRATION_CHECK
     for (uint8_t i=0; i<INS_VIBRATION_CHECK_INSTANCES; i++) {
@@ -511,6 +512,10 @@ AP_InertialSensor::_detect_backends(void)
     _add_backend(AP_InertialSensor_LSM9DS0::detect(*this));
 #elif HAL_INS_DEFAULT == HAL_INS_L3G4200D
     _add_backend(AP_InertialSensor_L3G4200D::detect(*this));
+#elif HAL_INS_DEFAULT == HAL_INS_RASPILOT
+    //_add_backend(AP_InertialSensor_L3GD20::detect);
+    //_add_backend(AP_InertialSensor_LSM303D::detect);
+    _add_backend(AP_InertialSensor_MPU6000::detect_spi(*this));
 #else
     #error Unrecognised HAL_INS_TYPE setting
 #endif
@@ -553,6 +558,9 @@ bool AP_InertialSensor::calibrate_accel(AP_InertialSensor_UserInteract* interact
                                         float &trim_roll,
                                         float &trim_pitch)
 {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   using quan::min;
+#endif
     uint8_t num_accels = min(get_accel_count(), INS_MAX_INSTANCES);
     Vector3f samples[INS_MAX_INSTANCES][6];
     Vector3f new_offsets[INS_MAX_INSTANCES];
@@ -902,7 +910,7 @@ bool AP_InertialSensor::use_accel(uint8_t instance) const
 void
 AP_InertialSensor::_init_gyro()
 {
-    uint8_t num_gyros = min(get_gyro_count(), INS_MAX_INSTANCES);
+    uint8_t num_gyros = quan::min(get_gyro_count(), INS_MAX_INSTANCES);
     Vector3f last_average[INS_MAX_INSTANCES], best_avg[INS_MAX_INSTANCES];
     Vector3f new_gyro_offset[INS_MAX_INSTANCES];
     float best_diff[INS_MAX_INSTANCES];

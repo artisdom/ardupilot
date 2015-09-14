@@ -31,7 +31,7 @@ private:
     bool                read_register(uint8_t address, uint8_t *value);
     bool                write_register(uint8_t address, uint8_t value);
 
-    bool                _calibrate(uint8_t calibration_gain, uint16_t expected_x, uint16_t expected_yz, float gain_multiple);
+    bool                _calibrate(uint8_t calibration_gain, uint16_t expected_x, uint16_t expected_yz);
     bool                _detect_version();
 
     uint32_t            _retry_time; // when unhealthy the millis() value to retry at
@@ -48,6 +48,7 @@ private:
     uint8_t             _compass_instance;
     uint8_t             _product_id;
 
+    float               _gain_multiple;
 public:
     // detect the sensor
     static AP_Compass_Backend *detect_i2c(Compass &compass,

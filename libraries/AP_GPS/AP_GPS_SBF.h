@@ -82,6 +82,14 @@ private:
          uint16_t MeanCorrAge;
          uint32_t SignalInfo;
          uint8_t AlertFlag;
+		 // rev1
+		 uint8_t NrBases;
+		 uint16_t PPPInfo;
+		 // rev2
+		 uint16_t Latency;
+		 uint16_t HAccuracy;
+		 uint16_t VAccuracy;
+		 uint8_t Misc;
     };
   
     struct PACKED msg4001
@@ -101,7 +109,7 @@ private:
 	union PACKED msgbuffer {
         msg4007 msg4007u;
 		msg4001 msg4001u;
-        uint8_t bytes[];
+        uint8_t bytes[128];
     };
 	
     struct sbf_msg_parser_t

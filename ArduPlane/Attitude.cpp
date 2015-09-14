@@ -454,7 +454,8 @@ void Plane::calc_nav_yaw_ground(void)
 {
     if (gps.ground_speed() < 1 && 
         channel_throttle->control_in == 0 &&
-        flight_stage != AP_SpdHgtControl::FLIGHT_TAKEOFF) {
+        flight_stage != AP_SpdHgtControl::FLIGHT_TAKEOFF &&
+        flight_stage != AP_SpdHgtControl::FLIGHT_LAND_ABORT) {
         // manual rudder control while still
         steer_state.locked_course = false;
         steer_state.locked_course_err = 0;
@@ -463,7 +464,8 @@ void Plane::calc_nav_yaw_ground(void)
     }
 
     float steer_rate = (rudder_input/4500.0f) * g.ground_steer_dps;
-    if (flight_stage == AP_SpdHgtControl::FLIGHT_TAKEOFF) {
+    if (flight_stage == AP_SpdHgtControl::FLIGHT_TAKEOFF ||
+        flight_stage == AP_SpdHgtControl::FLIGHT_LAND_ABORT) {
         steer_rate = 0;
     }
     if (!is_zero(steer_rate)) {
@@ -472,7 +474,8 @@ void Plane::calc_nav_yaw_ground(void)
     } else if (!steer_state.locked_course) {
         // pilot has released the rudder stick or we are still - lock the course
         steer_state.locked_course = true;
-        if (flight_stage != AP_SpdHgtControl::FLIGHT_TAKEOFF) {
+        if (flight_stage != AP_SpdHgtControl::FLIGHT_TAKEOFF &&
+            flight_stage != AP_SpdHgtControl::FLIGHT_LAND_ABORT) {
             steer_state.locked_course_err = 0;
         }
     }
@@ -580,8 +583,26 @@ bool Plane::suppress_throttle(void)
         return false;
     }
 
+    bool gps_movement = (gps.status() >= AP_GPS::GPS_OK_FIX_2D && gps.ground_speed() >= 5);
+    
     if (control_mode==AUTO && 
         auto_state.takeoff_complete == false) {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   using quan::max;
+#endif
+
+        uint32_t launch_duration_ms = ((int32_t)g.takeoff_throttle_delay)*100 + 2000;
+        if (is_flying() &&
+            millis() - started_flying_ms > max(launch_duration_ms,5000U) && // been flying >5s in any mode
+            adjusted_relative_altitude_cm() > 500 && // are >5m above AGL/home
+            labs(ahrs.pitch_sensor) < 3000 && // not high pitch, which happens when held before launch
+            gps_movement) { // definate gps movement
+            // we're already flying, do not suppress the throttle. We can get
+            // stuck in this condition if we reset a mission and cmd 1 is takeoff
+            // but we're currently flying around below the takeoff altitude
+            throttle_suppressed = false;
+            return false;
+        }
         if (auto_takeoff_check()) {
             // we're in auto takeoff 
             throttle_suppressed = false;
@@ -594,19 +615,18 @@ bool Plane::suppress_throttle(void)
     if (relative_altitude_abs_cm() >= 1000) {
         // we're more than 10m from the home altitude
         throttle_suppressed = false;
-        gcs_send_text_fmt(PSTR("Throttle unsuppressed - altitude %.2f"), 
+        gcs_send_text_fmt(PSTR("Throttle enabled - altitude %.2f"), 
                           (double)(relative_altitude_abs_cm()*0.01f));
         return false;
     }
 
-    if (gps.status() >= AP_GPS::GPS_OK_FIX_2D && 
-        gps.ground_speed() >= 5) {
+    if (gps_movement) {
         // if we have an airspeed sensor, then check it too, and
         // require 5m/s. This prevents throttle up due to spiky GPS
         // groundspeed with bad GPS reception
         if ((!ahrs.airspeed_sensor_enabled()) || airspeed.get_airspeed() >= 5) {
             // we're moving at more than 5 m/s
-            gcs_send_text_fmt(PSTR("Throttle unsuppressed - speed %.2f airspeed %.2f"), 
+            gcs_send_text_fmt(PSTR("Throttle enabled - speed %.2f airspeed %.2f"), 
                               (double)gps.ground_speed(),
                               (double)airspeed.get_airspeed());
             throttle_suppressed = false;
@@ -729,6 +749,14 @@ void Plane::set_servos_idle(void)
     channel_rudder->output();
     channel_throttle->output_trim();
 }
+
+/*
+  return minimum throttle, taking account of throttle reversal
+ */
+uint16_t Plane::throttle_min(void) const
+{
+    return channel_throttle->get_reverse() ? channel_throttle->radio_max : channel_throttle->radio_min;
+};
 
 
 /*****************************************
@@ -856,7 +884,8 @@ void Plane::set_servos(void)
         if (control_mode == AUTO && flight_stage == AP_SpdHgtControl::FLIGHT_LAND_FINAL) {
             min_throttle = 0;
         }
-        if (control_mode == AUTO && flight_stage == AP_SpdHgtControl::FLIGHT_TAKEOFF) {
+        if (control_mode == AUTO &&
+            (flight_stage == AP_SpdHgtControl::FLIGHT_TAKEOFF || flight_stage == AP_SpdHgtControl::FLIGHT_LAND_ABORT)) {
             if(aparm.takeoff_throttle_max != 0) {
                 max_throttle = aparm.takeoff_throttle_max;
             } else {
@@ -933,6 +962,7 @@ void Plane::set_servos(void)
         if (control_mode == AUTO) {
             switch (flight_stage) {
             case AP_SpdHgtControl::FLIGHT_TAKEOFF:
+            case AP_SpdHgtControl::FLIGHT_LAND_ABORT:
                 if (g.takeoff_flap_percent != 0) {
                     auto_flap_percent = g.takeoff_flap_percent;
                 }
@@ -980,20 +1010,22 @@ void Plane::set_servos(void)
         channel_output_mixer(g.elevon_output, channel_pitch->radio_out, channel_roll->radio_out);
     }
 
-    //send throttle to 0 or MIN_PWM if not yet armed
     if (!arming.is_armed()) {
         //Some ESCs get noisy (beep error msgs) if PWM == 0.
         //This little segment aims to avoid this.
         switch (arming.arming_required()) { 
-            case AP_Arming::YES_MIN_PWM:
-                channel_throttle->radio_out = channel_throttle->radio_min;
+        case AP_Arming::NO:
+            //keep existing behavior: do nothing to radio_out
+            //(don't disarm throttle channel even if AP_Arming class is)
             break;
-            case AP_Arming::YES_ZERO_PWM:
-                channel_throttle->radio_out = 0;
+
+        case AP_Arming::YES_ZERO_PWM:
+            channel_throttle->radio_out = 0;
             break;
-            default:
-                //keep existing behavior: do nothing to radio_out
-                //(don't disarm throttle channel even if AP_Arming class is)
+
+        case AP_Arming::YES_MIN_PWM:
+        default:
+            channel_throttle->radio_out = throttle_min();
             break;
         }
     }

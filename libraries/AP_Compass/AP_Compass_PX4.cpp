@@ -95,6 +95,8 @@ bool AP_Compass_PX4::init(void)
         set_external(_instance[i], ioctl(_mag_fd[i], MAGIOCGEXTERNAL, 0) > 0);
         _count[i] = 0;
         _sum[i].zero();
+
+        set_milligauss_ratio(_instance[i], 1.0f);
     }
 
     // give the driver a chance to run, and gather one sample

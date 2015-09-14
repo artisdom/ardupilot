@@ -497,15 +497,12 @@ void Plane::handle_auto_mode(void)
         nav_cmd_id = auto_rtl_command.id;
     }
 
-    switch(nav_cmd_id) {
-    case MAV_CMD_NAV_TAKEOFF:
+    if (nav_cmd_id == MAV_CMD_NAV_TAKEOFF ||
+        (nav_cmd_id == MAV_CMD_NAV_LAND && flight_stage == AP_SpdHgtControl::FLIGHT_LAND_ABORT)) {
         takeoff_calc_roll();
         takeoff_calc_pitch();
         calc_throttle();
-
-        break;
-
-    case MAV_CMD_NAV_LAND:
+    } else if (nav_cmd_id == MAV_CMD_NAV_LAND) {
         calc_nav_roll();
         calc_nav_pitch();
         
@@ -521,17 +518,16 @@ void Plane::handle_auto_mode(void)
             // zero throttle
             channel_throttle->servo_out = 0;
         }
-        break;
-        
-    default:
+    } else {
         // we are doing normal AUTO flight, the special cases
         // are for takeoff and landing
-        steer_state.hold_course_cd = -1;
+        if (nav_cmd_id != MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT) {
+            steer_state.hold_course_cd = -1;
+        }
         auto_state.land_complete = false;
         calc_nav_roll();
         calc_nav_pitch();
         calc_throttle();
-        break;
     }
 }
 
@@ -777,10 +773,12 @@ void Plane::update_navigation()
  */
 void Plane::set_flight_stage(AP_SpdHgtControl::FlightStage fs) 
 {
-    //if just now entering land flight stage
-    if (fs == AP_SpdHgtControl::FLIGHT_LAND_APPROACH &&
-        flight_stage != AP_SpdHgtControl::FLIGHT_LAND_APPROACH) {
+    if (fs == flight_stage) {
+        return;
+    }
 
+    switch (fs) {
+    case AP_SpdHgtControl::FLIGHT_LAND_APPROACH:
 #if GEOFENCE_ENABLED == ENABLED 
         if (g.fence_autoenable == 1) {
             if (! geofence_set_enabled(false, AUTO_TOGGLED)) {
@@ -796,8 +794,19 @@ void Plane::set_flight_stage(AP_SpdHgtControl::FlightStage fs)
             }
         }
 #endif
+        break;
+
+    case AP_SpdHgtControl::FLIGHT_LAND_ABORT:
+        gcs_send_text_fmt(PSTR("Landing aborted via throttle, climbing to %dm"), auto_state.takeoff_altitude_rel_cm/100);
+        break;
+
+    case AP_SpdHgtControl::FLIGHT_LAND_FINAL:
+    case AP_SpdHgtControl::FLIGHT_NORMAL:
+    case AP_SpdHgtControl::FLIGHT_TAKEOFF:
+        break;
     }
     
+
     flight_stage = fs;
 }
 
@@ -837,11 +846,18 @@ void Plane::update_flight_stage(void)
         if (control_mode==AUTO) {
             if (auto_state.takeoff_complete == false) {
                 set_flight_stage(AP_SpdHgtControl::FLIGHT_TAKEOFF);
-            } else if (mission.get_current_nav_cmd().id == MAV_CMD_NAV_LAND && 
-                       auto_state.land_complete == true) {
-                set_flight_stage(AP_SpdHgtControl::FLIGHT_LAND_FINAL);
             } else if (mission.get_current_nav_cmd().id == MAV_CMD_NAV_LAND) {
-                set_flight_stage(AP_SpdHgtControl::FLIGHT_LAND_APPROACH); 
+
+                if ((g.land_abort_throttle_enable && channel_throttle->control_in > 95) ||
+                        flight_stage == AP_SpdHgtControl::FLIGHT_LAND_ABORT){
+                    // abort mode is sticky, it must complete while executing NAV_LAND
+                    set_flight_stage(AP_SpdHgtControl::FLIGHT_LAND_ABORT);
+                } else if (auto_state.land_complete == true) {
+                    set_flight_stage(AP_SpdHgtControl::FLIGHT_LAND_FINAL);
+                } else {
+                    set_flight_stage(AP_SpdHgtControl::FLIGHT_LAND_APPROACH);
+                }
+
             } else {
                 set_flight_stage(AP_SpdHgtControl::FLIGHT_NORMAL);
             }

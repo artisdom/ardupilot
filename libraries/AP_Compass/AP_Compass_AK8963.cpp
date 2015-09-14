@@ -178,6 +178,8 @@ bool AP_Compass_AK8963::init()
     set_dev_id(_compass_instance, _bus->get_dev_id());
     hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&AP_Compass_AK8963::_update, void));
 
+    set_milligauss_ratio(_compass_instance, 10.0f);
+    
     _bus_sem->give();
     hal.scheduler->resume_timer_procs();
 
@@ -204,9 +206,11 @@ void AP_Compass_AK8963::read()
 
     hal.scheduler->suspend_timer_procs();
     auto field = _get_filtered_field();
+
     _reset_filter();
     hal.scheduler->resume_timer_procs();
     _make_factory_sensitivity_adjustment(field);
+    _make_adc_sensitivity_adjustment(field);
 
 #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP
     field.rotate(ROTATION_YAW_90);
@@ -226,6 +230,13 @@ void AP_Compass_AK8963::_reset_filter()
 {
     _mag_x_accum = _mag_y_accum = _mag_z_accum = 0;
     _accum_count = 0;
+}
+
+void AP_Compass_AK8963::_make_adc_sensitivity_adjustment(Vector3f& field) const
+{
+    static const float ADC_16BIT_RESOLUTION = 0.15f;
+
+    field *= ADC_16BIT_RESOLUTION;
 }
 
 void AP_Compass_AK8963::_make_factory_sensitivity_adjustment(Vector3f& field) const

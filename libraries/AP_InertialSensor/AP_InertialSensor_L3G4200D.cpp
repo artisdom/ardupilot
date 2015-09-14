@@ -271,12 +271,7 @@ bool AP_InertialSensor_L3G4200D::update(void)
     _have_sample = false;
     pthread_spin_unlock(&_data_lock);
 
-    // Adjust for chip scaling to get m/s/s
-    accel *= ADXL345_ACCELEROMETER_SCALE_M_S;
     _publish_accel(_accel_instance, accel);
-
-    // Adjust for chip scaling to get radians/sec
-    gyro *= L3G4200D_GYRO_SCALE_R_S;
     _publish_gyro(_gyro_instance, gyro);
 
     if (_last_filter_hz != _accel_filter_cutoff()) {
@@ -322,7 +317,11 @@ void AP_InertialSensor_L3G4200D::_accumulate(void)
         if (hal.i2c->readRegisters(L3G4200D_I2C_ADDRESS, L3G4200D_REG_XL | L3G4200D_REG_AUTO_INCREMENT, 
                                    sizeof(buffer), (uint8_t *)&buffer[0][0]) == 0) {
             for (uint8_t i=0; i<num_samples_available; i++) {
-                _data[_data_idx].gyro_filtered = _gyro_filter.apply(Vector3f(buffer[i][0], -buffer[i][1], -buffer[i][2]));
+                Vector3f gyro = Vector3f(buffer[i][0], -buffer[i][1], -buffer[i][2]);
+                // Adjust for chip scaling to get radians/sec
+                gyro *= L3G4200D_GYRO_SCALE_R_S;
+                _rotate_and_correct_gyro(_gyro_instance, gyro);
+                _data[_data_idx].gyro_filtered = _gyro_filter.apply(gyro);
                 _have_gyro_sample = true;
             }
         }
@@ -342,7 +341,12 @@ void AP_InertialSensor_L3G4200D::_accumulate(void)
                                            sizeof(buffer[0]), num_samples_available,
                                            (uint8_t *)&buffer[0][0]) == 0) {
             for (uint8_t i=0; i<num_samples_available; i++) {
-                _data[_data_idx].accel_filtered = _accel_filter.apply(Vector3f(buffer[i][0], -buffer[i][1], -buffer[i][2]));
+                Vector3f accel = Vector3f(buffer[i][0], -buffer[i][1], -buffer[i][2]);
+                // Adjust for chip scaling to get m/s/s
+                accel *= ADXL345_ACCELEROMETER_SCALE_M_S;
+                _rotate_and_correct_accel(_accel_instance, accel);
+                _notify_new_accel_raw_sample(_accel_instance, accel);
+                _data[_data_idx].accel_filtered = _accel_filter.apply(accel);
                 _have_accel_sample = true;
             }
         }

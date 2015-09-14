@@ -144,7 +144,7 @@ private:
     AP_Baro barometer;
     Compass compass;
     AP_InertialSensor ins;
-    RangeFinder sonar;
+    RangeFinder sonar { serial_manager };
 
     // flight modes convenience array
     AP_Int8	*modes;
@@ -456,6 +456,7 @@ private:
     void init_rc_out();
     void read_radio();
     void control_failsafe(uint16_t pwm);
+    bool throttle_failsafe_active();
     void trim_control_surfaces();
     void trim_radio();
     void init_barometer(void);

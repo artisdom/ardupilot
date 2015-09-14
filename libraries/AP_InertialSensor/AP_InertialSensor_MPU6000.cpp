@@ -13,9 +13,11 @@ extern const AP_HAL::HAL& hal;
 #if CONFIG_HAL_BOARD == HAL_BOARD_APM2
 #define MPU6000_DRDY_PIN 70
 #elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX
-#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_ERLE || CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXF
 #include <AP_HAL_Linux/GPIO.h>
+#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_ERLEBOARD || CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXF
 #define MPU6000_DRDY_PIN BBB_P8_14
+#elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RASPILOT
+#define MPU6000_DRDY_PIN RPI_GPIO_24
 #endif
 #endif
 
@@ -625,6 +627,8 @@ void AP_InertialSensor_MPU6000::start()
     _gyro_instance = _imu.register_gyro();
     _accel_instance = _imu.register_accel();
 
+    _set_accel_sample_rate(_accel_instance, 1000);
+
     hal.scheduler->resume_timer_procs();
 
     // start the timer process to read samples
@@ -663,16 +667,8 @@ bool AP_InertialSensor_MPU6000::update( void )
     _sum_count = 0;
     hal.scheduler->resume_timer_procs();
 
-    gyro *= _gyro_scale / num_samples;
-    accel *= MPU6000_ACCEL_SCALE_1G / num_samples;
-
-#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXF
-    accel.rotate(ROTATION_PITCH_180_YAW_90);
-    gyro.rotate(ROTATION_PITCH_180_YAW_90);
-#elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP
-    accel.rotate(ROTATION_YAW_270);
-    gyro.rotate(ROTATION_YAW_270);
-#endif
+    gyro /= num_samples;
+    accel /= num_samples;
 
     _publish_accel(_accel_instance, accel);
     _publish_gyro(_gyro_instance, gyro);
@@ -748,21 +744,37 @@ void AP_InertialSensor_MPU6000::_accumulate(uint8_t *samples, uint8_t n_samples)
 {
     for(uint8_t i=0; i < n_samples; i++) {
         uint8_t *data = samples + MPU6000_SAMPLE_SIZE * i;
-#if MPU6000_FAST_SAMPLING
-        _accel_filtered = _accel_filter.apply(Vector3f(int16_val(data, 1),
-                                                       int16_val(data, 0),
-                                                      -int16_val(data, 2)));
+        Vector3f accel, gyro;
 
-        _gyro_filtered = _gyro_filter.apply(Vector3f(int16_val(data, 4),
-                                                     int16_val(data, 3),
-                                                    -int16_val(data, 5)));
+        accel = Vector3f(int16_val(data, 1),
+                         int16_val(data, 0),
+                         -int16_val(data, 2));
+        accel *= MPU6000_ACCEL_SCALE_1G;
+
+        gyro = Vector3f(int16_val(data, 4),
+                        int16_val(data, 3),
+                        -int16_val(data, 5));
+        gyro *= _gyro_scale;
+
+#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXF
+        accel.rotate(ROTATION_PITCH_180_YAW_90);
+        gyro.rotate(ROTATION_PITCH_180_YAW_90);
+#elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP
+        accel.rotate(ROTATION_YAW_270);
+        gyro.rotate(ROTATION_YAW_270);
+#endif
+
+        _rotate_and_correct_accel(_accel_instance, accel);
+        _rotate_and_correct_gyro(_gyro_instance, gyro);
+
+        _notify_new_accel_raw_sample(_accel_instance, accel);
+
+#if MPU6000_FAST_SAMPLING
+        _accel_filtered = _accel_filter.apply(accel);
+        _gyro_filtered = _gyro_filter.apply(gyro);
 #else
-        _accel_sum.x += int16_val(data, 1);
-        _accel_sum.y += int16_val(data, 0);
-        _accel_sum.z -= int16_val(data, 2);
-        _gyro_sum.x  += int16_val(data, 4);
-        _gyro_sum.y  += int16_val(data, 3);
-        _gyro_sum.z  -= int16_val(data, 5);
+        _accel_sum += accel;
+        _gyro_sum += gyro;
 #endif
         _sum_count++;
 

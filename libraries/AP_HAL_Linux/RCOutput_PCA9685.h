@@ -4,10 +4,14 @@
 
 #include "AP_HAL_Linux.h"
 
+#define PCA9685_PRIMARY_ADDRESS             0x40 // All address pins low, PCA9685 default
+#define PCA9685_SECONDARY_ADDRESS           0x41
+#define PCA9685_TERTIARY_ADDRESS            0x42
+
 class Linux::LinuxRCOutput_PCA9685 : public AP_HAL::RCOutput {
     public:
-    LinuxRCOutput_PCA9685(bool external_clock, uint8_t channel_offset,
-                          uint8_t oe_pin_number);
+    LinuxRCOutput_PCA9685(uint8_t addr, bool external_clock, uint8_t channel_offset,
+                          int16_t oe_pin_number);
     ~LinuxRCOutput_PCA9685();
     void     init(void* machtnichts);
     void     reset_all_channels();
@@ -30,9 +34,10 @@ private:
 
     uint16_t *_pulses_buffer;
 
+    uint8_t _addr;
     bool _external_clock;
     uint8_t _channel_offset;
-    uint8_t _oe_pin_number;
+    int16_t _oe_pin_number;
 };
 
 #endif // __AP_HAL_LINUX_RCOUTPUT_PCA9685_H__
