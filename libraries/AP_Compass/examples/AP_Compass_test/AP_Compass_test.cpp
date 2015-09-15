@@ -10,6 +10,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_HAL_AVR/AP_HAL_AVR.h>
 #include <AP_HAL_PX4/AP_HAL_PX4.h>
+#include <AP_HAL_Quan/AP_HAL_Quan.h>
 #include <AP_HAL_Linux/AP_HAL_Linux.h>
 #include <AP_HAL_FLYMAPLE/AP_HAL_FLYMAPLE.h>
 #include <AP_HAL_Empty/AP_HAL_Empty.h>
@@ -46,7 +47,10 @@ uint32_t timer;
 
 void setup() {
     hal.console->println("Compass library test");
-
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    // seems to need this at start else fails to read properly
+   // hal.scheduler->delay(100);
+#endif
     if (!compass.init()) {
         hal.console->println("compass initialisation failed!");
         while (1) ;
@@ -59,6 +63,17 @@ void setup() {
     hal.scheduler->delay(1000);
     timer = hal.scheduler->micros();
 }
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+void quan::uav::osd::on_draw() 
+{ 
+/*
+   could do something more exiting?
+*/
+    pxp_type pos{-140,50};
+    draw_text("Quan APM Compass Test",pos);
+}
+#endif
 
 void loop()
 {

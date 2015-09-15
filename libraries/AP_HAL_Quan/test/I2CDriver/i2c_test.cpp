@@ -42,10 +42,14 @@ namespace {
    uint8_t values [6] = {0,0,0,0,0,0};
 
    constexpr uint8_t baro_addr = 0x77;
+
+   constexpr uint8_t ConfigRegA = 0x00;
    // convert pressure
    // takes 
    static uint8_t baro_start_pressure_conv = 0x48;
    static uint8_t baro_read_adc = 0x00;
+
+   bool alt_method = false;
    
     
    int16_t convert_to_int16(uint8_t * d)
@@ -83,22 +87,48 @@ namespace {
             
             if ( sem && sem->take_nonblocking() ){
 
-               if (  hal.i2c->writeRegister(mag_addr,mag_modereg,mag_single_measurement) != 0){
-                  sem->give();
-                  return; // should report on error
-               }
-               if ( hal.i2c->write(mag_addr,1,&mag_msb_x) !=0 ){
+//               if (  hal.i2c->writeRegister(mag_addr,mag_modereg,mag_single_measurement) != 0){
+//                  sem->give();
+//                  return; // should report on error
+//               }
+//
+//               if (!alt_method){
+//                  if ( hal.i2c->write(mag_addr,1,&mag_msb_x) !=0 ){
+//                     sem->give();
+//                     return;
+//                  }
+//                  if ( hal.i2c->read(mag_addr,6,values) != 0){
+//                     sem->give();
+//                     return;
+//                  }
+//               }else{
+//                  if ( hal.i2c->readRegisters(mag_addr,mag_msb_x,6,values) != 0){
+//                     sem->give();
+//                     return;
+//                  }
+//               }
+//               alt_method = ! alt_method;
+               //-------------------
+               if (hal.i2c->writeRegister(mag_addr,ConfigRegA,(0x03 << 5) | ( 0x06 << 2) | 0x10 ) != 0 ){
+                  hal.console->printf("writeRegister failed\n");
                   sem->give();
                   return;
                }
-               if ( hal.i2c->read(mag_addr,6,values) != 0){
+               uint8_t test_ret;
+               if ( hal.i2c->readRegister(mag_addr,ConfigRegA,&test_ret) != 0){
                   sem->give();
                   return;
                }
+               if ( test_ret !=  ((0x03 << 5) | ( 0x06 << 2) | 0x10 )  ){
+                  hal.console->printf("readRegister failed\n");
+                  sem->give();
+                  return;
+               }
+              // hal.console->printf("configreg A is %u\n", static_cast<unsigned int>(test_ret));
                hal.console->printf("read mag success\n");
-               Vector3<int> result;
-               copy_new_values(result);
-               hal.console->printf("mag result = [%d, %d,%d]\n",result.x,result.y,result.z);
+//               Vector3<int> result;
+//               copy_new_values(result);
+//               hal.console->printf("mag result = [%d, %d,%d]\n",result.x,result.y,result.z);
                // baro test --------------------
                if ( m_baro_state == idle){
                   // request a conversion
