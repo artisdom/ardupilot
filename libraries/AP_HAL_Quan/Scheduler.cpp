@@ -273,11 +273,14 @@ void QuanScheduler::register_io_process(AP_HAL::MemberProc k)
 void QuanScheduler::register_timer_failsafe(AP_HAL::Proc, uint32_t period_us)
 {}
 
+// at this point could call taskENTER_CRITICAL()
+// to prevent switching?
+// also need it in the other in timer task though
 void QuanScheduler::suspend_timer_procs()
 {
    vTaskSuspend(scheduler_timer_task_handle);
 }
-
+//  taskEXIT_CRITICAL()
 void QuanScheduler::resume_timer_procs()
 {
     vTaskResume(scheduler_timer_task_handle);

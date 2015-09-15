@@ -29,6 +29,7 @@
 #include <AP_HAL_Linux/AP_HAL_Linux.h>
 #include <AP_HAL_FLYMAPLE/AP_HAL_FLYMAPLE.h>
 #include <AP_HAL_PX4/AP_HAL_PX4.h>
+#include <AP_HAL_Quan/AP_HAL_Quan.h>
 #include <AP_HAL_Empty/AP_HAL_Empty.h>
 #include <AP_Rally/AP_Rally.h>
 #include <AP_NavEKF/AP_NavEKF.h>
@@ -43,26 +44,46 @@ static AP_Baro barometer;
 static uint32_t timer;
 static uint8_t counter;
 
+static uint32_t timer_ms = 0;
 void setup()
 {
-    hal.console->println("Barometer library test");
+    hal.console->printf("Barometer library test\n");
 
-    hal.scheduler->delay(1000);
+    hal.scheduler->delay(100);
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_APM2
     // disable CS on MPU6000
     hal.gpio->pinMode(63, HAL_GPIO_OUTPUT);
     hal.gpio->write(63, 1);
 #endif
-
+    hal.console->printf("Initing baro\n");
     barometer.init();
+    hal.console->printf("Calibrating baro\n");
     barometer.calibrate();
-
+   hal.console->printf("Done setup\n");
     timer = hal.scheduler->micros();
+
+    timer_ms = hal.scheduler->millis();
+    
 }
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+void quan::uav::osd::on_draw() 
+{ 
+    pxp_type pos{-140,50};
+    char buf[100];
+    
+    draw_text("Quan APM Baro Test",pos);
+}
+#endif
 
 void loop()
 {
+      
+    if ( (hal.scheduler->millis() - timer_ms) > 500 ){
+        timer_ms = hal.scheduler->millis();
+        hal.console->printf("loop!\n"); 
+    }
     // run accumulate() at 50Hz and update() at 10Hz
     if((hal.scheduler->micros() - timer) > 20*1000UL) {
         timer = hal.scheduler->micros();
