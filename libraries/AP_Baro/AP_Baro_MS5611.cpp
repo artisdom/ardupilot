@@ -329,7 +329,7 @@ void AP_Baro_MS56XX::update()
     if (!_use_timer) {
         // if we're not using the timer then accumulate one more time
         // to cope with the calibration loop and minimise lag
-         hal.console->printf("in accumulate\n");
+        // hal.console->printf("in accumulate\n");
         accumulate();
     }
 
@@ -342,25 +342,25 @@ void AP_Baro_MS56XX::update()
 
     // Suspend timer procs because these variables are written to
     // in "_update".
-    taskENTER_CRITICAL();
+  //  taskENTER_CRITICAL();
    // hal.console->printf("suspending timer procs\n"); 
-  // hal.scheduler->suspend_timer_procs();
+   hal.scheduler->suspend_timer_procs();
     
     sD1 = _s_D1; _s_D1 = 0;
     sD2 = _s_D2; _s_D2 = 0;
     d1count = _d1_count; _d1_count = 0;
     d2count = _d2_count; _d2_count = 0;
     _updated = false;
-    hal.console->printf("resuming timer procs\n"); 
-  //  hal.scheduler->resume_timer_procs();
-    taskEXIT_CRITICAL();
+   // hal.console->printf("resuming timer procs\n"); 
+    hal.scheduler->resume_timer_procs();
+  //  taskEXIT_CRITICAL();
     if (d1count != 0) {
         _D1 = ((float)sD1) / d1count;
     }
     if (d2count != 0) {
         _D2 = ((float)sD2) / d2count;
     }
-    hal.console->printf("calculating\n"); 
+   // hal.console->printf("calculating\n"); 
     _calculate();
 }
 

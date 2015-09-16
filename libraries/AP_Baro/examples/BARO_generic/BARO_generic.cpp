@@ -82,7 +82,7 @@ void loop()
       
     if ( (hal.scheduler->millis() - timer_ms) > 500 ){
         timer_ms = hal.scheduler->millis();
-        hal.console->printf("loop!\n"); 
+       // hal.console->printf("loop!\n"); 
     }
     // run accumulate() at 50Hz and update() at 10Hz
     if((hal.scheduler->micros() - timer) > 20*1000UL) {
@@ -96,7 +96,7 @@ void loop()
         uint32_t read_time = hal.scheduler->micros() - timer;
         float alt = barometer.get_altitude();
         if (!barometer.healthy()) {
-            hal.console->println("not healthy");
+            hal.console->println("baro not healthy");
             return;
         }
         hal.console->print("Pressure:");

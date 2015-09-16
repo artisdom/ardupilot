@@ -105,27 +105,27 @@ void AP_Baro::calibrate()
     for (uint8_t i = 0; i < 10; i++) {
         uint32_t tstart = hal.scheduler->millis();
         do {
-            hal.console->printf("call update\n");
+           // hal.console->printf("call update\n");
             update();
-            hal.console->printf("update done\n");
+           // hal.console->printf("update done\n");
             if (hal.scheduler->millis() - tstart > 500) {
-               hal.console->printf("panic\n");
+              // hal.console->printf("panic\n");
                 hal.scheduler->panic(PSTR("PANIC: AP_Baro::read unsuccessful "
                         "for more than 500ms in AP_Baro::calibrate [2]\r\n"));
             }
             hal.scheduler->delay(10);
         } while (!healthy());
-         hal.console->printf("done do\n");
+       //  hal.console->printf("done do\n");
         hal.scheduler->delay(100);
     }
-    hal.console->printf("health check done\n");
+   // hal.console->printf("health check done\n");
     // now average over 5 values for the ground pressure and
     // temperature settings
     float sum_pressure[BARO_MAX_INSTANCES] = {0};
     float sum_temperature[BARO_MAX_INSTANCES] = {0};
     uint8_t count[BARO_MAX_INSTANCES] = {0};
     const uint8_t num_samples = 5;
-     hal.console->printf("averaging\n");
+     //hal.console->printf("averaging\n");
     for (uint8_t c = 0; c < num_samples; c++) {
         uint32_t tstart = hal.scheduler->millis();
         do {
@@ -144,7 +144,7 @@ void AP_Baro::calibrate()
         }
         hal.scheduler->delay(100);
     }
-     hal.console->printf("set and save 2\n");
+    // hal.console->printf("set and save 2\n");
     for (uint8_t i=0; i<_num_sensors; i++) {
         if (count[i] == 0) {
             sensors[i].calibrated = false;
@@ -300,7 +300,7 @@ void AP_Baro::init(void)
     }
 #elif HAL_BARO_DEFAULT == HAL_BARO_MS5611 && HAL_BARO_MS5611_I2C_BUS == 0
     {
-        hal.console->printf("quan baro\n");
+       // hal.console->printf("quan baro\n");
         drivers[0] = new AP_Baro_MS5611(*this, new AP_SerialBus_I2C(hal.i2c, HAL_BARO_MS5611_I2C_ADDR), false);
         _num_drivers = 1;
     }
