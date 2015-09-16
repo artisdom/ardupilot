@@ -84,6 +84,10 @@ namespace {
    AP_HAL::MemberProc timer_procs[max_scheduler_timer_procs] = {nullptr};
 
    bool m_in_timer_process = false;
+
+   bool request_timer_procs_suspended = false;
+
+   bool timer_procs_suspended = false;
    
    void scheduler_timer_task(void * params)
    {
@@ -120,16 +124,22 @@ namespace {
                }
             }
          }
-         // run all the functions
-         for ( auto& pfn : timer_procs){
-            if ( (pfn == nullptr) == false){
-            //   taskENTER_CRITICAL();
-               m_in_timer_process = true;
-               pfn();
-               m_in_timer_process = false;
-             //  taskEXIT_CRITICAL();
-            }
-         } 
+         // 
+         if ( request_timer_procs_suspended){
+            timer_procs_suspended = true;
+         }else{
+            timer_procs_suspended = false;
+            // run all the functions
+            for ( auto& pfn : timer_procs){
+               if ( (pfn == nullptr) == false){
+               //   taskENTER_CRITICAL();
+                  m_in_timer_process = true;
+                  pfn();
+                  m_in_timer_process = false;
+                //  taskEXIT_CRITICAL();
+               }
+            } 
+         }
          // can add other tasks here
          // e.g A2D
          // and sleep 1 ms till next time
@@ -273,17 +283,20 @@ void QuanScheduler::register_io_process(AP_HAL::MemberProc k)
 void QuanScheduler::register_timer_failsafe(AP_HAL::Proc, uint32_t period_us)
 {}
 
-// at this point could call taskENTER_CRITICAL()
-// to prevent switching?
-// also need it in the other in timer task though
+// request 
 void QuanScheduler::suspend_timer_procs()
 {
-   vTaskSuspend(scheduler_timer_task_handle);
+   request_timer_procs_suspended = true;
+   while (!timer_procs_suspended){
+      delay(1);
+   }
 }
-//  taskEXIT_CRITICAL()
 void QuanScheduler::resume_timer_procs()
 {
-    vTaskResume(scheduler_timer_task_handle);
+    request_timer_procs_suspended = false;
+    while (timer_procs_suspended){
+      delay(1);
+   }
 }
 
 // call from interrupt?
