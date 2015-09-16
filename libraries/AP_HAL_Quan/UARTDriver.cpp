@@ -1,3 +1,6 @@
+#include <quan/stm32/freertos/apm/freertos_usart_task.hpp>
+#include <quan/stm32/gpio.hpp>
+#include <resources.hpp>
 
 #include "UARTDriver.h"
 
@@ -8,19 +11,30 @@
    put the non template data and no template dep fns in a non template member struct
    of QuanUARTDriver<Usart>. Since it is not global should be fine to do
 */
-#include <quan/stm32/freertos/apm/freertos_usart_task.hpp>
+
 
 /*
  Though technically Usart can be read/written by multiple threads
  In practise when things are working correctly
   Will be used by one thread
   use a mutex to ensure this?
+ Look at serial manager
 */
 
 using namespace Quan;
+   
+/*
+At startup this is set to non inverting
+*/
+void Quan::set_usart3_tx_inverting( bool val)
+{
+    quan::stm32::put<frsky_txo_sign_pin>(val);
+}
 
 namespace {
 
+   // on isolated port
+   // Pin 4 RXI Pin 5 TXO
    struct sp1{
       typedef quan::stm32::usart1                    usart;
       typedef quan::mcu::pin<quan::stm32::gpioa,9>   txo_pin;
@@ -28,6 +42,8 @@ namespace {
       typedef quan::stm32::freertos::apm::usart_tx_rx_task<usart,txo_pin,rxi_pin> serial_port;
    };
 
+   // on isolated port
+   // Pin 2 TXO , Pin 6 RXI
    struct sp2{
       typedef quan::stm32::usart3                     usart;
       typedef quan::mcu::pin<quan::stm32::gpiob,10>   txo_pin; 
