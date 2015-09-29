@@ -4133,14 +4133,22 @@ void NavEKF::readIMUData()
 
         // apply a peak hold 0.2 second time constant decaying envelope filter to the noise length on IMU1
         float alpha = 1.0f - 5.0f*dtDelVel1;
+#if INS_VIBRATION_CHECK
         imuNoiseFiltState1 = maxf(ins.get_vibration_levels(0).length(), alpha*imuNoiseFiltState1);
+#else
+        imuNoiseFiltState1 = alpha*imuNoiseFiltState1;
+#endif        
 
         // read IMU2 delta velocity data
         readDeltaVelocity(1, dVelIMU2, dtDelVel2);
 
         // apply a peak hold 0.2 second time constant decaying envelope filter to the noise length on IMU2
         alpha = 1.0f - 5.0f*dtDelVel2;
+#if INS_VIBRATION_CHECK
         imuNoiseFiltState2 = maxf(ins.get_vibration_levels(1).length(), alpha*imuNoiseFiltState2);
+#else
+        imuNoiseFiltState1 = alpha*imuNoiseFiltState2;
+#endif 
 
         // calculate the filtered difference between acceleration vectors from IMU1 and 2
         // apply a LPF filter with a 1.0 second time constant
