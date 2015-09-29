@@ -14,7 +14,8 @@
    maximum number of INS instances available on this platform. If more
    than 1 then redundent sensors may be available
  */
-#if HAL_CPU_CLASS > HAL_CPU_CLASS_16
+
+#if ( HAL_CPU_CLASS > HAL_CPU_CLASS_16 ) && ( CONFIG_HAL_BOARD != HAL_BOARD_QUAN )
 #define INS_MAX_INSTANCES 3
 #define INS_MAX_BACKENDS  6
 #define INS_VIBRATION_CHECK 1
@@ -24,7 +25,6 @@
 #define INS_MAX_BACKENDS  1
 #define INS_VIBRATION_CHECK 0
 #endif
-
 
 #include <stdint.h>
 #include <AP_HAL/AP_HAL.h>
