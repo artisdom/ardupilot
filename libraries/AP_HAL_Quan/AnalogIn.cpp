@@ -127,17 +127,19 @@ namespace {
       // ADC1 DMA ------------------------------------------------------------------------
       // USE DMA2.Stream4.Channel0  
       // Enable and reset DMA2 module
+      // add a check that it isnt already enable  
       quan::stm32::rcc::get()->ahb1enr |= (1 << 22);
       for ( uint8_t i = 0; i < 20; ++i){
          asm volatile ("nop" : : :);
       }
-      quan::stm32::rcc::get()->ahb1rstr |= (1 << 22);
-      quan::stm32::rcc::get()->ahb1rstr &= ~(1 << 22);
+    // no need to do this?
+    //  quan::stm32::rcc::get()->ahb1rstr |= (1 << 22);
+     // quan::stm32::rcc::get()->ahb1rstr &= ~(1 << 22);
 
       // DMA setup
       DMA_Stream_TypeDef * dma_stream = DMA2_Stream4;
       constexpr uint32_t  dma_channel = 0;
-      constexpr uint32_t  dma_priority = 0b11; // medium
+      constexpr uint32_t  dma_priority = 0b00; // low
       dma_stream->CR = (dma_stream->CR & ~(0b111 << 25)) | ( dma_channel << 25); //(CHSEL) select channel
       dma_stream->CR = (dma_stream->CR & ~(0b11 << 16)) | (dma_priority << 16U); // (PL) priority
       dma_stream->CR = (dma_stream->CR & ~(0b11 << 13)) | (01 << 13); // (MSIZE) 16 bit memory transfer
@@ -154,8 +156,6 @@ namespace {
       NVIC_EnableIRQ(DMA2_Stream4_IRQn);
 
       DMA2->HIFCR |= (0b111101 << 0) ; // clear flags for Dma2 Stream 4
-   //   DMA2->HIFCR &= ~(0b111101 << 0) ; 
-
       ADC1->CR2 |= (1 << 8);    //  (DMA) enable adc DMA
       DMA2_Stream4->CR |= (1 << 0); // (EN)  enable DMA
       ADC1->CR2 |= (1 << 0); // (ADON)
