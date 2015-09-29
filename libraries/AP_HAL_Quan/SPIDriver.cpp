@@ -27,7 +27,7 @@ namespace {
          spi1_mosi
          ,quan::stm32::gpio::mode::af5  
          ,quan::stm32::gpio::pupd::none
-         ,quan::stm32::gpio::ospeed::slow
+         ,quan::stm32::gpio::ospeed::medium_fast
       >();
 
       quan::stm32::apply<
@@ -40,14 +40,14 @@ namespace {
          spi1_sck
          ,quan::stm32::gpio::mode::af5  
          ,quan::stm32::gpio::pupd::none
-         ,quan::stm32::gpio::ospeed::slow
+         ,quan::stm32::gpio::ospeed::medium_fast
       >();
 
       quan::stm32::apply<
          spi1_soft_nss
          ,quan::stm32::gpio::mode::output
          ,quan::stm32::gpio::pupd::none
-         ,quan::stm32::gpio::ospeed::medium_slow
+         ,quan::stm32::gpio::ospeed::medium_fast
          ,quan::stm32::gpio::ostate::high
       >();
 
@@ -60,15 +60,15 @@ namespace {
       // use fpclk div 128 == 650 kHz
       // cr1.br = 0b110;
       // for high speed
-      // 21 MHz clock ( 20 MHz +- 10%) fpclk div 4 for high speed mode
-      // cr1.br = 0b001;
-
+      // go for 10.5 MHz clk fpclk div 8 for high speed mode
+      // else 21 MHz which is out of spec
+      
 // DMA
       RX on DMA2_Stream0.ch3 or DMA2_Stream2.ch3
       TX on DMA2_Stream3.ch3 or DMA2_Stream5.ch3
 */
    constexpr uint16_t spi_slow_brr = (0b110 << 3);
-   constexpr uint16_t spi_fast_brr = (0b01 << 3);
+   constexpr uint16_t spi_fast_brr = (0b001 << 3);
    constexpr uint16_t spi_brr_and_clear_mask = ~(0b111 << 3);
 
    void spi_setup()
@@ -106,6 +106,7 @@ namespace {
 
    void start_spi()
    {
+       
        spi1::get()->cr1.bb_setbit<6>(); //( SPE)
    }
 
@@ -152,7 +153,7 @@ namespace {
 
        void cs_release()
        {
-          uint8_t const waits = m_fast_speed? 2:20;
+          uint8_t const waits = m_fast_speed? 4:20;
           for ( uint8_t i =0; i < waits;++i){
                asm volatile( "nop":::);
           }
@@ -162,13 +163,10 @@ namespace {
        // send and receive 1 byte no nss so not really interface
        uint8_t transfer(uint8_t data)
        {
-            // do we need to add a fail timeout?
-            // and set an errno
-            // OTOH since this is master and sending clock
-            // then failure is unlikely
-            // unless mpu has failed..
+            if ( rxne()){ ll_read(); }
+            while ( !txe()){;}
             ll_write(data);
-            while ( (!txe()) || ( busy()) || (!rxne()) ){;}
+            while ( !rxne() ){;}
             return ll_read();
        }
        //tx only... not interface
@@ -181,6 +179,7 @@ namespace {
 
       void set_bus_speed(enum bus_speed speed) 
       {
+    #if 1
          // make sure not in middle of a transfer obviously!
          // set a flag?
          switch (speed){
@@ -188,9 +187,9 @@ namespace {
             // should think a bit about power saving
             case SPI_SPEED_LOW: 
                if ( m_fast_speed){
-                  quan::stm32::apply<spi1_mosi,quan::stm32::gpio::ospeed::slow>();
-                  quan::stm32::apply<spi1_sck,quan::stm32::gpio::ospeed::slow>();
-                  quan::stm32::apply<spi1_soft_nss,quan::stm32::gpio::ospeed::slow>();
+//                  quan::stm32::apply<spi1_mosi,quan::stm32::gpio::ospeed::slow>();
+//                  quan::stm32::apply<spi1_sck,quan::stm32::gpio::ospeed::slow>();
+//                  quan::stm32::apply<spi1_soft_nss,quan::stm32::gpio::ospeed::slow>();
                   spi1::get()->cr1 = (spi1::get()->cr1 & spi_brr_and_clear_mask) | spi_slow_brr;
                   m_fast_speed = false;
                }
@@ -198,9 +197,9 @@ namespace {
 
             case SPI_SPEED_HIGH:
                if ( m_fast_speed == false){
-                  quan::stm32::apply<spi1_mosi,quan::stm32::gpio::ospeed::medium_slow>();
-                  quan::stm32::apply<spi1_sck,quan::stm32::gpio::ospeed::medium_slow>();
-                  quan::stm32::apply<spi1_soft_nss,quan::stm32::gpio::ospeed::medium_slow>();
+//                  quan::stm32::apply<spi1_mosi,quan::stm32::gpio::ospeed::medium_slow>();
+//                  quan::stm32::apply<spi1_sck,quan::stm32::gpio::ospeed::medium_slow>();
+//                  quan::stm32::apply<spi1_soft_nss,quan::stm32::gpio::ospeed::medium_slow>();
                   spi1::get()->cr1 = (spi1::get()->cr1 & spi_brr_and_clear_mask) | spi_fast_brr;
                   m_fast_speed = true;
                }
@@ -208,6 +207,7 @@ namespace {
             default:
                break;
          }
+#endif
       }
 // TODO
 //       void set_state(State state) { };
@@ -220,7 +220,7 @@ namespace {
        static void ll_write( uint8_t val){ spi1::get()->dr = val;}
        Quan::QuanSemaphore m_semaphore;
        bool m_fast_speed;
-   } mpu6000device ;
+   } mpu_device ;
 
 }  // namespace
 
@@ -230,18 +230,26 @@ Quan::QuanSPIDeviceManager::QuanSPIDeviceManager()
 
 void Quan::QuanSPIDeviceManager::init(void *)
 {
-   mpu6000device.init();
+   mpu_device.init();
 }
 
 /*
  devices are listed in AP_HAL/AP_HAL_Namespace.hpp
-  including AP_HAL:: SPIDevice_MPU6000 
+  including AP_HAL::SPIDevice_MPU6000 
+            AP_HAL::SPIDevice_MPU9250
 */
 AP_HAL::SPIDeviceDriver* Quan::QuanSPIDeviceManager::device(enum AP_HAL::SPIDevice e)
 {
+#if 0
    return ( e == AP_HAL::SPIDevice_MPU6000 )
-      ? &mpu6000device 
+      ? &mpu_device 
       : nullptr
   ;
+#else
+   return ( e == AP_HAL::SPIDevice_MPU9250 )
+      ? &mpu_device 
+      : nullptr
+  ;
+#endif
 }
 
