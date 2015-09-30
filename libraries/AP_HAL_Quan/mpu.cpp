@@ -10,7 +10,8 @@
 #include <quan/stm32/f4/exti/set_exti.hpp>
 #include <quan/stm32/f4/syscfg/module_enable_disable.hpp>
 
-#include "serial_port.hpp"
+#include <quan/stm32/serial_port.hpp>
+
 #include <cstdio>
 #include <cstring>
 
@@ -25,6 +26,23 @@ extern "C" void DMA2_Stream0_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void EXTI15_10_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 
 namespace {
+
+
+
+   struct console{
+      typedef quan::stm32::usart1 usart;
+      typedef quan::mcu::pin<quan::stm32::gpioa,9> txo_pin; // PA9
+      typedef quan::mcu::pin<quan::stm32::gpioa,10> rxi_pin; // PA10
+      static constexpr uint32_t in_buf_size = 1000;
+      static constexpr uint32_t out_buf_size = 1000;
+      typedef quan::stm32::serial_port<
+         usart,
+         out_buf_size,
+         in_buf_size,
+         txo_pin,
+         rxi_pin
+      > serial_port;
+   };
 
    typedef console::serial_port sp;
 
@@ -358,11 +376,13 @@ bool whoami_test()
 
    if ( val == val::whoami){
       sp::write("whoami succeeded\n");
+      return true;
    }else{
       sp::write("whoami failed\n");
       char buf[20];
       sprintf(buf,"got %u\n",static_cast<unsigned int>(val));
       sp::write(buf);
+      return false;
    }
 }
 
@@ -429,7 +449,7 @@ extern "C" void read_imu()
    // start with interrupt status reg
    // so read clears irq
    arr[0] = reg::intr_status | 0x80;
-   memcpy(arr+1,0,15);
+   memset(arr+1,'\0',15);
    spi_device_driver::transaction(arr,arr,16);
 
    quan::three_d::vect<double> accel;

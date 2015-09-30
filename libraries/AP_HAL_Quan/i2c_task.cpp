@@ -58,6 +58,8 @@ namespace {
    bool read_baro_pressure();
    bool read_baro_temperature();
 
+   void wait_for_power_up();
+
    // last waketime for the i2c compass baro task
    TickType_t last_wake_time = 0;
 
@@ -149,11 +151,12 @@ namespace {
              return ( in >> 1U ) | ( ((in & 0b10)?0:1) & ( in & 0b1) ) ;
          };
          if ( m_count == 256U){
-           m_sum = div_half_even(sum);
+           m_sum = div_half_even(m_sum);
            m_count = 128U;
          }
          m_sum += sample;
          ++m_count;
+         return *this;
       }
 
       float average() const
@@ -175,7 +178,7 @@ namespace {
    uint8_t read_16bits(uint8_t addr, uint8_t reg, uint16_t & out)
    {
        uint8_t buf[2];
-       if (_i2c->readRegisters(addr, reg, 2, buf) == transfer_succeeded) {
+       if (hal.i2c->readRegisters(addr, reg, 2, buf) == transfer_succeeded) {
            out = (((uint16_t)(buf[0]) << 8) | buf[1]);
            return transfer_succeeded;
        }else{
@@ -186,7 +189,7 @@ namespace {
    uint8_t read_24bits(uint8_t addr, uint8_t reg, uint32_t & out)
    {
        uint8_t buf[3];
-       if (_i2c->readRegisters(addr, reg, 3, buf) == 0) {
+       if (hal.i2c->readRegisters(addr, reg, 3, buf) == 0) {
           out = (((uint32_t)buf[0]) << 16) | (((uint32_t)buf[1]) << 8) | buf[2];
          return transfer_succeeded;
        }else{
@@ -194,7 +197,7 @@ namespace {
        }
    }
 
-   bool calculate_baro_args( Quan::baro_args& args)
+   bool calculate_baro_args( Quan::detail::baro_args& args)
    {
 
       // Formulas from manufacturer datasheet
@@ -220,39 +223,42 @@ namespace {
         OFF = OFF - OFF2;
         SENS = SENS - SENS2;
       }
-      args.pressure =  quan::pressure::Pa{baro_accum.average()*SENS/2097152 - OFF)/32768};
+      args.pressure = quan::pressure::Pa{(pressure_accum.average()*SENS/2097152 - OFF)/32768};
       // nb. not sure if its K or C here atm
       // may as well put in K to helps docs
       // also check unit. Looks like might be centi c not K ?
-      args.temperature = quan::temperature::K{TEMP + 2000) * 0.01f};
+      args.temperature = quan::temperature::K{(TEMP + 2000) * 0.01f};
       return true;
       //_copy_to_frontend(_instance, pressure, temperature);
    }
 
    bool read_baro_pressure()
    {
-       uint32_t cur_pressure =0;
-       if ( read24_bits(baro_addr,0,cur_pressure) != transfer_succceeded){
+      uint32_t latest_pressure_reading = 0;
+      if ( read_24bits(baro_addr,0,latest_pressure_reading) == transfer_succeeded){
+         pressure_accum += latest_pressure_reading;
+         return true;
+      }else{
          return false;
-       }
-       pressure_accum += (cur_pressure);
+      }
    }
 
    bool read_baro_temperature()
    {
       uint32_t cur_temperature = 0;
-      if ( read24_bits(baro_addr,0,cur_temperature) != transfer_succeeded){
+      if ( read_24bits(baro_addr,0,cur_temperature) == transfer_succeeded){
+         temperature_accum += cur_temperature;
+         if ( uxQueueSpacesAvailable(hBaroQueue) != 0){
+            Quan::detail::baro_args args;
+            calculate_baro_args(args);
+            xQueueSendToBack(hBaroQueue,&args,0);
+            temperature_accum.reset();
+            pressure_accum.reset();
+         }
+         return true;
+      }else{
          return false;
       }
-      temperature_accum += cur_temperature;
-      if ( uxQueueSpacesAvailable(hBaroQueue) != 0){
-         Quan::baro_args args;
-         calculate_baro_args(args);
-         xQueueSendToBack(hBaroQueue,&args,0);
-         temperature_accum.reset();
-         pressure_accum.reset();
-      }
-      return true;
    }
 
    bool request_pressure_read()
@@ -272,7 +278,6 @@ namespace {
       
     /* save the read crc */
       uint16_t const crc_read = baroCal[7];
-
     /* remove CRC byte */
       baroCal[7] = (0xFF00 & (baroCal[7]));
       uint16_t n_rem = 0x00;
@@ -284,12 +289,11 @@ namespace {
             n_rem ^= (uint8_t)(baroCal[cnt >> 1] >> 8);
          }
 
-         for (n_bit = 8; n_bit > 0; n_bit--) {
+         for (uint8_t n_bit = 8U; n_bit > 0U; --n_bit) {
             if (n_rem & 0x8000) {
-            n_rem = (n_rem << 1) ^ 0x3000;
-
+               n_rem = (n_rem << 1U) ^ 0x3000;
             } else {
-            n_rem = (n_rem << 1);
+               n_rem = (n_rem << 1U);
             }
          }
       }
@@ -297,7 +301,6 @@ namespace {
     /* final 4 bit remainder is CRC value */
       n_rem = (0x000F & (n_rem >> 12));
       baroCal[7] = crc_read;
-
       /* return true if CRCs match */
       return (0x000F & crc_read) == (n_rem ^ 0x00);
    }
@@ -310,7 +313,6 @@ namespace {
          hal.scheduler->panic("couldnt get semaphore");
          return false;
       }
-      
       // TODO add timeout
       while ( !sem->take_nonblocking()){;}
       uint8_t command = baro_cmd_reset;
@@ -321,26 +323,21 @@ namespace {
       }
       hal.scheduler->delay(4);
       for ( uint8_t i = 0; i < 8; ++i){
-        if (  read_24bits(baro_addr,baro_cal_base_reg + 2*i, baro_call_array + i) != transfer_succeeded){
+        if (  read_16bits(baro_addr,baro_cal_base_reg + 2*i, baroCal[i]) != transfer_succeeded){
             hal.scheduler->panic("read baro cal failed\n");
-            sem->give;
-            return transfer_failed;
+            sem->give();
+            return false;
         }
       }
-
       if (! do_baro_crc()){
           hal.scheduler->panic("read baro crc failed\n");
-          sem->give;
-          return transfer_failed;
+          sem->give();
+          return false;
       }
-
       temperature_accum.reset();
       pressure_accum.reset();
-
       bool result = request_pressure_read();
-
       sem->give();
-
       return result;
    }
 //------------mag------------------------------------
@@ -547,9 +544,8 @@ namespace {
          ){
             continue;
          }
-         // read raw_magnetometer_values from the compass
-         hal.scheduler->delay(50);
 
+         hal.scheduler->delay(50);
          quan::three_d::vect<int16_t> mag_result;
          int32_t time_ms =0;
          if (!read_compass_raw(mag_result,time_ms)){
