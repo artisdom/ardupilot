@@ -71,8 +71,6 @@ void setup()
 void quan::uav::osd::on_draw() 
 { 
     pxp_type pos{-140,50};
-    char buf[100];
-    
     draw_text("Quan APM Baro Test",pos);
 }
 #endif
