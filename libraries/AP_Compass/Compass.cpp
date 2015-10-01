@@ -468,6 +468,8 @@ void Compass::_detect_backends(void)
                                                HAL_COMPASS_AK8963_I2C_ADDR));
 #elif HAL_COMPASS_DEFAULT == HAL_COMPASS_PX4 || HAL_COMPASS_DEFAULT == HAL_COMPASS_VRBRAIN
     _add_backend(AP_Compass_PX4::detect(*this));
+#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_QUAN
+#pragma message "TODO Quan compass"
 #else
     #error Unrecognised HAL_COMPASS_TYPE setting
 #endif
