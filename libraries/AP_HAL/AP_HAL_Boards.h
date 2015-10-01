@@ -70,6 +70,7 @@
 #define HAL_INS_L3GD20   10
 #define HAL_INS_LSM9DS0 11
 #define HAL_INS_RASPILOT 12
+#define HAL_INS_QUAN 13
 
 // barometer driver types
 #define HAL_BARO_BMP085     1
@@ -79,6 +80,7 @@
 #define HAL_BARO_PX4        5
 #define HAL_BARO_HIL        6
 #define HAL_BARO_VRBRAIN    7
+#define HAL_BARO_QUAN       8
 
 // compass driver types
 #define HAL_COMPASS_HMC5843   1
@@ -89,7 +91,7 @@
 #define HAL_COMPASS_AK8963_I2C  6
 #define HAL_COMPASS_HMC5843_MPU6000 7
 #define HAL_COMPASS_RASPILOT  8
-
+#define HAL_COMPASS_QUAN      9
 /**
    CPU classes, used to select if CPU intensive algorithms should be used
 
@@ -271,8 +273,6 @@
 #define HAL_COMPASS_DEFAULT HAL_COMPASS_HIL
 #define CONFIG_HAL_BOARD_SUBTYPE HAL_BOARD_SUBTYPE_NONE
 
-//############################################################################
-//##############################################################################
 #elif CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #define AP_HAL_BOARD_DRIVER AP_HAL_Quan
 #define HAL_BOARD_NAME "QUAN"
@@ -281,14 +281,10 @@
 #define HAL_CPU_CLASS HAL_CPU_CLASS_150
 #define HAL_STORAGE_SIZE            4096
 #define HAL_STORAGE_SIZE_AVAILABLE  HAL_STORAGE_SIZE
-//#define HAL_INS_DEFAULT HAL_INS_MPU60XX_SPI
-#define HAL_INS_DEFAULT HAL_INS_MPU9250
-#define HAL_BARO_DEFAULT HAL_BARO_MS5611
-#define HAL_BARO_MS5611_I2C_BUS 0
-#define HAL_BARO_MS5611_I2C_ADDR 0x77
-#define HAL_COMPASS_DEFAULT HAL_COMPASS_HMC5843
+#define HAL_INS_DEFAULT HAL_INS_QUAN
+#define HAL_BARO_DEFAULT HAL_BARO_QUAN
+#define HAL_COMPASS_DEFAULT HAL_COMPASS_QUAN
 #define CONFIG_HAL_BOARD_SUBTYPE HAL_BOARD_SUBTYPE_NONE
-//########################################################
 
 #elif CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
 #define AP_HAL_BOARD_DRIVER AP_HAL_VRBRAIN
