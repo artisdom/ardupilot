@@ -24,13 +24,13 @@ namespace Quan{
    namespace detail{
 
       struct baro_args{
-         quan::pressure::Pa         pressure;
-         quan::temperature::K       temperature;
-         int32_t                    update_time_ms;
+         quan::pressure_<float>::Pa         pressure;
+         quan::temperature_<float>::K       temperature;
+         int32_t                            update_time_ms;
       };
 
       struct compass_args{
-         quan::three_d::vect<quan::magnetic_flux_density::milli_gauss> field;
+         quan::three_d::vect<quan::magnetic_flux_density_<float>::milli_gauss> field;
          int32_t                                                       update_time_ms;
       };
    }
