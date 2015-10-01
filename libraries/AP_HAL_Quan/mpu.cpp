@@ -5,7 +5,6 @@
 #include <quan/stm32/rcc.hpp>
 #include <quan/three_d/vect.hpp>
 #include <quan/stm32/millis.hpp>
-
 #include <quan/stm32/rcc.hpp>
 #include <quan/stm32/f4/exti/set_exti.hpp>
 #include <quan/stm32/f4/syscfg/module_enable_disable.hpp>
@@ -530,8 +529,6 @@ extern "C" void DMA2_Stream0_IRQHandler()
 
    DMA2_Stream5->CR &= ~(1 << 0); // (EN) disable DMA
    DMA2_Stream0->CR &= ~(1 << 0); // (EN) disable DMA
-
-
 
    union{
       uint8_t arr[2];
