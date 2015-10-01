@@ -317,6 +317,11 @@ void AP_Baro::init(void)
         drivers[0] = new AP_Baro_MS5607(*this, new AP_SerialBus_I2C(hal.i2c1, HAL_BARO_MS5607_I2C_ADDR), true);
         _num_drivers = 1;
     }
+#elif HAL_BARO_DEFAULT == HAL_BARO_QUAN
+   {
+     drivers[0] = new AP_Baro_Quan(*this);
+     _num_drivers = 1;
+   }
 #endif    
     if (_num_drivers == 0 || _num_sensors == 0 || drivers[0] == NULL) {
         hal.scheduler->panic(PSTR("Baro: unable to initialise driver"));
