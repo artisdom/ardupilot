@@ -74,9 +74,6 @@ namespace {
 
    void i2c_task(void* params)
    {
-      hBaroQueue = xQueueCreate(4,sizeof(Quan::detail::baro_args));
-      hCompassQueue = xQueueCreate(4,sizeof(Quan::detail::compass_args));
-
       // need to wait for 5V on the external sensor voltage regs
       wait_for_power_up();
 
@@ -93,7 +90,7 @@ namespace {
          // every 1/100th sec
          vTaskDelayUntil(&last_wake_time, 10);
          // basically own i2c !
-         auto * sem =  hal.i2c->get_semaphore();
+         auto * sem = hal.i2c->get_semaphore();
          if ( sem && sem->take_nonblocking()){
             // TODO take care of failures?
             // do n tries to read compass
@@ -224,10 +221,8 @@ namespace {
         SENS = SENS - SENS2;
       }
       args.pressure = quan::pressure::Pa{(pressure_accum.average()*SENS/2097152 - OFF)/32768};
-      // nb. not sure if its K or C here atm
-      // may as well put in K to helps docs
-      // also check unit. Looks like might be centi c not K ?
-      args.temperature = quan::temperature::K{(TEMP + 2000) * 0.01f};
+      // nb.  Use Kelvin but 
+      args.temperature = quan::temperature::K{((TEMP + 2000) * 0.01f) + 273.15f};
       return true;
       //_copy_to_frontend(_instance, pressure, temperature);
    }
@@ -496,6 +491,9 @@ namespace {
 namespace Quan {
    void create_i2c_task()
    {
+      hBaroQueue = xQueueCreate(4,sizeof(Quan::detail::baro_args));
+      hCompassQueue = xQueueCreate(4,sizeof(Quan::detail::compass_args));
+
       xTaskCreate(
          i2c_task,"I2C_task",
          1000,
@@ -507,11 +505,17 @@ namespace Quan {
 
    QueueHandle_t get_compass_queue_handle()
    {
+      if ( hCompassQueue == nullptr){
+         hal.scheduler->panic("Requesting null compass queue handle\n");
+      }
       return hCompassQueue;
    }
 
     QueueHandle_t get_baro_queue_handle()
    {
+      if ( hBaroQueue == nullptr){
+         hal.scheduler->panic("Requesting null baro queue handle\n");
+      }
       return hBaroQueue;
    }
 }
@@ -520,7 +524,7 @@ namespace {
 
    bool do_compass_calibration()
    {
-      ; // gives a range of +-2.5 Ga
+      // gives a range of +-2.5 Ga
       constexpr uint16_t expected_x = 766;
       constexpr uint16_t expected_yz = 713;
 
