@@ -9,12 +9,14 @@
 #include <quan/stm32/tim/temp_reg.hpp>
 #include <quan/stm32/get_raw_timer_frequency.hpp>
 #include <quan/max.hpp>
+#include "i2c_task.hpp"
 //#include <quan/stm32/gpio.hpp>
 //#include <resources.hpp>
 
 using namespace Quan;
 
 extern const AP_HAL::HAL& hal;
+
 
 namespace {
 
@@ -45,10 +47,7 @@ namespace {
  
 } // namespace
 
-#if 0
-// test adc_timer UP interrupt
-void adc_timer_fun();
-#endif
+
 extern "C" void TIM8_UP_TIM13_IRQHandler() __attribute__ ( (interrupt ("IRQ")));
 
 extern "C" void TIM8_UP_TIM13_IRQHandler()
@@ -57,38 +56,33 @@ extern "C" void TIM8_UP_TIM13_IRQHandler()
       usec_timer::get()->sr = 0;
       ++ timer_micros_ovflo_count;
    }
-#if 0
-   typedef quan::stm32::tim8 adc_timer;
-   if ( adc_timer::get()->sr & (1 << 0) ) {// UIF
-      adc_timer::get()->sr = 0;
-         adc_timer_fun();
-    }
-#endif
 }
 
+
+#if 0
 namespace {
 
    // for vTaskDelayUntil
-   TickType_t last_scheduler_timer_task_wake_time = 0;
+ //  TickType_t last_scheduler_timer_task_wake_time = 0;
    // The queue for task messages
    // could be more sophisticated
    // to remove tasks as well as add
-   QueueHandle_t scheduler_timer_task_message_queue = nullptr;
+  // QueueHandle_t scheduler_timer_task_message_queue = nullptr;
    // max number of timer task procs
-   constexpr uint32_t max_scheduler_timer_procs = 4;
-   constexpr uint32_t scheduler_timer_task_queue_length = max_scheduler_timer_procs;
+ //  constexpr uint32_t max_scheduler_timer_procs = 4;
+ //  constexpr uint32_t scheduler_timer_task_queue_length = max_scheduler_timer_procs;
 
    // static temp for new task from queue
-   AP_HAL::MemberProc new_scheduler_timer_task_proc = nullptr;
+ //  AP_HAL::MemberProc new_scheduler_timer_task_proc = nullptr;
    // the array of timer procs to call in the slot
-   AP_HAL::MemberProc timer_procs[max_scheduler_timer_procs] = {nullptr};
+ //  AP_HAL::MemberProc timer_procs[max_scheduler_timer_procs] = {nullptr};
 
-   bool m_in_timer_process = false;
+  // bool m_in_timer_process = false;
 
-   bool request_timer_procs_suspended = false;
+  // bool request_timer_procs_suspended = false;
 
-   bool timer_procs_suspended = false;
-   
+  // bool timer_procs_suspended = false;
+
    void scheduler_timer_task(void * params)
    {
       scheduler_timer_task_message_queue = xQueueCreate(2,sizeof(AP_HAL::MemberProc));
@@ -166,16 +160,20 @@ namespace {
    }
 
 } // namespace
+#endif
 
 QuanScheduler::QuanScheduler()
 {}
-void create_adc_task();
+//void create_adc_task();
 // called in HAL_Quan::init( int argc, char * const * argv)
 // after console and GPIO inited
 void QuanScheduler::init(void* )
 {
    setup_usec_timer();
-   create_scheduler_timer_task();
+  // create_scheduler_timer_task();
+   Quan::create_i2c_task();
+   // can now get Compass and baro q handles
+   
    start_usec_timer();
 }
 
@@ -253,6 +251,7 @@ a function to do useful stuff during the delay function
  maybe be null
  called during Plane::init_ardupilot fun
  to run Mavlink output fun
+ TODO .. Remove this 
 */
 void QuanScheduler::register_delay_callback(AP_HAL::Proc pfn,
             uint16_t min_time_ms)
@@ -266,17 +265,21 @@ namespace{
 }
 void QuanScheduler::register_timer_process(AP_HAL::MemberProc mp)
 {
-   if ( (mp == nullptr) == false){
-      new_scheduler_timer_task_proc_in = mp;
-      if (xQueueSendToBack(scheduler_timer_task_message_queue,&new_scheduler_timer_task_proc_in,2) == errQUEUE_FULL){
-          hal.console->printf("failed to add new scheduler_timer_task proc\n");
-      }
-   }
+    panic("QuanScheduler::register_timer_process called\n");
+//   if ( (mp == nullptr) == false){
+//      new_scheduler_timer_task_proc_in = mp;
+//      if (xQueueSendToBack(scheduler_timer_task_message_queue,&new_scheduler_timer_task_proc_in,2) == errQUEUE_FULL){
+//          hal.console->printf("failed to add new scheduler_timer_task proc\n");
+//      }
+//   }
 }
 
 //"not supported on AVR" so wont bother yet
 void QuanScheduler::register_io_process(AP_HAL::MemberProc k)
-{}
+{
+   panic("QuanScheduler::register_io_process called\n");
+
+}
 
 // TODO register a function to call on failsafe ( eg. WDT timeout)
 // and sort failsafe watchdog etc
@@ -286,23 +289,24 @@ void QuanScheduler::register_timer_failsafe(AP_HAL::Proc, uint32_t period_us)
 // request 
 void QuanScheduler::suspend_timer_procs()
 {
-   request_timer_procs_suspended = true;
-   while (!timer_procs_suspended){
-      delay(1);
-   }
+//   request_timer_procs_suspended = true;
+//   while (!timer_procs_suspended){
+//      delay(1);
+//   }
 }
+
 void QuanScheduler::resume_timer_procs()
 {
-    request_timer_procs_suspended = false;
-    while (timer_procs_suspended){
-      delay(1);
-   }
+//    request_timer_procs_suspended = false;
+//    while (timer_procs_suspended){
+//      delay(1);
+//   }
 }
 
 // call from interrupt?
 bool QuanScheduler::in_timerprocess() 
 {
-    return  m_in_timer_process; 
+    return false; // m_in_timer_process; 
 }
 
 namespace {
