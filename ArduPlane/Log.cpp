@@ -316,6 +316,7 @@ struct PACKED log_Status {
     uint8_t safety;
     bool is_crashed;
     bool is_still;
+    uint8_t stage;
 };
 
 void Plane::Log_Write_Status()
@@ -329,6 +330,7 @@ void Plane::Log_Write_Status()
         ,safety      : hal.util->safety_switch_state()
         ,is_crashed  : crash_state.is_crashed
         ,is_still    : plane.ins.is_still()
+        ,stage       : flight_stage
         };
 
     DataFlash.WriteBlock(&pkt, sizeof(pkt));
@@ -444,6 +446,9 @@ void Plane::Log_Write_RC(void)
 {
     DataFlash.Log_Write_RCIN();
     DataFlash.Log_Write_RCOUT();
+    if (rssi.enabled()) {
+        DataFlash.Log_Write_RSSI(rssi);
+    }
 }
 
 void Plane::Log_Write_Baro(void)
@@ -491,7 +496,7 @@ static const struct LogStructure log_structure[] PROGMEM = {
     { LOG_ATRP_MSG, sizeof(AP_AutoTune::log_ATRP),
       "ATRP", "QBBcfff",  "TimeUS,Type,State,Servo,Demanded,Achieved,P" },
     { LOG_STATUS_MSG, sizeof(log_Status),
-      "STAT", "QBfBBBB",  "TimeUS,isFlying,isFlyProb,Armed,Safety,Crash,Still" },
+      "STAT", "QBfBBBBB",  "TimeUS,isFlying,isFlyProb,Armed,Safety,Crash,Still,Stage" },
 #if OPTFLOW == ENABLED
     { LOG_OPTFLOW_MSG, sizeof(log_Optflow),
       "OF",   "QBffff",   "TimeUS,Qual,flowX,flowY,bodyX,bodyY" },
@@ -519,6 +524,7 @@ void Plane::Log_Write_Vehicle_Startup_Messages()
 {
     // only 200(?) bytes are guaranteed by DataFlash
     Log_Write_Startup(TYPE_GROUNDSTART_MSG);
+    DataFlash.Log_Write_Mode(control_mode);
 }
 
 // start a new log

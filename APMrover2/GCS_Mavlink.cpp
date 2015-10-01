@@ -145,7 +145,7 @@ void Rover::send_extended_status1(mavlink_channel_t chan)
     if (gps.status() >= AP_GPS::GPS_OK_FIX_3D) {
         control_sensors_health |= MAV_SYS_STATUS_SENSOR_GPS;
     }
-    if (!ins.get_gyro_health_all() || (!g.skip_gyro_cal && !ins.gyro_calibrated_ok_all())) {
+    if (!ins.get_gyro_health_all() || !ins.gyro_calibrated_ok_all()) {
         control_sensors_health &= ~MAV_SYS_STATUS_SENSOR_3D_GYRO;
     }
     if (!ins.get_accel_health_all()) {
@@ -575,7 +575,7 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
     case MSG_EKF_STATUS_REPORT:
 #if AP_AHRS_NAVEKF_AVAILABLE
         CHECK_PAYLOAD_SIZE(EKF_STATUS_REPORT);
-        rover.ahrs.get_NavEKF().send_status_report(chan);
+        rover.ahrs.send_ekf_status_report(chan);
 #endif
         break;
 
@@ -920,6 +920,31 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                 break;
 #endif
 
+#if CAMERA == ENABLED
+        case MAV_CMD_DO_DIGICAM_CONFIGURE:
+            rover.camera.configure(packet.param1,
+                                   packet.param2,
+                                   packet.param3,
+                                   packet.param4,
+                                   packet.param5,
+                                   packet.param6,
+                                   packet.param7);
+
+            result = MAV_RESULT_ACCEPTED;
+            break;
+
+        case MAV_CMD_DO_DIGICAM_CONTROL:
+            rover.camera.control(packet.param1,
+                                 packet.param2,
+                                 packet.param3,
+                                 packet.param4,
+                                 packet.param5,
+                                 packet.param6);
+
+            result = MAV_RESULT_ACCEPTED;
+            break;
+#endif // CAMERA == ENABLED
+
             case MAV_CMD_DO_MOUNT_CONTROL:
 #if MOUNT == ENABLED
                 rover.camera_mount.control(packet.param1, packet.param2, packet.param3, (MAV_MOUNT_MODE) packet.param7);
@@ -949,10 +974,11 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                 } else if (is_equal(packet.param5,1.0f)) {
                     float trim_roll, trim_pitch;
                     AP_InertialSensor_UserInteract_MAVLink interact(this);
-                    if (rover.g.skip_gyro_cal) {
-                        // start with gyro calibration, otherwise if the user
-                        // has SKIP_GYRO_CAL=1 they don't get to do it
-                        rover.ins.init_gyro();
+                    // start with gyro calibration
+                    rover.ins.init_gyro();
+                    // reset ahrs gyro bias
+                    if (rover.ins.gyro_calibrated_ok_all()) {
+                        rover.ahrs.reset_gyro_drift();
                     }
                     if(rover.ins.calibrate_accel(&interact, trim_roll, trim_pitch)) {
                         // reset ahrs's trim to suggested values from calibration routine
@@ -962,6 +988,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                         result = MAV_RESULT_FAILED;
                     }
                 } else if (is_equal(packet.param5,2.0f)) {
+                    // start with gyro calibration
+                    rover.ins.init_gyro();
                     // accel trim
                     float trim_roll, trim_pitch;
                     if(rover.ins.calibrate_trim(trim_roll, trim_pitch)) {
@@ -1235,11 +1263,13 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 #endif // HIL_MODE
 
 #if CAMERA == ENABLED
+    //deprecated. Use MAV_CMD_DO_DIGICAM_CONFIGURE
     case MAVLINK_MSG_ID_DIGICAM_CONFIGURE:
     {
         break;
     }
 
+    //deprecated. Use MAV_CMD_DO_DIGICAM_CONFIGURE
     case MAVLINK_MSG_ID_DIGICAM_CONTROL:
     {
         rover.camera.control_msg(msg);
@@ -1249,12 +1279,14 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 #endif // CAMERA == ENABLED
 
 #if MOUNT == ENABLED
+    //deprecated. Use MAV_CMD_DO_MOUNT_CONFIGURE
     case MAVLINK_MSG_ID_MOUNT_CONFIGURE:
 		{
 			rover.camera_mount.configure_msg(msg);
 			break;
 		}
 
+    //deprecated. Use MAV_CMD_DO_MOUNT_CONTROL
     case MAVLINK_MSG_ID_MOUNT_CONTROL:
 		{
 			rover.camera_mount.control_msg(msg);

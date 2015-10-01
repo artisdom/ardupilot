@@ -714,7 +714,7 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
 
     case MSG_EKF_STATUS_REPORT:
         CHECK_PAYLOAD_SIZE(EKF_STATUS_REPORT);
-        copter.ahrs.get_NavEKF().send_status_report(chan);
+        copter.ahrs.send_ekf_status_report(chan);
         break;
 
     case MSG_FENCE_STATUS:
@@ -1263,6 +1263,30 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
             result = MAV_RESULT_ACCEPTED;
             break;
 
+#if CAMERA == ENABLED
+        case MAV_CMD_DO_DIGICAM_CONFIGURE:
+            copter.camera.configure(packet.param1,
+                                    packet.param2,
+                                    packet.param3,
+                                    packet.param4,
+                                    packet.param5,
+                                    packet.param6,
+                                    packet.param7);
+
+            result = MAV_RESULT_ACCEPTED;
+            break;
+
+        case MAV_CMD_DO_DIGICAM_CONTROL:
+            copter.camera.control(packet.param1,
+                                  packet.param2,
+                                  packet.param3,
+                                  packet.param4,
+                                  packet.param5,
+                                  packet.param6);
+
+            result = MAV_RESULT_ACCEPTED;
+            break;
+#endif // CAMERA == ENABLED
         case MAV_CMD_DO_MOUNT_CONTROL:
 #if MOUNT == ENABLED
             copter.camera_mount.control(packet.param1, packet.param2, packet.param3, (MAV_MOUNT_MODE) packet.param7);
@@ -1272,6 +1296,9 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         case MAV_CMD_MISSION_START:
             if (copter.motors.armed() && copter.set_mode(AUTO)) {
                 copter.set_auto_armed(true);
+                if (copter.mission.state() != AP_Mission::MISSION_RUNNING) {
+                    copter.mission.start_or_resume();
+                }
                 result = MAV_RESULT_ACCEPTED;
             }
             break;
@@ -1283,11 +1310,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                 break;
             }
             if (is_equal(packet.param1,1.0f)) {
-                // gyro offset calibration
-                copter.ins.init_gyro();
-                // reset ahrs gyro bias
-                if (copter.ins.gyro_calibrated_ok_all()) {
-                    copter.ahrs.reset_gyro_drift();
+                if (copter.calibrate_gyros()) {
                     result = MAV_RESULT_ACCEPTED;
                 } else {
                     result = MAV_RESULT_FAILED;
@@ -1300,8 +1323,12 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                 result = MAV_RESULT_UNSUPPORTED;
             } else if (is_equal(packet.param5,1.0f)) {
                 // 3d accel calibration
-                float trim_roll, trim_pitch;
+                if (!copter.calibrate_gyros()) {
+                    result = MAV_RESULT_FAILED;
+                    break;
+                }
                 // this blocks
+                float trim_roll, trim_pitch;
                 AP_InertialSensor_UserInteract_MAVLink interact(this);
                 if(copter.ins.calibrate_accel(&interact, trim_roll, trim_pitch)) {
                     // reset ahrs's trim to suggested values from calibration routine
@@ -1311,6 +1338,11 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                     result = MAV_RESULT_FAILED;
                 }
             } else if (is_equal(packet.param5,2.0f)) {
+                // calibrate gyros
+                if (!copter.calibrate_gyros()) {
+                    result = MAV_RESULT_FAILED;
+                    break;
+                }
                 // accel trim
                 float trim_roll, trim_pitch;
                 if(copter.ins.calibrate_trim(trim_roll, trim_pitch)) {
@@ -1724,9 +1756,11 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 #endif
 
 #if CAMERA == ENABLED
+    //deprecated.  Use MAV_CMD_DO_DIGICAM_CONFIGURE
     case MAVLINK_MSG_ID_DIGICAM_CONFIGURE:      // MAV ID: 202
         break;
 
+    //deprecated.  Use MAV_CMD_DO_DIGICAM_CONTROL
     case MAVLINK_MSG_ID_DIGICAM_CONTROL:
         copter.camera.control_msg(msg);
         copter.log_picture();

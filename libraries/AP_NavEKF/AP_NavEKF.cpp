@@ -108,6 +108,9 @@ extern const AP_HAL::HAL& hal;
 // initial imu bias uncertainty (deg/sec)
 #define INIT_ACCEL_BIAS_UNCERTAINTY 0.3f
 
+// maximum gyro bias in rad/sec that can be compensated for
+#define MAX_GYRO_BIAS 0.1f
+
 // Define tuning parameters
 const AP_Param::GroupInfo NavEKF::var_info[] PROGMEM = {
 
@@ -2907,7 +2910,7 @@ void NavEKF::FuseOptFlow()
     Vector3f velNED_local;
     Vector3f relVelSensor;
 
-    uint8_t &obsIndex = flow_state.obsIndex;
+    uint8_t obsIndex = flow_state.obsIndex;
     ftype &q0 = flow_state.q0;
     ftype &q1 = flow_state.q1;
     ftype &q2 = flow_state.q2;
@@ -4387,6 +4390,9 @@ void NavEKF::readMagData()
         // read compass data and scale to improve numerical conditioning
         magData = _ahrs->get_compass()->get_field_milligauss() * 0.001f;
 
+        // check for consistent data between magnetometers
+        consistentMagData = _ahrs->get_compass()->consistent();
+
         // get states stored at time closest to measurement time after allowance for measurement delay
         RecallStates(statesAtMagMeasTime, (imuSampleTime_ms - msecMagDelay));
 
@@ -4521,10 +4527,12 @@ Quaternion NavEKF::calcQuatAndFieldStates(float roll, float pitch)
             // store the yaw change so that it can be retrieved externally for use by the control loops to prevent yaw disturbances following a reset
             Vector3f tempEuler;
             state.quat.to_euler(tempEuler.x, tempEuler.y, tempEuler.z);
-            yawResetAngle = wrap_PI(yaw - tempEuler.z);
-            // set the flag to indicate that an in-flight yaw reset has been performed
-            // this will be cleared when the reset value is retrieved
-            yawResetAngleWaiting = true;
+            // this check ensures we accumulate the resets that occur within a single iteration of the EKF
+            if (imuSampleTime_ms != lastYawReset_ms) {
+                yawResetAngle = 0.0f;
+            }
+            yawResetAngle += wrap_PI(yaw - tempEuler.z);
+            lastYawReset_ms = imuSampleTime_ms;
             // calculate an initial quaternion using the new yaw value
             initQuat.from_euler(roll, pitch, yaw);
         } else {
@@ -4697,6 +4705,7 @@ void NavEKF::InitialiseVariables()
     ekfStartTime_ms = imuSampleTime_ms;
     lastGpsVelFail_ms = 0;
     lastGpsAidBadTime_ms = 0;
+    magYawResetTimer_ms = imuSampleTime_ms;
 
     // initialise other variables
     gpsNoiseScaler = 1.0f;
@@ -4781,7 +4790,7 @@ void NavEKF::InitialiseVariables()
     highYawRate = false;
     yawRateFilt = 0.0f;
     yawResetAngle = 0.0f;
-    yawResetAngleWaiting = false;
+    lastYawReset_ms = 0;
     imuNoiseFiltState1 = 0.0f;
     imuNoiseFiltState2 = 0.0f;
     lastImuSwitchState = IMUSWITCH_MIXED;
@@ -4880,9 +4889,9 @@ return the filter fault status as a bitmasked integer
  1 = velocities are NaN
  2 = badly conditioned X magnetometer fusion
  3 = badly conditioned Y magnetometer fusion
- 5 = badly conditioned Z magnetometer fusion
- 6 = badly conditioned airspeed fusion
- 7 = badly conditioned synthetic sideslip fusion
+ 4 = badly conditioned Z magnetometer fusion
+ 5 = badly conditioned airspeed fusion
+ 6 = badly conditioned synthetic sideslip fusion
  7 = filter is not initialised
 */
 void  NavEKF::getFilterFaults(uint8_t &faults) const
@@ -4942,9 +4951,10 @@ void  NavEKF::getFilterStatus(nav_filter_status &status) const
     bool optFlowNavPossible = flowDataValid && (_fusionModeGPS == 3);
     bool gpsNavPossible = !gpsNotAvailable && (_fusionModeGPS <= 2);
     bool filterHealthy = healthy();
+    bool gyroHealthy = checkGyroHealthPreFlight();
 
     // set individual flags
-    status.flags.attitude = !state.quat.is_nan() && filterHealthy;   // attitude valid (we need a better check)
+    status.flags.attitude = !state.quat.is_nan() && filterHealthy && gyroHealthy;   // attitude valid (we need a better check)
     status.flags.horiz_vel = someHorizRefData && notDeadReckoning && filterHealthy;      // horizontal velocity estimate valid
     status.flags.vert_vel = someVertRefData && filterHealthy;        // vertical velocity estimate valid
     status.flags.horiz_pos_rel = ((doingFlowNav && gndOffsetValid) || doingWindRelNav || doingNormalGpsNav) && notDeadReckoning && filterHealthy;   // relative horizontal position estimate valid
@@ -4952,8 +4962,8 @@ void  NavEKF::getFilterStatus(nav_filter_status &status) const
     status.flags.vert_pos = !hgtTimeout && filterHealthy;            // vertical position estimate valid
     status.flags.terrain_alt = gndOffsetValid && filterHealthy;		// terrain height estimate valid
     status.flags.const_pos_mode = constPosMode && filterHealthy;     // constant position mode
-    status.flags.pred_horiz_pos_rel = (optFlowNavPossible || gpsNavPossible) && filterHealthy; // we should be able to estimate a relative position when we enter flight mode
-    status.flags.pred_horiz_pos_abs = gpsNavPossible && filterHealthy; // we should be able to estimate an absolute position when we enter flight mode
+    status.flags.pred_horiz_pos_rel = (optFlowNavPossible || gpsNavPossible) && filterHealthy && gyroHealthy; // we should be able to estimate a relative position when we enter flight mode
+    status.flags.pred_horiz_pos_abs = gpsNavPossible && filterHealthy && gyroHealthy; // we should be able to estimate an absolute position when we enter flight mode
     status.flags.takeoff_detected = takeOffDetected; // takeoff for optical flow navigation has been detected
     status.flags.takeoff = expectGndEffectTakeoff; // The EKF has been told to expect takeoff and is in a ground effect mitigation mode
     status.flags.touchdown = expectGndEffectTouchdown; // The EKF has been told to detect touchdown and is in a ground effect mitigation mode
@@ -5229,6 +5239,20 @@ bool NavEKF::calcGpsGoodToAlign(void)
                            "GPS horiz error %.1f", (double)hAcc);
     }
     
+    // If we have good magnetometer consistency and bad innovations for longer than 5 seconds then we reset heading and field states
+    // This enables us to handle large changes to the external magnetic field environment that occur before arming
+    if ((magTestRatio.x <= 1.0f && magTestRatio.y <= 1.0f) || !consistentMagData) {
+        magYawResetTimer_ms = imuSampleTime_ms;
+    }
+    if (imuSampleTime_ms - magYawResetTimer_ms > 5000) {
+        // reset heading and field states
+        Vector3f eulerAngles;
+        getEulerAngles(eulerAngles);
+        state.quat = calcQuatAndFieldStates(eulerAngles.x, eulerAngles.y);
+        // reset timer to ensure that bad magnetometer data cannot cause a heading reset more often than every 5 seconds
+        magYawResetTimer_ms = imuSampleTime_ms;
+    }
+
     // fail if magnetometer innovations are outside limits indicating bad yaw
     // with bad yaw we are unable to use GPS
     bool yawFail;
@@ -5251,7 +5275,7 @@ bool NavEKF::calcGpsGoodToAlign(void)
         hal.util->snprintf(prearm_fail_string, sizeof(prearm_fail_string),
                            "GPS numsats %u (needs 6)", _ahrs->get_gps().num_sats());
     }
-    
+
     // record time of fail if failing
     if (gpsVelFail || numSatsFail || hAccFail || yawFail) {
         lastGpsVelFail_ms = imuSampleTime_ms;
@@ -5368,14 +5392,6 @@ bool NavEKF::getHeightControlLimit(float &height) const
     }
 }
 
-// provides the delta quaternion that was used by the INS calculation to rotate from the previous orientation to the orientation at the current time
-// the delta quaternion returned will be a zero rotation if the INS calculation was not performed on that time step
-Quaternion NavEKF::getDeltaQuaternion(void) const
-{
-    // Note: correctedDelAngQuat is reset to a zero rotation at the start of every update cycle in UpdateFilter()
-    return correctedDelAngQuat;
-}
-
 // return the quaternions defining the rotation from NED to XYZ (body) axes
 void NavEKF::getQuaternion(Quaternion& ret) const
 {
@@ -5396,19 +5412,32 @@ void NavEKF::alignMagStateDeclination()
 }
 
 // return the amount of yaw angle change due to the last yaw angle reset in radians
-// returns true if a reset yaw angle has been updated and not queried
-// this function should not have more than one client
-bool NavEKF::getLastYawResetAngle(float &yawAng)
+// returns the time of the last yaw angle reset or 0 if no reset has ever occurred
+uint32_t NavEKF::getLastYawResetAngle(float &yawAng)
 {
-    if (yawResetAngleWaiting) {
-        yawAng = yawResetAngle;
-        yawResetAngleWaiting = false;
-        return true;
-    } else {
-        yawAng = yawResetAngle;
-        return false;
-    }
+    yawAng = yawResetAngle;
+    return lastYawReset_ms;
 }
 
+// Check for signs of bad gyro health before flight
+bool NavEKF::checkGyroHealthPreFlight(void) const
+{
+    bool retVar;
+    if (hal.util->get_soft_armed()) {
+        // Always return true if we are flying (use arm status as a surrogate for flying)
+        retVar = true;
+    } else if
+    (state.gyro_bias.x < 0.5f*MAX_GYRO_BIAS*dtIMUavg &&
+            state.gyro_bias.y < 0.5f*MAX_GYRO_BIAS*dtIMUavg &&
+            state.gyro_bias.z < 0.5f*MAX_GYRO_BIAS*dtIMUavg &&
+            posTestRatio < 0.1f) {
+        // If the synthetic position innovations are too high or the estimated gyro bias exceeds 50% of the available adjustment we declare the gyro as unhealthy
+        // this condition is likely caused by excessive gyro bias and the operator should be prompted to perform a gyro calibration and reset.
+        retVar = true;
+    } else {
+        retVar = false;
+    }
+    return retVar;
+}
 
 #endif // HAL_CPU_CLASS

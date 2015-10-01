@@ -33,6 +33,8 @@
 # define MAG_BOARD_ORIENTATION ROTATION_ROLL_180
 #elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX && CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RASPILOT
 # define MAG_BOARD_ORIENTATION ROTATION_ROLL_180
+#elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX && CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP
+# define MAG_BOARD_ORIENTATION ROTATION_YAW_90
 #else
 # define MAG_BOARD_ORIENTATION ROTATION_NONE
 #endif
@@ -52,6 +54,9 @@
 //MAXIMUM COMPASS REPORTS
 #define MAX_CAL_REPORTS 10
 #define CONTINUOUS_REPORTS 0
+#define AP_COMPASS_MAX_XYZ_ANG_DIFF radians(50.0f)
+#define AP_COMPASS_MAX_XY_ANG_DIFF radians(30.0f)
+#define AP_COMPASS_MAX_XY_LENGTH_DIFF 100.0f
 
 class Compass
 {
@@ -164,6 +169,9 @@ public:
 
     void send_mag_cal_progress(mavlink_channel_t chan);
     void send_mag_cal_report(mavlink_channel_t chan);
+
+    // check if the compasses are pointing in the same direction
+    bool consistent() const;
 
     /// Return the health of a compass
     bool healthy(uint8_t i) const { return _state[i].healthy; }

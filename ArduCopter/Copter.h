@@ -63,6 +63,7 @@
 #include <AP_InertialSensor/AP_InertialSensor.h>  // ArduPilot Mega Inertial Sensor (accel & gyro) Library
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_NavEKF/AP_NavEKF.h>
+#include <AP_NavEKF2/AP_NavEKF2.h>
 #include <AP_Mission/AP_Mission.h>         // Mission command library
 #include <AP_Rally/AP_Rally.h>           // Rally point library
 #include <AC_PID/AC_PID.h>             // PID library
@@ -186,7 +187,8 @@ private:
 
     // Inertial Navigation EKF
     NavEKF EKF{&ahrs, barometer, sonar};
-    AP_AHRS_NavEKF ahrs{ins, barometer, gps, sonar, EKF};
+    NavEKF2 EKF2{&ahrs, barometer, sonar};
+    AP_AHRS_NavEKF ahrs{ins, barometer, gps, sonar, EKF, EKF2};
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     SITL sitl;
@@ -205,6 +207,9 @@ private:
 
     // scale factor applied to velocity controller gain to prevent optical flow noise causing excessive angle demand noise
     float ekfNavVelGainScaler;
+
+    // system time in milliseconds of last recorded yaw reset from ekf
+    uint32_t ekfYawReset_ms = 0;
 
     // GCS selection
     AP_SerialManager serial_manager;
@@ -821,7 +826,6 @@ private:
     void heli_radio_passthrough();
     bool heli_acro_init(bool ignore_checks);
     void heli_acro_run();
-    void get_pilot_desired_yaw_rate(int16_t yaw_in, float &yaw_out);
     bool heli_stabilize_init(bool ignore_checks);
     void heli_stabilize_run();
     void read_inertia();
@@ -842,6 +846,7 @@ private:
     bool pre_arm_checks(bool display_failure);
     void pre_arm_rc_checks();
     bool pre_arm_gps_checks(bool display_failure);
+    bool pre_arm_ekf_attitude_check();
     bool arm_checks(bool display_failure, bool arming_from_gcs);
     void init_disarm_motors();
     void motors_output();
@@ -912,7 +917,8 @@ private:
     void save_trim();
     void auto_trim();
     void init_ardupilot();
-    void startup_ground(bool force_gyro_cal);
+    void startup_INS_ground();
+    bool calibrate_gyros();
     bool position_ok();
     bool ekf_position_ok();
     bool optflow_position_ok();

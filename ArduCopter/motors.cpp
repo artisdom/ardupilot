@@ -124,7 +124,7 @@ bool Copter::init_arm_motors(bool arming_from_gcs)
     // Flag used to track if we have armed the motors the first time.
     // This is used to decide if we should run the ground_start routine
     // which calibrates the IMU
-    static bool did_ground_start = false;
+    static bool did_gyro_cal = false;
     static bool in_arm_motors = false;
 
     // exit immediately if already in this function
@@ -165,7 +165,7 @@ bool Copter::init_arm_motors(bool arming_from_gcs)
 
     if (ap.home_state == HOME_UNSET) {
         // Reset EKF altitude if home hasn't been set yet (we use EKF altitude as substitute for alt above home)
-        ahrs.get_NavEKF().resetHeightDatum();
+        ahrs.resetHeightDatum();
         Log_Write_Event(DATA_EKF_ALT_RESET);
     } else if (ap.home_state == HOME_SET_NOT_LOCKED) {
         // Reset home position if it has already been set before (but not locked)
@@ -173,17 +173,19 @@ bool Copter::init_arm_motors(bool arming_from_gcs)
     }
     calc_distance_and_bearing();
 
-    if(did_ground_start == false) {
-        startup_ground(true);
-        // final check that gyros calibrated successfully
-        if (((g.arming_check == ARMING_CHECK_ALL) || (g.arming_check & ARMING_CHECK_INS)) && !ins.gyro_calibrated_ok_all()) {
-            gcs_send_text_P(MAV_SEVERITY_CRITICAL,PSTR("Arm: Gyro calibration failed"));
-            AP_Notify::flags.armed = false;
-            failsafe_enable();
-            in_arm_motors = false;
-            return false;
+    // gyro calibration on first arming
+    if ((did_gyro_cal == false) && (ins.gyro_calibration_timing() == AP_InertialSensor::GYRO_CAL_STARTUP_AND_FIRST_BOOT)) {
+        if (!calibrate_gyros()) {
+            // final check that gyros calibrated successfully
+            if (((g.arming_check == ARMING_CHECK_ALL) || (g.arming_check & ARMING_CHECK_INS))) {
+                gcs_send_text_P(MAV_SEVERITY_CRITICAL,PSTR("Arm: Gyro calibration failed"));
+                AP_Notify::flags.armed = false;
+                failsafe_enable();
+                in_arm_motors = false;
+                return false;
+            }
         }
-        did_ground_start = true;
+        did_gyro_cal = true;
     }
 
 #if FRAME_CONFIG == HELI_FRAME
@@ -373,25 +375,13 @@ bool Copter::pre_arm_checks(bool display_failure)
             return false;
         }
 
-#if COMPASS_MAX_INSTANCES > 1
         // check all compasses point in roughly same direction
-        if (compass.get_count() > 1) {
-            Vector3f prime_mag_vec = compass.get_field_milligauss();
-            prime_mag_vec.normalize();
-            for(uint8_t i=0; i<compass.get_count(); i++) {
-                // get next compass
-                Vector3f mag_vec = compass.get_field_milligauss(i);
-                mag_vec.normalize();
-                Vector3f vec_diff = mag_vec - prime_mag_vec;
-                if (compass.use_for_yaw(i) && vec_diff.length() > COMPASS_ACCEPTABLE_VECTOR_DIFF) {
-                    if (display_failure) {
-                        gcs_send_text_P(MAV_SEVERITY_CRITICAL,PSTR("PreArm: inconsistent compasses"));
-                    }
-                    return false;
-                }
+        if (!compass.consistent()) {
+            if (display_failure) {
+                gcs_send_text_P(MAV_SEVERITY_CRITICAL,PSTR("PreArm: inconsistent compasses"));
             }
+            return false;
         }
-#endif
 
     }
 
@@ -478,6 +468,14 @@ bool Copter::pre_arm_checks(bool display_failure)
             }
         }
 #endif
+
+        // get ekf attitude (if bad, it's usually the gyro biases)
+        if (!pre_arm_ekf_attitude_check()) {
+            if (display_failure) {
+                gcs_send_text_P(MAV_SEVERITY_CRITICAL,PSTR("PreArm: gyros still settling"));
+            }
+            return false;
+        }
     }
 #if CONFIG_HAL_BOARD != HAL_BOARD_VRBRAIN
 #ifndef CONFIG_ARCH_BOARD_PX4FMU_V1
@@ -552,10 +550,7 @@ bool Copter::pre_arm_checks(bool display_failure)
 #endif
 #if FRAME_CONFIG == HELI_FRAME
         // check helicopter parameters
-        if (!motors.parameter_check()) {
-            if (display_failure) {
-                gcs_send_text_P(MAV_SEVERITY_CRITICAL,PSTR("PreArm: Check Heli Parameters"));
-            }
+        if (!motors.parameter_check(display_failure)) {
             return false;
         }
 #endif // HELI_FRAME
@@ -706,6 +701,15 @@ bool Copter::pre_arm_gps_checks(bool display_failure)
     return true;
 }
 
+// check ekf attitude is acceptable
+bool Copter::pre_arm_ekf_attitude_check()
+{
+    // get ekf filter status
+    nav_filter_status filt_status = inertial_nav.get_filter_status();
+
+    return filt_status.flags.attitude;
+}
+
 // arm_checks - perform final checks before arming
 //  always called just before arming.  Return true if ok to arm
 //  has side-effect that logging is started
@@ -727,6 +731,13 @@ bool Copter::arm_checks(bool display_failure, bool arming_from_gcs)
         if(!ins.get_gyro_health_all()) {
             if (display_failure) {
                 gcs_send_text_P(MAV_SEVERITY_CRITICAL,PSTR("Arm: Gyros not healthy"));
+            }
+            return false;
+        }
+        // get ekf attitude (if bad, it's usually the gyro biases)
+        if (!pre_arm_ekf_attitude_check()) {
+            if (display_failure) {
+                gcs_send_text_P(MAV_SEVERITY_CRITICAL,PSTR("Arm: gyros still settling"));
             }
             return false;
         }

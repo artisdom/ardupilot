@@ -334,6 +334,7 @@ void Plane::do_takeoff(const AP_Mission::Mission_Command& cmd)
     // zero locked course
     steer_state.locked_course_err = 0;
     steer_state.hold_course_cd = -1;
+    auto_state.baro_takeoff_alt = barometer.get_altitude();
 }
 
 void Plane::do_nav_wp(const AP_Mission::Mission_Command& cmd)
@@ -358,6 +359,11 @@ void Plane::do_land(const AP_Mission::Mission_Command& cmd)
         // If no takeoff command has ever been used, default to a conservative 10deg
         auto_state.takeoff_pitch_cd = 1000;
     }
+
+#if RANGEFINDER_ENABLED == ENABLED
+    // zero rangefinder state, start to accumulate good samples now
+    memset(&rangefinder_state, 0, sizeof(rangefinder_state));
+#endif
 }
 
 void Plane::loiter_set_direction_wp(const AP_Mission::Mission_Command& cmd)
@@ -871,7 +877,13 @@ void Plane::do_set_home(const AP_Mission::Mission_Command& cmd)
 void Plane::do_digicam_configure(const AP_Mission::Mission_Command& cmd)
 {
 #if CAMERA == ENABLED
-    camera.configure_cmd(cmd);
+    camera.configure(cmd.content.digicam_configure.shooting_mode,
+                     cmd.content.digicam_configure.shutter_speed,
+                     cmd.content.digicam_configure.aperture,
+                     cmd.content.digicam_configure.ISO,
+                     cmd.content.digicam_configure.exposure_type,
+                     cmd.content.digicam_configure.cmd_id,
+                     cmd.content.digicam_configure.engine_cutoff_time);
 #endif
 }
 
@@ -879,7 +891,12 @@ void Plane::do_digicam_configure(const AP_Mission::Mission_Command& cmd)
 void Plane::do_digicam_control(const AP_Mission::Mission_Command& cmd)
 {
 #if CAMERA == ENABLED
-    camera.control_cmd(cmd);
+    camera.control(cmd.content.digicam_control.session,
+                   cmd.content.digicam_control.zoom_pos,
+                   cmd.content.digicam_control.zoom_step,
+                   cmd.content.digicam_control.focus_lock,
+                   cmd.content.digicam_control.shooting_cmd,
+                   cmd.content.digicam_control.cmd_id);
     log_picture();
 #endif
 }

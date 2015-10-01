@@ -43,6 +43,7 @@
 #include <AP_InertialSensor/AP_InertialSensor.h>
 #include <AP_InertialNav/AP_InertialNav.h>
 #include <AP_NavEKF/AP_NavEKF.h>
+#include <AP_NavEKF2/AP_NavEKF2.h>
 #include <AP_Mission/AP_Mission.h>
 #include <AP_Rally/AP_Rally.h>
 #include <AP_BattMonitor/AP_BattMonitor.h>
@@ -85,7 +86,8 @@ public:
     AP_SerialManager serial_manager;
     RangeFinder rng {serial_manager};
     NavEKF EKF{&ahrs, barometer, rng};
-    AP_AHRS_NavEKF ahrs {ins, barometer, gps, rng, EKF};
+    NavEKF2 EKF2{&ahrs, barometer, rng};
+    AP_AHRS_NavEKF ahrs {ins, barometer, gps, rng, EKF, EKF2};
     AP_InertialNav_NavEKF inertial_nav{ahrs};
     AP_Vehicle::FixedWing aparm;
     AP_Airspeed airspeed{aparm};
@@ -131,6 +133,10 @@ const AP_Param::Info ReplayVehicle::var_info[] PROGMEM = {
     // @Path: ../libraries/AP_NavEKF/AP_NavEKF.cpp
     GOBJECTN(EKF, NavEKF, "EKF_", NavEKF),
 
+    // @Group: EK2_
+    // @Path: ../libraries/AP_NavEKF2/AP_NavEKF2.cpp
+    GOBJECTN(EKF2, NavEKF2, "EK2_", NavEKF2),
+    
     // @Group: COMPASS_
     // @Path: ../libraries/AP_Compass/AP_Compass.cpp
     GOBJECT(compass, "COMPASS_", Compass),
@@ -176,6 +182,8 @@ static const struct LogStructure log_structure[] PROGMEM = {
 
 void ReplayVehicle::setup(void) 
 {
+    load_parameters();
+    
     // we pass zero log structures, as we will be outputting the log
     // structures we need manually, to prevent FMT duplicates
     dataflash.Init(log_structure, 0);
@@ -186,7 +194,8 @@ void ReplayVehicle::setup(void)
     ahrs.set_wind_estimation(true);
     ahrs.set_correct_centrifugal(true);
     ahrs.set_ekf_use(true);
-
+    EKF2.set_enable(true);
+                        
     printf("Starting disarmed\n");
     hal.util->set_soft_armed(false);
 
@@ -581,6 +590,7 @@ void Replay::setup()
     }
 
     _vehicle.setup();
+
     set_ins_update_rate(log_info.update_rate);
 
     feenableexcept(FE_INVALID | FE_OVERFLOW);
@@ -604,16 +614,16 @@ void Replay::setup()
 void Replay::set_ins_update_rate(uint16_t _update_rate) {
     switch (_update_rate) {
     case 50:
-        _vehicle.ins.init(AP_InertialSensor::WARM_START, AP_InertialSensor::RATE_50HZ);
+        _vehicle.ins.init(AP_InertialSensor::RATE_50HZ);
         break;
     case 100:
-        _vehicle.ins.init(AP_InertialSensor::WARM_START, AP_InertialSensor::RATE_100HZ);
+        _vehicle.ins.init(AP_InertialSensor::RATE_100HZ);
         break;
     case 200:
-        _vehicle.ins.init(AP_InertialSensor::WARM_START, AP_InertialSensor::RATE_200HZ);
+        _vehicle.ins.init(AP_InertialSensor::RATE_200HZ);
         break;
     case 400:
-        _vehicle.ins.init(AP_InertialSensor::WARM_START, AP_InertialSensor::RATE_400HZ);
+        _vehicle.ins.init(AP_InertialSensor::RATE_400HZ);
         break;
     default:
         printf("Invalid update rate (%d); use 50, 100, 200 or 400\n", _update_rate);

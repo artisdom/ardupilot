@@ -3,7 +3,7 @@
 #include "Plane.h"
 
 // default sensors are present and healthy: gyro, accelerometer, barometer, rate_control, attitude_stabilization, yaw_position, altitude control, x/y position control, motor_control
-#define MAVLINK_SENSOR_PRESENT_DEFAULT (MAV_SYS_STATUS_SENSOR_3D_GYRO | MAV_SYS_STATUS_SENSOR_3D_ACCEL | MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE | MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL | MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION | MAV_SYS_STATUS_SENSOR_YAW_POSITION | MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL | MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL | MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS | MAV_SYS_STATUS_AHRS)
+#define MAVLINK_SENSOR_PRESENT_DEFAULT (MAV_SYS_STATUS_SENSOR_3D_GYRO | MAV_SYS_STATUS_SENSOR_3D_ACCEL | MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE | MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL | MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION | MAV_SYS_STATUS_SENSOR_YAW_POSITION | MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL | MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL | MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS | MAV_SYS_STATUS_AHRS | MAV_SYS_STATUS_SENSOR_RC_RECEIVER)
 
 void Plane::send_heartbeat(mavlink_channel_t chan)
 {
@@ -237,7 +237,7 @@ void Plane::send_extended_status1(mavlink_channel_t chan)
         control_sensors_health |= MAV_SYS_STATUS_SENSOR_OPTICAL_FLOW;
     }
 #endif
-    if (!ins.get_gyro_health_all() || (!g.skip_gyro_cal && !ins.gyro_calibrated_ok_all())) {
+    if (!ins.get_gyro_health_all() || !ins.gyro_calibrated_ok_all()) {
         control_sensors_health &= ~MAV_SYS_STATUS_SENSOR_3D_GYRO;
     }
     if (!ins.get_accel_health_all()) {
@@ -252,6 +252,12 @@ void Plane::send_extended_status1(mavlink_channel_t chan)
     }
 #endif
 
+    if (millis() - failsafe.last_valid_rc_ms < 200) {
+        control_sensors_health |= MAV_SYS_STATUS_SENSOR_RC_RECEIVER;
+    } else {
+        control_sensors_health &= ~MAV_SYS_STATUS_SENSOR_RC_RECEIVER;
+    }
+    
     int16_t battery_current = -1;
     int8_t battery_remaining = -1;
 
@@ -468,6 +474,19 @@ void Plane::send_wind(mavlink_channel_t chan)
                                           // direction wind is coming from
         wind.length(),
         wind.z);
+}
+
+/*
+  send RPM packet
+ */
+void NOINLINE Plane::send_rpm(mavlink_channel_t chan)
+{
+    if (rpm_sensor.healthy(0) || rpm_sensor.healthy(1)) {
+        mavlink_msg_rpm_send(
+            chan,
+            rpm_sensor.get_rpm(0),
+            rpm_sensor.get_rpm(1));
+    }
 }
 
 /*
@@ -770,7 +789,7 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
     case MSG_EKF_STATUS_REPORT:
 #if AP_AHRS_NAVEKF_AVAILABLE
         CHECK_PAYLOAD_SIZE(EKF_STATUS_REPORT);
-        plane.ahrs.get_NavEKF().send_status_report(chan);
+        plane.ahrs.send_ekf_status_report(chan);
 #endif
         break;
 
@@ -799,7 +818,8 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         break;
 
     case MSG_RPM:
-        // unused
+        CHECK_PAYLOAD_SIZE(RPM);
+        plane.send_rpm(chan);
         break;
 
     case MSG_MISSION_ITEM_REACHED:
@@ -1025,6 +1045,7 @@ GCS_MAVLINK::data_stream_send(void)
     if (stream_trigger(STREAM_EXTRA1)) {
         send_message(MSG_ATTITUDE);
         send_message(MSG_SIMSTATE);
+        send_message(MSG_RPM);
         if (plane.control_mode != MANUAL) {
             send_message(MSG_PID_TUNING);
         }
@@ -1161,6 +1182,31 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
             break;
 #endif
 
+#if CAMERA == ENABLED
+        case MAV_CMD_DO_DIGICAM_CONFIGURE:
+            plane.camera.configure(packet.param1,
+                                   packet.param2,
+                                   packet.param3,
+                                   packet.param4,
+                                   packet.param5,
+                                   packet.param6,
+                                   packet.param7);
+
+            result = MAV_RESULT_ACCEPTED;
+            break;
+
+        case MAV_CMD_DO_DIGICAM_CONTROL:
+            plane.camera.control(packet.param1,
+                                 packet.param2,
+                                 packet.param3,
+                                 packet.param4,
+                                 packet.param5,
+                                 packet.param6);
+
+            result = MAV_RESULT_ACCEPTED;
+            break;
+#endif // CAMERA == ENABLED
+
         case MAV_CMD_DO_MOUNT_CONTROL:
 #if MOUNT == ENABLED
             plane.camera_mount.control(packet.param1, packet.param2, packet.param3, (MAV_MOUNT_MODE) packet.param7);
@@ -1194,10 +1240,11 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
             } else if (is_equal(packet.param5,1.0f)) {
                 float trim_roll, trim_pitch;
                 AP_InertialSensor_UserInteract_MAVLink interact(this);
-                if (plane.g.skip_gyro_cal) {
-                    // start with gyro calibration, otherwise if the user
-                    // has SKIP_GYRO_CAL=1 they don't get to do it
-                    plane.ins.init_gyro();
+                // start with gyro calibration
+                plane.ins.init_gyro();
+                // reset ahrs gyro bias
+                if (plane.ins.gyro_calibrated_ok_all()) {
+                    plane.ahrs.reset_gyro_drift();
                 }
                 if(plane.ins.calibrate_accel(&interact, trim_roll, trim_pitch)) {
                     // reset ahrs's trim to suggested values from calibration routine
@@ -1207,6 +1254,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                     result = MAV_RESULT_FAILED;
                 }
             } else if (is_equal(packet.param5,2.0f)) {
+                // start with gyro calibration
+                plane.ins.init_gyro();
                 // accel trim
                 float trim_roll, trim_pitch;
                 if(plane.ins.calibrate_trim(trim_roll, trim_pitch)) {
@@ -1714,11 +1763,13 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
     }
 
 #if CAMERA == ENABLED
+    //deprecated. Use MAV_CMD_DO_DIGICAM_CONFIGURE
     case MAVLINK_MSG_ID_DIGICAM_CONFIGURE:
     {
         break;
     }
 
+    //deprecated. Use MAV_CMD_DO_DIGICAM_CONTROL
     case MAVLINK_MSG_ID_DIGICAM_CONTROL:
     {
         plane.camera.control_msg(msg);
@@ -1728,12 +1779,14 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 #endif // CAMERA == ENABLED
 
 #if MOUNT == ENABLED
+    //deprecated. Use MAV_CMD_DO_MOUNT_CONFIGURE
     case MAVLINK_MSG_ID_MOUNT_CONFIGURE:
     {
         plane.camera_mount.configure_msg(msg);
         break;
     }
 
+    //deprecated. Use MAV_CMD_DO_MOUNT_CONTROL
     case MAVLINK_MSG_ID_MOUNT_CONTROL:
     {
         plane.camera_mount.control_msg(msg);

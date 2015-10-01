@@ -91,7 +91,7 @@ public:
         k_param_scheduler,
         k_param_relay,
         k_param_takeoff_throttle_delay,
-        k_param_skip_gyro_cal,
+        k_param_skip_gyro_cal, // unused
         k_param_auto_fbw_steer,
         k_param_waypoint_max_radius,
         k_param_ground_steer_alt,        
@@ -141,9 +141,8 @@ public:
         k_param_gcs_pid_mask,
         k_param_crash_detection_enable,
         k_param_land_abort_throttle_enable,
-
-        // 97: RSSI
         k_param_rssi = 97,
+        k_param_rpm_sensor,
         
         // 100: Arming parameters
         k_param_arming = 100,
@@ -199,6 +198,7 @@ public:
         k_param_NavEKF,  // Extended Kalman Filter Inertial Navigation Group
         k_param_mission, // mission library
         k_param_serial_manager, // serial manager library
+        k_param_NavEKF2,  // EKF2
 
         //
         // 150: Navigation parameters
@@ -363,8 +363,6 @@ public:
     // attitude controller type.
     AP_Int8  att_controller;
 
-    // skip gyro calibration
-    AP_Int8  skip_gyro_cal;
     AP_Int8  auto_fbw_steer;
 
     // Estimation

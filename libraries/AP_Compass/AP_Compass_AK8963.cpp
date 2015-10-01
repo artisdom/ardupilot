@@ -212,9 +212,6 @@ void AP_Compass_AK8963::read()
     _make_factory_sensitivity_adjustment(field);
     _make_adc_sensitivity_adjustment(field);
 
-#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP
-    field.rotate(ROTATION_YAW_90);
-#endif
     publish_filtered_field(field, _compass_instance);
 }
 
@@ -457,7 +454,7 @@ void AP_AK8963_SerialBus_MPU9250::_write(uint8_t address, const uint8_t *buf, ui
 
 bool AP_AK8963_SerialBus_MPU9250::configure()
 {
-    if (!AP_InertialSensor_MPU9250::initialize_driver_state())
+    if (!AP_InertialSensor_MPU9250::initialize_driver_state(_spi))
         return false;
 
     uint8_t user_ctrl;
