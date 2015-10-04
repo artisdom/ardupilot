@@ -47,8 +47,6 @@ namespace {
    bool init_compass();
    bool request_compass_read();
    bool read_compass();
-   // ll version assumes semaphore has been acquired
-   bool ll_request_compass_read();
 
    bool init_baro();
    bool request_pressure_read();
@@ -58,9 +56,22 @@ namespace {
 
    void wait_for_power_up();
 
+   void panic(const char* text)
+   {
+      taskENTER_CRITICAL();
+      hal.scheduler->panic(text);
+      taskEXIT_CRITICAL();
+   }
+
    // last waketime for the i2c compass baro task
    // used by FreeRTOS
    TickType_t last_wake_time = 0;
+
+   TickType_t delay_wakeup_time = 0;
+   void delay( uint32_t n)
+   {
+      vTaskDelayUntil(&delay_wakeup_time,n);
+   }
 
    // queue for sending baro data to apm thread
    QueueHandle_t hBaroQueue = nullptr;
@@ -79,11 +90,12 @@ namespace {
       wait_for_power_up();
 
       if ( (hBaroQueue == nullptr) || (hCompassQueue == nullptr) ){
-         hal.scheduler->panic("create FreeRTOS queues failed in I2c task\n");
+         panic("create FreeRTOS queues failed in I2c task\n");
       }
 
+      
       if ( ! (init_compass() && init_baro()) ){
-         hal.scheduler->panic("Compass and Baro init failed\n");
+         panic("Compass and Baro init failed\n");
       }
 
       // running...
@@ -97,19 +109,16 @@ namespace {
             // do n tries to read compass
             // if no joy reinit?
             read_compass();
+            request_compass_read();
             // on every 1 in 2 read the baro temperature
             // else read the baro pressure
             if (baro_read_pressure == false){
                read_baro_temperature();
+               request_pressure_read();
                baro_read_pressure = true;
             }else{
                read_baro_pressure();
-            }
-            request_compass_read();
-            if (baro_read_pressure == false){
                request_temperature_read();
-            }else{
-               request_pressure_read();
             }
             sem->give();
          }
@@ -270,27 +279,27 @@ namespace {
       
       AP_HAL::Semaphore * const sem = hal.i2c->get_semaphore();
       if (!sem) {
-         hal.scheduler->panic("couldnt get semaphore");
+         panic("couldnt get semaphore");
          return false;
       }
       // TODO add timeout
       while ( !sem->take_nonblocking()){;}
       uint8_t command = baro_cmd_reset;
       if ( hal.i2c->write(baro_addr,1,&command) != transfer_succeeded){
-         hal.scheduler->panic("coulndt write baro reset");
+         panic("coulndt write baro reset");
          sem->give();
          return false;
       }
-      hal.scheduler->delay(4);
+      delay(4);
       for ( uint8_t i = 0; i < 8; ++i){
         if (  read_16bits(baro_addr,baro_cal_base_reg + 2*i, baroCal[i]) != transfer_succeeded){
-            hal.scheduler->panic("read baro cal failed\n");
+            panic("read baro cal failed\n");
             sem->give();
             return false;
         }
       }
       if (! do_baro_crc()){
-          hal.scheduler->panic("read baro crc failed\n");
+          panic("read baro crc failed\n");
           sem->give();
           return false;
       }
@@ -350,7 +359,7 @@ namespace {
    {
       AP_HAL::Semaphore * const sem = hal.i2c->get_semaphore();
       if (!sem) {
-         hal.scheduler->panic("couldnt get semaphore");
+         panic("couldnt get semaphore");
          return false;
       }
       
@@ -362,7 +371,7 @@ namespace {
          return false;
       }
       // start the read loop
-      bool const result = do_mag_runtime_config() && ll_request_compass_read();
+      bool const result = do_mag_runtime_config() && request_compass_read();
       sem->give();
       return result;
    }
@@ -374,22 +383,11 @@ namespace {
        &&  (hal.i2c->writeRegister(mag_addr,mag_configB,(mag_runtime_gain_index << 5)) == transfer_succeeded) ;
    }
 
-   bool ll_request_compass_read()
+   bool request_compass_read()
    {
       return (hal.i2c->writeRegister(mag_addr,mag_modereg, mag_single_measurement) == transfer_succeeded);
    }
 
-   bool request_compass_read()
-   {
-      AP_HAL::Semaphore * const sem = hal.i2c->get_semaphore();
-      if (! (sem && sem->take_nonblocking()) ){
-        hal.scheduler->panic("couldnt get semaphore");
-         return false;
-      }
-      bool result = ll_request_compass_read();
-      sem->give();
-      return result;
-   }
 
    int16_t mag_convert_to_int16(uint8_t * d)
    {
@@ -481,7 +479,7 @@ namespace Quan {
    QueueHandle_t get_compass_queue_handle()
    {
       if ( hCompassQueue == nullptr){
-         hal.scheduler->panic("Requesting null compass queue handle\n");
+         panic("Requesting null compass queue handle\n");
       }
       return hCompassQueue;
    }
@@ -489,7 +487,7 @@ namespace Quan {
    QueueHandle_t get_baro_queue_handle()
    {
       if ( hBaroQueue == nullptr){
-         hal.scheduler->panic("Requesting null baro queue handle\n");
+         panic("Requesting null baro queue handle\n");
       }
       return hBaroQueue;
    }
@@ -515,7 +513,7 @@ namespace {
          if (hal.i2c->writeRegister(mag_addr,mag_configA, mag_positive_bias_config) != transfer_succeeded){
             continue;   // compass not responding on the bus
          }
-         hal.scheduler->delay(50);
+         delay(50);
 
          // set gains
          if ( !((hal.i2c->writeRegister(mag_addr,mag_configB, (mag_calibration_gain_index << 5)) == transfer_succeeded) &&
@@ -524,13 +522,13 @@ namespace {
             continue;
          }
 
-         hal.scheduler->delay(50);
+         delay(50);
          quan::three_d::vect<int16_t> mag_result;
          int32_t time_ms =0;
          if (!read_compass_raw(mag_result,time_ms)){
             continue;      // we didn't read valid raw_magnetometer_values
          }
-         hal.scheduler->delay(10);
+         delay(10);
 
          quan::three_d::vect<float> cal;
 
@@ -575,7 +573,7 @@ namespace {
             once = true;
             hal.console->printf("HMC5883 Compass warming up\n");
          }
-         hal.scheduler->delay(200 - now_ms);
+         delay(200 - now_ms);
       }
    }
 
