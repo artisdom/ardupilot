@@ -226,7 +226,7 @@ void AP_Airspeed::read(void)
         airspeed_pressure = -airspeed_pressure;
         // no break
     case PITOT_TUBE_ORDER_POSITIVE:
-        if (airspeed_pressure < -32) {
+        if (airspeed_pressure < -32.f) {
             // we're reading more than about -8m/s. The user probably has
             // the ports the wrong way around
             _healthy = false;
@@ -237,7 +237,7 @@ void AP_Airspeed::read(void)
         airspeed_pressure = fabsf(airspeed_pressure);
         break;
     }
-    airspeed_pressure       = max(airspeed_pressure, 0);
+    airspeed_pressure       = max(airspeed_pressure, 0.f);
     _last_pressure          = airspeed_pressure;
     _raw_airspeed           = sqrtf(airspeed_pressure * _ratio);
     _airspeed               = 0.7f * _airspeed  +  0.3f * _raw_airspeed;
