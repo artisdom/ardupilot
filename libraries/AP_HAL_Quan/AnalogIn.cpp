@@ -1,4 +1,7 @@
 
+#include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
 #include <stm32f4xx.h>
 #include "FreeRTOS.h"
@@ -334,3 +337,5 @@ namespace Quan{
   }  
 
 }
+
+#endif //  CONFIG_HAL_BOARD == HAL_BOARD_QUAN

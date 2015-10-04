@@ -11,6 +11,10 @@
 #include <AP_Vehicle/AP_Vehicle.h>
 #include <AP_Math/AP_Math.h>
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <AP_HAL_Quan/imu_task.hpp>
+#endif
+
 /*
   enable TIMING_DEBUG to track down scheduling issues with the main
   loop. Output is on the debug console
@@ -524,7 +528,7 @@ AP_InertialSensor::_detect_backends(void)
     //_add_backend(AP_InertialSensor_LSM303D::detect);
     _add_backend(AP_InertialSensor_MPU6000::detect_spi(*this));
 #elif HAL_INS_DEFAULT == HAL_INS_QUAN
-#pragma message "TODO QUAN INS"
+     _add_backend(AP_InertialSensor_Quan::detect(*this));
 #else
     #error Unrecognised HAL_INS_TYPE setting
 #endif
@@ -1350,6 +1354,27 @@ void AP_InertialSensor::wait_for_sample(void)
         return;
     }
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    
+    // block up to 1 sample period
+    // if no sample then report, which should nt happen when running
+    // so should prob be a panic
+    while( !Quan::wait_for_imu_sample( _sample_period_usec) ){
+       hal.console->printf("AP_InertialSensor .. quan .. failed to read INS sample promptly\n");
+    }
+    // new sample has arrived!
+    uint32_t now = hal.scheduler->micros();
+    if (_hil_mode && _hil.delta_time > 0) {
+        _delta_time = _hil.delta_time;
+        _hil.delta_time = 0;
+    }else{
+        _delta_time = (now - _last_sample_usec) * 1.0e-6f;
+    }
+    _last_sample_usec = now;
+    _next_sample_usec = now + _sample_period_usec;
+
+#else
+
     uint32_t now = hal.scheduler->micros();
 
     if (_next_sample_usec == 0 && _delta_time <= 0) {
@@ -1429,6 +1454,8 @@ check_sample:
                                 (long)(now - delta_time_sum));
         }
     }
+#endif
+
 #endif
 
     _have_sample = true;

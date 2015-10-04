@@ -1,5 +1,6 @@
 #include "LowPassFilter2p.h"
 
+#include <AP_Math/vector3_volatile.h>
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // DigitalBiquadFilter
@@ -93,6 +94,8 @@ T LowPassFilter2p<T>::apply(const T &sample) {
 template class LowPassFilter2p<int>;
 template class LowPassFilter2p<long>;
 template class LowPassFilter2p<float>;
-template class LowPassFilter2p<double>;
+
+//template class LowPassFilter2p<double>;
 template class LowPassFilter2p<Vector2f>;
 template class LowPassFilter2p<Vector3f>;
+template class LowPassFilter2p<Vector3<volatile float> >;

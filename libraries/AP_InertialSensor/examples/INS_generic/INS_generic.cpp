@@ -148,19 +148,19 @@ static void display_offsets_and_scaling()
     // display results
     hal.console->printf_P(
             PSTR("\nAccel Offsets X:%10.8f \t Y:%10.8f \t Z:%10.8f\n"),
-                    accel_offsets.x,
-                    accel_offsets.y,
-                    accel_offsets.z);
+                    static_cast<double>(accel_offsets.x),
+                    static_cast<double>(accel_offsets.y),
+                    static_cast<double>(accel_offsets.z) );
     hal.console->printf_P(
             PSTR("Accel Scale X:%10.8f \t Y:%10.8f \t Z:%10.8f\n"),
-                    accel_scale.x,
-                    accel_scale.y,
-                    accel_scale.z);
+                    static_cast<double>(accel_scale.x),
+                    static_cast<double>(accel_scale.y),
+                    static_cast<double>(accel_scale.z) );
     hal.console->printf_P(
             PSTR("Gyro Offsets X:%10.8f \t Y:%10.8f \t Z:%10.8f\n"),
-                    gyro_offsets.x,
-                    gyro_offsets.y,
-                    gyro_offsets.z);
+                    static_cast<double>(gyro_offsets.x),
+                    static_cast<double>(gyro_offsets.y),
+                    static_cast<double>(gyro_offsets.z) );
 }
 
 static void run_test()
@@ -194,7 +194,13 @@ static void run_test()
 		if (counter++ % 50 == 0) {
 			// display results
 			hal.console->printf_P(PSTR("Accel X:%4.2f \t Y:%4.2f \t Z:%4.2f \t len:%4.2f \t Gyro X:%4.2f \t Y:%4.2f \t Z:%4.2f\n"), 
-								  accel.x, accel.y, accel.z, length, gyro.x, gyro.y, gyro.z);
+            static_cast<double>(accel.x), 
+            static_cast<double>(accel.y), 
+            static_cast<double>(accel.z), 
+            static_cast<double>(length), 
+            static_cast<double>(gyro.x), 
+            static_cast<double>(gyro.y), 
+            static_cast<double>(gyro.z) );
 		}
     }
 

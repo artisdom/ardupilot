@@ -1,6 +1,9 @@
 #ifndef APM_QUANTRACKER_I2C_TASK_HPP_INCLUDED
 #define APM_QUANTRACKER_I2C_TASK_HPP_INCLUDED
 
+#include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
 #include "FreeRTOS.h"
 #include <task.h>
 #include <semphr.h>
@@ -26,14 +29,14 @@ namespace Quan{
       struct baro_args{
          quan::pressure_<float>::Pa         pressure;
          quan::temperature_<float>::K       temperature;
-         int32_t                            update_time_ms;
       };
 
       struct compass_args{
          quan::three_d::vect<quan::magnetic_flux_density_<float>::milli_gauss> field;
-         int32_t                                                       update_time_ms;
+         uint32_t time_us;
       };
    }
 }
 
+#endif //CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #endif // APM_QUANTRACKER_I2C_TASK_HPP_INCLUDED

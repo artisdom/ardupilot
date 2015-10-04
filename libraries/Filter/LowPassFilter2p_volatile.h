@@ -15,19 +15,19 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LOWPASSFILTER2P_H
-#define LOWPASSFILTER2P_H
+#ifndef LOWPASSFILTER2P_VOLATILE_H
+#define LOWPASSFILTER2P_VOLATILE_H
 
-#include <AP_Math/AP_Math.h>
-#include <math.h>
-#include <inttypes.h>
+#include "LowPassFilter2p.h"
+
+#include <type_traits>
 
 
 /// @file   LowPassFilter2p.h
 /// @brief  A class to implement a second order low pass filter
 /// @authors: Leonard Hall <LeonardTHall@gmail.com>, template implmentation: Daniel Frenzel <dgdanielf@gmail.com>
 template <class T>
-class DigitalBiquadFilter {
+class DigitalBiquadFilter< {
 public:
     struct biquad_params {
         float cutoff_freq;
@@ -49,10 +49,6 @@ private:
     T _delay_element_1;
     T _delay_element_2;
 };
-
-
-
- 
 
 template <class T>
 class LowPassFilter2p {
@@ -101,4 +97,4 @@ typedef LowPassFilter2p<Vector2f> LowPassFilter2pVector2f;
 typedef LowPassFilter2p<Vector3f> LowPassFilter2pVector3f;
 
 
-#endif // LOWPASSFILTER2P_H
+#endif // LOWPASSFILTER2P_VOLATILE_H

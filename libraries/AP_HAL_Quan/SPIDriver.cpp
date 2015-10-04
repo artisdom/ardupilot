@@ -1,3 +1,6 @@
+// NOT used
+
+#if 0
 
 #include <stm32f4xx.h>
 #include "FreeRTOS.h"
@@ -252,4 +255,6 @@ AP_HAL::SPIDeviceDriver* Quan::QuanSPIDeviceManager::device(enum AP_HAL::SPIDevi
   ;
 #endif
 }
+
+#endif
 

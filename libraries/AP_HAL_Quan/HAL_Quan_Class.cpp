@@ -20,7 +20,7 @@ namespace Quan{
   AP_HAL::RCOutput*    get_rc_outputs();
 }
 
-static QuanSPIDeviceManager spiDeviceManager;
+static Empty::EmptySPIDeviceManager spiDeviceManager;
 static QuanStorage storageDriver;
 static QuanGPIO gpioDriver;
 //static QuanRCOutput rcoutDriver;
@@ -64,4 +64,4 @@ void HAL_Quan::init(int argc,char* const argv[]) const
 
 const HAL_Quan AP_HAL_Quan;
 
-#endif
+#endif  // CONFIG_HAL_BOARD == HAL_BOARD_QUAN

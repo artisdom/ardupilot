@@ -23,7 +23,8 @@
 
 #include <stm32f4xx.h>
 #include "i2c_task.hpp"
-
+#include <quan/max.hpp>
+#include <Filter/Butter.h>
 /*
 The MS56111 Baro and HMC5883 compass are on a single I2C bus
 
@@ -34,11 +35,8 @@ The I2C_Task runs as a separate task in FreeRTOS
 The I2Ctask uses FreeRTOS queues to communicate compass and Baro data to the APM_Task
 
 The I2C_Task is run at 100 Hz
-The baro data is accumulated until the BaroQueue is not full
-but in the main loop results are only read every 10 Hz
-Currently The CompaasDat is put on once per i2c_task cycle
-but prob should accumualte like the Baro task
-and put new data when queue has space
+The task also filters the data
+and puts the lastest value on the queues when there is free space
 
 */
 
@@ -61,6 +59,7 @@ namespace {
    void wait_for_power_up();
 
    // last waketime for the i2c compass baro task
+   // used by FreeRTOS
    TickType_t last_wake_time = 0;
 
    // queue for sending baro data to apm thread
@@ -69,8 +68,10 @@ namespace {
    // queue for sending compass data to apm thread
    QueueHandle_t hCompassQueue = nullptr;
 
-   // count to sequentially read 3 * pressure then 1 * temperature
-   int baro_read_state_count = 0;
+   // boolean count to sequentially read 1 * pressure then 1 * temperature
+   // This is done to give a nominal 50 Hz update rate
+   // for the baro pressure and temperature filters
+   bool baro_read_pressure = true;
 
    void i2c_task(void* params)
    {
@@ -96,17 +97,16 @@ namespace {
             // do n tries to read compass
             // if no joy reinit?
             read_compass();
-            // on every 1 in 4 read the baro temperature
+            // on every 1 in 2 read the baro temperature
             // else read the baro pressure
-            if (baro_read_state_count > 2){
+            if (baro_read_pressure == false){
                read_baro_temperature();
-               baro_read_state_count = 0;
+               baro_read_pressure = true;
             }else{
                read_baro_pressure();
             }
             request_compass_read();
-            if (++baro_read_state_count > 2){
-               // may also put the baro data on the queue
+            if (baro_read_pressure == false){
                request_temperature_read();
             }else{
                request_pressure_read();
@@ -131,46 +131,22 @@ namespace {
    // baroCal[7] is crc
    uint16_t baroCal[8];
 
-   // usefulr accumulators for the baro temp and pressure raw data
-   struct baro_accum_t{
-      
-      void reset()
-      {
-         m_count = 0;
-         m_sum = 0.f;
-      }
+   Butter2<butter50_8_coeffs,quan::pressure_<float>::Pa>    pressure_filter;
+   Butter2<butter100_05_coeffs,quan::temperature_<float>::K>   temperature_filter;
+   Butter2<
+      butter50_8_coeffs,
+      quan::three_d::vect<
+         quan::magnetic_flux_density_<float>::milli_gauss
+      > 
+   > compass_filter;
 
-      baro_accum_t & operator +=(uint32_t sample)
-      {
-         // try to get statistically best
-         // average
-         auto div_half_even = [] (uint32_t in){
-             return ( in >> 1U ) | ( ((in & 0b10)?0:1) & ( in & 0b1) ) ;
-         };
-         if ( m_count == 256U){
-           m_sum = div_half_even(m_sum);
-           m_count = 128U;
-         }
-         m_sum += sample;
-         ++m_count;
-         return *this;
-      }
-
-      float average() const
-      {
-         if ( m_count > 0){
-            return static_cast<float>(m_sum) / m_count;
-         }else{
-            return 0.f;
-         }
-      }
-      private:
-      uint32_t m_count;
-      uint32_t m_sum;
-   };
-
-   baro_accum_t temperature_accum;
-   baro_accum_t pressure_accum;
+   quan::pressure_<float>::Pa         filtered_pressure;
+   quan::temperature_<float>::K       filtered_temperature;
+  
+   quan::three_d::vect<
+      quan::magnetic_flux_density_<float>::milli_gauss
+   > filtered_compass;
+   
    
    uint8_t read_16bits(uint8_t addr, uint8_t reg, uint16_t & out)
    {
@@ -194,61 +170,50 @@ namespace {
        }
    }
 
-   bool calculate_baro_args( Quan::detail::baro_args& args)
-   {
+   // store the raw data from the baro
+   uint32_t latest_pressure_reading = 0;
+   uint32_t latest_temperature_reading = 0;
 
+   bool calculate_baro_args()
+   {
       // Formulas from manufacturer datasheet
       // sub -20c temperature compensation is not included
-
-      // we do the calculations using floating point
-      // as this is much faster on an AVR2560, and also allows
-      // us to take advantage of the averaging of D1 and D1 over
-      // multiple samples, giving us more precision
-
-      float dT = temperature_accum.average() - (((uint32_t)baroCal[5]) << 8);
+      float const dT = latest_temperature_reading - (((uint32_t)baroCal[5]) << 8);
       float TEMP = (dT * baroCal[6])/8388608;
       float OFF = baroCal[2] * 65536.0f + (baroCal[4] * dT) / 128;
       float SENS = baroCal[1] * 32768.0f + (baroCal[3] * dT) / 256;
 
       if (TEMP < 0) {
         // second order temperature compensation when under 20 degrees C
-        float T2 = (dT*dT) / 0x80000000;
-        float Aux = TEMP*TEMP;
-        float OFF2 = 2.5f*Aux;
-        float SENS2 = 1.25f*Aux;
+        float const T2 = (dT*dT) / 0x80000000;
+        float const Aux = TEMP*TEMP;
+        float const OFF2 = 2.5f*Aux;
+        float const SENS2 = 1.25f*Aux;
         TEMP = TEMP - T2;
         OFF = OFF - OFF2;
         SENS = SENS - SENS2;
       }
-      args.pressure = quan::pressure::Pa{(pressure_accum.average()*SENS/2097152 - OFF)/32768};
-      // nb.  Use Kelvin but 
-      args.temperature = quan::temperature::K{((TEMP + 2000) * 0.01f) + 273.15f};
+      filtered_pressure = pressure_filter.filter(quan::pressure::Pa{(latest_pressure_reading*SENS/2097152 - OFF)/32768});
+      // nb.Use Kelvin 
+      filtered_temperature = temperature_filter.filter(quan::temperature::K{((TEMP + 2000) * 0.01f) + 273.15f});
       return true;
-      //_copy_to_frontend(_instance, pressure, temperature);
    }
 
    bool read_baro_pressure()
    {
-      uint32_t latest_pressure_reading = 0;
-      if ( read_24bits(baro_addr,0,latest_pressure_reading) == transfer_succeeded){
-         pressure_accum += latest_pressure_reading;
-         return true;
-      }else{
-         return false;
-      }
+      return read_24bits(baro_addr,0,latest_pressure_reading) == transfer_succeeded;
    }
 
+   // on temperature read do the baro conversion calcs and try
+   // moving existing temperature and pressure samples to the
+   // quueue if possible
    bool read_baro_temperature()
    {
-      uint32_t cur_temperature = 0;
-      if ( read_24bits(baro_addr,0,cur_temperature) == transfer_succeeded){
-         temperature_accum += cur_temperature;
+      if ( read_24bits(baro_addr,0,latest_temperature_reading) == transfer_succeeded){
+         calculate_baro_args();
          if ( uxQueueSpacesAvailable(hBaroQueue) != 0){
-            Quan::detail::baro_args args;
-            calculate_baro_args(args);
+            Quan::detail::baro_args args = {filtered_pressure,filtered_temperature};
             xQueueSendToBack(hBaroQueue,&args,0);
-            temperature_accum.reset();
-            pressure_accum.reset();
          }
          return true;
       }else{
@@ -256,12 +221,14 @@ namespace {
       }
    }
 
+   // request the baro to prepare a pressure sample
    bool request_pressure_read()
    {
       uint8_t command = baro_cmd_read_pressure;
       return hal.i2c->write(baro_addr,1,&command) == transfer_succeeded;
    }
 
+   // request the baro to prepare a temperature sample
    bool request_temperature_read()
    {
       uint8_t command = baro_cmd_read_temperature;
@@ -270,7 +237,6 @@ namespace {
 
    bool do_baro_crc()
    {
-      
     /* save the read crc */
       uint16_t const crc_read = baroCal[7];
     /* remove CRC byte */
@@ -283,7 +249,6 @@ namespace {
          } else {
             n_rem ^= (uint8_t)(baroCal[cnt >> 1] >> 8);
          }
-
          for (uint8_t n_bit = 8U; n_bit > 0U; --n_bit) {
             if (n_rem & 0x8000) {
                n_rem = (n_rem << 1U) ^ 0x3000;
@@ -292,7 +257,6 @@ namespace {
             }
          }
       }
-
     /* final 4 bit remainder is CRC value */
       n_rem = (0x000F & (n_rem >> 12));
       baroCal[7] = crc_read;
@@ -303,6 +267,7 @@ namespace {
    // based on the AP_BARO_MS5611 constructor code
    bool init_baro()
    {
+      
       AP_HAL::Semaphore * const sem = hal.i2c->get_semaphore();
       if (!sem) {
          hal.scheduler->panic("couldnt get semaphore");
@@ -329,8 +294,12 @@ namespace {
           sem->give();
           return false;
       }
-      temperature_accum.reset();
-      pressure_accum.reset();
+
+      // 14 degrees C is average world temperature
+      temperature_filter.reset(quan::temperature_<float>::K{273.15f + 14.f});
+      // standard atmospheric pressure in Pa
+      pressure_filter.reset(quan::pressure_<float>::Pa{101325.f});
+      // start the ball rolling
       bool result = request_pressure_read();
       sem->give();
       return result;
@@ -453,31 +422,28 @@ namespace {
    }
 
    // when the new value is ready
-   // read the compass and put the result on the queue to the
+   // read the compass and if possible, put the filtered result on the queue to the
    // stub AP_CompassBackend
    bool read_compass()
    {
       int32_t time_ms = 0;
       quan::three_d::vect<int16_t> result;
-      
+
       if ( read_compass_raw(result, time_ms)){
-           Quan::detail::compass_args args;
-           constexpr milli_gauss milli_gauss_per_lsb = compass_gain_per_lsb[mag_runtime_gain_index];
-           args.field.x   = result.x * milli_gauss_per_lsb * mag_scaling.x;
-           args.field.y   = result.y * milli_gauss_per_lsb * mag_scaling.y;
-           args.field.z   = result.z * milli_gauss_per_lsb * mag_scaling.z;
-           args.update_time_ms = time_ms;
-           taskENTER_CRITICAL();
-           if ( uxQueueSpacesAvailable(hCompassQueue) == 0){
-              // no space on queue so
-              // just dump the first on the queue
-              // This may happen by design during init ec
-              Quan::detail::compass_args dump_args; 
-              xQueueReceive(hCompassQueue,&dump_args, 0 );
-           }
-           taskEXIT_CRITICAL();
-           xQueueSendToBack(hCompassQueue,&args,0);
-           return true;
+         // Quan::detail::compass_args args;
+         constexpr milli_gauss milli_gauss_per_lsb = compass_gain_per_lsb[mag_runtime_gain_index];
+         filtered_compass = compass_filter.filter({
+            result.x * milli_gauss_per_lsb * mag_scaling.x
+            ,result.y * milli_gauss_per_lsb * mag_scaling.y
+            ,result.z * milli_gauss_per_lsb * mag_scaling.z
+         });
+         if ( uxQueueSpacesAvailable(hCompassQueue) != 0 ){
+            Quan::detail::compass_args args;
+            args.field = filtered_compass;
+            args.time_us = hal.scheduler->micros();
+            xQueueSendToBack(hCompassQueue,&args,0);
+         }
+         return true;
       }else{
          return false;
       }
@@ -491,8 +457,17 @@ namespace {
 namespace Quan {
    void create_i2c_task()
    {
-      hBaroQueue = xQueueCreate(4,sizeof(Quan::detail::baro_args));
-      hCompassQueue = xQueueCreate(4,sizeof(Quan::detail::compass_args));
+      // As long as the baro data is read at less than 50 Hz
+      // and the compass at less than 100 Hz
+      // 1 in queue should be ok
+      // The update rates are listed in ArduPlane.cpp
+      // as 10 Hz for update_compass
+      // and 10 Hz for update_alt ( baro)
+      // (The higher rate accumulate functions are not used or required)
+      // Same rates in ArduCopter
+      constexpr uint32_t num_in_queue = 1;
+      hBaroQueue = xQueueCreate(num_in_queue,sizeof(Quan::detail::baro_args));
+      hCompassQueue = xQueueCreate(num_in_queue,sizeof(Quan::detail::compass_args));
 
       xTaskCreate(
          i2c_task,"I2C_task",
@@ -511,7 +486,7 @@ namespace Quan {
       return hCompassQueue;
    }
 
-    QueueHandle_t get_baro_queue_handle()
+   QueueHandle_t get_baro_queue_handle()
    {
       if ( hBaroQueue == nullptr){
          hal.scheduler->panic("Requesting null baro queue handle\n");

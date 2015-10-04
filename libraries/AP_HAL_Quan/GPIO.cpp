@@ -1,7 +1,10 @@
 
+
+#include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
 #include "GPIO.h"
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <quan/stm32/gpio.hpp>
 #include <resources.hpp>
 

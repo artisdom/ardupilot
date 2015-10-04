@@ -31,6 +31,10 @@ void Quan::set_usart3_tx_inverting( bool val)
     quan::stm32::put<frsky_txo_sign_pin>(val);
 }
 
+/*
+TODO add thread safe version for console
+*/
+
 namespace {
 
    // on isolated port

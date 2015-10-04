@@ -1,4 +1,9 @@
 
+
+#include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
+
 #include <stm32f4xx.h>
 #include <quan/stm32/spi.hpp>
 #include <quan/stm32/gpio.hpp>
@@ -8,43 +13,70 @@
 #include <quan/stm32/rcc.hpp>
 #include <quan/stm32/f4/exti/set_exti.hpp>
 #include <quan/stm32/f4/syscfg/module_enable_disable.hpp>
+#include <quan/stm32/push_pop_fp.hpp>
 
-#include <quan/stm32/serial_port.hpp>
+#include <Filter/LowPassFilter2p.h>
+#include "task.h"
+#include "semphr.h"
 
-#include <cstdio>
-#include <cstring>
+#include <AP_Math/vector3_volatile.h>
 
-#include <quan/time.hpp>
+#include "imu_task.hpp"
 
-namespace {
-   typedef quan::time_<int64_t>::ms ms;
-}
-void delay ( ms const &  t);
+/*
+   Inertial sensor runs at
+   50 Hz   Rover , Plane
+   100 Hz
+   200 Hz
+   400 Hz  Copter
+
+   for 400Hz run IMU at 8kHz and divide by 20 
+   // config = 0, sample_rate_div = 19
+  When tested there is a around 100 usec jitter  ( e.g 2%)
+   as shown in the samples below
+
+t=2544
+t=2453
+t=2544
+t=2452
+t=2544
+t=2453
+t=2544
+t=2452
+t=2544
+t=2452
+t=2544
+t=2453
+t=2544
+t=2452
+
+ For "fast processors" the IMU6000 internal filter is disabled
+
+    Filter cutoff frequency ?
+    given as 20 (Hz) for plane and Copter and 10(Hz) for rover
+
+*/
+
+extern const AP_HAL::HAL& hal;
 
 extern "C" void DMA2_Stream0_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void EXTI15_10_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 
 namespace {
 
+   // handle to the  1 element ins args queue
+   QueueHandle_t h_INS_ArgsQueue = 0U;
+  
+   // ignore the hal function for delay
+   // actually is only used in apm_task for setup
+   // so would be ok
+   TickType_t wakeup_time = 0;
+   void delay( uint32_t n)
+   {
+      vTaskDelayUntil(&wakeup_time,n);
+   }
 
-
-   struct console{
-      typedef quan::stm32::usart1 usart;
-      typedef quan::mcu::pin<quan::stm32::gpioa,9> txo_pin; // PA9
-      typedef quan::mcu::pin<quan::stm32::gpioa,10> rxi_pin; // PA10
-      static constexpr uint32_t in_buf_size = 1000;
-      static constexpr uint32_t out_buf_size = 1000;
-      typedef quan::stm32::serial_port<
-         usart,
-         out_buf_size,
-         in_buf_size,
-         txo_pin,
-         rxi_pin
-      > serial_port;
-   };
-
-   typedef console::serial_port sp;
-
+   // imu register values
    struct val{
       static constexpr uint8_t device_wakeup = 0U;
       static constexpr uint8_t device_reset = (1 << 7);
@@ -55,6 +87,7 @@ namespace {
       static constexpr uint8_t whoami =   0x68  ;
    };
 
+   // imu register indexes
    struct reg{
       static constexpr uint8_t sample_rate_div     = 25U;
       static constexpr uint8_t config              = 26U;
@@ -84,16 +117,13 @@ namespace {
       static constexpr uint8_t accel_offsets       = 119U; // 119 to 126
    };
 
-
-
-   // SPI1 used for MPU6000/ MPU9250 IMU
   struct spi_device_driver  {
 
       typedef quan::stm32::spi1 spi1;
 
       static void init() 
       {
-         quan::stm32::rcc::get()->apb2enr.bb_setbit<12>(); // |= (1 << 12);
+         quan::stm32::rcc::get()->apb2enr.bb_setbit<12>(); 
          quan::stm32::rcc::get()->apb2rstr.bb_setbit<12>();
          quan::stm32::rcc::get()->apb2rstr.bb_clearbit<12>();
          setup_spi_pins();
@@ -102,12 +132,14 @@ namespace {
          setup_dma();
          start_spi();
       }
-
+// only used for setup
        static bool transaction(const uint8_t *tx, uint8_t *rx, uint16_t len) 
        {
+         taskENTER_CRITICAL();
          cs_assert();
          transfer(tx,rx,len);
          cs_release();
+         taskEXIT_CRITICAL();
          return true;
        }
 private:
@@ -183,7 +215,7 @@ private:
 public:
       static void cs_assert()
       {
-         m_transfer_in_progress = true;
+        // m_transfer_in_progress = true;
          quan::stm32::clear<spi1_soft_nss>();
          (void)ll_read();
       }
@@ -199,7 +231,7 @@ public:
             }
          }
          quan::stm32::set<spi1_soft_nss>();
-         m_transfer_in_progress = false;
+        // m_transfer_in_progress = false;
       }
 
       static bool txe(){ return spi1::get()->sr.bb_getbit<1>();}
@@ -211,7 +243,7 @@ private:
       static void ll_write( uint8_t val){ spi1::get()->dr = val;}
       // Quan::QuanSemaphore m_semaphore;
       static bool m_fast_speed;
-      static volatile bool m_transfer_in_progress;
+     // static volatile bool m_transfer_in_progress;
 
       typedef quan::mcu::pin<quan::stm32::gpiob,5>  spi1_mosi;
       typedef quan::mcu::pin<quan::stm32::gpiob,4>  spi1_miso;
@@ -258,7 +290,6 @@ private:
 
       static void setup_spi_regs()
       {
-         
          // SPE = false // periphal disabled for now?
          // LSBFIRST =  false, 
          // RXONLY = false
@@ -276,6 +307,7 @@ private:
          |  (1 << 9)      // (SSM)
          ;
       }
+
 public:
       static void enable_dma()
       { 
@@ -309,6 +341,8 @@ private:
 public:
       static uint8_t dma_tx_buffer[16] ;
       static volatile uint8_t  dma_rx_buffer[16] ;
+      
+     // static bool m_in_setup_mode;
 private:
       static void setup_dma()
       {
@@ -359,139 +393,211 @@ private:
    };
 
    bool spi_device_driver::m_fast_speed = false;
-   volatile bool spi_device_driver::m_transfer_in_progress = false;
+  // bool spi_device_driver::m_in_setup_mode = false;
+  // volatile bool spi_device_driver::m_transfer_in_progress = false;
    volatile uint8_t  spi_device_driver::dma_rx_buffer[16] __attribute__((section(".telem_buffer"))) = {0};
    uint8_t spi_device_driver::dma_tx_buffer[16] __attribute__((section(".telem_buffer"))) = {
       (reg::intr_status | 0x80),0,0,0,
       0,0,0,0,
       0,0,0,0,
       0,0,0,0
-    };
-}
+   };
 
-bool whoami_test()
-{
-   uint8_t val = spi_device_driver::reg_read(reg::whoami);
-
-   if ( val == val::whoami){
-      sp::write("whoami succeeded\n");
-      return true;
-   }else{
-      sp::write("whoami failed\n");
-      char buf[20];
-      sprintf(buf,"got %u\n",static_cast<unsigned int>(val));
-      sp::write(buf);
-      return false;
-   }
-}
-
-void spi_setup()
-{
-   sp::write("spi setup\n");
-   spi_device_driver::init();
-   delay(ms{100});
-
-   // reset
-   spi_device_driver::reg_write(reg::pwr_mgmt1, 1U << 7U);
-   delay(ms{100});
-  
-   // wakeup
- //  sp::write("spi wake up\n");
-   spi_device_driver::reg_write(reg::pwr_mgmt1, 3U);
-   delay(ms{100});
-
-   // disable I2C
-   spi_device_driver::reg_write(reg::user_ctrl, 1U << 4U);
-   delay(ms{100});
-
-   while (! whoami_test() )
+   bool whoami_test()
    {
-      delay(ms{100});
+      uint8_t val = spi_device_driver::reg_read(reg::whoami);
+
+      if ( val == val::whoami){
+         return true;
+      }else{
+         hal.console->printf("whoami failed\n");
+         hal.console->printf("got %u\n",static_cast<unsigned int>(val));
+         return false;
+      }
    }
-  
-   spi_device_driver::reg_write(reg::fifo_enable, 0U);
-   delay(ms{1});
 
-   spi_device_driver::reg_write(reg::sample_rate_div, 17);
-   delay(ms{1});
+   typedef Vector3<volatile float> vvect3;
+   typedef LowPassFilter2p<vvect3> lp_filter;
 
-   spi_device_driver::reg_write(reg::config, 0x04);
-   delay(ms{1});
+   lp_filter  gyro_filter;
+   lp_filter  accel_filter;
 
-   spi_device_driver::reg_write(reg::gyro_config, 0x8);
-   delay(ms{1});
+   // number of irqs before the  MPU ready irqhandler
+   // unblocks the AP_InertialSensor::wait_for_sample function
+   // to fulfill the requested sample frequency 
+   uint32_t num_irqs_for_update_message = 1;
 
-   spi_device_driver::reg_write(reg::accel_config, 0x8);
-   delay(ms{1});
+   template <uint32_t CallbackFreq_Hz>
+   struct reg_vals;
 
-   // want active low     bit 7 = true
-   // hold until cleared   bit 5 = true
-   spi_device_driver::reg_write(reg::intr_bypass_en_cfg, 0b10100000);
-   delay(ms{1});
+   template<> struct reg_vals<50>
+   {
+      static void apply(uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
+      {
+         // 8 kHz sampling
+         spi_device_driver::reg_write(reg::config, 0x00);
 
-   // Should be initialised at startup
-   // so check init linker flags etc
-   spi_device_driver::dma_tx_buffer[0] = (reg::intr_status | 0x80);
-   memset(spi_device_driver::dma_tx_buffer+1,0,15);
+         delay(1);
+         // divide by 8 == 1 kHz
+         spi_device_driver::reg_write(reg::sample_rate_div, 7);
+         constexpr uint32_t irq_freq_Hz = 1000;
+         constexpr uint32_t callback_freq_Hz = 50;
 
-   spi_device_driver::enable_dma();
-   spi_device_driver::set_bus_speed(1) ;
-   // int on data ready
-   spi_device_driver::reg_write(reg::intr_enable, 0b00000001);
+         accel_filter.set_cutoff_frequency(irq_freq_Hz,acc_cutoff_Hz);
+         gyro_filter.set_cutoff_frequency(irq_freq_Hz,gyro_cutoff_Hz);
+
+         num_irqs_for_update_message = irq_freq_Hz/callback_freq_Hz;
+      }
+   };
+
+   template <> struct reg_vals<100>
+   {
+      static void apply(uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
+      {
+         // 8 kHz sampling
+         spi_device_driver::reg_write(reg::config, 0x00);
+
+         delay(1);
+         // divide by 8 == 1 kHz
+         spi_device_driver::reg_write(reg::sample_rate_div, 7);
+         constexpr uint32_t irq_freq_Hz = 1000;
+         constexpr uint32_t callback_freq_Hz = 100;
+
+         accel_filter.set_cutoff_frequency(irq_freq_Hz,acc_cutoff_Hz);
+         gyro_filter.set_cutoff_frequency(irq_freq_Hz,gyro_cutoff_Hz);
+
+         num_irqs_for_update_message = irq_freq_Hz/callback_freq_Hz;
+      }
+   };
+
+   template <> struct reg_vals<200>
+   {
+      static void apply(uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
+      {
+         // 8 kHz sampling
+         spi_device_driver::reg_write(reg::config, 0x00);
+
+         delay(1);
+         // divide by 8 == 1 kHz
+         spi_device_driver::reg_write(reg::sample_rate_div, 7);
+         constexpr uint32_t irq_freq_Hz = 1000;
+         constexpr uint32_t callback_freq_Hz = 200;
+
+         accel_filter.set_cutoff_frequency(irq_freq_Hz,acc_cutoff_Hz);
+         gyro_filter.set_cutoff_frequency(irq_freq_Hz,gyro_cutoff_Hz);
+
+         num_irqs_for_update_message = irq_freq_Hz/callback_freq_Hz;
+      }
+   };
+
+   template <> struct reg_vals<400>
+   {
+      static void apply(uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
+      {
+         // 8 kHz sampling
+         spi_device_driver::reg_write(reg::config, 0x00);
+         delay(1);
+         // divide by 4 = 2 kHz
+         spi_device_driver::reg_write(reg::sample_rate_div, 3);
+         constexpr uint32_t irq_freq_Hz = 2000;
+         constexpr uint32_t callback_freq_Hz = 400;
+
+         accel_filter.set_cutoff_frequency(irq_freq_Hz,acc_cutoff_Hz);
+         gyro_filter.set_cutoff_frequency(irq_freq_Hz,gyro_cutoff_Hz);
+
+         num_irqs_for_update_message = irq_freq_Hz/callback_freq_Hz;
+      }
+   };
+
+   struct inertial_sensor_args_t{
+      Vector3<volatile float>  accel;
+      Vector3<volatile float>  gyro;
+   };
 }
 
-// no irq version
-extern "C" void read_imu()
-{
+namespace Quan{ namespace detail{
 
-   uint8_t arr[16];
-   // start with interrupt status reg
-   // so read clears irq
-   arr[0] = reg::intr_status | 0x80;
-   memset(arr+1,'\0',15);
-   spi_device_driver::transaction(arr,arr,16);
+   // call once at startup
+   // in APM thread
+   void spi_setup(uint16_t sample_rate_Hz, uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
+   {
 
-   quan::three_d::vect<double> accel;
-   quan::three_d::vect<double> gyro;
+      h_INS_ArgsQueue = xQueueCreate(1,sizeof(inertial_sensor_args_t *));
+    //  spi_device_driver::m_in_setup_mode = true;
+ 
+      spi_device_driver::init();
+      delay(100);
 
-   asm volatile ("nop" :::);
+      // reset
+      spi_device_driver::reg_write(reg::pwr_mgmt1, 1U << 7U);
+      delay(100);
+     
+      // wakeup
+      spi_device_driver::reg_write(reg::pwr_mgmt1, 3U);
+      delay(100);
 
-   union{
-      uint8_t arr[2];
-      int16_t val;
-   }u;  
+      // disable I2C
+      spi_device_driver::reg_write(reg::user_ctrl, 1U << 4U);
+      delay(100);
 
-   u.arr[1] = arr[2];
-   u.arr[0] = arr[3];
-   accel.x = u.val;
+      while (! whoami_test() )
+      {
+         delay(100);
+      }
+     
+      spi_device_driver::reg_write(reg::fifo_enable, 0U);
+      delay(1);
 
-   u.arr[1] = arr[4];
-   u.arr[0] = arr[5];
-   accel.y = u.val;
+      // setup the rates
 
-   u.arr[1] = arr[6];
-   u.arr[0] = arr[7];
-   accel.z = u.val;
+      switch (sample_rate_Hz){
+         case 50U:
+            reg_vals<50>::apply(acc_cutoff_Hz, gyro_cutoff_Hz);
+            break;
+         case 100U:
+            reg_vals<100>::apply(acc_cutoff_Hz, gyro_cutoff_Hz);
+            break;
+         case 200U:
+            reg_vals<200>::apply(acc_cutoff_Hz, gyro_cutoff_Hz);
+            break;
+         case 400U:
+            reg_vals<400>::apply(acc_cutoff_Hz, gyro_cutoff_Hz);
+            break;
+         default:
+            hal.scheduler->panic("unknown sample rate for spi setup\n");
+            break;
+      }
 
-   char buf [120];
-   sprintf(buf, "accel = [%.3f,%.3f,%.3f] \n",accel.x,accel.y,accel.z);
-   sp::write(buf);
+      delay(1);
 
-   u.arr[1] = arr[10];
-   u.arr[0] = arr[11];
-   gyro.x = u.val;
+      // check ranges
+      spi_device_driver::reg_write(reg::gyro_config, 0x8);
+      delay(1);
 
-   u.arr[1] = arr[12];
-   u.arr[0] = arr[13];
-   gyro.y = u.val;
-   u.arr[1] = arr[14];
-   u.arr[0] = arr[15];
-   gyro.z = u.val;
+      spi_device_driver::reg_write(reg::accel_config, 0x8);
+      delay(1);
 
-   sprintf(buf, "gyro = [%.3f,%.3f,%.3f]\n",gyro.x,gyro.y,gyro.z);
-   sp::write(buf);
-   
-}
+      // want active low     bit 7 = true
+      // hold until cleared   bit 5 = true
+      spi_device_driver::reg_write(reg::intr_bypass_en_cfg, 0b10100000);
+      delay(1);
+
+      // Should be initialised at startup
+      // so check init linker flags etc
+      spi_device_driver::dma_tx_buffer[0] = (reg::intr_status | 0x80);
+      memset(spi_device_driver::dma_tx_buffer+1,0,15);
+
+    //  spi_device_driver::m_in_setup_mode = false;
+
+      spi_device_driver::enable_dma();
+//####################################
+// TODO get correct enum for setting bus speed
+      spi_device_driver::set_bus_speed(1) ;
+//##########################################
+      // int on data ready
+      spi_device_driver::reg_write(reg::intr_enable, 0b00000001);
+   }
+}} // Quan::detail
 
 // Interrupt from MPU6000
 extern "C" void EXTI15_10_IRQHandler() __attribute__ ((interrupt ("IRQ")));
@@ -515,7 +621,42 @@ extern "C" void EXTI15_10_IRQHandler()
       spi_device_driver::start_spi();
       
    }else{
-      // other event?
+      // other event? panic!
+   }
+}
+
+namespace {
+
+   // args to be passed to apm inertial sensor
+   // should be volatile
+    inertial_sensor_args_t imu_args;
+    volatile uint32_t irq_count = 0;
+}
+
+namespace Quan{
+
+   // called by AP_InertailSensor::wait_for_sample
+   // blocks 
+   bool wait_for_imu_sample(uint32_t usecs_to_wait)
+   {
+      inertial_sensor_args_t * p_dummy_result;
+      TickType_t const ms_to_wait = usecs_to_wait / 1000  + (((usecs_to_wait % 1000) > 499 )?1:0);
+      return xQueuePeek(h_INS_ArgsQueue,&p_dummy_result,ms_to_wait) == pdTRUE ;
+   }
+
+   // called by AP_inertialSensor_Backend::update ( quan version)
+   // after AP_InertailSensor::wait_for_sample has unblocked
+   bool update_ins(Vector3f & accel,Vector3f & gyro)
+   {
+      inertial_sensor_args_t * p_args;
+  
+      if (xQueueReceive(h_INS_ArgsQueue,&p_args,0) == pdTRUE ){
+          accel = p_args->accel;
+          gyro = p_args->gyro;
+          return true;
+      }else{
+         return false;
+      } 
    }
 }
 
@@ -523,19 +664,23 @@ extern "C" void EXTI15_10_IRQHandler()
 extern "C" void DMA2_Stream0_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void DMA2_Stream0_IRQHandler()
 {
-
-   quan::three_d::vect<double> accel;
-   quan::three_d::vect<double> gyro;
+   quan::stm32::push_FPregs();
 
    DMA2_Stream5->CR &= ~(1 << 0); // (EN) disable DMA
    DMA2_Stream0->CR &= ~(1 << 0); // (EN) disable DMA
 
+   // get the dma buffer
+   volatile uint8_t * arr = spi_device_driver::dma_rx_buffer;
+
+   // device to convert the buffer values
+   // TODO use CMSIS intrinsics
    union{
       uint8_t arr[2];
       int16_t val;
-   }u;  
+   }u; 
 
-   volatile uint8_t * arr = spi_device_driver::dma_rx_buffer;
+   Vector3f  accel;
+   Vector3f  gyro;
 
    u.arr[1] = arr[2];
    u.arr[0] = arr[3];
@@ -549,8 +694,6 @@ extern "C" void DMA2_Stream0_IRQHandler()
    u.arr[0] = arr[7];
    accel.z = u.val;
 
-   char buf [120];
-
    u.arr[1] = arr[10];
    u.arr[0] = arr[11];
    gyro.x = u.val;
@@ -563,28 +706,34 @@ extern "C" void DMA2_Stream0_IRQHandler()
    u.arr[0] = arr[15];
    gyro.z = u.val;
 
-   while(DMA2_Stream5->CR & (1 << 0)){;}
-   while(DMA2_Stream0->CR & (1 << 0)){;}
-
+   while( (DMA2_Stream5->CR | DMA2_Stream0->CR ) & (1 << 0) ){;}
+ 
    DMA2->HIFCR |= ( 0b111101 << 6) ; // Stream 5 clear flags
    DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
+
    spi_device_driver::cs_release();
 
-   sprintf(buf, "accel = [%.3f,%.3f,%.3f] \n",accel.x,accel.y,accel.z);
-   sp::write(buf);
-   sprintf(buf, "gyro = [%.3f,%.3f,%.3f]\n",gyro.x,gyro.y,gyro.z);
-   sp::write(buf);
+   BaseType_t HigherPriorityTaskWoken_imu = pdFALSE;
+
+   if ( ++irq_count == num_irqs_for_update_message){
+       irq_count = 0;
+       if ( xQueueIsQueueEmptyFromISR(h_INS_ArgsQueue)){
+          imu_args.accel = accel_filter.apply(accel);
+          imu_args.gyro = gyro_filter.apply(gyro);
+          inertial_sensor_args_t*  p_imu_args = &imu_args;
+          xQueueSendToBackFromISR(h_INS_ArgsQueue,&p_imu_args,&HigherPriorityTaskWoken_imu);
+      }else{
+         // message that apm task missed it
+         // this may be ok at startup though
+      }
+   }else{
+      // we dont need to go through the whole rigmarole
+      // just update the filter
+       accel_filter.apply(accel);
+       gyro_filter.apply(gyro);
+   }
+   quan::stm32::pop_FPregs();
+   portEND_SWITCHING_ISR(HigherPriorityTaskWoken_imu);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
+#endif // CONFIG_HAL_BOARD == HAL_BOARD_QUAN

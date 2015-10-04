@@ -2,6 +2,7 @@
 #ifndef __AP_HAL_QUAN_MAIN_H__
 #define __AP_HAL_QUAN_MAIN_H__
 
+#include <AP_HAL/AP_HAL.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <quantracker/osd/osd.hpp>
 #include <task.h>
@@ -45,7 +46,7 @@ void create_apm_task() \
       apm_task,"apm task", \
       5000, \
       &dummy_param, \
-      tskIDLE_PRIORITY + 1, \
+      tskIDLE_PRIORITY + 2, \
       &task_handle \
   ); \
 }
