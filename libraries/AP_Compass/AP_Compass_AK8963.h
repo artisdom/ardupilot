@@ -3,6 +3,9 @@
 #define AP_Compass_AK8963_H
 
 #include <AP_HAL/AP_HAL.h>
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
+
 #include <AP_Common/AP_Common.h>
 #include <AP_Math/AP_Math.h>
 
@@ -124,4 +127,5 @@ private:
     AP_HAL::Semaphore *_i2c_sem;
     uint8_t _addr;
 };
+#endif // #if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
 #endif

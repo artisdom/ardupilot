@@ -3,8 +3,12 @@
 #ifndef __AP_INERTIAL_SENSOR_MPU6000_H__
 #define __AP_INERTIAL_SENSOR_MPU6000_H__
 
+
 #include <stdint.h>
 #include <AP_HAL/AP_HAL.h>
+
+#if  CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 #include <AP_Math/AP_Math.h>
 #include <AP_Progmem/AP_Progmem.h>
 
@@ -233,4 +237,5 @@ private:
     uint8_t _ext_sens_data = 0;
 };
 
+#endif // CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 #endif // __AP_INERTIAL_SENSOR_MPU6000_H__

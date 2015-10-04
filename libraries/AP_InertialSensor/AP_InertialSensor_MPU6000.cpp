@@ -1,8 +1,8 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
+#include <AP_HAL/AP_HAL.h>
+#if  CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 
 #include <assert.h>
-
-#include <AP_HAL/AP_HAL.h>
 #include "AP_InertialSensor_MPU6000.h"
 
 extern const AP_HAL::HAL& hal;
@@ -1090,3 +1090,6 @@ int AP_MPU6000_AuxiliaryBus::_configure_periodic_read(AuxiliaryBusSlave *slave,
 
     return 0;
 }
+
+#endif
+

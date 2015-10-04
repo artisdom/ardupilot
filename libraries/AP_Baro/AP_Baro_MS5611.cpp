@@ -21,6 +21,8 @@
 */
 
 #include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 #include "AP_Baro.h"
 
 #include "FreeRTOS.h"
@@ -466,3 +468,5 @@ void AP_Baro_MS56XX::accumulate(void)
         _timer();
     }
 }
+
+#endif // #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
