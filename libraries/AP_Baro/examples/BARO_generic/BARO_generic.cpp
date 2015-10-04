@@ -104,7 +104,7 @@ void loop()
         hal.console->print(" Altitude:");
         hal.console->print(alt);
         hal.console->printf(" climb=%.2f t=%u",
-                            barometer.get_climb_rate(),
+                            static_cast<double>(barometer.get_climb_rate()),
                             (unsigned)read_time);
         hal.console->println();
     }
