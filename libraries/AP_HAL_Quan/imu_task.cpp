@@ -14,48 +14,15 @@
 #include <quan/stm32/f4/exti/set_exti.hpp>
 #include <quan/stm32/f4/syscfg/module_enable_disable.hpp>
 #include <quan/stm32/push_pop_fp.hpp>
-
+#include <cmath>
 #include <Filter/LowPassFilter2p.h>
 #include "task.h"
 #include "semphr.h"
-
 #include <AP_Math/vector3_volatile.h>
-
+#include <quan/acceleration.hpp>
+#include <quan/angle.hpp>
+#include <quan/reciprocal_time.hpp>
 #include "imu_task.hpp"
-
-/*
-   Inertial sensor runs at
-   50 Hz   Rover , Plane
-   100 Hz
-   200 Hz
-   400 Hz  Copter
-
-   for 400Hz run IMU at 8kHz and divide by 20 
-   // config = 0, sample_rate_div = 19
-  When tested there is a around 100 usec jitter  ( e.g 2%)
-   as shown in the samples below
-
-t=2544
-t=2453
-t=2544
-t=2452
-t=2544
-t=2453
-t=2544
-t=2452
-t=2544
-t=2452
-t=2544
-t=2453
-t=2544
-t=2452
-
- For "fast processors" the IMU6000 internal filter is disabled
-
-    Filter cutoff frequency ?
-    given as 20 (Hz) for plane and Copter and 10(Hz) for rover
-
-*/
 
 extern const AP_HAL::HAL& hal;
 
@@ -66,6 +33,20 @@ namespace {
 
    // handle to the  1 element ins args queue
    QueueHandle_t h_INS_ArgsQueue = 0U;
+
+   void panic(const char* text)
+   {
+      taskENTER_CRITICAL();
+      hal.scheduler->panic(text);
+      taskEXIT_CRITICAL();
+   }
+
+   void hal_printf(const char* text)
+   {
+      taskENTER_CRITICAL();
+      hal.console->write(text);
+      taskEXIT_CRITICAL();
+   }
   
    // ignore the hal function for delay
    // actually is only used in apm_task for setup
@@ -89,6 +70,7 @@ namespace {
 
    // imu register indexes
    struct reg{
+      static constexpr uint8_t product_id          = 12U;
       static constexpr uint8_t sample_rate_div     = 25U;
       static constexpr uint8_t config              = 26U;
       static constexpr uint8_t gyro_config         = 27U;
@@ -410,8 +392,7 @@ private:
       if ( val == val::whoami){
          return true;
       }else{
-         hal.console->printf("whoami failed\n");
-         hal.console->printf("got %u\n",static_cast<unsigned int>(val));
+         hal_printf("whoami failed\n");
          return false;
       }
    }
@@ -509,22 +490,58 @@ private:
       }
    };
 
+   // accel should be in units of m.s-2
+   // gyro should be in units of rad.s
    struct inertial_sensor_args_t{
       Vector3<volatile float>  accel;
       Vector3<volatile float>  gyro;
    };
+   // required gyro rate
+   // as in Ap_InertialSensor_MPU6000
+   // can be 250, 500, 100,2000
+   constexpr uint32_t gyro_fsr_deg_s = 2000U;
+   // to scale from the raw reg output to rad.s-1 
+   constexpr float gyro_constant(uint32_t gyro_fsr_deg_s_in)
+   {
+      typedef quan::angle::deg deg;
+      typedef quan::angle::rad rad;
+      typedef quan::reciprocal_time_<deg>::per_s deg_per_s;
+      typedef quan::reciprocal_time_<rad>::per_s rad_per_s;
+      return static_cast<float>(((rad_per_s{deg_per_s{deg{gyro_fsr_deg_s_in}}}/32768).numeric_value()).numeric_value());
+   };
+   // accel full scale
+   // can be 2 , 4 , 8 , 16 g
+   constexpr uint32_t accel_fsr_g = 8U;
+   // to scale from the raw reg output to m.s-2
+   constexpr float accel_constant(uint32_t accel_fsr_g_in)
+   {
+     return static_cast<float>(((quan::acceleration::g * accel_fsr_g_in)/32768).numeric_value());
+   };
+
+   constexpr uint8_t mpu6000ES_C4 = 0x14;
+   constexpr uint8_t mpu6000ES_C5 = 0x15;
+   constexpr uint8_t mpu6000ES_D6 = 0x16;
+   constexpr uint8_t mpu6000ES_D7 = 0x17;
+   constexpr uint8_t mpu6000ES_D8 = 0x18;
+
+   constexpr uint8_t mpu6000_C4 = 0x54;
+   constexpr uint8_t mpu6000_C5 = 0x55;
+   constexpr uint8_t mpu6000_D6 = 0x56;
+   constexpr uint8_t mpu6000_D7 = 0x57;
+   constexpr uint8_t mpu6000_D8 = 0x58;
+   constexpr uint8_t mpu6000_D9 = 0x59;
 }
 
 namespace Quan{ namespace detail{
 
    // call once at startup
    // in APM thread
+   // TODO read the offset regs
    void spi_setup(uint16_t sample_rate_Hz, uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
    {
 
       h_INS_ArgsQueue = xQueueCreate(1,sizeof(inertial_sensor_args_t *));
-    //  spi_device_driver::m_in_setup_mode = true;
- 
+
       spi_device_driver::init();
       delay(100);
 
@@ -549,7 +566,6 @@ namespace Quan{ namespace detail{
       delay(1);
 
       // setup the rates
-
       switch (sample_rate_Hz){
          case 50U:
             reg_vals<50>::apply(acc_cutoff_Hz, gyro_cutoff_Hz);
@@ -564,17 +580,45 @@ namespace Quan{ namespace detail{
             reg_vals<400>::apply(acc_cutoff_Hz, gyro_cutoff_Hz);
             break;
          default:
-            hal.scheduler->panic("unknown sample rate for spi setup\n");
+            panic("unknown sample rate for spi setup\n");
             break;
       }
 
       delay(1);
 
-      // check ranges
-      spi_device_driver::reg_write(reg::gyro_config, 0x8);
+      // bits 4:3
+      // available scales = (reg, val}
+      //  0  250 deg.s-1
+      //  1  500 deg.s-1
+      //  2 1000 deg.s-1
+      //  3 2000 deg.s-1
+      auto get_gyro_reg_val =[](uint32_t gyro_fsr) 
+      { return static_cast<uint8_t>(static_cast<uint32_t>(log2(gyro_fsr/250U)) << 3U);};
+
+      spi_device_driver::reg_write(reg::gyro_config, get_gyro_reg_val(gyro_fsr_deg_s));
+
       delay(1);
 
-      spi_device_driver::reg_write(reg::accel_config, 0x8);
+      // accel reg value dependent on produxct version
+      // want a fsr of 8g
+      uint8_t const product_id = spi_device_driver::reg_read(reg::product_id);
+
+//      generic TODO
+//      uint8_t get_accel_reg_bits [] (uint32_t accel_fsr)
+//      { return static_cast<uint8_t>(static_cast<uint32_t>(logs2(accel_fsr/2)) & 0b11);};
+//      
+      // for 8g accel fsr
+      switch( product_id){
+         case   mpu6000_C4:
+         case   mpu6000_C5:
+         case mpu6000ES_C4:
+         case mpu6000ES_C5:
+            spi_device_driver::reg_write(reg::accel_config, 1 << 3);
+            break;
+         default:
+            spi_device_driver::reg_write(reg::accel_config, 1 << 4);
+            break;
+      }
       delay(1);
 
       // want active low     bit 7 = true
@@ -586,8 +630,6 @@ namespace Quan{ namespace detail{
       // so check init linker flags etc
       spi_device_driver::dma_tx_buffer[0] = (reg::intr_status | 0x80);
       memset(spi_device_driver::dma_tx_buffer+1,0,15);
-
-    //  spi_device_driver::m_in_setup_mode = false;
 
       spi_device_driver::enable_dma();
 //####################################
@@ -621,14 +663,12 @@ extern "C" void EXTI15_10_IRQHandler()
       spi_device_driver::start_spi();
       
    }else{
-      // other event? panic!
+      panic("unknown EXTI15_10 event\n");
    }
 }
 
 namespace {
 
-   // args to be passed to apm inertial sensor
-   // should be volatile
     inertial_sensor_args_t imu_args;
     volatile uint32_t irq_count = 0;
 }
@@ -682,29 +722,45 @@ extern "C" void DMA2_Stream0_IRQHandler()
    Vector3f  accel;
    Vector3f  gyro;
 
+   /*
+      according to MPU6000 backend::_accumulate()
+
+      accel_out.x  <-- accel_in.y
+      accel_out.y  <-- accel_in.x
+      accel_out.z  <-- -accel_in.z
+
+      gyro_out.x   <-- gyro_in.y
+      gyro_out.y   <-- gyro_in.x
+      gyro_out.z   <-- -gyro_in.z
+   */
+
+   constexpr float accel_k = accel_constant(accel_fsr_g);
+  
    u.arr[1] = arr[2];
    u.arr[0] = arr[3];
-   accel.x = u.val;
+   accel.y = u.val * accel_k;
 
    u.arr[1] = arr[4];
    u.arr[0] = arr[5];
-   accel.y = u.val;
+   accel.x = u.val * accel_k;
 
    u.arr[1] = arr[6];
    u.arr[0] = arr[7];
-   accel.z = u.val;
+   accel.z = -u.val * accel_k ;
+
+   constexpr float gyro_k = gyro_constant(gyro_fsr_deg_s);
 
    u.arr[1] = arr[10];
    u.arr[0] = arr[11];
-   gyro.x = u.val;
+   gyro.y = u.val * gyro_k;
 
    u.arr[1] = arr[12];
    u.arr[0] = arr[13];
-   gyro.y = u.val;
+   gyro.x = u.val * gyro_k;
 
    u.arr[1] = arr[14];
    u.arr[0] = arr[15];
-   gyro.z = u.val;
+   gyro.z = -u.val * gyro_k;
 
    while( (DMA2_Stream5->CR | DMA2_Stream0->CR ) & (1 << 0) ){;}
  
