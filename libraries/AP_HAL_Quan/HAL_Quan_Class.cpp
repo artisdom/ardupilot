@@ -59,7 +59,7 @@ void HAL_Quan::init(int argc,char* const argv[]) const
    analogin->init(NULL);
    i2c->begin();
    spi->init(NULL);
-   scheduler->init(NULL);
+   scheduler->init(NULL); // start i2c_task
 }
 
 const HAL_Quan AP_HAL_Quan;
