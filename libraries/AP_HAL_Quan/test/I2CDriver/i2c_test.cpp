@@ -14,12 +14,9 @@
 #include <cstring>
 #include <stm32f4xx.h>
 
+//#define QUAN_WITH_OSD_OVERLAY
 
-/*
-   Test of the Timer task
-   tset_task justs blinks an LED but in the timer task callback
-*/
-
+#error "need to disable the i2c_task in quan scheduler.cpp for this to work atm"
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 
 namespace {
@@ -51,7 +48,6 @@ namespace {
 
    bool alt_method = false;
    
-    
    int16_t convert_to_int16(uint8_t * d)
    {
       union{
@@ -78,8 +74,8 @@ namespace {
 
       void fun()
       {
-         if (++m_count == 500){
-            m_count = 0;
+//         if (++m_count == 500){
+//            m_count = 0;
 
             hal.gpio->toggle(red_led_pin);
 
@@ -156,14 +152,14 @@ namespace {
             }else{
                hal.console->printf("couldnt get semaphore\n");
             }
-         }
+        // }
       }
 
       void init()
       {
           hal.gpio->pinMode(red_led_pin,HAL_GPIO_OUTPUT);
           hal.gpio->write(red_led_pin,pin_off);
-          hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&test_task_t::fun, void));
+         // hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&test_task_t::fun, void));
       }
    private:
       uint32_t m_count ;
@@ -187,7 +183,7 @@ void quan::uav::osd::on_draw()
 }
 
 namespace {
-   constexpr uint8_t interval = 10U;
+   constexpr uint16_t interval = 500U;
    uint64_t next_event = interval;
 }
 // called forever in apm_task
@@ -195,9 +191,8 @@ void loop()
 {
    uint64_t const now = hal.scheduler->millis64();
    if ( next_event <= now ){
-      hal.gpio->toggle(test_pin);
+     test_task.fun();
       next_event = now + interval;
-      
    }
 }
 
