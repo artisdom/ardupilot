@@ -46,7 +46,7 @@ void create_apm_task() \
       apm_task,"apm task", \
       5000, \
       &dummy_param, \
-      tskIDLE_PRIORITY + 2, \
+      tskIDLE_PRIORITY + 1, \
       &task_handle \
   ); \
 }
