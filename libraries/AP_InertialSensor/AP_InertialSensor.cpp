@@ -1359,11 +1359,16 @@ void AP_InertialSensor::wait_for_sample(void)
     // block up to 1 sample period
     // if no sample then report, which should nt happen when running
     // so should prob be a panic
+    // actually seems too short for tests where there is no other
+    // 
     while( !Quan::wait_for_imu_sample( _sample_period_usec) ){
-       hal.console->printf("AP_InertialSensor .. quan .. failed to read INS sample promptly\n");
+      // hal.console->printf("AP_InertialSensor .. quan .. failed to read INS sample promptly\n");
     }
+    
     // new sample has arrived!
     uint32_t now = hal.scheduler->micros();
+//    hal.console->printf("AP_InertialSensor .. quan got sample at  %u\n",static_cast<unsigned>(now));
+   
     if (_hil_mode && _hil.delta_time > 0) {
         _delta_time = _hil.delta_time;
         _hil.delta_time = 0;
