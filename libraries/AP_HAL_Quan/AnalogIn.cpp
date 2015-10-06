@@ -210,22 +210,24 @@ namespace {
        void reset(){;}
    };
 
-   template <typename Coefficients>
-   struct butterworth_filter_t final : public Filter<float>{
-      butterworth_filter_t() {m_filter.reset(1.65f);}
-      float apply(float sample){ return m_filter.filter(sample);}
+   struct average_filter_t final : public Filter<float>{
+      average_filter_t(float init_value, float gain) 
+      : m_last_value{init_value}, m_gain{quan::constrain(gain, 0.f, 1.f)}{}
+      float apply(float sample)
+      { 
+         return m_last_value = m_last_value * (1.f - m_gain) + sample * m_gain;
+      }
       void reset(){;}
-      Butter2<Coefficients> m_filter;  
+      private:
+        float m_last_value;
+        float const m_gain;
    };
 
-   typedef butterworth_filter_t<butter100_4_coeffs> airspeed_adc_t;
-   typedef butterworth_filter_t<butter100_8_coeffs> batt_current_adc_t;
-
-   simple_filter_t      batt_voltage_adc;
-   batt_current_adc_t   batt_current_adc;
-   airspeed_adc_t       airspeed_adc;
-   simple_filter_t      rssi_adc;
-   dummy_filter_t       dummy_filter;
+   average_filter_t   batt_voltage_adc{0.f, 0.1f};
+   average_filter_t   batt_current_adc{0.f, 0.1f};
+   average_filter_t   airspeed_adc{1.65f , 0.5f};
+   average_filter_t   rssi_adc{0.f, 0.1f};
+   dummy_filter_t     dummy_filter;
    
    filter* filters[5] = { 
       &batt_voltage_adc,

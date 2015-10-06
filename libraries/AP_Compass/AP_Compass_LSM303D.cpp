@@ -16,6 +16,7 @@
 
 #include <AP_Math/AP_Math.h>
 #include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 
 #include "AP_Compass_LSM303D.h"
 
@@ -544,3 +545,5 @@ uint8_t AP_Compass_LSM303D::_mag_set_samplerate(uint16_t frequency)
     _register_modify(ADDR_CTRL_REG5, clearbits, setbits);
     return 0;
 }
+
+#endif // #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
