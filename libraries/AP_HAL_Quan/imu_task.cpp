@@ -540,7 +540,10 @@ namespace Quan{ namespace detail{
    void spi_setup(uint16_t sample_rate_Hz, uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
    {
 
+    
       h_INS_ArgsQueue = xQueueCreate(1,sizeof(inertial_sensor_args_t *));
+
+      hal_printf("spi_setup\n");
 
       spi_device_driver::init();
       delay(100);
