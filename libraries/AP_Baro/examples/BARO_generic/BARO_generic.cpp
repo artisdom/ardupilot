@@ -87,7 +87,7 @@ void loop()
    hal.scheduler->delay(100);  // just run at 10 Hz. for Quan baro.accumulate is a nop
    {
       uint32_t timer = hal.scheduler->micros();
-      hal.console->printf("in apm baro task\n");
+     // hal.console->printf("in apm baro task\n");
 #else
     // run accumulate() at 50Hz and update() at 10Hz
     if((hal.scheduler->micros() - timer) > 20*1000UL) {
