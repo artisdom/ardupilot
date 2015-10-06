@@ -183,17 +183,17 @@ void quan::uav::osd::on_draw()
 }
 
 namespace {
-   constexpr uint16_t interval = 500U;
-   uint64_t next_event = interval;
+   constexpr TickType_t interval = 500U;
+   TickType_t wakeup_time;
 }
 // called forever in apm_task
+// so make the loop so that it yields
+
 void loop() 
 {
-   uint64_t const now = hal.scheduler->millis64();
-   if ( next_event <= now ){
-     test_task.fun();
-      next_event = now + interval;
-   }
+  vTaskDelayUntil(&wakeup_time,interval);
+  test_task.fun();
+ 
 }
 
 #if defined QUAN_WITH_OSD_OVERLAY
