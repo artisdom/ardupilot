@@ -24,7 +24,7 @@
 #include <stm32f4xx.h>
 #include "i2c_task.hpp"
 #include <quan/max.hpp>
-#include <Filter/Butter.h>
+#include <Filter/LowPassFilter2p.h>
 /*
 The MS56111 Baro and HMC5883 compass are on a single I2C bus
 
@@ -37,6 +37,10 @@ The I2Ctask uses FreeRTOS queues to communicate compass and Baro data to the APM
 The I2C_Task is run at 100 Hz
 The task also filters the data
 and puts the lastest value on the queues when there is free space
+
+Best time to start?
+
+Needs usart and i2c and scheduler objects to be ready
 
 */
 
@@ -60,6 +64,13 @@ namespace {
    {
       taskENTER_CRITICAL();
       hal.scheduler->panic(text);
+      taskEXIT_CRITICAL();
+   }
+
+   void hal_printf(const char* text)
+   {
+      taskENTER_CRITICAL();
+      hal.console->write(text);
       taskEXIT_CRITICAL();
    }
 
@@ -89,38 +100,70 @@ namespace {
       // need to wait for 5V on the external sensor voltage regs
       wait_for_power_up();
 
+      hal_printf("starting i2c task\n");
+
       if ( (hBaroQueue == nullptr) || (hCompassQueue == nullptr) ){
-         panic("create FreeRTOS queues failed in I2c task\n");
+        // panic("create FreeRTOS queues failed in I2c task\n");
+         hal_printf("create FreeRTOS queues failed in I2c task\n");
       }
 
-      
-      if ( ! (init_compass() && init_baro()) ){
-         panic("Compass and Baro init failed\n");
+      if ( ! init_compass()){
+         hal_printf("Compass init failed\n");
+      }
+
+      if ( ! init_baro() ){
+        // panic("Compass and Baro init failed\n");
+         hal_printf(" Baro init failed\n");
       }
 
       // running...
+     // hal_printf("run i2c task\n");
       for (;;){
+        // hal_printf("run i2c task [1]\n");
          // every 1/100th sec
          vTaskDelayUntil(&last_wake_time, 10);
-         // basically own i2c !
+        // hal_printf("i2c >\n");
+         
          auto * sem = hal.i2c->get_semaphore();
          if ( sem && sem->take_nonblocking()){
+
+          //  hal_printf("in sem\n");
             // TODO take care of failures?
             // do n tries to read compass
             // if no joy reinit?
-            read_compass();
-            request_compass_read();
+            if ( ! read_compass() ){
+               hal_printf("compass read fail\n");
+            }else{
+               // hal_printf("compass read succ\n");
+            }
+         
+            if (! request_compass_read()){
+               hal_printf("compass req fail\n");
+            }
             // on every 1 in 2 read the baro temperature
             // else read the baro pressure
             if (baro_read_pressure == false){
-               read_baro_temperature();
-               request_pressure_read();
+               if (!read_baro_temperature()){
+                  hal_printf("baro temp read fail\n");
+               }else{
+                 // hal_printf("baro temp read\n");
+               }
+               if (!request_pressure_read()){
+                  hal_printf("baro pressure req fail\n");
+               }
                baro_read_pressure = true;
             }else{
-               read_baro_pressure();
-               request_temperature_read();
+               if (!read_baro_pressure()){
+                  hal_printf("baro pressure read fail\n");
+               }
+               if(! request_temperature_read()){
+                  hal_printf("baro temperature read fail\n");
+               }
+               baro_read_pressure = false;
             }
             sem->give();
+         }else{
+            hal_printf("i2ct no sem\n");
          }
       }
    }
@@ -130,7 +173,7 @@ namespace {
    constexpr uint8_t transfer_failed = 1U;
 //------------baro ----------------------------------
    constexpr uint8_t baro_addr = 0x77;
-   constexpr uint8_t baro_cal_base_reg = 0xA2;
+   constexpr uint8_t baro_cal_base_reg = 0xA0;
    constexpr uint8_t baro_cmd_reset = 0x1E;
    constexpr uint8_t baro_cmd_read_pressure = 0x48;
    constexpr uint8_t baro_cmd_read_temperature = 0x58;
@@ -140,10 +183,9 @@ namespace {
    // baroCal[7] is crc
    uint16_t baroCal[8];
 
-   Butter2<butter50_8_coeffs,quan::pressure_<float>::Pa>    pressure_filter;
-   Butter2<butter100_05_coeffs,quan::temperature_<float>::K>   temperature_filter;
-   Butter2<
-      butter50_8_coeffs,
+   LowPassFilter2p<quan::pressure_<float>::Pa>    pressure_filter;
+   LowPassFilter2p<quan::temperature_<float>::K>   temperature_filter;
+   LowPassFilter2p<
       quan::three_d::vect<
          quan::magnetic_flux_density_<float>::milli_gauss
       > 
@@ -183,28 +225,63 @@ namespace {
    uint32_t latest_pressure_reading = 0;
    uint32_t latest_temperature_reading = 0;
 
+   template <typename Pressure, typename Temperature>
+   void ms5611_calc(int32_t D1, int32_t D2, Pressure & p, Temperature &t)
+   {
+      int32_t const dT = D2 - ( static_cast<int32_t>(baroCal[5]) << 8);
+      int32_t TEMP = 2000 + ((dT * static_cast<int32_t>(baroCal[6])) >> 23);
+      int64_t  OFF = ((static_cast<int64_t>(baroCal[2]) << 16)) 
+         + ((static_cast<int64_t>(baroCal[4]) * dT ) >> 7);
+      int64_t  SENS = (static_cast<int64_t>(baroCal[1]) << 15)
+            + ( (static_cast<int64_t>(baroCal[3]) * dT) >> 8);
+
+      int32_t T2 = 0;
+      int64_t OFF2 = 0;
+      int64_t SENS2 = 0;
+      if ( TEMP < 2000 ){
+         T2 = (static_cast<int64_t>(dT) * dT ) >> 31;
+         OFF2 = (5 * static_cast<int64_t>(TEMP - 2000) * static_cast<int64_t>(TEMP - 2000)) >> 1;
+         SENS2 = OFF2 >> 1;
+      }
+      TEMP = TEMP - T2;
+      OFF = OFF- OFF2;
+      SENS = SENS - SENS2;
+      int32_t P = (((D1 * SENS)>> 21) - OFF) >> 15;
+     
+      p = pressure_filter.apply(quan::pressure::Pa{P});
+      t = temperature_filter.apply(quan::temperature::K{(TEMP * 0.01f) + 273.15f});
+   }
+
    bool calculate_baro_args()
    {
-      // Formulas from manufacturer datasheet
-      // sub -20c temperature compensation is not included
-      float const dT = latest_temperature_reading - (((uint32_t)baroCal[5]) << 8);
-      float TEMP = (dT * baroCal[6])/8388608;
-      float OFF = baroCal[2] * 65536.0f + (baroCal[4] * dT) / 128;
-      float SENS = baroCal[1] * 32768.0f + (baroCal[3] * dT) / 256;
+       ms5611_calc(
+            latest_pressure_reading, 
+            latest_temperature_reading,
+            filtered_pressure,
+            filtered_temperature
+        );
+//      // Formulas from manufacturer datasheet
+//      // sub -20c temperature compensation is not included
+//      float const dT = latest_temperature_reading - (((uint32_t)baroCal[5]) << 8);
+//      float TEMP = (dT * baroCal[6])/8388608;
+//      float OFF = baroCal[2] * 65536.0f + (baroCal[4] * dT) / 128;
+//      float SENS = baroCal[1] * 32768.0f + (baroCal[3] * dT) / 256;
+//
+//      if (TEMP < 0) {
+//        // second order temperature compensation when under 20 degrees C
+//        float const T2 = (dT*dT) / 0x80000000;
+//        float const Aux = TEMP*TEMP;
+//        float const OFF2 = 2.5f*Aux;
+//        float const SENS2 = 1.25f*Aux;
+//        TEMP = TEMP - T2;
+//        OFF = OFF - OFF2;
+//        SENS = SENS - SENS2;
+//      }
+//      filtered_pressure = pressure_filter.filter(quan::pressure::Pa{(latest_pressure_reading*SENS/2097152 - OFF)/32768});
+//      // nb.Use Kelvin 
+//      filtered_temperature = temperature_filter.filter(quan::temperature::K{((TEMP + 2000) * 0.01f) + 273.15f});
 
-      if (TEMP < 0) {
-        // second order temperature compensation when under 20 degrees C
-        float const T2 = (dT*dT) / 0x80000000;
-        float const Aux = TEMP*TEMP;
-        float const OFF2 = 2.5f*Aux;
-        float const SENS2 = 1.25f*Aux;
-        TEMP = TEMP - T2;
-        OFF = OFF - OFF2;
-        SENS = SENS - SENS2;
-      }
-      filtered_pressure = pressure_filter.filter(quan::pressure::Pa{(latest_pressure_reading*SENS/2097152 - OFF)/32768});
-      // nb.Use Kelvin 
-      filtered_temperature = temperature_filter.filter(quan::temperature::K{((TEMP + 2000) * 0.01f) + 273.15f});
+      
       return true;
    }
 
@@ -220,12 +297,19 @@ namespace {
    {
       if ( read_24bits(baro_addr,0,latest_temperature_reading) == transfer_succeeded){
          calculate_baro_args();
+         // hal_printf("read_baro_temperature\n");
          if ( uxQueueSpacesAvailable(hBaroQueue) != 0){
+
+//            hal.console->printf(
+//               "%f Pa, %f K\n",
+//               static_cast<double>(filtered_pressure.numeric_value())
+//               ,static_cast<double>(filtered_temperature.numeric_value()) );
             Quan::detail::baro_args args = {filtered_pressure,filtered_temperature};
             xQueueSendToBack(hBaroQueue,&args,0);
          }
          return true;
       }else{
+         hal_printf("temp read failed\n");
          return false;
       }
    }
@@ -279,37 +363,50 @@ namespace {
       
       AP_HAL::Semaphore * const sem = hal.i2c->get_semaphore();
       if (!sem) {
-         panic("couldnt get semaphore");
+         hal_printf("couldnt get semaphore");
          return false;
       }
+     // hal_printf("init_baro - got semaphore\n");
       // TODO add timeout
       while ( !sem->take_nonblocking()){;}
       uint8_t command = baro_cmd_reset;
       if ( hal.i2c->write(baro_addr,1,&command) != transfer_succeeded){
-         panic("coulndt write baro reset");
+         hal_printf("coulndt write baro reset");
          sem->give();
          return false;
       }
+      hal_printf("init_baro - reset baro\n");
       delay(4);
       for ( uint8_t i = 0; i < 8; ++i){
         if (  read_16bits(baro_addr,baro_cal_base_reg + 2*i, baroCal[i]) != transfer_succeeded){
-            panic("read baro cal failed\n");
+            hal_printf("read baro cal failed\n");
             sem->give();
             return false;
         }
+        hal_printf("init_baro - read baro cal\n");
       }
       if (! do_baro_crc()){
-          panic("read baro crc failed\n");
+          hal_printf("read baro crc failed\n");
           sem->give();
           return false;
       }
+      hal_printf("init_baro - read crc succeeded\n");
 
       // 14 degrees C is average world temperature
-      temperature_filter.reset(quan::temperature_<float>::K{273.15f + 14.f});
+       // 50 Hz sample and  1 Hz cutoff
+      temperature_filter.set_cutoff_frequency(50,0.5);
+      temperature_filter.reset(quan::temperature_<float>::K{273.15 + 14}, 1000);
       // standard atmospheric pressure in Pa
-      pressure_filter.reset(quan::pressure_<float>::Pa{101325.f});
+      // 50 Hz sample and 10 Hz cutoff
+      pressure_filter.set_cutoff_frequency(50,5);
+      pressure_filter.reset(quan::pressure_<float>::Pa{101325},1000);
       // start the ball rolling
       bool result = request_pressure_read();
+      if ( result){
+       // hal_printf("request first baro sample\n");
+      }else{
+          hal_printf("request first baro sample failed\n");
+      }
       sem->give();
       return result;
    }
@@ -359,12 +456,17 @@ namespace {
    {
       AP_HAL::Semaphore * const sem = hal.i2c->get_semaphore();
       if (!sem) {
-         panic("couldnt get semaphore");
+         hal_printf("couldnt get semaphore");
          return false;
       }
+
+      // compass filter sample at 100 Hz, cutoff 12 Hz
+      compass_filter.set_cutoff_frequency(100,12);
+      typedef quan::magnetic_flux_density_<float>::milli_gauss mgauss;
+      compass_filter.reset(quan::three_d::vect<mgauss>{mgauss{1.0},mgauss{0.0},mgauss{0.0}},1000);
       
       // TODO add timeout
-      while ( !sem->take_nonblocking()){;}
+      while ( !sem->take_nonblocking()){hal_printf("loop taking semaphore\n");}
 
       if (! do_compass_calibration() ){
          sem->give();
@@ -430,7 +532,7 @@ namespace {
       if ( read_compass_raw(result, time_ms)){
          // Quan::detail::compass_args args;
          constexpr milli_gauss milli_gauss_per_lsb = compass_gain_per_lsb[mag_runtime_gain_index];
-         filtered_compass = compass_filter.filter({
+         filtered_compass = compass_filter.apply({
             result.x * milli_gauss_per_lsb * mag_scaling.x
             ,result.y * milli_gauss_per_lsb * mag_scaling.y
             ,result.z * milli_gauss_per_lsb * mag_scaling.z
@@ -471,7 +573,7 @@ namespace Quan {
          i2c_task,"I2C_task",
          1000,
          &dummy_params,
-         tskIDLE_PRIORITY + 2, // want slightly higher than apm task priority
+         tskIDLE_PRIORITY + 3, // want slightly higher than apm task priority
          & task_handle
       ) ;
    }
@@ -571,11 +673,11 @@ namespace {
       if( now_ms < 200){
          if ( ! once){
             once = true;
-            hal.console->printf("HMC5883 Compass warming up\n");
+            hal_printf("I2C bus warming up\n");
          }
          delay(200 - now_ms);
       }
    }
-
-
 }
+
+
