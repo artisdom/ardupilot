@@ -2,6 +2,11 @@
 
 #include <AP_Math/vector3_volatile.h>
 
+#include <quan/pressure.hpp>
+#include <quan/temperature.hpp>
+#include <quan/magnetic_flux_density.hpp>
+#include <quan/three_d/vect.hpp>
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 // DigitalBiquadFilter
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -31,6 +36,7 @@ template <class T>
 void DigitalBiquadFilter<T>::reset() { 
     _delay_element_1 = _delay_element_2 = T();
 }
+
 
 template <class T>
 void DigitalBiquadFilter<T>::compute_params(float sample_freq, float cutoff_freq, biquad_params &ret) {
@@ -78,6 +84,16 @@ float LowPassFilter2p<T>::get_cutoff_freq(void) const {
 }
 
 template <class T>
+void  LowPassFilter2p<T>::reset(T const & value, uint32_t n)  
+{
+   _filter.reset();
+
+   for ( uint32_t i = 0; i < n; ++i){
+     this->apply(value);
+   }
+}
+
+template <class T>
 float LowPassFilter2p<T>::get_sample_freq(void) const {
     return _params.sample_freq;
 }
@@ -99,3 +115,12 @@ template class LowPassFilter2p<float>;
 template class LowPassFilter2p<Vector2f>;
 template class LowPassFilter2p<Vector3f>;
 template class LowPassFilter2p<Vector3<volatile float> >;
+
+
+template class LowPassFilter2p<quan::pressure_<float>::Pa>;
+template class LowPassFilter2p<quan::temperature_<float>::K> ;
+template class LowPassFilter2p<
+   quan::three_d::vect<
+      quan::magnetic_flux_density_<float>::milli_gauss
+   > 
+>;
