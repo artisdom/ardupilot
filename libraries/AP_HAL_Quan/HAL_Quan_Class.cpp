@@ -58,7 +58,7 @@ void HAL_Quan::init(int argc,char* const argv[]) const
    rcout->init(NULL);
    analogin->init(NULL);
    i2c->begin();
-   spi->init(NULL);
+   spi->init(NULL);  // this is a dummy
    scheduler->init(NULL); // start i2c_task
 }
 
