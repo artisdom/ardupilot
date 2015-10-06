@@ -41,15 +41,16 @@ const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 
 static AP_Baro barometer;
 
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 static uint32_t timer;
 static uint8_t counter;
+#endif
 
-static uint32_t timer_ms = 0;
 void setup()
 {
     hal.console->printf("Barometer library test\n");
 
-    hal.scheduler->delay(100);
+    hal.scheduler->delay(1000);
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_APM2
     // disable CS on MPU6000
@@ -60,14 +61,18 @@ void setup()
     barometer.init();
     hal.console->printf("Calibrating baro\n");
     barometer.calibrate();
-   hal.console->printf("Done setup\n");
-    timer = hal.scheduler->micros();
+    hal.console->printf("Done setup\n");
 
-    timer_ms = hal.scheduler->millis();
-    
+
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+// for Quan we use the hal.scheduler->delay fun rather than busy waiting
+// on counters to avoid the apm_task saturating
+    timer = hal.scheduler->micros();
+ #endif
 }
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+// do something on osd to check its running ok
 void quan::uav::osd::on_draw() 
 { 
     pxp_type pos{-140,50};
@@ -78,18 +83,22 @@ void quan::uav::osd::on_draw()
 void loop()
 {
       
-    if ( (hal.scheduler->millis() - timer_ms) > 500 ){
-        timer_ms = hal.scheduler->millis();
-       // hal.console->printf("loop!\n"); 
-    }
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   hal.scheduler->delay(100);  // just run at 10 Hz. for Quan baro.accumulate is a nop
+   {
+      uint32_t timer = hal.scheduler->micros();
+      hal.console->printf("in apm baro task\n");
+#else
     // run accumulate() at 50Hz and update() at 10Hz
     if((hal.scheduler->micros() - timer) > 20*1000UL) {
         timer = hal.scheduler->micros();
+
         barometer.accumulate();
         if (counter++ < 5) {
             return;
         }
         counter = 0;
+#endif
         barometer.update();
         uint32_t read_time = hal.scheduler->micros() - timer;
         float alt = barometer.get_altitude();
