@@ -1,3 +1,5 @@
+
+
 // -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 //
 //////////////////////////////////////////////////////////////////////////////
@@ -82,10 +84,12 @@
 #endif
 #endif
 
+#ifndef RANGEFINDER_ENABLED
 #if HAL_CPU_CLASS > HAL_CPU_CLASS_16
 # define RANGEFINDER_ENABLED ENABLED
 #else
 # define RANGEFINDER_ENABLED DISABLED
+#endif
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
