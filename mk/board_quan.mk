@@ -90,7 +90,7 @@ include $(MK_DIR)/find_tools.mk
 
 # specific flags for stm32f4
 QUAN_DEFINES = QUAN_STM32F4 QUAN_FREERTOS $(TELEMETRY_DIRECTION) STM32F40_41xxx \
-QUAN_OSD_SOFTWARE_SYNCSEP HSE_VALUE=8000000 QUAN_OSD_BOARD_TYPE=4
+QUAN_OSD_SOFTWARE_SYNCSEP HSE_VALUE=8000000 QUAN_OSD_BOARD_TYPE=4 QUAN_CUSTOM_AP_PARAMS
 
 QUAN_INCLUDES = $(STM32_INCLUDES) $(QUAN_INCLUDE_PATH) $(QUANTRACKER_ROOT_DIR)include \
 $(RTOS_INCLUDES)
@@ -122,6 +122,9 @@ DEFINES        +=   -DSKETCH=\"$(SKETCH)\" -DSKETCHNAME="\"$(SKETCH)\"" \
 DEFINES        +=   $(EXTRAFLAGS)
 DEFINES        +=   -DCONFIG_HAL_BOARD=$(HAL_BOARD) 
 DEFINES        +=   $(patsubst %,-D%,$(QUAN_DEFINES))
+ifneq ($(QUAN_CUSTOM_DEFINES),)
+DEFINES        +=   $(patsubst %,-D%,$(QUAN_CUSTOM_DEFINES))
+endif
 
 WARNFLAGS       =   -Wformat -Wall -Wshadow -Wpointer-arith -Wcast-align \
 -Wno-unused-parameter -Wno-missing-field-initializers
