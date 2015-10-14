@@ -1,10 +1,13 @@
 
 #include <AP_HAL/AP_HAL.h>
+#include <AP_HAL_Empty/I2CDriver.h>
+#include <AP_HAL_Empty/Semaphores.h>
 #include "I2CDriver.h"
 #include <quan/stm32/freertos/freertos_i2c_task.hpp>
 #include <quan/malloc_free.hpp>
 #include <quan/meta/integer_max.hpp>
 #include <AP_HAL_Quan/Semaphores.h>
+
 #include <string>
 
 using namespace Quan;
@@ -216,7 +219,14 @@ namespace {
 }// namespace
 
 namespace Quan{
+AP_HAL::I2CDriver * get_quan_i2c_driver()
+{
+   return &i2c3;
+}
+
+}
+namespace Quan{
     AP_HAL::I2CDriver * get_i2c_driver()
-    { return &i2c3;}
+    { return new Empty::EmptyI2CDriver{new Empty::EmptySemaphore} ;}
 }
 
