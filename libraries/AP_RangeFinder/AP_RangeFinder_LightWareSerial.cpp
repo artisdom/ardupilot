@@ -15,6 +15,9 @@
  */
 
 #include <AP_HAL/AP_HAL.h>
+
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 #include "AP_RangeFinder_LightWareSerial.h"
 #include <AP_SerialManager/AP_SerialManager.h>
 #include <ctype.h>
@@ -97,3 +100,5 @@ void AP_RangeFinder_LightWareSerial::update(void)
         set_status(RangeFinder::RangeFinder_NoData);
     }
 }
+
+#endif

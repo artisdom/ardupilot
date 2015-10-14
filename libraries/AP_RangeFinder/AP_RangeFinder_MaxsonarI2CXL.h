@@ -3,6 +3,9 @@
 #ifndef __AP_RANGEFINDER_MAXSONARI2CXL_H__
 #define __AP_RANGEFINDER_MAXSONARI2CXL_H__
 
+#include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 #include "RangeFinder.h"
 #include "RangeFinder_Backend.h"
 
@@ -32,4 +35,7 @@ private:
     static bool start_reading(void);
     static bool get_reading(uint16_t &reading_cm);
 };
+
+#endif  //quan
+
 #endif  // __AP_RANGEFINDER_MAXSONARI2CXL_H__

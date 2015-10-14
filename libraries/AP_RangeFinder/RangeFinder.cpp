@@ -15,6 +15,7 @@
  */
 
 #include "RangeFinder.h"
+#include "RangeFinder_Backend.h"
 #include "AP_RangeFinder_analog.h"
 #include "AP_RangeFinder_PulsedLightLRF.h"
 #include "AP_RangeFinder_MaxsonarI2CXL.h"
@@ -448,6 +449,7 @@ void RangeFinder::update(void)
  */
 void RangeFinder::detect_instance(uint8_t instance)
 {
+ #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
     uint8_t type = _type[instance];
 #if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
     if (type == RangeFinder_TYPE_PLI2C || 
@@ -518,6 +520,8 @@ void RangeFinder::detect_instance(uint8_t instance)
             return;
         }
     }
+
+#endif // CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 }
 
 // query status

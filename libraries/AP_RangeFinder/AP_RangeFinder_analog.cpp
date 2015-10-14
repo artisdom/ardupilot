@@ -20,6 +20,9 @@
  */
 
 #include <AP_HAL/AP_HAL.h>
+
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 #include <AP_Common/AP_Common.h>
 #include <AP_Math/AP_Math.h>
 #include "RangeFinder.h"
@@ -127,4 +130,7 @@ void AP_RangeFinder_analog::update(void)
     // update range_valid state based on distance measured
     update_status();
 }
+
+#endif
+
 

@@ -17,6 +17,9 @@
 #ifndef AP_RangeFinder_PX4_H
 #define AP_RangeFinder_PX4_H
 
+#include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 #include "RangeFinder.h"
 #include "RangeFinder_Backend.h"
 
@@ -50,4 +53,5 @@ private:
     static int open_driver(void);
 };
 
+#endif
 #endif // AP_RangeFinder_PX4_H

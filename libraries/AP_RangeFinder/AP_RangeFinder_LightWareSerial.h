@@ -3,6 +3,9 @@
 #ifndef __AP_RANGEFINDER_LIGHTWARESERIAL_H__
 #define __AP_RANGEFINDER_LIGHTWARESERIAL_H__
 
+#include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 #include "RangeFinder.h"
 #include "RangeFinder_Backend.h"
 
@@ -29,4 +32,6 @@ private:
     char linebuf[10];
     uint8_t linebuf_len = 0;
 };
+
+#endif // quan
 #endif  // __AP_RANGEFINDER_LIGHTWARESERIAL_H__

@@ -17,6 +17,9 @@
 #ifndef AP_RangeFinder_PX4_PWM_H
 #define AP_RangeFinder_PX4_PWM_H
 
+#include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 #include "RangeFinder.h"
 #include "RangeFinder_Backend.h"
 
@@ -44,4 +47,5 @@ private:
     float _last_sample_distance_cm;
 };
 
+#endif
 #endif // AP_RangeFinder_PX4_PWM_H

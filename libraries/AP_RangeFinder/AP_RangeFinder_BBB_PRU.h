@@ -1,6 +1,9 @@
 #ifndef __AP_RANGEFINDER_PRU_H__
 #define __AP_RANGEFINDER_PRU_H__
 
+#include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 #include "RangeFinder.h"
 #include "RangeFinder_Backend.h"
 
@@ -32,4 +35,6 @@ public:
 private:
 
 };
+#endif  // quan
+
 #endif  // __AP_RANGEFINDER_PRU_H__
