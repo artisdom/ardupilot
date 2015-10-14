@@ -7,6 +7,8 @@
 #include <AP_HAL_Quan/imu_task.hpp>
 #include "AP_InertialSensor_Quan.h"
 
+extern const AP_HAL::HAL& hal;
+
 AP_InertialSensor_Quan::AP_InertialSensor_Quan(AP_InertialSensor &imu)
 : AP_InertialSensor_Backend(imu)
  ,m_accel_id{imu.register_accel()} 
@@ -17,7 +19,21 @@ AP_InertialSensor_Quan::AP_InertialSensor_Quan(AP_InertialSensor &imu)
 
 AP_InertialSensor_Backend * AP_InertialSensor_Quan::detect(AP_InertialSensor &imu)
 {
-    return new AP_InertialSensor_Quan(imu);
+
+#if !defined QUAN_APM_DONT_START_START_IMU_TASK
+// get some warning this has started !
+   Quan::detail::spi_setup(
+      imu.get_sample_rate(), 
+      imu.get_accel_filter_hz(), 
+      imu.get_gyro_filter_hz()   
+   );
+   hal.scheduler->delay(50);
+   return new AP_InertialSensor_Quan(imu);
+#else
+   return nullptr;
+#warning "IMU task wont be started due to defined QUAN_APM_DONT_START_START_IMU_TASK"
+#endif
+    
 }
 
 bool AP_InertialSensor_Quan::gyro_sample_available(void)
@@ -44,16 +60,6 @@ bool AP_InertialSensor_Quan::update()
    }else{
       return false;
    }
-}
-
-void AP_InertialSensor_Quan::start()
-{
-   Quan::detail::spi_setup(
-      get_sample_rate_hz(), 
-      _accel_filter_cutoff(), 
-      _gyro_filter_cutoff()
-   );
-   // running!
 }
 
 #endif // CONFIG_HAL_BOARD == HAL_BOARD_QUAN
