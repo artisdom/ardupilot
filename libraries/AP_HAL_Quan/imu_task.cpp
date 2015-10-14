@@ -36,9 +36,9 @@ namespace {
 
    void panic(const char* text)
    {
-      taskENTER_CRITICAL();
+      //taskENTER_CRITICAL();
       hal.scheduler->panic(text);
-      taskEXIT_CRITICAL();
+      //taskEXIT_CRITICAL();
    }
 
    void hal_printf(const char* text)
@@ -351,7 +351,7 @@ private:
          dma_stream->M0AR = (uint32_t)dma_rx_buffer; 
          dma_stream->NDTR = 16;
 
-         NVIC_SetPriority(DMA2_Stream0_IRQn,15);  // low prio
+         NVIC_SetPriority(DMA2_Stream0_IRQn,15); 
          NVIC_EnableIRQ(DMA2_Stream0_IRQn);
 
          // TX
@@ -565,21 +565,26 @@ namespace Quan{ namespace detail{
          delay(100);
       }
      
+      hal_printf("whaomi succeeded\n");
       spi_device_driver::reg_write(reg::fifo_enable, 0U);
       delay(1);
 
       // setup the rates
       switch (sample_rate_Hz){
          case 50U:
+            hal_printf("setup 50 Hz rate\n");
             reg_vals<50>::apply(acc_cutoff_Hz, gyro_cutoff_Hz);
             break;
          case 100U:
+            hal_printf("setup 100 Hz rate\n");
             reg_vals<100>::apply(acc_cutoff_Hz, gyro_cutoff_Hz);
             break;
          case 200U:
+            hal_printf("setup 200 Hz rate\n");
             reg_vals<200>::apply(acc_cutoff_Hz, gyro_cutoff_Hz);
             break;
          case 400U:
+            hal_printf("setup 400 Hz rate\n");
             reg_vals<400>::apply(acc_cutoff_Hz, gyro_cutoff_Hz);
             break;
          default:
@@ -634,6 +639,8 @@ namespace Quan{ namespace detail{
       spi_device_driver::dma_tx_buffer[0] = (reg::intr_status | 0x80);
       memset(spi_device_driver::dma_tx_buffer+1,0,15);
 
+      hal_printf("imu init done\n");
+
       spi_device_driver::enable_dma();
 //####################################
 // TODO get correct enum for setting bus speed
@@ -664,7 +671,7 @@ extern "C" void EXTI15_10_IRQHandler()
       DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
       DMA2_Stream5->CR |= (1 << 0); // (EN) enable DMA  tx
       spi_device_driver::start_spi();
-      
+     // hal_printf("£");
    }else{
       panic("unknown EXTI15_10 event\n");
    }
@@ -696,6 +703,7 @@ namespace Quan{
       if (xQueueReceive(h_INS_ArgsQueue,&p_args,0) == pdTRUE ){
           accel = p_args->accel;
           gyro = p_args->gyro;
+          
           return true;
       }else{
          return false;
@@ -784,6 +792,7 @@ extern "C" void DMA2_Stream0_IRQHandler()
       }else{
          // message that apm task missed it
          // this may be ok at startup though
+         
       }
    }else{
       // we dont need to go through the whole rigmarole
