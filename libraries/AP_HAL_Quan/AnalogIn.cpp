@@ -56,8 +56,8 @@ namespace {
 
    typedef quan::mcu::pin<quan::stm32::gpioc,0> analog_pin1;  // battery voltage
    typedef quan::mcu::pin<quan::stm32::gpioc,1> analog_pin2;  // battery current
-   typedef quan::mcu::pin<quan::stm32::gpioc,3> analog_pin3;  // 
-   typedef quan::mcu::pin<quan::stm32::gpioc,4> analog_pin4;
+   typedef quan::mcu::pin<quan::stm32::gpioc,3> analog_pin3;  // airspeed
+   typedef quan::mcu::pin<quan::stm32::gpioc,4> analog_pin4;  // rssi
 
    template <typename Pin>
    void setup_adc_pin()
@@ -240,11 +240,14 @@ namespace {
    float raw_adc_voltages[5] {0.f,0.f,0.f,0.f,0.f};
    float filtered_adc_values[5] = {0.f,0.f,0.f,0.f,0.f};
 
+   // n.b though the actual voltage is 0 to 3.3V
+   // Ardupilot expects everything in a 0 to 5 v range
+   // so we scale it as if 5V here
    void process_adc()
    {
       for (uint8_t i = 0; i < 4 ; ++i)
       {
-         float const voltage = (adc_results[i] * 3.3f) / 4096;
+         float const voltage = (adc_results[i] * 5.f) / 4096;
          raw_adc_voltages[i] = voltage;
          filtered_adc_values[i]= filters[i]->apply(voltage);
       }
@@ -280,8 +283,8 @@ namespace {
       float voltage_latest(){return raw_adc_voltages[Pin];}
    
       float voltage_average() {return filtered_adc_values[Pin];}
-
-      float voltage_average_ratiometric(){ return voltage_average();}
+      // scaled 0 to 5 V
+      float voltage_average_ratiometric(){ return voltage_average() ;}
       // should be safe else
       // caller would have to know about impl
       float read_latest() {return voltage_latest();}
@@ -322,6 +325,10 @@ namespace {
          return analog_sources[(((n >= 0 ) && ( n < 4 ))?n:4)];
       }
 
+      // should be reading the actual board voltage
+      // we can monitor the VBat voltage and
+      // if it drops below a level
+      // drop this one maybe
       float board_voltage(void)
       {
           return 3.3f;
