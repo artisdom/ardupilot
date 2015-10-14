@@ -171,7 +171,11 @@ void QuanScheduler::init(void* )
 {
    setup_usec_timer();
   // create_scheduler_timer_task();
+#if ! (defined (QUAN_APM_DONT_START_I2C_TASK))
    Quan::create_i2c_task();
+#else 
+#warning "I2C task wont be run due to defined QUAN_APM_DONT_START_I2C_TASK"
+#endif
    // can now get Compass and baro q handles
    
    start_usec_timer();
@@ -265,7 +269,7 @@ namespace{
 }
 void QuanScheduler::register_timer_process(AP_HAL::MemberProc mp)
 {
-    panic("QuanScheduler::register_timer_process called\n");
+    hal.console->printf("QuanScheduler::register_timer_process called\n");
 //   if ( (mp == nullptr) == false){
 //      new_scheduler_timer_task_proc_in = mp;
 //      if (xQueueSendToBack(scheduler_timer_task_message_queue,&new_scheduler_timer_task_proc_in,2) == errQUEUE_FULL){
@@ -277,7 +281,7 @@ void QuanScheduler::register_timer_process(AP_HAL::MemberProc mp)
 //"not supported on AVR" so wont bother yet
 void QuanScheduler::register_io_process(AP_HAL::MemberProc k)
 {
-   panic("QuanScheduler::register_io_process called\n");
+   hal.console->printf("QuanScheduler::register_io_process called\n");
 
 }
 
@@ -325,7 +329,8 @@ void QuanScheduler::system_initialized()
 
 void QuanScheduler::panic(const prog_char_t *errormsg) {
     hal.console->println_P(errormsg);
-    for(;;);
+   
+    for(;;){ hal.scheduler->delay(1000);}
 }
 
 // TODO wdt
