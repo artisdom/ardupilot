@@ -19,15 +19,6 @@ namespace {
    template <typename Pin> struct gpio_pin final : public AP_HAL::DigitalSource{
       typedef typename Pin::port_type port_type;
       static_assert(quan::is_model_of<quan::stm32::gpio::Pin,Pin>::value,"not a port pin");
-//      void init()
-//      {
-//         quan::stm32::module_enable<typename Pin::port_type>();
-//         quan::stm32::apply<
-//            Pin 
-//            ,quan::stm32::gpio::mode::input
-//            ,quan::stm32::gpio::pupd::pull_down
-//         >();
-//      }
 
       void mode(uint8_t mode_in)
       {
@@ -70,8 +61,8 @@ namespace {
   };
 
    gpio_pin<heartbeat_led_pin>                      pin1;
-   gpio_pin<quan::mcu::pin<quan::stm32::gpioc,14> > pin2;
-   gpio_pin<quan::mcu::pin<quan::stm32::gpioc,15> > pin3;
+   gpio_pin<quan::mcu::pin<quan::stm32::gpioa,14> > pin2;
+   gpio_pin<quan::mcu::pin<quan::stm32::gpioa,13> > pin3;
    
    AP_HAL::DigitalSource * const pins_array[] =
    {
@@ -96,10 +87,9 @@ namespace {
 
 void Quan::QuanGPIO::init()
  {
-      
       quan::stm32::module_enable<decltype(pin1)::port_type>();
-       quan::stm32::module_enable<decltype(pin2)::port_type>();
-       quan::stm32::module_enable<decltype(pin3)::port_type>();
+      quan::stm32::module_enable<decltype(pin2)::port_type>();
+      quan::stm32::module_enable<decltype(pin3)::port_type>();
  }
 
 void Quan::QuanGPIO::pinMode(uint8_t pin, uint8_t pin_mode)
