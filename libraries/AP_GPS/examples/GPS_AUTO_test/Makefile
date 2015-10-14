@@ -1,3 +1,5 @@
+QUAN_CUSTOM_DEFINES = QUAN_APM_DONT_START_I2C_TASK  QUAN_APM_DONT_START_START_IMU_TASK
+
 include ../../../../mk/apm.mk
 
  .PHONY: upload_sp
