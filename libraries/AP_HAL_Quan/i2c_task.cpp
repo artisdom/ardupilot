@@ -25,6 +25,7 @@
 #include "i2c_task.hpp"
 #include <quan/max.hpp>
 #include <Filter/LowPassFilter2p.h>
+#include <AP_HAL/I2CDriver.h>
 /*
 The MS56111 Baro and HMC5883 compass are on a single I2C bus
 
@@ -45,6 +46,10 @@ Needs usart and i2c and scheduler objects to be ready
 */
 
 extern const AP_HAL::HAL& hal;
+
+namespace Quan{
+   AP_HAL::I2CDriver * get_quan_i2c_driver();
+}
 
 namespace {
 
@@ -90,6 +95,8 @@ namespace {
    // queue for sending compass data to apm thread
    QueueHandle_t hCompassQueue = nullptr;
 
+   AP_HAL::I2CDriver * p_i2c = nullptr;
+
    // boolean count to sequentially read 1 * pressure then 1 * temperature
    // This is done to give a nominal 50 Hz update rate
    // for the baro pressure and temperature filters
@@ -106,6 +113,9 @@ namespace {
         // panic("create FreeRTOS queues failed in I2c task\n");
          hal_printf("create FreeRTOS queues failed in I2c task\n");
       }
+      p_i2c = Quan::get_quan_i2c_driver();
+
+      p_i2c->begin();
 
       if ( ! init_compass()){
          hal_printf("Compass init failed\n");
@@ -124,7 +134,7 @@ namespace {
          vTaskDelayUntil(&last_wake_time, 10);
         // hal_printf("i2c >\n");
          
-         auto * sem = hal.i2c->get_semaphore();
+         auto * sem = p_i2c->get_semaphore();
          if ( sem && sem->take_nonblocking()){
 
           //  hal_printf("in sem\n");
@@ -202,7 +212,7 @@ namespace {
    uint8_t read_16bits(uint8_t addr, uint8_t reg, uint16_t & out)
    {
        uint8_t buf[2];
-       if (hal.i2c->readRegisters(addr, reg, 2, buf) == transfer_succeeded) {
+       if (p_i2c->readRegisters(addr, reg, 2, buf) == transfer_succeeded) {
            out = (((uint16_t)(buf[0]) << 8) | buf[1]);
            return transfer_succeeded;
        }else{
@@ -213,7 +223,7 @@ namespace {
    uint8_t read_24bits(uint8_t addr, uint8_t reg, uint32_t & out)
    {
        uint8_t buf[3];
-       if (hal.i2c->readRegisters(addr, reg, 3, buf) == 0) {
+       if (p_i2c->readRegisters(addr, reg, 3, buf) == 0) {
           out = (((uint32_t)buf[0]) << 16) | (((uint32_t)buf[1]) << 8) | buf[2];
          return transfer_succeeded;
        }else{
@@ -318,14 +328,14 @@ namespace {
    bool request_pressure_read()
    {
       uint8_t command = baro_cmd_read_pressure;
-      return hal.i2c->write(baro_addr,1,&command) == transfer_succeeded;
+      return p_i2c->write(baro_addr,1,&command) == transfer_succeeded;
    }
 
    // request the baro to prepare a temperature sample
    bool request_temperature_read()
    {
       uint8_t command = baro_cmd_read_temperature;
-      return hal.i2c->write(baro_addr,1,&command) == transfer_succeeded;
+      return p_i2c->write(baro_addr,1,&command) == transfer_succeeded;
    }
 
    bool do_baro_crc()
@@ -361,7 +371,7 @@ namespace {
    bool init_baro()
    {
       
-      AP_HAL::Semaphore * const sem = hal.i2c->get_semaphore();
+      AP_HAL::Semaphore * const sem = p_i2c->get_semaphore();
       if (!sem) {
          hal_printf("couldnt get semaphore");
          return false;
@@ -370,7 +380,7 @@ namespace {
       // TODO add timeout
       while ( !sem->take_nonblocking()){;}
       uint8_t command = baro_cmd_reset;
-      if ( hal.i2c->write(baro_addr,1,&command) != transfer_succeeded){
+      if ( p_i2c->write(baro_addr,1,&command) != transfer_succeeded){
          hal_printf("coulndt write baro reset");
          sem->give();
          return false;
@@ -454,7 +464,7 @@ namespace {
    // This is based squarely on the AP_Compass_HMC5843 source
    bool init_compass()
    {
-      AP_HAL::Semaphore * const sem = hal.i2c->get_semaphore();
+      AP_HAL::Semaphore * const sem = p_i2c->get_semaphore();
       if (!sem) {
          hal_printf("couldnt get semaphore");
          return false;
@@ -481,13 +491,13 @@ namespace {
    bool do_mag_runtime_config()
    {
       constexpr uint8_t sample_average8 = (0b11 << 5);
-      return (hal.i2c->writeRegister(mag_addr,mag_configA,sample_average8) == transfer_succeeded)
-       &&  (hal.i2c->writeRegister(mag_addr,mag_configB,(mag_runtime_gain_index << 5)) == transfer_succeeded) ;
+      return (p_i2c->writeRegister(mag_addr,mag_configA,sample_average8) == transfer_succeeded)
+       &&  (p_i2c->writeRegister(mag_addr,mag_configB,(mag_runtime_gain_index << 5)) == transfer_succeeded) ;
    }
 
    bool request_compass_read()
    {
-      return (hal.i2c->writeRegister(mag_addr,mag_modereg, mag_single_measurement) == transfer_succeeded);
+      return (p_i2c->writeRegister(mag_addr,mag_modereg, mag_single_measurement) == transfer_succeeded);
    }
 
 
@@ -512,7 +522,7 @@ namespace {
    bool read_compass_raw(quan::three_d::vect<int16_t> & result_out, int32_t & time_out)
    {
       uint8_t raw_mag_values[6] = {0,0,0,0,0,0};
-      if ( hal.i2c->readRegisters(mag_addr,mag_msb_x,6,raw_mag_values) == transfer_succeeded){
+      if ( p_i2c->readRegisters(mag_addr,mag_msb_x,6,raw_mag_values) == transfer_succeeded){
          time_out = hal.scheduler->millis();
          copy_new_values(raw_mag_values,result_out);
          return true;
@@ -612,14 +622,14 @@ namespace {
          ++numAttempts;
 
          // force positiveBias (compass should return 715 for all channels)
-         if (hal.i2c->writeRegister(mag_addr,mag_configA, mag_positive_bias_config) != transfer_succeeded){
+         if (p_i2c->writeRegister(mag_addr,mag_configA, mag_positive_bias_config) != transfer_succeeded){
             continue;   // compass not responding on the bus
          }
          delay(50);
 
          // set gains
-         if ( !((hal.i2c->writeRegister(mag_addr,mag_configB, (mag_calibration_gain_index << 5)) == transfer_succeeded) &&
-             (hal.i2c->writeRegister(mag_addr,mag_modereg, mag_single_measurement) == transfer_succeeded))
+         if ( !((p_i2c->writeRegister(mag_addr,mag_configB, (mag_calibration_gain_index << 5)) == transfer_succeeded) &&
+             (p_i2c->writeRegister(mag_addr,mag_modereg, mag_single_measurement) == transfer_succeeded))
          ){
             continue;
          }
