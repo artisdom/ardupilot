@@ -69,6 +69,9 @@
 #include "CompassCalibrator.h"
 #include <AP_HAL/AP_HAL.h>
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <quan/malloc_free.hpp>
+#endif
 extern const AP_HAL::HAL& hal;
 
 ////////////////////////////////////////////////////////////
@@ -263,9 +266,11 @@ bool CompassCalibrator::set_status(compass_cal_status_t status) {
                 _status = COMPASS_CAL_RUNNING_STEP_ONE;
                 return true;
             }
-
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+             _sample_buffer = (CompassSample*)quan::malloc(sizeof(CompassSample)*COMPASS_CAL_NUM_SAMPLES);
+#else
             _sample_buffer = (CompassSample*)malloc(sizeof(CompassSample)*COMPASS_CAL_NUM_SAMPLES);
-
+#endif
             if(_sample_buffer != NULL) {
                 initialize_fit();
                 _status = COMPASS_CAL_RUNNING_STEP_ONE;
