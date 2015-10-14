@@ -55,7 +55,9 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: AUTOTUNE_LEVEL
     // @DisplayName: Autotune level
-    // @Description: Level of aggressiveness for autotune. When autotune is run a lower AUTOTUNE_LEVEL will result in a 'softer' tune, with less agressive gains. For most users a level of 6 is recommended.
+    // @Description: Level of aggressiveness for autotune. 
+    // When autotune is run a lower AUTOTUNE_LEVEL will result in a 'softer' tune, with less agressive gains. 
+    // For most users a level of 6 is recommended.
     // @Range: 1 10
     // @Increment: 1
     // @User: Standard
@@ -130,14 +132,24 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: AUTO_FBW_STEER
     // @DisplayName: Use FBWA steering in AUTO
-    // @Description: When enabled this option gives FBWA navigation and steering in AUTO mode. This can be used to allow manual stabilised piloting with waypoint logic for triggering payloads. With this enabled the pilot has the same control over the plane as in FBWA mode, and the normal AUTO navigation is completely disabled. This option is not recommended for normal use.
+    // @Description: When enabled this option gives FBWA navigation and steering in AUTO mode. 
+    // This can be used to allow manual stabilised piloting with waypoint logic for triggering payloads. 
+    // With this enabled the pilot has the same control over the plane as in FBWA mode, 
+    // and the normal AUTO navigation is completely disabled. This option is not recommended for normal use.
     // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
     GSCALAR(auto_fbw_steer,          "AUTO_FBW_STEER",   0),
 
     // @Param: TKOFF_THR_MINSPD
     // @DisplayName: Takeoff throttle min speed
-    // @Description: Minimum GPS ground speed in m/s used by the speed check that un-suppresses throttle in auto-takeoff. This can be be used for catapult launches where you want the motor to engage only after the plane leaves the catapult, but it is preferable to use the TKOFF_THR_MINACC and TKOFF_THR_DELAY parameters for catapult launches due to the errors associated with GPS measurements. For hand launches with a pusher prop it is strongly advised that this parameter be set to a value no less than 4 m/s to provide additional protection against premature motor start. Note that the GPS velocity will lag the real velocity by about 0.5 seconds. The ground speed check is delayed by the TKOFF_THR_DELAY parameter.
+    // @Description: Minimum GPS ground speed in m/s used by the speed check that un-suppresses throttle in auto-takeoff. 
+    // This can be be used for catapult launches where you want the motor to engage only after the plane leaves the catapult, 
+    // but it is preferable to use the TKOFF_THR_MINACC and TKOFF_THR_DELAY parameters 
+    // for catapult launches due to the errors associated with GPS measurements. 
+    // For hand launches with a pusher prop it is strongly advised that this parameter be set to a value no less than 4 m/s
+    // to provide additional protection against premature motor start.
+    // Note that the GPS velocity will lag the real velocity by about 0.5 seconds. 
+    // The ground speed check is delayed by the TKOFF_THR_DELAY parameter.
     // @Units: m/s
     // @Range: 0 30
     // @Increment: 0.1
@@ -155,7 +167,12 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: TKOFF_THR_DELAY
     // @DisplayName: Takeoff throttle delay
-    // @Description: This parameter sets the time delay (in 1/10ths of a second) that the ground speed check is delayed after the forward acceleration check controlled by TKOFF_THR_MINACC has passed. For hand launches with pusher propellers it is essential that this is set to a value of no less than 2 (0.2 seconds) to ensure that the aircraft is safely clear of the throwers arm before the motor can start. For bungee launches a larger value can be used (such as 30) to give time for the bungee to release from the aircraft before the motor is started.
+    // @Description: This parameter sets the time delay (in 1/10ths of a second) that the ground speed check is delayed after 
+    // the forward acceleration check controlled by TKOFF_THR_MINACC has passed. 
+    // For hand launches with pusher propellers it is essential that this is set to a value of no less 
+    // than 2 (0.2 seconds) to ensure that the aircraft is safely clear of the throwers arm before the motor can start. 
+    // For bungee launches a larger value can be used (such as 30) to give time for the bungee to release from 
+    // the aircraft before the motor is started.
     // @Units: 0.1 seconds
     // @Range: 0 127
     // @Increment: 1
@@ -164,7 +181,18 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: TKOFF_TDRAG_ELEV
     // @DisplayName: Takeoff tail dragger elevator
-    // @Description: This parameter sets the amount of elevator to apply during the initial stage of a takeoff. It is used to hold the tail wheel of a taildragger on the ground during the initial takeoff stage to give maximum steering. This option should be combined with the TKOFF_TDRAG_SPD1 option and the GROUND_STEER_ALT option along with tuning of the ground steering controller. A value of zero means to bypass the initial "tail hold" stage of takeoff. Set to zero for hand and catapult launch. For tail-draggers you should normally set this to 100, meaning full up elevator during the initial stage of takeoff. For most tricycle undercarriage aircraft a value of zero will work well, but for some tricycle aircraft a small negative value (say around -20 to -30) will apply down elevator which will hold the nose wheel firmly on the ground during initial acceleration. Only use a negative value if you find that the nosewheel doesn't grip well during takeoff. Too much down elevator on a tricycle undercarriage may cause instability in steering as the plane pivots around the nosewheel. Add down elevator 10 percent at a time.
+    // @Description: This parameter sets the amount of elevator to apply during the initial stage of a takeoff. 
+    // It is used to hold the tail wheel of a taildragger on the ground during the initial takeoff stage to give maximum steering. 
+    // This option should be combined with the TKOFF_TDRAG_SPD1 option and the GROUND_STEER_ALT option along with tuning of 
+    // the ground steering controller. A value of zero means to bypass the initial "tail hold" stage of takeoff. 
+    // Set to zero for hand and catapult launch. For tail-draggers you should normally set this to 100, 
+    // meaning full up elevator during the initial stage of takeoff. 
+    // For most tricycle undercarriage aircraft a value of zero will work well, 
+    // but for some tricycle aircraft a small negative value (say around -20 to -30) will apply down elevator 
+    // which will hold the nose wheel firmly on the ground during initial acceleration. 
+    // Only use a negative value if you find that the nosewheel doesn't grip well during takeoff. 
+    // Too much down elevator on a tricycle undercarriage may cause instability in steering 
+    //as the plane pivots around the nosewheel. Add down elevator 10 percent at a time.
     // @Units: Percent
     // @Range: -100 100
     // @Increment: 1
@@ -191,7 +219,13 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: TKOFF_THR_SLEW
     // @DisplayName: Takeoff throttle slew rate
-    // @Description: This parameter sets the slew rate for the throttle during auto takeoff. When this is zero the THR_SLEWRATE parameter is used during takeoff. For rolling takeoffs it can be a good idea to set a lower slewrate for takeoff to give a slower acceleration which can improve ground steering control. The value is a percentage throttle change per second, so a value of 20 means to advance the throttle over 5 seconds on takeoff. Values below 20 are not recommended as they may cause the plane to try to climb out with too little throttle.
+    // @Description: This parameter sets the slew rate for the throttle during auto takeoff. 
+    // When this is zero the THR_SLEWRATE parameter is used during takeoff. 
+    // For rolling takeoffs it can be a good idea to set a lower slewrate for takeoff 
+    // to give a slower acceleration which can improve ground steering control. 
+    // The value is a percentage throttle change per second, so a value of 20 means 
+    // to advance the throttle over 5 seconds on takeoff. 
+    // Values below 20 are not recommended as they may cause the plane to try to climb out with too little throttle.
     // @Units: percent
     // @Range: 0 127
     // @Increment: 1
@@ -208,7 +242,13 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: FBWA_TDRAG_CHAN
     // @DisplayName: FBWA taildragger channel
-    // @Description: This is a RC input channel which when it goes above 1700 enables FBWA taildragger takeoff mode. It should be assigned to a momentary switch. Once this feature is enabled it will stay enabled until the aircraft goes above TKOFF_TDRAG_SPD1 airspeed, changes mode, or the pitch goes above the initial pitch when this is engaged or goes below 0 pitch. When enabled the elevator will be forced to TKOFF_TDRAG_ELEV. This option allows for easier takeoffs on taildraggers in FBWA mode, and also makes it easier to test auto-takeoff steering handling in FBWA. Setting it to 0 disables this option.
+    // @Description: This is a RC input channel which when it goes above 1700 enables FBWA taildragger takeoff mode. 
+    // It should be assigned to a momentary switch. 
+    // Once this feature is enabled it will stay enabled until the aircraft goes above TKOFF_TDRAG_SPD1 airspeed, 
+    // changes mode, or the pitch goes above the initial pitch when this is engaged or goes below 0 pitch. 
+    // When enabled the elevator will be forced to TKOFF_TDRAG_ELEV. 
+    // This option allows for easier takeoffs on taildraggers in FBWA mode, 
+    // and also makes it easier to test auto-takeoff steering handling in FBWA. Setting it to 0 disables this option.
     // @User: Standard
     GSCALAR(fbwa_tdrag_chan,          "FBWA_TDRAG_CHAN",  0),
 
@@ -223,7 +263,11 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: LAND_PITCH_CD
     // @DisplayName: Landing Pitch
-    // @Description: Used in autoland to give the minimum pitch in the final stage of landing (after the flare). This parameter can be used to ensure that the final landing attitude is appropriate for the type of undercarriage on the aircraft. Note that it is a minimum pitch only - the landing code will control pitch above this value to try to achieve the configured landing sink rate.
+    // @Description: Used in autoland to give the minimum pitch in the final stage of landing (after the flare). 
+    // This parameter can be used to ensure that the final landing attitude is appropriate for the type 
+    // of undercarriage on the aircraft. 
+    // Note that it is a minimum pitch only - the landing code will control pitch above this value to try 
+    // to achieve the configured landing sink rate.
     // @Units: centi-Degrees
     // @User: Advanced
     ASCALAR(land_pitch_cd,          "LAND_PITCH_CD",  0),
@@ -262,7 +306,8 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
 	// @Param: NAV_CONTROLLER
 	// @DisplayName: Navigation controller selection
-	// @Description: Which navigation controller to enable. Currently the only navigation controller available is L1. From time to time other experimental controllers will be added which are selected using this parameter.
+	// @Description: Which navigation controller to enable. Currently the only navigation controller available is L1. 
+   // From time to time other experimental controllers will be added which are selected using this parameter.
 	// @Values: 0:Default,1:L1Controller
 	// @User: Standard
 	GSCALAR(nav_controller,          "NAV_CONTROLLER",   AP_Navigation::CONTROLLER_L1),
@@ -278,14 +323,19 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: ALT_CTRL_ALG
     // @DisplayName: Altitude control algorithm
-    // @Description: This sets what algorithm will be used for altitude control. The default is zero, which selects the most appropriate algorithm for your airframe. Currently the default is to use TECS (total energy control system). From time to time we will add other experimental altitude control algorithms which will be selected using this parameter.
+    // @Description: This sets what algorithm will be used for altitude control. 
+    // The default is zero, which selects the most appropriate algorithm for your airframe. 
+    // Currently the default is to use TECS (total energy control system). 
+    // From time to time we will add other experimental altitude control algorithms 
+    // which will be selected using this parameter.
     // @Values: 0:Automatic
     // @User: Advanced
     GSCALAR(alt_control_algorithm, "ALT_CTRL_ALG",    ALT_CONTROL_DEFAULT),
 
     // @Param: ALT_OFFSET
     // @DisplayName: Altitude offset
-    // @Description: This is added to the target altitude in automatic flight. It can be used to add a global altitude offset to a mission
+    // @Description: This is added to the target altitude in automatic flight. 
+    // It can be used to add a global altitude offset to a mission
     // @Units: Meters
     // @Range: -32767 32767
     // @Increment: 1
@@ -390,7 +440,10 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: ARSPD_FBW_MIN
     // @DisplayName: Minimum Airspeed
-    // @Description: This is the minimum airspeed you want to fly at in modes where the autopilot controls the airspeed. This should be set to a value around 20% higher than the level flight stall speed for the airframe. This value is also used in the STALL_PREVENTION code.
+    // @Description: This is the minimum airspeed you want to fly at in 
+    // modes where the autopilot controls the airspeed. 
+    // This should be set to a value around 20% higher than the level flight stall speed for the airframe. 
+    // This value is also used in the STALL_PREVENTION code.
     // @Units: m/s
     // @Range: 5 100
     // @Increment: 1
@@ -399,7 +452,10 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: ARSPD_FBW_MAX
     // @DisplayName: Maximum Airspeed
-    // @Description: This is the maximum airspeed that you want to allow for your airframe in auto-throttle modes. You should ensure that this value is sufficiently above the ARSPD_FBW_MIN value to allow for a sufficient flight envelope to accurately control altitude using airspeed. A value at least 50% above ARSPD_FBW_MIN is recommended.
+    // @Description: This is the maximum airspeed that you want to allow for your airframe in auto-throttle modes. 
+    //You should ensure that this value is sufficiently above the ARSPD_FBW_MIN value to allow 
+    // for a sufficient flight envelope to accurately control altitude using airspeed. 
+    // A value at least 50% above ARSPD_FBW_MIN is recommended.
     // @Units: m/s
     // @Range: 5 100
     // @Increment: 1
@@ -408,7 +464,9 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: FBWB_ELEV_REV
     // @DisplayName: Fly By Wire elevator reverse
-    // @Description: Reverse sense of elevator in FBWB and CRUISE modes. When set to 0 up elevator (pulling back on the stick) means to lower altitude. When set to 1, up elevator means to raise altitude.
+    // @Description: Reverse sense of elevator in FBWB and CRUISE modes. 
+    // When set to 0 up elevator (pulling back on the stick) means to lower altitude. 
+    // When set to 1, up elevator means to raise altitude.
     // @Values: 0:Disabled,1:Enabled
     // @User: Standard
     GSCALAR(flybywire_elev_reverse, "FBWB_ELEV_REV",  0),
@@ -458,7 +516,8 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: TKOFF_THR_MAX
     // @DisplayName: Maximum Throttle for takeoff
-    // @Description: The maximum throttle setting during automatic takeoff. If this is zero then THR_MAX is used for takeoff as well.
+    // @Description: The maximum throttle setting during automatic takeoff. 
+    // If this is zero then THR_MAX is used for takeoff as well.
     // @Units: Percent
     // @Range: 0 100
     // @Increment: 1
@@ -476,7 +535,9 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: FLAP_SLEWRATE
     // @DisplayName: Flap slew rate
-    // @Description: maximum percentage change in flap output per second. A setting of 25 means to not change the flap by more than 25% of the full flap range in one second. A value of 0 means no rate limiting.
+    // @Description: maximum percentage change in flap output per second. 
+    // A setting of 25 means to not change the flap by more than 25% of the full flap range in one second. 
+    // A value of 0 means no rate limiting.
     // @Units: Percent
     // @Range: 0 100
     // @Increment: 1
@@ -485,15 +546,20 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: THR_SUPP_MAN
     // @DisplayName: Throttle suppress manual passthru
-    // @Description: When throttle is suppressed in auto mode it is normally forced to zero. If you enable this option, then while suppressed it will be manual throttle. This is useful on petrol engines to hold the idle throttle manually while waiting for takeoff
-	// @Values: 0:Disabled,1:Enabled
+    // @Description: When throttle is suppressed in auto mode it is normally forced to zero. 
+    // If you enable this option, then while suppressed it will be manual throttle. 
+    // This is useful on petrol engines to hold the idle throttle manually while waiting for takeoff
+	 // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
     GSCALAR(throttle_suppress_manual,"THR_SUPP_MAN",   0),
 
     // @Param: THR_PASS_STAB
     // @DisplayName: Throttle passthru in stabilize
-    // @Description: If this is set then when in STABILIZE, FBWA or ACRO modes the throttle is a direct passthru from the transmitter. This means the THR_MIN and THR_MAX settings are not used in these modes. This is useful for petrol engines where you setup a throttle cut switch that suppresses the throttle below the normal minimum.
-	// @Values: 0:Disabled,1:Enabled
+    // @Description: If this is set then when in STABILIZE, FBWA or ACRO modes the throttle is a direct 
+    // passthru from the transmitter. This means the THR_MIN and THR_MAX settings are not used in these modes. 
+    // This is useful for petrol engines where you setup a throttle cut switch that suppresses 
+    // the throttle below the normal minimum.
+	 // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
     GSCALAR(throttle_passthru_stabilize,"THR_PASS_STAB",   0),
 
@@ -524,7 +590,11 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: THROTTLE_NUDGE
     // @DisplayName: Throttle nudge enable
-    // @Description: When enabled, this uses the throttle input in auto-throttle modes to 'nudge' the throttle or airspeed to higher or lower values. When you have an airspeed sensor the nudge affects the target airspeed, so that throttle inputs above 50% will increase the target airspeed from TRIM_ARSPD_CM up to a maximum of ARSPD_FBW_MAX. When no airspeed sensor is enabled the throttle nudge will push up the target throttle for throttle inputs above 50%.
+    // @Description: When enabled, this uses the throttle input in auto-throttle modes to 'nudge' the throttle or airspeed to higher or lower values. 
+    // When you have an airspeed sensor the nudge affects the target airspeed, 
+    //so that throttle inputs above 50% will increase the target airspeed from 
+    // TRIM_ARSPD_CM up to a maximum of ARSPD_FBW_MAX. When no airspeed sensor 
+    // is enabled the throttle nudge will push up the target throttle for throttle inputs above 50%.
     // @Values: 0:Disabled,1:Enabled
     // @User: Standard
     // @User: Standard
@@ -580,7 +650,20 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: FS_GCS_ENABL
     // @DisplayName: GCS failsafe enable
-    // @Description: Enable ground control station telemetry failsafe. Failsafe will trigger after FS_LONG_TIMEOUT seconds of no MAVLink heartbeat messages. There are two possible enabled settings. Seeing FS_GCS_ENABL to 1 means that GCS failsafe will be triggered when the aircraft has not received a MAVLink HEARTBEAT message. Setting FS_GCS_ENABL to 2 means that GCS failsafe will be triggered on either a loss of HEARTBEAT messages, or a RADIO_STATUS message from a MAVLink enabled 3DR radio indicating that the ground station is not receiving status updates from the aircraft, which is indicated by the RADIO_STATUS.remrssi field being zero (this may happen if you have a one way link due to asymmetric noise on the ground station and aircraft radios).Setting FS_GCS_ENABL to 3 means that GCS failsafe will be triggered by Heartbeat(like option one), but only in AUTO mode. WARNING: Enabling this option opens up the possibility of your plane going into failsafe mode and running the motor on the ground it it loses contact with your ground station. If this option is enabled on an electric plane then you should enable ARMING_REQUIRED.
+    // @Description: Enable ground control station telemetry failsafe. Failsafe will trigger 
+    // after FS_LONG_TIMEOUT seconds of no MAVLink heartbeat messages. 
+    // There are two possible enabled settings. Seeing FS_GCS_ENABL to 1 means
+    // that GCS failsafe will be triggered when the aircraft has not received a
+    // MAVLink HEARTBEAT message. Setting FS_GCS_ENABL to 2 means that GCS failsafe 
+    // will be triggered on either a loss of HEARTBEAT messages, or a RADIO_STATUS message 
+    // from a MAVLink enabled 3DR radio indicating that the ground station is not receiving 
+    // status updates from the aircraft, which is indicated by the RADIO_STATUS.remrssi field 
+    // being zero (this may happen if you have a one way link due to asymmetric noise on the 
+    // ground station and aircraft radios).Setting FS_GCS_ENABL to 3 means that GCS failsafe 
+    // will be triggered by Heartbeat(like option one), but only in AUTO mode. 
+    // WARNING: Enabling this option opens up the possibility of your plane going into 
+    // failsafe mode and running the motor on the ground it it loses contact with your ground station. 
+    // If this option is enabled on an electric plane then you should enable ARMING_REQUIRED.
     // @Values: 0:Disabled,1:Heartbeat,2:HeartbeatAndREMRSSI,3:HeartbeatAndAUTO
     // @User: Standard
     GSCALAR(gcs_heartbeat_fs_enabled, "FS_GCS_ENABL", GCS_FAILSAFE_OFF),
@@ -712,14 +795,19 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: TRIM_AUTO
     // @DisplayName: Automatic trim adjustment
-    // @Description: Set RC trim PWM levels to current levels when switching away from manual mode. When this option is enabled and you change from MANUAL to any other mode then the APM will take the current position of the control sticks as the trim values for aileron, elevator and rudder. It will use those to set RC1_TRIM, RC2_TRIM and RC4_TRIM. This option is disabled by default as if a pilot is not aware of this option and changes from MANUAL to another mode while control inputs are not centered then the trim could be changed to a dangerously bad value. You can enable this option to assist with trimming your plane, by enabling it before takeoff then switching briefly to MANUAL in flight, and seeing how the plane reacts. You can then switch back to FBWA, trim the surfaces then again test MANUAL mode. Each time you switch from MANUAL the APM will take your control inputs as the new trim. After you have good trim on your aircraft you can disable TRIM_AUTO for future flights.
+    // @Description: Set RC trim PWM levels to current levels when switching away from manual mode. 
+    // When this option is enabled and you change from MANUAL to any other mode then the APM will 
+    //take the current position of the control sticks as the trim values for aileron, elevator and rudder.
+    // It will use those to set RC1_TRIM, RC2_TRIM and RC4_TRIM. This option is disabled by default as if a pilot is not aware of this option and changes from MANUAL to another mode while control inputs are not centered then the trim could be changed to a dangerously bad value. You can enable this option to assist with trimming your plane, by enabling it before takeoff then switching briefly to MANUAL in flight, and seeing how the plane reacts. You can then switch back to FBWA, trim the surfaces then again test MANUAL mode. Each time you switch from MANUAL the APM will take your control inputs as the new trim. After you have good trim on your aircraft you can disable TRIM_AUTO for future flights.
     // @Values: 0:Disabled,1:Enabled
     // @User: Standard
     GSCALAR(auto_trim,              "TRIM_AUTO",      AUTO_TRIM),
 
     // @Param: ELEVON_MIXING
     // @DisplayName: Elevon mixing
-    // @Description: This enables an older form of elevon mixing which is now deprecated. Please see the ELEVON_OUTPUT option for setting up elevons. The ELEVON_MIXING option should be set to 0 for elevon planes except for backwards compatibility with older setups.
+    // @Description: This enables an older form of elevon mixing which is now deprecated. 
+    // Please see the ELEVON_OUTPUT option for setting up elevons. 
+    // The ELEVON_MIXING option should be set to 0 for elevon planes except for backwards compatibility with older setups.
     // @Values: 0:Disabled,1:Enabled
     // @User: User
     GSCALAR(mix_mode,               "ELEVON_MIXING",  ELEVON_MIXING),
@@ -762,7 +850,13 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: MIXING_GAIN
     // @DisplayName: Mixing Gain
-    // @Description: The gain for the Vtail and elevon output mixers. The default is 0.5, which ensures that the mixer doesn't saturate, allowing both input channels to go to extremes while retaining control over the output. Hardware mixers often have a 1.0 gain, which gives more servo throw, but can saturate. If you don't have enough throw on your servos with VTAIL_OUTPUT or ELEVON_OUTPUT enabled then you can raise the gain using MIXING_GAIN. The mixer allows outputs in the range 900 to 2100 microseconds.
+    // @Description: The gain for the Vtail and elevon output mixers.
+    // The default is 0.5, which ensures that the mixer doesn't saturate, 
+    // allowing both input channels to go to extremes while retaining control 
+    // over the output. Hardware mixers often have a 1.0 gain, which gives more servo 
+    // throw, but can saturate. If you don't have enough throw on your servos with 
+    // VTAIL_OUTPUT or ELEVON_OUTPUT enabled then you can raise the gain using MIXING_GAIN.
+    // The mixer allows outputs in the range 900 to 2100 microseconds.
     // @Range: 0.5 1.2
     // @User: User
     GSCALAR(mixing_gain,            "MIXING_GAIN",    0.5f),
@@ -796,13 +890,15 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: RST_MISSION_CH
     // @DisplayName: Reset Mission Channel
-    // @Description: RC channel to use to reset the mission to the first waypoint. When this channel goes above 1750 the mission is reset. Set RST_MISSION_CH to 0 to disable.
+    // @Description: RC channel to use to reset the mission to the first waypoint.
+    // When this channel goes above 1750 the mission is reset. Set RST_MISSION_CH to 0 to disable.
     // @User: Advanced
     GSCALAR(reset_mission_chan,      "RST_MISSION_CH",  0),
 
     // @Param: TRIM_ARSPD_CM
     // @DisplayName: Target airspeed
-    // @Description: Airspeed in cm/s to aim for when airspeed is enabled in auto mode. This is a calibrated (apparent) airspeed.
+    // @Description: Airspeed in cm/s to aim for when airspeed is enabled in auto mode. 
+    // This is a calibrated (apparent) airspeed.
     // @Units: cm/s
     // @User: User
     GSCALAR(airspeed_cruise_cm,     "TRIM_ARSPD_CM",  AIRSPEED_CRUISE_CM),
@@ -830,7 +926,9 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: ALT_HOLD_RTL
     // @DisplayName: RTL altitude
-    // @Description: Return to launch target altitude. This is the altitude the plane will aim for and loiter at when returning home. If this is negative (usually -1) then the plane will use the current altitude at the time of entering RTL. Note that when transiting to a Rally Point the altitude of the Rally Point is used instead of ALT_HOLD_RTL.
+    // @Description: Return to launch target altitude. This is the altitude the plane will aim for and loiter at when returning home. 
+    // If this is negative (usually -1) then the plane will use the current altitude at the time of entering RTL. 
+    // Note that when transiting to a Rally Point the altitude of the Rally Point is used instead of ALT_HOLD_RTL.
     // @Units: centimeters
     // @User: User
     GSCALAR(RTL_altitude_cm,        "ALT_HOLD_RTL",   ALT_HOLD_HOME_CM),
@@ -907,7 +1005,20 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 #if CONFIG_HAL_BOARD == HAL_BOARD_PX4
     // @Param: OVERRIDE_CHAN
     // @DisplayName: PX4IO override channel
-    // @Description: If set to a non-zero value then this is an RC input channel number to use for testing manual control in case the main FMU microcontroller on a PX4 or Pixhawk fails. When this RC input channel goes above 1750 the FMU will stop sending servo controls to the PX4IO board, which will trigger the PX4IO board to start using its failsafe override behaviour, which should give you manual control of the aircraft. That allows you to test for correct manual behaviour without actually crashing the FMU. This parameter is normally only set to a non-zero value for ground testing purposes. When the override channel is used it also forces the PX4 safety switch into an armed state. This allows it to be used as a way to re-arm a plane after an in-flight reboot. Use in that way is considered a developer option, for people testing unstable developer code. Note that you may set OVERRIDE_CHAN to the same channel as FLTMODE_CH to get PX4IO based override when in flight mode 6. Note that when override is triggered the 6 auxiliary output channels on Pixhawk will no longer be updated, so all the flight controls you need must be assigned to the first 8 channels.
+    // @Description: If set to a non-zero value then this is an RC input channel number 
+    // to use for testing manual control in case the main FMU microcontroller on a PX4 or Pixhawk fails. 
+    // When this RC input channel goes above 1750 the FMU will stop sending servo controls to the PX4IO board, 
+    // which will trigger the PX4IO board to start using its failsafe override behaviour,
+    // which should give you manual control of the aircraft. 
+    // That allows you to test for correct manual behaviour without actually crashing the FMU.
+    // This parameter is normally only set to a non-zero value for ground testing purposes. 
+    // When the override channel is used it also forces the PX4 safety switch into an armed state. 
+    // This allows it to be used as a way to re-arm a plane after an in-flight reboot. 
+    // Use in that way is considered a developer option, for people testing unstable developer code. 
+    // Note that you may set OVERRIDE_CHAN to the same channel as FLTMODE_CH to get PX4IO based override 
+    // when in flight mode 6. Note that when override is triggered the 6 auxiliary output channels 
+    // on Pixhawk will no longer be updated, so all the flight controls you need must be assigned to 
+    // the first 8 channels.
     // @User: Advanced
     GSCALAR(override_channel,      "OVERRIDE_CHAN",  0),
 #endif
@@ -922,7 +1033,8 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 #if HIL_SUPPORT
     // @Param: HIL_MODE
     // @DisplayName: HIL mode enable
-    // @Description: This enables and disables hardware in the loop mode. If HIL_MODE is 1 then on the next reboot all sensors are replaced with HIL sensors which come from the GCS.
+    // @Description: This enables and disables hardware in the loop mode. 
+    //If HIL_MODE is 1 then on the next reboot all sensors are replaced with HIL sensors which come from the GCS.
     // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
     GSCALAR(hil_mode,               "HIL_MODE",      0),
@@ -930,14 +1042,19 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: HIL_SERVOS
     // @DisplayName: HIL Servos enable
-    // @Description: This controls whether real servo controls are used in HIL mode. If you enable this then the APM will control the real servos in HIL mode. If disabled it will report servo values, but will not output to the real servos. Be careful that your motor and propeller are not connected if you enable this option.
+    // @Description: This controls whether real servo controls are used in HIL mode. 
+    // If you enable this then the APM will control the real servos in HIL mode. 
+    // If disabled it will report servo values, but will not output to the real servos. 
+    // Be careful that your motor and propeller are not connected if you enable this option.
     // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
     GSCALAR(hil_servos,            "HIL_SERVOS",      0),
 
     // @Param: HIL_ERR_LIMIT
     // @DisplayName: Limit of error in HIL attitude before reset
-    // @Description: This controls the maximum error in degrees on any axis before HIL will reset the DCM attitude to match the HIL_STATE attitude. This limit will prevent poor timing on HIL from causing a major attitude error. If the value is zero then no limit applies.
+    // @Description: This controls the maximum error in degrees on any axis before HIL will reset the DCM attitude to match the HIL_STATE attitude. 
+    // This limit will prevent poor timing on HIL from causing a major attitude error. 
+    // If the value is zero then no limit applies.
     // @Units: degrees
     // @Range: 0 90
     // @Increment: 0.1
@@ -953,14 +1070,18 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
 
     // @Param: RC_TRIM_AT_START
     // @DisplayName: RC Trims auto set at start.
-    // @Description: Automatically set roll/pitch trim from Tx at ground start. This makes the assumption that the RC transmitter has not been altered since trims were last captured.
+    // @Description: Automatically set roll/pitch trim from Tx at ground start. 
+    // This makes the assumption that the RC transmitter has not been altered since trims were last captured.
     // @Values: 0:Disable,1:Enable
     // @User: Standard
     GSCALAR(trim_rc_at_start,     "TRIM_RC_AT_START",    0), 
 
     // @Param: CRASH_DETECT
     // @DisplayName: Crash Detection
-    // @Description: Automatically detect a crash during AUTO flight and perform the bitmask selected action(s). Disarm will turn off motor for saftey and to help against burning out ESC and motor. Setting the mode to manual will help save the servos from burning out by overexerting if the aircraft crashed in an odd orientation such as upsidedown.
+    // @Description: Automatically detect a crash during AUTO flight and perform the bitmask selected action(s).
+    // Disarm will turn off motor for saftey and to help against burning out ESC and motor. 
+    // Setting the mode to manual will help save the servos from burning out by overexerting 
+    // if the aircraft crashed in an odd orientation such as upsidedown.
     // @Values: 0:Disabled,1:Disarm
     // @Bitmask: 0:Disarm
     // @User: Advanced
