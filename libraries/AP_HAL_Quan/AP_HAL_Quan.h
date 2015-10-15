@@ -4,7 +4,7 @@
 
 /* Your layer exports should depend on AP_HAL.h ONLY. */
 #include <AP_HAL/AP_HAL.h>
-
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 /**
  * Umbrella header for AP_HAL_Quan module.
  * The module header exports singleton instances which must conform the
@@ -26,7 +26,7 @@
  * ArduPilot application, whose entry points are the c++ functions
  * `void setup()` and `void loop()`, ala Arduino.
  */
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
 #include <quan/min.hpp>
 #include <quan/max.hpp>
 #include "HAL_Quan_Class.h"
