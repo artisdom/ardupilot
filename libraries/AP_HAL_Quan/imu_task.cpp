@@ -498,7 +498,7 @@ private:
    };
    // required gyro rate
    // as in Ap_InertialSensor_MPU6000
-   // can be 250, 500, 100,2000
+   // can be 250, 500, 100,2000 degrees.sec[-1]
    constexpr uint32_t gyro_fsr_deg_s = 2000U;
    // to scale from the raw reg output to rad.s-1 
    constexpr float gyro_constant(uint32_t gyro_fsr_deg_s_in)
@@ -540,7 +540,6 @@ namespace Quan{ namespace detail{
    void spi_setup(uint16_t sample_rate_Hz, uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
    {
 
-    
       h_INS_ArgsQueue = xQueueCreate(1,sizeof(inertial_sensor_args_t *));
 
       hal_printf("spi_setup\n");
@@ -689,25 +688,28 @@ namespace Quan{
    // blocks 
    bool wait_for_imu_sample(uint32_t usecs_to_wait)
    {
-      inertial_sensor_args_t * p_dummy_result;
-      TickType_t const ms_to_wait = usecs_to_wait / 1000  + (((usecs_to_wait % 1000) > 499 )?1:0);
-      return xQueuePeek(h_INS_ArgsQueue,&p_dummy_result,ms_to_wait) == pdTRUE ;
+      if (h_INS_ArgsQueue != nullptr){
+         inertial_sensor_args_t * p_dummy_result;
+         TickType_t const ms_to_wait = usecs_to_wait / 1000  + (((usecs_to_wait % 1000) > 499 )?1:0);
+         return xQueuePeek(h_INS_ArgsQueue,&p_dummy_result,ms_to_wait) == pdTRUE ;
+      }else{
+         return false;
+      }
    }
 
    // called by AP_inertialSensor_Backend::update ( quan version)
    // after AP_InertailSensor::wait_for_sample has unblocked
    bool update_ins(Vector3f & accel,Vector3f & gyro)
    {
-      inertial_sensor_args_t * p_args;
-  
-      if (xQueueReceive(h_INS_ArgsQueue,&p_args,0) == pdTRUE ){
-          accel = p_args->accel;
-          gyro = p_args->gyro;
-          
-          return true;
-      }else{
-         return false;
-      } 
+      if (h_INS_ArgsQueue != nullptr){
+         inertial_sensor_args_t * p_args;
+         if (xQueueReceive(h_INS_ArgsQueue,&p_args,0) == pdTRUE ){
+             accel = p_args->accel;
+             gyro = p_args->gyro;
+             return true;
+         }
+      }
+      return false;
    }
 }
 
