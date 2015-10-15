@@ -44,7 +44,7 @@ void create_apm_task() \
 { \
   xTaskCreate( \
       apm_task,"apm task", \
-      5000, \
+      4000, \
       &dummy_param, \
       tskIDLE_PRIORITY + 1, \
       &task_handle \
