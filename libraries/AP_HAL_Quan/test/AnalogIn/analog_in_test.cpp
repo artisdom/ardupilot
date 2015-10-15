@@ -82,7 +82,7 @@ namespace {
       {
           hal.gpio->pinMode(red_led_pin,HAL_GPIO_OUTPUT);
           hal.gpio->write(red_led_pin,pin_off);
-          hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&test_task_t::fun, void));
+          
       }
    private:
       uint32_t m_count ;
@@ -105,15 +105,19 @@ void quan::uav::osd::on_draw()
 }
 
 namespace {
-   uint64_t next_event = 10U;
+
+   TickType_t prev_wake_time= 0; 
+   uint32_t led_count = 0;
+
 }
 // called forever in apm_task
 void loop() 
 {
-   uint64_t const now = hal.scheduler->millis64();
-   if ( next_event <= now ){
+   vTaskDelayUntil(&prev_wake_time,1); 
+   test_task.fun();
+   if ( ++led_count == 200){
+      led_count = 0;
       hal.gpio->toggle(test_pin);
-      next_event = now + 10U;
    }
 }
 
