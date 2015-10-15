@@ -38,10 +38,13 @@
 #include <AP_HAL_Empty/AP_HAL_Empty.h>
 #include <AP_HAL_Linux/AP_HAL_Linux.h>
 #include <AP_HAL_PX4/AP_HAL_PX4.h>
+#include <AP_HAL_Quan/AP_HAL_Quan.h>
 #include <AP_BattMonitor/AP_BattMonitor.h>
 #include <AP_SerialManager/AP_SerialManager.h>
 #include <RC_Channel/RC_Channel.h>
 #include <AP_RangeFinder/AP_RangeFinder.h>
+
+#include "osd_message.hpp"
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 
@@ -61,8 +64,6 @@ AP_SerialManager serial_manager;
 // choose which AHRS system to use
 AP_AHRS_DCM  ahrs(ins, baro, gps);
 
-
-
 #define HIGH 1
 #define LOW 0
 
@@ -75,7 +76,7 @@ void setup(void)
     hal.gpio->write(40, HIGH);
 #endif
 
-    ins.init(AP_InertialSensor::RATE_100HZ);
+    ins.init(AP_InertialSensor::RATE_50HZ);
     ahrs.init();
     serial_manager.init();
 
@@ -86,50 +87,59 @@ void setup(void)
         hal.console->printf("No compass detected\n");
     }
     gps.init(NULL, serial_manager);
+    Quan::osd_init();
+
+    
+}
+
+namespace {
+
+  //uint16_t counter =0;
+  uint16_t print_counter =0;
+  uint16_t compass_counter;
+  float heading = 0;
+  //uint32_t iter_time =0;
 }
 
 void loop(void)
 {
-    static uint16_t counter;
-    static uint32_t last_t, last_print, last_compass;
-    uint32_t now = hal.scheduler->micros();
-    float heading = 0;
-
-    if (last_t == 0) {
-        last_t = now;
-        return;
-    }
-    last_t = now;
-
-    if (now - last_compass > 100*1000UL &&
-        compass.read()) {
+    //hal.scheduler->delay(10); // 1/100th sec
+    ins.wait_for_sample();
+    if (++compass_counter == 10){
+        compass_counter = 0;
+        compass.read();
         heading = compass.calculate_heading(ahrs.get_dcm_matrix());
-        // read compass at 10Hz
-        last_compass = now;
 #if WITH_GPS
         g_gps->update();
 #endif
     }
 
-    ahrs.update();
-    counter++;
+   ahrs.update();
+ 
+  // quan::three_d::vect<float> drift1{drift.x,drift.y,drift.z};
+   quan::three_d::vect<float> attitude ;
 
-    if (now - last_print >= 100000 /* 100ms : 10hz */) {
-        Vector3f drift  = ahrs.get_gyro_drift();
-        hal.console->printf_P(
-                PSTR("r:%4.1f  p:%4.1f y:%4.1f "
-                    "drift=(%5.1f %5.1f %5.1f) hdg=%.1f rate=%.1f\n"),
-                        ToDeg(ahrs.roll),
-                        ToDeg(ahrs.pitch),
-                        ToDeg(ahrs.yaw),
-                        ToDeg(drift.x),
-                        ToDeg(drift.y),
-                        ToDeg(drift.z),
-                        compass.use_for_yaw() ? ToDeg(heading) : 0.0f,
-                        (1.0e6f*counter)/(now-last_print));
-        last_print = now;
-        counter = 0;
-    }
+   Quan::osd_send_attitude({ToDeg(ahrs.pitch),ToDeg(ahrs.roll),ToDeg(ahrs.yaw)});
+ //  Quan::osd_send_drift(drift1);
+   Quan::osd_send_heading(ToDeg(heading));
+
+    if (++print_counter == 100) {
+      print_counter = 0;
+      Vector3f drift  = ahrs.get_gyro_drift();
+      hal.console->printf_P(
+         PSTR("r:%4.1f  p:%4.1f y:%4.1f "
+         "drift=(%5.1f %5.1f %5.1f) hdg=%.1f \n"),
+            static_cast<double>(ToDeg(ahrs.roll)),
+            static_cast<double>(ToDeg(ahrs.pitch)),
+            static_cast<double>(ToDeg(ahrs.yaw)),
+            static_cast<double>(ToDeg(drift.x)),
+            static_cast<double>(ToDeg(drift.y)),
+            static_cast<double>(ToDeg(drift.z)),
+            compass.use_for_yaw() ? static_cast<double>(ToDeg(heading)) : 0.0
+      );
+   }
+
+   
 }
 
 AP_HAL_MAIN();
