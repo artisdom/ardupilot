@@ -49,8 +49,11 @@ const AP_Param::GroupInfo Compass::var_info[] PROGMEM = {
     // @Description: Enable or disable the automatic learning of compass offsets
     // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_GROUPINFO("LEARN",  3, Compass, _learn, 0),
+#else
     AP_GROUPINFO("LEARN",  3, Compass, _learn, COMPASS_LEARN_DEFAULT),
-
+#endif
     // @Param: USE
     // @DisplayName: Use compass for yaw
     // @Description: Enable or disable the use of the compass (instead of the GPS) for determining heading
@@ -63,8 +66,11 @@ const AP_Param::GroupInfo Compass::var_info[] PROGMEM = {
     // @Description: Enable or disable the automatic calculation of the declination based on gps location
     // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_GROUPINFO("AUTODEC",5, Compass, _auto_declination, 0),
+#else
     AP_GROUPINFO("AUTODEC",5, Compass, _auto_declination, 1),
-
+#endif
     // @Param: MOTCT
     // @DisplayName: Motor interference compensation type
     // @Description: Set motor interference compensation type to disabled, throttle or current.  Do not change manually.
@@ -113,6 +119,7 @@ const AP_Param::GroupInfo Compass::var_info[] PROGMEM = {
     // 31:Roll90Pitch180,32:Roll270Pitch180,33:Roll90Pitch270,34:Roll180Pitch270,
     //35:Roll270Pitch270,36:Roll90Pitch180Yaw90,37:Roll90Yaw270,38:Yaw293Pitch68Roll90
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   // either ROTATION_NONE or ROTATION_180
    AP_GROUPINFO("ORIENT", 8, Compass, _state[0].orientation, ROTATION_YAW_180),
 #else
     AP_GROUPINFO("ORIENT", 8, Compass, _state[0].orientation, ROTATION_NONE),
