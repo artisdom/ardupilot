@@ -68,7 +68,7 @@ void setup() {
 void quan::uav::osd::on_draw() 
 { 
 /*
-   could do something more exiting?
+   could do something more exciting?
 */
     pxp_type pos{-140,50};
     draw_text("Quan APM Compass Test",pos);
@@ -77,7 +77,7 @@ void quan::uav::osd::on_draw()
 
 void loop()
 {
-    static float min[3], max[3], offset[3];
+   // static float min[3], max[3], offset[3];
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
      hal.scheduler->delay(100);
@@ -89,7 +89,17 @@ void loop()
 #endif
         timer = hal.scheduler->micros();
         compass.read();
-        unsigned long read_time = hal.scheduler->micros() - timer;
+       // unsigned long read_time = hal.scheduler->micros() - timer;
+        Vector3f raw_field = compass.get_raw_field();
+
+        hal.console->printf(
+            "raw field [%.2f x, %.2f y, %.2f z]\n",
+             static_cast<double>(raw_field.x) 
+            ,static_cast<double>(raw_field.y)
+            ,static_cast<double>(raw_field.z)
+        );
+      
+#if 0
         float heading;
 
         if (!compass.healthy()) {
@@ -141,6 +151,7 @@ void loop()
         hal.console->printf(" t=%u", (unsigned)read_time);
 
         hal.console->println();
+#endif
 #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
     } else {
 	    hal.scheduler->delay(1);
