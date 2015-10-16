@@ -39,9 +39,8 @@ The I2C_Task is run at 100 Hz
 The task also filters the data
 and puts the lastest value on the queues when there is free space
 
-Best time to start?
-
 Needs usart and i2c and scheduler objects to be ready
+  
 
 */
 
@@ -514,9 +513,9 @@ namespace {
 
    void copy_new_values(uint8_t (&raw_magnetometer_values)[6], quan::three_d::vect<int16_t> & result_out )
    {
-      result_out.x = - mag_convert_to_int16(raw_magnetometer_values);
-      result_out.y = + mag_convert_to_int16(raw_magnetometer_values + 4);
-      result_out.z = - mag_convert_to_int16(raw_magnetometer_values + 2);
+      result_out.x = -mag_convert_to_int16(raw_magnetometer_values);
+      result_out.y = mag_convert_to_int16(raw_magnetometer_values + 4);
+      result_out.z = -mag_convert_to_int16(raw_magnetometer_values + 2);
    }
 
    bool read_compass_raw(quan::three_d::vect<int16_t> & result_out, int32_t & time_out)
