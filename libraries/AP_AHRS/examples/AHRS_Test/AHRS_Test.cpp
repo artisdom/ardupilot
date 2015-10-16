@@ -89,7 +89,6 @@ void setup(void)
     gps.init(NULL, serial_manager);
     Quan::osd_init();
 
-    
 }
 
 namespace {
@@ -123,7 +122,7 @@ void loop(void)
  //  Quan::osd_send_drift(drift1);
    Quan::osd_send_heading(ToDeg(heading));
 
-    if (++print_counter == 100) {
+    if (++print_counter == 20) {
       print_counter = 0;
       Vector3f drift  = ahrs.get_gyro_drift();
       hal.console->printf_P(
