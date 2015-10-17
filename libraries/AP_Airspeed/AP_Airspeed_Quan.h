@@ -13,7 +13,7 @@ public:
     AP_Airspeed_Quan() {}
 
     // probe and initialise the sensor
-    bool init(void){ return true;}
+    bool init(void);
 
     // return the current differential_pressure in Pascal
     bool get_differential_pressure(float &pressure);

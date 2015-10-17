@@ -18,41 +18,53 @@
  *   Airspeed.pde - airspeed example sketch
  *
  */
-
-#include <AP_Common/AP_Common.h>
-#include <AP_Progmem/AP_Progmem.h>
-#include <AP_Param/AP_Param.h>
-#include <AP_Math/AP_Math.h>
 #include <AP_HAL/AP_HAL.h>
-#include <AP_HAL_AVR/AP_HAL_AVR.h>
-#include <AP_HAL_Linux/AP_HAL_Linux.h>
-#include <AP_HAL_Empty/AP_HAL_Empty.h>
-#include <AP_ADC/AP_ADC.h>
-#include <AP_ADC_AnalogSource/AP_ADC_AnalogSource.h>
-#include <Filter/Filter.h>
-#include <AP_Buffer/AP_Buffer.h>
+//#include <AP_Common/AP_Common.h>
+//#include <AP_Progmem/AP_Progmem.h>
+//#include <AP_Param/AP_Param.h>
+//#include <AP_Math/AP_Math.h>
+//#include <AP_HAL/AP_HAL.h>
+//#include <AP_HAL_AVR/AP_HAL_AVR.h>
+//#include <AP_HAL_Linux/AP_HAL_Linux.h>
+//#include <AP_HAL_Empty/AP_HAL_Empty.h>
+#include <AP_HAL_Quan/AP_HAL_Quan.h>
+//#include <AP_ADC/AP_ADC.h>
+//#include <AP_ADC_AnalogSource/AP_ADC_AnalogSource.h>
+//#include <Filter/Filter.h>
+//#include <AP_Buffer/AP_Buffer.h>
 #include <AP_Airspeed/AP_Airspeed.h>
 #include <AP_Vehicle/AP_Vehicle.h>
-#include <AP_Notify/AP_Notify.h>
-#include <AP_Compass/AP_Compass.h>
-#include <AP_Declination/AP_Declination.h>
-#include <AP_AHRS/AP_AHRS.h>
-#include <AP_NavEKF/AP_NavEKF.h>
-#include <AP_Terrain/AP_Terrain.h>
-#include <DataFlash/DataFlash.h>
-#include <AP_Baro/AP_Baro.h>
-#include <GCS_MAVLink/GCS_MAVLink.h>
-#include <AP_Mission/AP_Mission.h>
-#include <StorageManager/StorageManager.h>
-#include <AP_Terrain/AP_Terrain.h>
-#include <AP_GPS/AP_GPS.h>
-#include <AP_InertialSensor/AP_InertialSensor.h>
-#include <AP_BattMonitor/AP_BattMonitor.h>
-#include <AP_Rally/AP_Rally.h>
-#include <AP_RangeFinder/AP_RangeFinder.h>
+//#include <AP_Notify/AP_Notify.h>
+//#include <AP_Compass/AP_Compass.h>
+//#include <AP_Declination/AP_Declination.h>
+//#include <AP_AHRS/AP_AHRS.h>
+//#include <AP_NavEKF/AP_NavEKF.h>
+//#include <AP_Terrain/AP_Terrain.h>
+//#include <DataFlash/DataFlash.h>
+//#include <AP_Baro/AP_Baro.h>
+//#include <GCS_MAVLink/GCS_MAVLink.h>
+//#include <AP_Mission/AP_Mission.h>
+//#include <StorageManager/StorageManager.h>
+//#include <AP_Terrain/AP_Terrain.h>
+//#include <AP_GPS/AP_GPS.h>
+//#include <AP_InertialSensor/AP_InertialSensor.h>
+//#include <AP_BattMonitor/AP_BattMonitor.h>
+//#include <AP_Rally/AP_Rally.h>
+//#include <AP_RangeFinder/AP_RangeFinder.h>
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_APM1
 AP_ADC_ADS7844 apm1_adc;
+#endif
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
+// do something on osd to check its running ok
+void quan::uav::osd::on_draw() 
+{ 
+    pxp_type pos{-140,50};
+    draw_text("Quan APM Airspeed Test",pos);
+}
+
 #endif
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
@@ -65,7 +77,7 @@ void setup()
 {
     hal.console->println("ArduPilot Airspeed library test");
 
-    AP_Param::set_object_value(&airspeed, airspeed.var_info, "_PIN", 65);
+  //  AP_Param::set_object_value(&airspeed, airspeed.var_info, "_PIN", 2);
 
     airspeed.init();
     airspeed.calibrate(false);
@@ -73,13 +85,19 @@ void setup()
 
 void loop(void)
 {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+     hal.scheduler->delay(100);
+#else
     static uint32_t timer;
     if((hal.scheduler->millis() - timer) > 100) {
         timer = hal.scheduler->millis();
+#endif
         airspeed.read();
-        hal.console->printf("airspeed %.2f\n", airspeed.get_airspeed());
+        hal.console->printf("airspeed %8.3f\n", static_cast<double>(airspeed.get_airspeed()));
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
     }
     hal.scheduler->delay(1);
+#endif
 }
 
 AP_HAL_MAIN();

@@ -8,6 +8,16 @@
 
 extern const AP_HAL::HAL& hal;
 
+bool AP_Airspeed_Quan::init()
+{
+   // give time for sensor to stabilise
+   uint32_t now = hal.scheduler->millis();
+   if ( now < 5000){
+         hal.scheduler->delay(5000 - now);
+   }
+   return true;
+}
+
 // MPXV7002
 bool AP_Airspeed_Quan::get_differential_pressure(float &pressure)
 {
