@@ -9,7 +9,7 @@ extern const AP_HAL::HAL& hal;
 
 #include <AP_HAL/AP_HAL.h>
 
-#if CONFIG_HAL_BOARD != HAL_BOARD_PX4
+#if ( CONFIG_HAL_BOARD != HAL_BOARD_PX4 ) && (CONFIG_HAL_BOARD != HAL_BOARD_QUAN) 
 
 #define BATTMONITOR_SMBUS_I2C_ADDR  0x0B    // default I2C bus address
 
@@ -184,4 +184,4 @@ uint8_t AP_BattMonitor_SMBus_I2C::get_PEC(const uint8_t i2c_addr, uint8_t cmd, b
     return crc;
 }
 
-#endif // CONFIG_HAL_BOARD != HAL_BOARD_PX4
+#endif // CONFIG_HAL_BOARD != HAL_BOARD_PX4 && CONFIG_HAL_BOARD != HAL_BOARD_QUAN
