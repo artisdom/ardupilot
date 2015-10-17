@@ -34,10 +34,10 @@ HAL_Quan::HAL_Quan()
    Quan::get_serial_port<2>(),//   telemetry
    NULL,            /* no uartD */
    NULL,            /* no uartE */
-   Quan::get_i2c_driver(),
+   Quan::get_i2c_driver(), // dummy
    NULL, /* only one i2c */
    NULL, /* only one i2c */
-   &spiDeviceManager,
+   &spiDeviceManager, // dummy
    Quan::get_analog_in(),
    &storageDriver,
    Quan::get_serial_port<0>(),    // console  member
