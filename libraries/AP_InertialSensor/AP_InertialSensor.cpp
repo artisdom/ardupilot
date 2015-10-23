@@ -964,7 +964,8 @@ AP_InertialSensor::_init_gyro()
     for(int8_t c = 0; c < 5; c++) {
         hal.console->print("gyro  update loop\n");
 // Quan wait for sample ?
-        hal.scheduler->delay(5);
+       // hal.scheduler->delay(5);
+         wait_for_sample();
         update();
     }
 
@@ -1368,15 +1369,16 @@ void AP_InertialSensor::wait_for_sample(void)
     // so should prob be a panic
     // actually seems too short for tests where there is no other
     
-    bool s = Quan::wait_for_imu_sample( _sample_period_usec *3);
-   
-    if (s ){
-       hal.console->printf("s\n");
-    }else{
-      hal.console->printf("ins no s\n");
-    }
-    
+    bool s = Quan::wait_for_imu_sample( 22000);
+ 
+        
     uint32_t now = hal.scheduler->micros();
+    if (s ){
+       hal.console->printf("t = %u Y\n", static_cast<unsigned>(now/1000));
+    }else{
+      hal.console->printf("t = %u N\n",static_cast<unsigned>(now/1000));
+    }
+
 
     if (_hil_mode && _hil.delta_time > 0) {
         _delta_time = _hil.delta_time;
