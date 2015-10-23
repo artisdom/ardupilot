@@ -12,6 +12,7 @@ using namespace Quan;
 
 
 namespace Quan{
+  void init_spi();
   template <uint32_t I>
   AP_HAL::UARTDriver*  get_serial_port();
   AP_HAL::AnalogIn*    get_analog_in();
@@ -54,6 +55,7 @@ void HAL_Quan::init(int argc,char* const argv[]) const
 {
    uartA->begin(115200);
    gpio->init();
+   Quan::init_spi();
    rcin->init(NULL);
    rcout->init(NULL);
    analogin->init(NULL);
