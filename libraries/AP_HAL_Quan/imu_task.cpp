@@ -74,8 +74,7 @@ namespace {
       static constexpr uint8_t sample_rate_div     = 25U;
       static constexpr uint8_t config              = 26U;
       static constexpr uint8_t gyro_config         = 27U;
-     // static constexpr uint8_t accel_config        = 27U;
-      static constexpr uint8_t accel_config       = 28U;
+      static constexpr uint8_t accel_config        = 28U;
       static constexpr uint8_t fifo_enable         = 35U;
       static constexpr uint8_t intr_bypass_en_cfg  = 55U;
       static constexpr uint8_t intr_enable         = 56U;
@@ -114,16 +113,8 @@ namespace {
          setup_dma();
          start_spi();
       }
-// only used for setup
-       static bool transaction(const uint8_t *tx, uint8_t *rx, uint16_t len) 
-       {
-         taskENTER_CRITICAL();
-         cs_assert();
-         transfer(tx,rx,len);
-         cs_release();
-         taskEXIT_CRITICAL();
-         return true;
-       }
+
+
 private:
        static uint8_t transfer(uint8_t data)
        {
@@ -139,21 +130,61 @@ private:
             rx[i]= transfer(tx[i]);
           }
        }
-  public:
-       static void reg_write( uint8_t r, uint8_t v)
+      
+ public:  
+
+      template <typename nCS_Pin>
+      static void cs_assert()
+      {
+        // m_transfer_in_progress = true;
+         quan::stm32::clear<nCS_Pin>();
+         (void)ll_read();
+      }
+
+      // worst case 1 cycle at 168 Mhz == 6 ns
+      template <typename nCS_Pin>
+      static void cs_release()
+      {
+         while (busy()) { asm volatile ("nop":::);}
+         if ( !m_fast_speed){
+            // 500 ns hold
+            for (uint8_t i = 0; i < 50; ++i){
+               asm volatile ("nop":::);
+            }
+         }
+         quan::stm32::set<nCS_Pin>();
+      }
+       template <typename CS_Pin>
+       static bool transaction_no_crit(const uint8_t *tx, uint8_t *rx, uint16_t len) 
        {
-          // critical section
-          uint8_t arr[2] = {r, v};
-          transaction(arr,arr, 2U);
-          // ~critical section
+         cs_assert<CS_Pin>();
+         transfer(tx,rx,len);
+         cs_release<CS_Pin>();
+         return true;
        }
 
+       template <typename CS_Pin>
+       static bool transaction(const uint8_t *tx, uint8_t *rx, uint16_t len) 
+       {
+         taskENTER_CRITICAL();
+         bool const result = transaction_no_crit<CS_Pin>(tx,rx,len);
+         taskEXIT_CRITICAL();
+         return result;
+       }
+
+  public:
+       template <typename CS_Pin>
+       static void reg_write( uint8_t r, uint8_t v)
+       {
+          uint8_t arr[2] = {r, v};
+          transaction<CS_Pin>(arr,arr, 2U);
+       }
+
+      template <typename CS_Pin>
       static uint8_t reg_read( uint8_t r)
       {
-         // critical section
          uint8_t arr[2] = {static_cast<uint8_t>(r | 0x80),0U};
-         transaction(arr,arr, 2);
-         // ~critical section
+         transaction<CS_Pin>(arr,arr, 2);
          return arr[1];
       }
 
@@ -195,26 +226,6 @@ private:
       }
 
 public:
-      static void cs_assert()
-      {
-        // m_transfer_in_progress = true;
-         quan::stm32::clear<spi1_soft_nss>();
-         (void)ll_read();
-      }
-
-      // worst case 1 cycle at 168 Mhz == 6 ns
-      static void cs_release()
-      {
-         while (busy()) { asm volatile ("nop":::);}
-         if ( !m_fast_speed){
-            // 500 ns hold
-            for (uint8_t i = 0; i < 50; ++i){
-               asm volatile ("nop":::);
-            }
-         }
-         quan::stm32::set<spi1_soft_nss>();
-        // m_transfer_in_progress = false;
-      }
 
       static bool txe(){ return spi1::get()->sr.bb_getbit<1>();}
       static bool rxne(){ return spi1::get()->sr.bb_getbit<0>();}
@@ -230,8 +241,8 @@ private:
       typedef quan::mcu::pin<quan::stm32::gpiob,5>  spi1_mosi;
       typedef quan::mcu::pin<quan::stm32::gpiob,4>  spi1_miso;
       typedef quan::mcu::pin<quan::stm32::gpiob,3>  spi1_sck;
-      typedef quan::mcu::pin<quan::stm32::gpioa,12> spi1_soft_nss;
 public:
+      typedef quan::mcu::pin<quan::stm32::gpioa,12> spi1_soft_nss;
       typedef quan::mcu::pin<quan::stm32::gpioc,14> mpu6000_irq;
       typedef quan::mcu::pin<quan::stm32::gpiob,1> fram_ncs;
 private:
@@ -327,7 +338,7 @@ private:
             quan::stm32::detail::get_exti_irq_num<mpu6000_irq::pin_value>::value
             ,14
          );
-         quan::stm32::enable_exti_interrupt<mpu6000_irq>(); 
+         //quan::stm32::enable_exti_interrupt<mpu6000_irq>(); 
       }
 public:
       static uint8_t dma_tx_buffer[16] ;
@@ -396,9 +407,9 @@ private:
 
    bool whoami_test()
    {
-      uint8_t val = spi_device_driver::reg_read(reg::whoami);
+      uint8_t value = spi_device_driver::reg_read<spi_device_driver::spi1_soft_nss>(reg::whoami);
 
-      if ( val == val::whoami){
+      if ( value == val::whoami){
          return true;
       }else{
          hal_printf("whoami failed\n");
@@ -425,11 +436,11 @@ private:
       static void apply(uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
       {
          // 8 kHz sampling
-         spi_device_driver::reg_write(reg::config, 0x00);
+         spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::config, 0x00);
 
          delay(1);
          // divide by 8 == 1 kHz
-         spi_device_driver::reg_write(reg::sample_rate_div, 7);
+         spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::sample_rate_div, 7);
          constexpr uint32_t irq_freq_Hz = 1000;
          constexpr uint32_t callback_freq_Hz = 50;
 
@@ -445,11 +456,11 @@ private:
       static void apply(uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
       {
          // 8 kHz sampling
-         spi_device_driver::reg_write(reg::config, 0x00);
+         spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::config, 0x00);
 
          delay(1);
          // divide by 8 == 1 kHz
-         spi_device_driver::reg_write(reg::sample_rate_div, 7);
+         spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::sample_rate_div, 7);
          constexpr uint32_t irq_freq_Hz = 1000;
          constexpr uint32_t callback_freq_Hz = 100;
 
@@ -465,11 +476,11 @@ private:
       static void apply(uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
       {
          // 8 kHz sampling
-         spi_device_driver::reg_write(reg::config, 0x00);
+         spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::config, 0x00);
 
          delay(1);
          // divide by 8 == 1 kHz
-         spi_device_driver::reg_write(reg::sample_rate_div, 7);
+         spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::sample_rate_div, 7);
          constexpr uint32_t irq_freq_Hz = 1000;
          constexpr uint32_t callback_freq_Hz = 200;
 
@@ -485,10 +496,10 @@ private:
       static void apply(uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
       {
          // 8 kHz sampling
-         spi_device_driver::reg_write(reg::config, 0x00);
+         spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::config, 0x00);
          delay(1);
          // divide by 4 = 2 kHz
-         spi_device_driver::reg_write(reg::sample_rate_div, 3);
+         spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::sample_rate_div, 3);
          constexpr uint32_t irq_freq_Hz = 2000;
          constexpr uint32_t callback_freq_Hz = 400;
 
@@ -541,7 +552,15 @@ private:
    constexpr uint8_t mpu6000_D9 = 0x59;
 }
 
-namespace Quan{ namespace detail{
+namespace Quan{ 
+
+   void init_spi()
+   {
+     spi_device_driver::init();
+     delay(100);
+   }
+
+namespace detail{
 
    // call once at startup
    // in APM thread
@@ -553,19 +572,19 @@ namespace Quan{ namespace detail{
 
       hal_printf("spi_setup\n");
 
-      spi_device_driver::init();
-      delay(100);
+     // spi_device_driver::init();
+      //delay(100);
 
       // reset
-      spi_device_driver::reg_write(reg::pwr_mgmt1, 1U << 7U);
+      spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::pwr_mgmt1, 1U << 7U);
       delay(100);
      
       // wakeup
-      spi_device_driver::reg_write(reg::pwr_mgmt1, 3U);
+      spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::pwr_mgmt1, 3U);
       delay(100);
 
       // disable I2C
-      spi_device_driver::reg_write(reg::user_ctrl, 1U << 4U);
+      spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::user_ctrl, 1U << 4U);
       delay(100);
 
       while (! whoami_test() )
@@ -574,7 +593,7 @@ namespace Quan{ namespace detail{
       }
      
       hal_printf("whaomi succeeded\n");
-      spi_device_driver::reg_write(reg::fifo_enable, 0U);
+      spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::fifo_enable, 0U);
       delay(1);
 
       // setup the rates
@@ -611,13 +630,13 @@ namespace Quan{ namespace detail{
       auto get_gyro_reg_val =[](uint32_t gyro_fsr) 
       { return static_cast<uint8_t>(static_cast<uint32_t>(log2(gyro_fsr/250U)) << 3U);};
 
-      spi_device_driver::reg_write(reg::gyro_config, get_gyro_reg_val(gyro_fsr_deg_s));
+      spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::gyro_config, get_gyro_reg_val(gyro_fsr_deg_s));
 
       delay(1);
 
       // accel reg value dependent on produxct version
       // want a fsr of 8g
-      uint8_t const product_id = spi_device_driver::reg_read(reg::product_id);
+      uint8_t const product_id = spi_device_driver::reg_read<spi_device_driver::spi1_soft_nss>(reg::product_id);
 
 //      generic TODO
 //      uint8_t get_accel_reg_bits [] (uint32_t accel_fsr)
@@ -629,17 +648,17 @@ namespace Quan{ namespace detail{
          case   mpu6000_C5:
          case mpu6000ES_C4:
          case mpu6000ES_C5:
-            spi_device_driver::reg_write(reg::accel_config, 1 << 3);
+            spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::accel_config, 1 << 3);
             break;
          default:
-            spi_device_driver::reg_write(reg::accel_config, 1 << 4);
+            spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::accel_config, 1 << 4);
             break;
       }
       delay(1);
 
       // want active low     bit 7 = true
       // hold until cleared   bit 5 = true
-      spi_device_driver::reg_write(reg::intr_bypass_en_cfg, 0b10100000);
+      spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::intr_bypass_en_cfg, 0b10100000);
       delay(1);
 
       // Should be initialised at startup
@@ -651,11 +670,17 @@ namespace Quan{ namespace detail{
 
       spi_device_driver::enable_dma();
 //####################################
+      taskENTER_CRITICAL();
+      quan::stm32::disable_exti_interrupt<spi_device_driver::mpu6000_irq>(); 
+      quan::stm32::clear_event_pending<spi_device_driver::mpu6000_irq>();
+           // int on data ready
+      spi_device_driver::reg_write<spi_device_driver::spi1_soft_nss>(reg::intr_enable, 0b00000001);
+      
 // TODO get correct enum for setting bus speed
       spi_device_driver::set_bus_speed(1) ;
 //##########################################
-      // int on data ready
-      spi_device_driver::reg_write(reg::intr_enable, 0b00000001);
+      quan::stm32::enable_exti_interrupt<spi_device_driver::mpu6000_irq>(); 
+      taskEXIT_CRITICAL();
    }
 }} // Quan::detail
 
@@ -668,7 +693,7 @@ extern "C" void EXTI15_10_IRQHandler()
    // v filter
    if (quan::stm32::is_event_pending<spi_device_driver::mpu6000_irq>()){
 
-      spi_device_driver::cs_assert(); // start transaction
+      spi_device_driver::cs_assert<spi_device_driver::spi1_soft_nss>(); // start transaction
       spi_device_driver::stop_spi();
       
       quan::stm32::clear_event_pending<spi_device_driver::mpu6000_irq>();
@@ -792,7 +817,7 @@ extern "C" void DMA2_Stream0_IRQHandler()
    DMA2->HIFCR |= ( 0b111101 << 6) ; // Stream 5 clear flags
    DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
 
-   spi_device_driver::cs_release();
+   spi_device_driver::cs_release<spi_device_driver::spi1_soft_nss>();
 
    BaseType_t HigherPriorityTaskWoken_imu = pdFALSE;
 
