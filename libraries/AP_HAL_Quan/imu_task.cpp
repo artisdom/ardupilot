@@ -74,8 +74,8 @@ namespace {
       static constexpr uint8_t sample_rate_div     = 25U;
       static constexpr uint8_t config              = 26U;
       static constexpr uint8_t gyro_config         = 27U;
-      static constexpr uint8_t accel_config        = 27U;
-      static constexpr uint8_t accel_config2       = 28U;
+     // static constexpr uint8_t accel_config        = 27U;
+      static constexpr uint8_t accel_config       = 28U;
       static constexpr uint8_t fifo_enable         = 35U;
       static constexpr uint8_t intr_bypass_en_cfg  = 55U;
       static constexpr uint8_t intr_enable         = 56U;
@@ -233,6 +233,7 @@ private:
       typedef quan::mcu::pin<quan::stm32::gpioa,12> spi1_soft_nss;
 public:
       typedef quan::mcu::pin<quan::stm32::gpioc,14> mpu6000_irq;
+      typedef quan::mcu::pin<quan::stm32::gpiob,1> fram_ncs;
 private:
       static void setup_spi_pins()
       {
@@ -263,6 +264,14 @@ private:
 
          quan::stm32::apply<
             spi1_soft_nss
+            ,quan::stm32::gpio::mode::output
+            ,quan::stm32::gpio::pupd::none
+            ,quan::stm32::gpio::ospeed::medium_fast
+            ,quan::stm32::gpio::ostate::high
+         >();
+
+        quan::stm32::apply<
+            fram_ncs
             ,quan::stm32::gpio::mode::output
             ,quan::stm32::gpio::pupd::none
             ,quan::stm32::gpio::ospeed::medium_fast
@@ -683,6 +692,9 @@ namespace {
 }
 
 namespace Quan{
+
+    bool eeprom_write(unsigned short, void const*, unsigned int) {return false;}
+    bool eeprom_read(void*, unsigned short, unsigned int){return false;}
 
    // called by AP_InertailSensor::wait_for_sample
    // blocks 
