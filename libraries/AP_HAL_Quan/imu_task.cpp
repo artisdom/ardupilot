@@ -132,20 +132,7 @@ private:
        }
 
   public:
-       template <typename CS_Pin>
-       static void reg_write( uint8_t r, uint8_t v)
-       {
-          uint8_t arr[2] = {r, v};
-          transaction<CS_Pin>(arr,arr, 2U);
-       }
-
-      template <typename CS_Pin>
-      static uint8_t reg_read( uint8_t r)
-      {
-         uint8_t arr[2] = {static_cast<uint8_t>(r | 0x80),0U};
-         transaction<CS_Pin>(arr,arr, 2);
-         return arr[1];
-      }
+   
 
    private:
       static constexpr uint16_t spi_slow_brr = (0b110 << 3);
@@ -229,14 +216,6 @@ private:
             ,quan::stm32::gpio::pupd::none
             ,quan::stm32::gpio::ospeed::medium_fast
          >();
-//
-//         quan::stm32::apply<
-//            spi1_soft_nss
-//            ,quan::stm32::gpio::mode::output
-//            ,quan::stm32::gpio::pupd::none
-//            ,quan::stm32::gpio::ospeed::medium_fast
-//            ,quan::stm32::gpio::ostate::high
-//         >();
 
         quan::stm32::apply<
             fram_ncs
@@ -277,11 +256,6 @@ public:
       { 
          spi1::get()->cr2 &= ~(( 1 << 1 ) | ( 1 << 0)) ;// (TXDMAEN ) | ( RXDMAEN)
       }
-      
-      
-
-private:
-      
             
    };
 
@@ -421,6 +395,19 @@ private:
          DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
       }
 
+      static void reg_write( uint8_t r, uint8_t v)
+      {
+         uint8_t arr[2] = {r, v};
+         spi_device_driver::transaction<spi1_soft_nss>(arr,arr,2U);
+      }
+
+      static uint8_t reg_read( uint8_t r)
+      {
+         uint8_t arr[2] = {static_cast<uint8_t>(r | 0x80),0U};
+         spi_device_driver::transaction<spi1_soft_nss>(arr,arr,2U);
+         return arr[1];
+      }
+
    }; // mpu6000
 
    void mpu6000_init()
@@ -438,7 +425,7 @@ private:
 
    bool whoami_test()
    {
-      uint8_t value = spi_device_driver::reg_read<mpu6000::spi1_soft_nss>(mpu6000::reg::whoami);
+      uint8_t value = mpu6000::reg_read(mpu6000::reg::whoami);
 
       if ( value == mpu6000::val::whoami){
          return true;
@@ -467,11 +454,11 @@ private:
       static void apply(uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
       {
          // 8 kHz sampling
-         spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::config, 0x00);
+         mpu6000::reg_write(mpu6000::reg::config, 0x00);
 
          delay(1);
          // divide by 8 == 1 kHz
-         spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::sample_rate_div, 7);
+         mpu6000::reg_write(mpu6000::reg::sample_rate_div, 7);
          constexpr uint32_t irq_freq_Hz = 1000;
          constexpr uint32_t callback_freq_Hz = 50;
 
@@ -487,11 +474,11 @@ private:
       static void apply(uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
       {
          // 8 kHz sampling
-         spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::config, 0x00);
+         mpu6000::reg_write(mpu6000::reg::config, 0x00);
 
          delay(1);
          // divide by 8 == 1 kHz
-         spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::sample_rate_div, 7);
+         mpu6000::reg_write(mpu6000::reg::sample_rate_div, 7);
          constexpr uint32_t irq_freq_Hz = 1000;
          constexpr uint32_t callback_freq_Hz = 100;
 
@@ -507,11 +494,11 @@ private:
       static void apply(uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
       {
          // 8 kHz sampling
-         spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::config, 0x00);
+         mpu6000::reg_write(mpu6000::reg::config, 0x00);
 
          delay(1);
          // divide by 8 == 1 kHz
-         spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::sample_rate_div, 7);
+         mpu6000::reg_write(mpu6000::reg::sample_rate_div, 7);
          constexpr uint32_t irq_freq_Hz = 1000;
          constexpr uint32_t callback_freq_Hz = 200;
 
@@ -527,10 +514,10 @@ private:
       static void apply(uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
       {
          // 8 kHz sampling
-         spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::config, 0x00);
+         mpu6000::reg_write(mpu6000::reg::config, 0x00);
          delay(1);
          // divide by 4 = 2 kHz
-         spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::sample_rate_div, 3);
+         mpu6000::reg_write(mpu6000::reg::sample_rate_div, 3);
          constexpr uint32_t irq_freq_Hz = 2000;
          constexpr uint32_t callback_freq_Hz = 400;
 
@@ -607,15 +594,15 @@ namespace detail{
       //delay(100);
 
       // reset
-      spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::pwr_mgmt1, 1U << 7U);
+      mpu6000::reg_write(mpu6000::reg::pwr_mgmt1, 1U << 7U);
       delay(100);
      
       // wakeup
-      spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::pwr_mgmt1, 3U);
+      mpu6000::reg_write(mpu6000::reg::pwr_mgmt1, 3U);
       delay(100);
 
       // disable I2C
-      spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::user_ctrl, 1U << 4U);
+      mpu6000::reg_write(mpu6000::reg::user_ctrl, 1U << 4U);
       delay(100);
 
       while (! whoami_test() )
@@ -624,7 +611,7 @@ namespace detail{
       }
      
       hal_printf("whaomi succeeded\n");
-      spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::fifo_enable, 0U);
+      mpu6000::reg_write(mpu6000::reg::fifo_enable, 0U);
       delay(1);
 
       // setup the rates
@@ -661,13 +648,13 @@ namespace detail{
       auto get_gyro_reg_val =[](uint32_t gyro_fsr) 
       { return static_cast<uint8_t>(static_cast<uint32_t>(log2(gyro_fsr/250U)) << 3U);};
 
-      spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::gyro_config, get_gyro_reg_val(gyro_fsr_deg_s));
+      mpu6000::reg_write(mpu6000::reg::gyro_config, get_gyro_reg_val(gyro_fsr_deg_s));
 
       delay(1);
 
       // accel reg value dependent on produxct version
       // want a fsr of 8g
-      uint8_t const product_id = spi_device_driver::reg_read<mpu6000::spi1_soft_nss>(mpu6000::reg::product_id);
+      uint8_t const product_id = mpu6000::reg_read(mpu6000::reg::product_id);
 
 //      generic TODO
 //      uint8_t get_accel_reg_bits [] (uint32_t accel_fsr)
@@ -679,17 +666,17 @@ namespace detail{
          case   mpu6000_C5:
          case mpu6000ES_C4:
          case mpu6000ES_C5:
-            spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::accel_config, 1 << 3);
+            mpu6000::reg_write(mpu6000::reg::accel_config, 1 << 3);
             break;
          default:
-            spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::accel_config, 1 << 4);
+            mpu6000::reg_write(mpu6000::reg::accel_config, 1 << 4);
             break;
       }
       delay(1);
 
       // want active low     bit 7 = true
       // hold until cleared   bit 5 = true
-      spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::intr_bypass_en_cfg, 0b10100000);
+      mpu6000::reg_write(mpu6000::reg::intr_bypass_en_cfg, 0b10100000);
       delay(1);
 
       // Should be initialised at startup
@@ -704,7 +691,7 @@ namespace detail{
       taskENTER_CRITICAL();
       quan::stm32::disable_exti_interrupt<mpu6000::mpu6000_irq>(); 
       quan::stm32::clear_event_pending<mpu6000::mpu6000_irq>();
-      spi_device_driver::reg_write<mpu6000::spi1_soft_nss>(mpu6000::reg::intr_enable, 0b00000001);
+      mpu6000::reg_write(mpu6000::reg::intr_enable, 0b00000001);
 // TODO get correct enum for setting bus speed
       spi_device_driver::set_bus_speed(1) ;
 //##########################################
