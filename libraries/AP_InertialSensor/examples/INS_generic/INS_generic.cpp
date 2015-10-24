@@ -201,6 +201,13 @@ static void run_test()
             static_cast<double>(gyro.y), 
             static_cast<double>(gyro.z) );
 		}
+
+       char buffer[100];
+             
+             hal.storage->read_block(buffer,5000,27);
+
+             hal.console->write((unsigned char const*)buffer,27);
+             hal.console->printf("-------------------------\n");
     }
 
     // clear user input
