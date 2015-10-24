@@ -168,7 +168,7 @@ static void run_test()
     Vector3f accel;
     Vector3f gyro;
     float length;
-	uint8_t counter = 0;
+	 uint8_t counter = 0;
 
     // flush any user input
     while( hal.console->available() ) {
@@ -183,7 +183,6 @@ static void run_test()
 
         // wait until we have a sample
         ins.wait_for_sample();
-
         // read samples from ins
         ins.update();
         accel = ins.get_accel();

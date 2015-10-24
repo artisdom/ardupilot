@@ -15,7 +15,7 @@ namespace Quan{
    bool update_ins(Vector3f & accel,Vector3f & gyro);
 
    namespace detail{
-      void spi_setup(uint16_t sample_rate_Hz, uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz);
+      void mpu6000_setup(uint16_t sample_rate_Hz, uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz);
    }
    
 };

@@ -32,8 +32,7 @@ extern "C" void EXTI15_10_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 namespace {
 
    // handle to the  1 element ins args queue
-   QueueHandle_t h_INS_ArgsQueue = 0U;
-
+   
    void panic(const char* text)
    {
       hal.scheduler->panic(text);
@@ -55,7 +54,9 @@ namespace {
       vTaskDelayUntil(&wakeup_time,n);
    }
 
+  
   void mpu6000_init();
+  void create_fram_task();
 
   struct spi_device_driver  {
 
@@ -63,6 +64,7 @@ namespace {
 
       static void init() 
       {
+         h_spi_mutex = xSemaphoreCreateMutex();
          quan::stm32::rcc::get()->apb2enr.bb_setbit<12>(); 
          quan::stm32::rcc::get()->apb2rstr.bb_setbit<12>();
          quan::stm32::rcc::get()->apb2rstr.bb_clearbit<12>();
@@ -70,8 +72,23 @@ namespace {
          setup_spi_regs(); 
          mpu6000_init();
          start_spi();
+         create_fram_task();
+      }
+      static bool acquire_mutex(uint32_t ms)
+      {
+         if ( h_spi_mutex != nullptr){
+            return xSemaphoreTake(h_spi_mutex ,ms) == pdTRUE;
+         }else{
+            return false;
+         }
+      }
+      static bool release_mutex()
+      {
+         return xSemaphoreGive(h_spi_mutex) == pdTRUE;
       }
 private:
+       static  QueueHandle_t h_spi_mutex;
+
        static uint8_t transfer(uint8_t data)
        {
          while (!txe()){;}
@@ -249,6 +266,7 @@ public:
    };
 
    bool spi_device_driver::m_fast_speed = false;
+   QueueHandle_t spi_device_driver::h_spi_mutex = nullptr;
 
 //-----------------------------------------------------------------------
 
@@ -265,6 +283,7 @@ public:
    // to fulfill the requested sample frequency 
       static uint32_t num_irqs_for_update_message ;
 
+      static QueueHandle_t h_args_queue;
    // accel should be in units of m.s-2
    // gyro should be in units of rad.s
       struct inertial_sensor_args_t{
@@ -362,6 +381,7 @@ public:
 
       static uint8_t dma_tx_buffer[16] ;
       static volatile uint8_t  dma_rx_buffer[16];
+      static volatile bool dma_transaction_in_progress;
 
       static void setup_pins()
       {
@@ -455,9 +475,14 @@ public:
       // assumes sample rate == 400, 200, 100, 50 Hz
       static void setup_registers( uint16_t sample_rate_Hz, uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
       {
-         h_INS_ArgsQueue = xQueueCreate(1,sizeof(inertial_sensor_args_t *));
+         mpu6000::h_args_queue = xQueueCreate(1,sizeof(inertial_sensor_args_t *));
 
-         hal_printf("spi_setup\n");
+         if ( ! spi_device_driver::acquire_mutex(1000)){
+            panic("couldnt get spi mutex in mpu600 setup registers");
+            return;
+         }
+
+         hal_printf("starting mpu6000 setup\n");
 
          // reset
          mpu6000::reg_write(mpu6000::reg::pwr_mgmt1, 1U << 7U);
@@ -553,8 +578,10 @@ public:
          mpu6000::reg_write(mpu6000::reg::intr_enable, 0b00000001);
    // TODO get correct enum for setting bus speed
          spi_device_driver::set_bus_speed(1) ;
+         spi_device_driver::release_mutex();
    //##########################################
          quan::stm32::enable_exti_interrupt<mpu6000::data_ready_irq>(); 
+
          taskEXIT_CRITICAL();
       }
 
@@ -588,6 +615,8 @@ public:
    mpu6000::lp_filter  mpu6000::accel_filter{};
 
    uint32_t mpu6000::num_irqs_for_update_message = 1;
+   QueueHandle_t mpu6000::h_args_queue = nullptr;
+   volatile bool mpu6000::dma_transaction_in_progress = false;
 }
 
 namespace Quan{ 
@@ -600,7 +629,7 @@ namespace Quan{
 
 namespace detail{
 
-   void spi_setup(uint16_t sample_rate_Hz, uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
+   void mpu6000_setup(uint16_t sample_rate_Hz, uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
    {
       mpu6000::setup_registers(sample_rate_Hz, acc_cutoff_Hz,gyro_cutoff_Hz);
    }
@@ -616,6 +645,7 @@ extern "C" void EXTI15_10_IRQHandler()
    // v filter
    if (quan::stm32::is_event_pending<mpu6000::data_ready_irq>()){
 
+      mpu6000::dma_transaction_in_progress = true;
       spi_device_driver::cs_assert<mpu6000::chip_select>(); // start transaction
       spi_device_driver::stop_spi();
       
@@ -648,10 +678,10 @@ namespace Quan{
    // blocks 
    bool wait_for_imu_sample(uint32_t usecs_to_wait)
    {
-      if (h_INS_ArgsQueue != nullptr){
+      if (mpu6000::h_args_queue != nullptr){
          mpu6000::inertial_sensor_args_t * p_dummy_result;
          TickType_t const ms_to_wait = usecs_to_wait / 1000  + (((usecs_to_wait % 1000) > 499 )?1:0);
-         return xQueuePeek(h_INS_ArgsQueue,&p_dummy_result,ms_to_wait) == pdTRUE ;
+         return xQueuePeek(mpu6000::h_args_queue,&p_dummy_result,ms_to_wait) == pdTRUE ;
       }else{
          return false;
       }
@@ -661,9 +691,9 @@ namespace Quan{
    // after AP_InertailSensor::wait_for_sample has unblocked
    bool update_ins(Vector3f & accel,Vector3f & gyro)
    {
-      if (h_INS_ArgsQueue != nullptr){
+      if (mpu6000::h_args_queue != nullptr){
          mpu6000::inertial_sensor_args_t * p_args;
-         if (xQueueReceive(h_INS_ArgsQueue,&p_args,0) == pdTRUE ){
+         if (xQueueReceive(mpu6000::h_args_queue,&p_args,0) == pdTRUE ){
              accel = p_args->accel;
              gyro = p_args->gyro;
              return true;
@@ -671,7 +701,8 @@ namespace Quan{
       }
       return false;
    }
-}
+
+} // Quan
 
 // RX DMA complete
 extern "C" void DMA2_Stream0_IRQHandler() __attribute__ ((interrupt ("IRQ")));
@@ -746,15 +777,17 @@ extern "C" void DMA2_Stream0_IRQHandler()
 
    if ( ++irq_count == mpu6000::num_irqs_for_update_message){
        irq_count = 0;
-       if ( xQueueIsQueueEmptyFromISR(h_INS_ArgsQueue)){
+       if ( xQueueIsQueueEmptyFromISR(mpu6000::h_args_queue)){
           imu_args.accel = mpu6000::accel_filter.apply(accel);
           imu_args.gyro = mpu6000::gyro_filter.apply(gyro);
           mpu6000::inertial_sensor_args_t*  p_imu_args = &imu_args;
-          xQueueSendToBackFromISR(h_INS_ArgsQueue,&p_imu_args,&HigherPriorityTaskWoken_imu);
+          xQueueSendToBackFromISR(mpu6000::h_args_queue,&p_imu_args,&HigherPriorityTaskWoken_imu);
       }else{
          // message that apm task missed it
          // this may be ok at startup though
-         
+         // update the filter but leave the args
+         mpu6000::accel_filter.apply(accel);
+         mpu6000::gyro_filter.apply(gyro);
       }
    }else{
       // we dont need to go through the whole rigmarole
@@ -763,7 +796,248 @@ extern "C" void DMA2_Stream0_IRQHandler()
        mpu6000::gyro_filter.apply(gyro);
    }
    quan::stm32::pop_FPregs();
+   mpu6000::dma_transaction_in_progress = false;
    portEND_SWITCHING_ISR(HigherPriorityTaskWoken_imu);
 }
+
+// for the fram
+namespace {
+
+   struct fram_message_t{
+      static constexpr uint8_t read  = 0;
+      static constexpr uint8_t write = 1;
+      size_t   num_elements;
+      uint32_t memory_address;
+      uint16_t fram_address;
+      uint8_t  cmd;
+   };
+
+   SemaphoreHandle_t h_fram_read_complete_semaphore = nullptr;
+   QueueHandle_t  h_fram_cmd_queue = nullptr;
+   char dummy_param = 0;
+   TaskHandle_t fram_task_handle = NULL;
+
+   struct fram_opcode{
+     static constexpr uint8_t wren  = 0b00000110; // write enable
+     static constexpr uint8_t wrdi  = 0b00000100; // write disable
+     static constexpr uint8_t rdsr  = 0b00000101; // read status
+     static constexpr uint8_t wrsr  = 0b00000001; // write status;
+     static constexpr uint8_t read  = 0b00000011; // read fram memory
+     static constexpr uint8_t write = 0b00000010; // write fram memory
+     static constexpr uint8_t rdid  = 0b10011111; // read device id
+   };
+
+   void fram_write_enable()
+   {
+        uint8_t op = fram_opcode::wren;
+        spi_device_driver::transaction<spi_device_driver::fram_ncs>(&op,&op,1);
+   }
+
+   void get_fram_device_id(uint8_t & manufacturerID, uint16_t & productID)
+   {
+      uint8_t result [5] = {fram_opcode::rdid,0,0,0,0};
+      spi_device_driver::transaction<spi_device_driver::fram_ncs>
+      (result,result,5);
+      manufacturerID = result[1];
+      productID = (result[3] << 8U ) + result[4];
+   }
+
+   void fram_write_statusreg(uint8_t val)
+   {
+      fram_write_enable(); 
+      uint8_t arr[2] = {fram_opcode::wrsr,val};
+      spi_device_driver::transaction<
+         spi_device_driver::fram_ncs
+      >( arr,arr,2);
+   }
+
+   // call before imu init
+   void fram_init()
+   {
+      
+      fram_write_statusreg(0b00000000);
+   }
+
+   // max size of a discrete read before the subsystem
+   // yields to interrupts.
+   // At 21 Mhz 8bit read takes < 0.5 usec 
+   // so to read 32 + 3 overhead takes
+   // < 20 usec
+   constexpr size_t max_fram_burst = 32;
+   constexpr size_t fram_size = 16384;
+
+   void fram_read_burst(void* memory_address, uint16_t fram_address, size_t num_elements)
+   {
+      taskENTER_CRITICAL();
+         while (! spi_device_driver::acquire_mutex(1000)){
+            hal_printf("fram acquire mutex failed\n");
+         }
+         quan::stm32::disable_exti_interrupt<mpu6000::data_ready_irq>(); 
+            uint8_t fram_burst_arr[max_fram_burst + 3];
+            fram_burst_arr[0] = fram_opcode::read;
+            fram_burst_arr[1] = static_cast<uint8_t>(fram_address >> 8U) ;
+            fram_burst_arr[2] = static_cast<uint8_t>(fram_address & 0xff) ; 
+            while ( mpu6000::dma_transaction_in_progress == true) {;}
+            spi_device_driver::transaction_no_crit<
+               spi_device_driver::fram_ncs
+            >(fram_burst_arr,fram_burst_arr,num_elements + 3);
+         quan::stm32::enable_exti_interrupt<mpu6000::data_ready_irq>();
+         memcpy(memory_address,fram_burst_arr + 3,num_elements);
+         spi_device_driver::release_mutex();
+      taskEXIT_CRITICAL();
+   }
+
+   void fram_read( void* memory_address_in, uint16_t fram_address_in, size_t num_elements_in)
+   {
+      size_t const numbursts = num_elements_in / max_fram_burst;
+      size_t const remainder = num_elements_in % max_fram_burst;
+
+      uint8_t * memory_address = (uint8_t*) memory_address_in;
+      uint16_t fram_address = fram_address_in;
+
+      for ( size_t i = 0; i < numbursts; ++i){
+         fram_read_burst(memory_address,fram_address,max_fram_burst);
+         memory_address += max_fram_burst;
+         fram_address   += max_fram_burst;
+      }
+      if ( remainder){
+         fram_read_burst(memory_address,fram_address,remainder);
+      }
+   }
+
+   void fram_write_burst(uint16_t fram_address,const void* memory_address, size_t num_elements)
+   {
+      taskENTER_CRITICAL();
+         while (! spi_device_driver::acquire_mutex(1000)){
+            hal_printf("fram acquire mutex failed\n");
+         }
+         quan::stm32::disable_exti_interrupt<mpu6000::data_ready_irq>();
+            uint8_t fram_burst_arr[max_fram_burst + 3];
+            fram_burst_arr[0] = fram_opcode::write;
+            fram_burst_arr[1] = static_cast<uint8_t>(fram_address  >> 8U) ;
+            fram_burst_arr[2] = static_cast<uint8_t>(fram_address & 0xff) ; 
+            while (  mpu6000::dma_transaction_in_progress == true) {;}
+            fram_write_enable();
+            memcpy(fram_burst_arr + 3,memory_address,num_elements);
+            spi_device_driver::transaction_no_crit<
+               spi_device_driver::fram_ncs
+            >(fram_burst_arr,fram_burst_arr,num_elements + 3);
+         quan::stm32::enable_exti_interrupt<mpu6000::data_ready_irq>();
+         spi_device_driver::release_mutex();
+      taskEXIT_CRITICAL();
+   }
+
+   void fram_write( uint16_t fram_address_in, const void* memory_address_in,size_t num_elements_in)
+   {
+     
+      size_t const numbursts = num_elements_in / max_fram_burst;
+      size_t const remainder = num_elements_in % max_fram_burst;
+
+      const uint8_t * memory_address = (const uint8_t *) memory_address_in;
+      uint16_t fram_address = fram_address_in;
+      
+      for ( size_t i = 0; i < numbursts; ++i){
+         fram_write_burst(fram_address,memory_address,max_fram_burst);
+         memory_address += max_fram_burst;
+         fram_address   += max_fram_burst;
+      }
+      if ( remainder){
+         fram_write_burst(fram_address,memory_address,remainder);
+      }
+      
+   }
+
+   //task just waits for fram messages
+   void fram_task (void * params)
+   {
+      for(;;) {
+        fram_message_t msg;
+		  xQueueReceive(h_fram_cmd_queue,&msg,portMAX_DELAY );
+		  switch (msg.cmd){
+		 	 case fram_message_t::read:
+		 		fram_read((void*)msg.memory_address, msg.fram_address, msg.num_elements);
+		 		xSemaphoreGive(h_fram_read_complete_semaphore);
+		 		break;
+		 	 case fram_message_t::write:
+		  		fram_write(msg.fram_address,(const void*)msg.memory_address, msg.num_elements);
+		  		break;
+        }
+      }
+   }
+
+   void create_fram_task()
+   {
+      fram_init();
+      h_fram_read_complete_semaphore = xSemaphoreCreateBinary();
+      h_fram_cmd_queue = xQueueCreate(1,sizeof(fram_message_t));
+
+      xTaskCreate( 
+         fram_task,"fram task", 
+         1000, 
+         &dummy_param, 
+         tskIDLE_PRIORITY + 4, 
+         &fram_task_handle 
+      ); 
+   }
+
+}
+
+namespace Quan{
+    bool storage_read(void * buffer,uint16_t storage_address,size_t n)
+   {
+
+      if ( (storage_address + n) > fram_size){
+         return false;
+      }
+      if ( h_fram_cmd_queue != nullptr){
+         fram_message_t msg;
+         msg.num_elements = n;
+         msg.memory_address = (uint32_t)buffer;
+         msg.fram_address = storage_address;
+         
+         msg.cmd = fram_message_t::read;
+         if  (xQueueSendToBack(h_fram_cmd_queue,&msg,100) == pdFALSE ){
+            hal.console->printf("fram read send to q failed\n");
+            return false;
+         }
+         if (xSemaphoreTake(h_fram_read_complete_semaphore, 100) == pdTRUE){
+            return true;
+         }else{
+             hal.console->printf("fram read complete sem failed\n");
+         }
+      }else{
+         hal.console->printf("null q handle in fram read\n");
+      }
+
+      return false;
+   }
+
+   // called from the APM Storage object in apm task
+   // blocks
+   bool storage_write(uint16_t storage_address, void const * buffer,size_t n)
+   {
+
+      if ( (storage_address + n) > fram_size){
+         return false;
+      }
+      if ( h_fram_cmd_queue != nullptr){
+         fram_message_t msg;
+         msg.num_elements = n;
+         msg.memory_address = (uint32_t)buffer;
+         msg.fram_address = storage_address;
+         msg.cmd = fram_message_t::write;   
+         if  (xQueueSendToBack(h_fram_cmd_queue,&msg,100) == pdTRUE ){
+            return true;
+         }else{
+            hal.console->printf("fram write send to q failed\n");
+         }
+      }else{
+         hal.console->printf("null q handle in fram write\n");
+      }
+
+      return false;
+   }
+
+} // Quan
 
 #endif // CONFIG_HAL_BOARD == HAL_BOARD_QUAN

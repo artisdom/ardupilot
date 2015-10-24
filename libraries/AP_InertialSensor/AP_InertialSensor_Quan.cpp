@@ -22,7 +22,7 @@ AP_InertialSensor_Backend * AP_InertialSensor_Quan::detect(AP_InertialSensor &im
 
 #if !defined QUAN_APM_DONT_START_START_IMU_TASK
 // get some warning this has started !
-   Quan::detail::spi_setup(
+   Quan::detail::mpu6000_setup(
       imu.get_sample_rate(), 
       imu.get_accel_filter_hz(), 
       imu.get_gyro_filter_hz()   
