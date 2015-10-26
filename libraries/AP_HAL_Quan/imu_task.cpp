@@ -137,9 +137,12 @@ private:
        template <typename CS_Pin>
        static bool transaction(const uint8_t *tx, uint8_t *rx, uint16_t len) 
        {
-         taskENTER_CRITICAL();
+         //taskENTER_CRITICAL();
+         UBaseType_t const old_prio = uxTaskPriorityGet(NULL);
+         vTaskPrioritySet(NULL,configMAX_PRIORITIES - 1 );
          bool const result = transaction_no_crit<CS_Pin>(tx,rx,len);
-         taskEXIT_CRITICAL();
+         vTaskPrioritySet(NULL,old_prio);
+        // taskEXIT_CRITICAL();
          return result;
        }
    private:
@@ -572,7 +575,9 @@ public:
 
          spi_device_driver::enable_dma();
    //####################################
-         taskENTER_CRITICAL();
+       //  taskENTER_CRITICAL();
+         UBaseType_t const old_prio = uxTaskPriorityGet(NULL);
+         vTaskPrioritySet(NULL,configMAX_PRIORITIES - 1 );
          quan::stm32::disable_exti_interrupt<mpu6000::data_ready_irq>(); 
          quan::stm32::clear_event_pending<mpu6000::data_ready_irq>();
          mpu6000::reg_write(mpu6000::reg::intr_enable, 0b00000001);
@@ -581,8 +586,8 @@ public:
          spi_device_driver::release_mutex();
    //##########################################
          quan::stm32::enable_exti_interrupt<mpu6000::data_ready_irq>(); 
-
-         taskEXIT_CRITICAL();
+         vTaskPrioritySet(NULL,old_prio);
+         //taskEXIT_CRITICAL();
       }
 
       static bool whoami_test()
@@ -868,7 +873,9 @@ namespace {
 
    void fram_read_burst(void* memory_address, uint16_t fram_address, size_t num_elements)
    {
-      taskENTER_CRITICAL();
+     // taskENTER_CRITICAL();
+         UBaseType_t const old_prio = uxTaskPriorityGet(NULL);
+         vTaskPrioritySet(NULL,configMAX_PRIORITIES - 1 );
          while (! spi_device_driver::acquire_mutex(1000)){
             hal_printf("fram acquire mutex failed\n");
          }
@@ -884,7 +891,8 @@ namespace {
          quan::stm32::enable_exti_interrupt<mpu6000::data_ready_irq>();
          memcpy(memory_address,fram_burst_arr + 3,num_elements);
          spi_device_driver::release_mutex();
-      taskEXIT_CRITICAL();
+     // taskEXIT_CRITICAL();
+         vTaskPrioritySet(NULL,old_prio);
    }
 
    void fram_read( void* memory_address_in, uint16_t fram_address_in, size_t num_elements_in)
@@ -907,7 +915,9 @@ namespace {
 
    void fram_write_burst(uint16_t fram_address,const void* memory_address, size_t num_elements)
    {
-      taskENTER_CRITICAL();
+      //taskENTER_CRITICAL();
+         UBaseType_t const old_prio = uxTaskPriorityGet(NULL);
+         vTaskPrioritySet(NULL,configMAX_PRIORITIES - 1 );
          while (! spi_device_driver::acquire_mutex(1000)){
             hal_printf("fram acquire mutex failed\n");
          }
@@ -924,7 +934,8 @@ namespace {
             >(fram_burst_arr,fram_burst_arr,num_elements + 3);
          quan::stm32::enable_exti_interrupt<mpu6000::data_ready_irq>();
          spi_device_driver::release_mutex();
-      taskEXIT_CRITICAL();
+         vTaskPrioritySet(NULL,old_prio);
+      //taskEXIT_CRITICAL();
    }
 
    void fram_write( uint16_t fram_address_in, const void* memory_address_in,size_t num_elements_in)
@@ -975,7 +986,7 @@ namespace {
          fram_task,"fram task", 
          1000, 
          &dummy_param, 
-         tskIDLE_PRIORITY + 4, 
+         tskIDLE_PRIORITY + 3, 
          &fram_task_handle 
       ); 
    }

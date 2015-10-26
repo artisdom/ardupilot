@@ -8,8 +8,11 @@ namespace AP_OSD{
    // union for sending different data types
    union osd_data_t{
       osd_data_t(){}
-      quan::three_d::vect<float> vect3df;
+      quan::three_d::vect<float>    vect3df;
+      quan::three_d::vect<uint32_t> vect3du32;
+      quan::three_d::vect<int32_t>  vect3di32;
       float f;
+      uint8_t u8;
    };
 
    // enum for all messages
@@ -19,6 +22,10 @@ namespace AP_OSD{
       attitude, // vect3df
       raw_compass, // vect3df
       drift ,  // vect3df
+      gps_status, // uint8_t
+      gps_location, // vect3du32 lat, lon, alt
+      baro_altitude,
+      airspeed,
       max_messages
    };
 

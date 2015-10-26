@@ -31,14 +31,40 @@ namespace{
    {
       info.drift = msg.value.vect3df;
    }
-      
+
+   void get_gps_status(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
+   {
+      info.gps_status = msg.value.u8;
+   }
+
+   void get_gps_location(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
+   {
+      info.gps_location = msg.value.vect3di32;
+   }
+
+   
+   void get_baro_altitude(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
+   {
+      info.baro_altitude = msg.value.f;
+   }
+
+   void get_airspeed(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
+   {
+      info.airspeed = msg.value.f;
+   }
+
    typedef void(*fun_ptr)(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info);
 
+   // order must match enums
    fun_ptr funs[] = {
       get_heading,
       get_attitude,
       get_raw_compass,
-      get_drift
+      get_drift,
+      get_gps_status, // uint8_t
+      get_gps_location, // vect3di32
+      get_baro_altitude, // float
+      get_airspeed
    };
 
    QueueHandle_t osd_queue = nullptr;

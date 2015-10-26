@@ -43,8 +43,7 @@
 #include <AP_SerialManager/AP_SerialManager.h>
 #include <RC_Channel/RC_Channel.h>
 #include <AP_RangeFinder/AP_RangeFinder.h>
-
-#include "osd_message.hpp"
+#include <AP_OSD/AP_OSD_enqueue.h>
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 
@@ -60,6 +59,10 @@ Compass compass;
 AP_GPS gps;
 AP_Baro baro;
 AP_SerialManager serial_manager;
+
+static AP_Vehicle::FixedWing aparm;
+
+AP_Airspeed airspeed(aparm);
 
 // choose which AHRS system to use
 AP_AHRS_DCM  ahrs(ins, baro, gps);
@@ -79,48 +82,57 @@ void setup(void)
     ins.init(AP_InertialSensor::RATE_50HZ);
     ahrs.init();
     serial_manager.init();
+    AP_OSD::enqueue::initialise();
+    baro.init();
+    baro.calibrate();
+
+    airspeed.init();
+    airspeed.calibrate(false);
 
     if( compass.init() ) {
         hal.console->printf("Enabling compass\n");
+        compass.set_offsets(0, {10.6004,-35.4656,-48.9482});
         ahrs.set_compass(&compass);
     } else {
         hal.console->printf("No compass detected\n");
     }
     gps.init(NULL, serial_manager);
-    Quan::osd_init();
-
+ 
 }
 
 namespace {
 
-  //uint16_t counter =0;
   uint16_t print_counter =0;
-  uint16_t compass_counter;
-  float heading = 0;
-  //uint32_t iter_time =0;
+  uint16_t counter10_Hz;
+ 
 }
 
 void loop(void)
 {
-    //hal.scheduler->delay(10); // 1/100th sec
+    
     ins.wait_for_sample();
-    if (++compass_counter == 10){
-        compass_counter = 0;
+    float heading = 0;
+    if (++counter10_Hz == 5){
+        counter10_Hz = 0;
         compass.read();
         heading = compass.calculate_heading(ahrs.get_dcm_matrix());
-#if WITH_GPS
-        g_gps->update();
-#endif
+        AP_OSD::enqueue::heading(ToDeg(heading));
+
+        baro.update();
+        AP_OSD::enqueue::baro_altitude(baro.get_altitude());
+
+        gps.update();
+        AP_OSD::enqueue::gps_status(gps.status());
+        AP_OSD::enqueue::gps_location(
+            {gps.location().lat,gps.location().lng,gps.location().alt}
+        );
+
+        airspeed.read();
+        AP_OSD::enqueue::airspeed(airspeed.get_airspeed());
+
     }
-
-   ahrs.update();
- 
-  // quan::three_d::vect<float> drift1{drift.x,drift.y,drift.z};
-   quan::three_d::vect<float> attitude ;
-
-   Quan::osd_send_attitude({ToDeg(ahrs.pitch),ToDeg(ahrs.roll),ToDeg(ahrs.yaw)});
- //  Quan::osd_send_drift(drift1);
-   Quan::osd_send_heading(ToDeg(heading));
+    ahrs.update();
+    AP_OSD::enqueue::attitude({ToDeg(ahrs.pitch),ToDeg(ahrs.roll),ToDeg(ahrs.yaw)});
 
     if (++print_counter == 20) {
       print_counter = 0;
@@ -137,8 +149,6 @@ void loop(void)
             compass.use_for_yaw() ? static_cast<double>(ToDeg(heading)) : 0.0
       );
    }
-
-   
 }
 
 AP_HAL_MAIN();
