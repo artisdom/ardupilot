@@ -127,3 +127,8 @@ bool AP_OSD::enqueue::airspeed(float in)
 {
    return put_message(AP_OSD::msgID::airspeed,in);
 }
+
+bool AP_OSD::enqueue::battery(quan::three_d::vect<float> const & in)
+{
+   return put_message(AP_OSD::msgID::battery,in);
+}

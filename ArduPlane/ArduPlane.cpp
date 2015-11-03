@@ -40,10 +40,10 @@
    modify the max time they ar expected to take to add a 1ms context switch
 */
 const AP_Scheduler::Task Plane::scheduler_tasks[] PROGMEM = {
-    SCHED_TASK(read_radio,              1,    700),
-    SCHED_TASK(check_short_failsafe,    1,   1000),
-    SCHED_TASK(ahrs_update,             1,   6400),
-    SCHED_TASK(update_speed_height,     1,   1600),
+    SCHED_TASK(read_radio,              1,    700), // 1000
+    SCHED_TASK(check_short_failsafe,    1,   1000), // 1000
+    SCHED_TASK(ahrs_update,             1,   6400), // 2000
+    SCHED_TASK(update_speed_height,     1,   1600), // 
     SCHED_TASK(update_flight_mode,      1,   1400),
     SCHED_TASK(stabilize,               1,   3500),
     SCHED_TASK(set_servos,              1,   1600),

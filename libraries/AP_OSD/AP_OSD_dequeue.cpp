@@ -42,7 +42,6 @@ namespace{
       info.gps_location = msg.value.vect3di32;
    }
 
-   
    void get_baro_altitude(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
    {
       info.baro_altitude = msg.value.f;
@@ -51,6 +50,13 @@ namespace{
    void get_airspeed(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
    {
       info.airspeed = msg.value.f;
+   }
+
+   void get_battery(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
+   {
+      info.battery_voltage = msg.value.vect3df.x;
+      info.battery_current = msg.value.vect3df.y;
+      info.battery_mAh_consumed = msg.value.vect3df.z;
    }
 
    typedef void(*fun_ptr)(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info);
@@ -64,7 +70,8 @@ namespace{
       get_gps_status, // uint8_t
       get_gps_location, // vect3di32
       get_baro_altitude, // float
-      get_airspeed
+      get_airspeed,
+      get_battery
    };
 
    QueueHandle_t osd_queue = nullptr;

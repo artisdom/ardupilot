@@ -67,6 +67,14 @@
  # define AP_BATT_CURR_PIN                  101
  # define AP_BATT_VOLTDIVIDER_DEFAULT       1.1f
  # define AP_BATT_CURR_AMP_PERVOLT_DEFAULT  17.0f
+#elif CONFUG_HAL_BOARD == CONFIG_HAL_QUAN
+ # define AP_BATT_VOLT_PIN                  0
+ # define AP_BATT_CURR_PIN                  1
+// using a 33 K res low side and 270 k high side
+// but the voltage is scaled as if it was 5V   
+ # define AP_BATT_VOLTDIVIDER_DEFAULT       6.06f
+// current sensor 
+ # define AP_BATT_CURR_AMP_PERVOLT_DEFAULT  16.67f
 #else
  # define AP_BATT_VOLT_PIN                  -1
  # define AP_BATT_CURR_PIN                  -1

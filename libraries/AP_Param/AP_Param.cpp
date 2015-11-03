@@ -34,6 +34,33 @@
 
 extern const AP_HAL::HAL &hal;
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include "FreeRTOS.h"
+#include <task.h>
+#endif
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+namespace {
+  // keep a count of tim used in loop
+  uint32_t thread_timer = 0;
+  constexpr uint32_t max_task_time_ms = 5;
+  constexpr uint32_t delay_time_ms = 2;
+
+  void start_thread_timer()
+  {
+    thread_timer = hal.scheduler->millis();
+  }
+
+  void check_thread_timer()
+  {
+    if ( (hal.scheduler->millis() - thread_timer) > max_task_time_ms ){
+       vTaskDelay(delay_time_ms);
+       thread_timer = hal.scheduler->millis();
+    }
+  }
+}
+#endif
+
 #define ENABLE_DEBUG 0
 
 #if ENABLE_DEBUG
@@ -80,7 +107,6 @@ uint16_t AP_Param::num_param_overrides = 0;
 
 // storage object
 StorageAccess AP_Param::_storage(StorageManager::StorageParam);
-
 
 // write to EEPROM
 void AP_Param::eeprom_write_check(const void *ptr, uint16_t ofs, uint8_t size)
@@ -470,7 +496,9 @@ bool AP_Param::scan(const AP_Param::Param_header *target, uint16_t *pofs)
 {
     struct Param_header phdr;
     uint16_t ofs = sizeof(AP_Param::EEPROM_header);
+
     while (ofs < _storage.size()) {
+
         _storage.read_block(&phdr, ofs, sizeof(phdr));
         if (phdr.type == target->type &&
             phdr.key == target->key &&
@@ -879,6 +907,7 @@ void AP_Param::setup_sketch_defaults(void)
 {
     setup();
     for (uint8_t i=0; i<_num_vars; i++) {
+        
         uint8_t type = PGM_UINT8(&_var_info[i].type);
         if (type <= AP_PARAM_FLOAT) {
             void *ptr = (void*)PGM_POINTER(&_var_info[i].ptr);
@@ -903,7 +932,13 @@ bool AP_Param::load_all(void)
     load_defaults_file(HAL_PARAM_DEFAULTS_PATH);
 #endif
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    start_thread_timer();
+#endif
     while (ofs < _storage.size()) {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+         check_thread_timer();
+ #endif 
         _storage.read_block(&phdr, ofs, sizeof(phdr));
         // note that this is an || not an && for robustness
         // against power off while adding a variable
@@ -1120,9 +1155,16 @@ void AP_Param::show_all(AP_HAL::BetterStream *port, bool showKeyValues)
     AP_Param *ap;
     enum ap_var_type type;
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+       start_thread_timer();
+ #endif 
     for (ap=AP_Param::first(&token, &type);
          ap;
          ap=AP_Param::next_scalar(&token, &type)) {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+       check_thread_timer();
+ #endif 
+
         if (showKeyValues) {
             port->printf_P(PSTR("Key %i: Index %i: GroupElement %i  :  "), token.key, token.idx, token.group_element);
         }

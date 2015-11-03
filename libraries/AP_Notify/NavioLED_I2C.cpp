@@ -17,6 +17,7 @@
  */
 
 #include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 #include "NavioLED_I2C.h"
 
 #define PCA9685_ADDRESS 0x40
@@ -86,3 +87,6 @@ bool NavioLED_I2C::hw_set_rgb(uint8_t red, uint8_t green, uint8_t blue)
     i2c_sem->give();
     return success;
 }
+
+#endif
+

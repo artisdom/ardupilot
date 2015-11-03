@@ -59,6 +59,7 @@ Compass compass;
 AP_GPS gps;
 AP_Baro baro;
 AP_SerialManager serial_manager;
+AP_BattMonitor  battery_monitor;
 
 static AP_Vehicle::FixedWing aparm;
 
@@ -78,7 +79,7 @@ void setup(void)
     hal.gpio->pinMode(40, HAL_HAL_GPIO_OUTPUT);
     hal.gpio->write(40, HIGH);
 #endif
-
+    battery_monitor.init();
     ins.init(AP_InertialSensor::RATE_50HZ);
     ahrs.init();
     serial_manager.init();
@@ -88,6 +89,7 @@ void setup(void)
 
     airspeed.init();
     airspeed.calibrate(false);
+    
 
     if( compass.init() ) {
         hal.console->printf("Enabling compass\n");
@@ -130,7 +132,15 @@ void loop(void)
         airspeed.read();
         AP_OSD::enqueue::airspeed(airspeed.get_airspeed());
 
+        battery_monitor.read();
+        AP_OSD::enqueue::battery(
+            {battery_monitor.voltage(),
+               battery_monitor.current_amps(),
+                  battery_monitor.current_total_mah()}
+        );
+
     }
+
     ahrs.update();
     AP_OSD::enqueue::attitude({ToDeg(ahrs.pitch),ToDeg(ahrs.roll),ToDeg(ahrs.yaw)});
 

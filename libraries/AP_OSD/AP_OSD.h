@@ -26,6 +26,7 @@ namespace AP_OSD{
       gps_location, // vect3du32 lat, lon, alt
       baro_altitude,
       airspeed,
+      battery,
       max_messages
    };
 

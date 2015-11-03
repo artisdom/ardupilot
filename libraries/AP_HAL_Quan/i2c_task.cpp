@@ -66,9 +66,9 @@ namespace {
 
    void panic(const char* text)
    {
-      taskENTER_CRITICAL();
+     // taskENTER_CRITICAL();
       hal.scheduler->panic(text);
-      taskEXIT_CRITICAL();
+     // taskEXIT_CRITICAL();
    }
 
    void hal_printf(const char* text)
@@ -116,13 +116,31 @@ namespace {
 
       p_i2c->begin();
 
-      if ( ! init_compass()){
-         hal_printf("Compass init failed\n");
+      bool result = false;
+      for ( uint8_t i = 0; i < 3; ++i){
+         if(init_compass()){
+            result = true;
+            break;
+         }
+      }
+      if (result){
+         hal_printf("Compass init succeeded\n");
+      }else{
+         panic("Compass init failed\n");
       }
 
-      if ( ! init_baro() ){
-        // panic("Compass and Baro init failed\n");
-         hal_printf(" Baro init failed\n");
+      result = false;
+      for ( uint8_t i = 0; i < 3; ++i){
+         if ( init_baro() ){
+            result = true;
+            break;
+         }
+           // panic("Compass and Baro init failed\n");
+      }  
+      if(result){
+           hal_printf(" Baro init succeeded\n");
+      }else{
+           panic(" Baro init failed\n");
       }
 
       // running...

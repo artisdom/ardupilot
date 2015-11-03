@@ -31,8 +31,8 @@ static QuanUtil utilInstance;
 HAL_Quan::HAL_Quan() 
 :AP_HAL::HAL(
    Quan::get_serial_port<0>(),//   console ( hal.uartA)
-   Quan::get_serial_port<1>(),//   1st GPS
-   Quan::get_serial_port<2>(),//   telemetry
+   Quan::get_serial_port<2>(),//   1st GPS ( on hack board)
+   Quan::get_serial_port<1>(),//   telemetry
    NULL,            /* no uartD */
    NULL,            /* no uartE */
    Quan::get_i2c_driver(), // dummy

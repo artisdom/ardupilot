@@ -25,6 +25,9 @@ namespace AP_OSD { namespace dequeue{
       float heading;  // deg
       float baro_altitude; // m
       float airspeed; // m.s[-1]
+      float battery_voltage; // V
+      float battery_current; // A
+      float battery_mAh_consumed; // mAh
       uint8_t gps_status; // enum
    };
 

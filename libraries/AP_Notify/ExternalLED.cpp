@@ -16,8 +16,10 @@
  */
 
 #include <AP_HAL/AP_HAL.h>
-#include "AP_Notify.h"
 
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+#include "AP_Notify.h"
+ 
 extern const AP_HAL::HAL& hal;
 
 bool ExternalLED::init(void)
@@ -245,3 +247,6 @@ void ExternalLED::motor_led2(bool on_off)
         hal.gpio->write(EXTERNAL_LED_MOTOR2, _flags.motorled2_on);
     }
 }
+
+#endif // CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+

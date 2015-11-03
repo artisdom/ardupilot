@@ -41,9 +41,43 @@ extern "C" void I2C3_ER_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void I2C3_ER_IRQHandler()
 {
    static_assert(std::is_same<i2c3_task::i2c_type, quan::stm32::i2c3>::value,"incorrect port irq");
+
    uint32_t const sr1 = i2c3_task::i2c_type::get()->sr1.get();
-   i2c3_task::i2c_type::get()->sr1.set(sr1 & 0xFF); 
-   i2c3_task::i2c_errno = i2c3_task::errno_t::i2c_err_handler;
+   //i2c3_task::i2c_errno = i2c3_task::errno_t::i2c_err_handler;
+    //TODO ideally should allow multiple errors
+   if ( sr1 & (1 << 8) ){
+      i2c3_task::i2c_errno = i2c3_task::errno_t::i2c_err_handler_BERR;
+   }else{
+      if (sr1 & (1 << 9) ){
+         i2c3_task::i2c_errno = i2c3_task::errno_t::i2c_err_handler_ARLO;
+      }else{
+         if (sr1 & (1 << 10) ){
+            i2c3_task::i2c_errno = i2c3_task::errno_t::i2c_err_handler_AF;
+         }else{
+            if (sr1 & (1 << 11) ){
+               i2c3_task::i2c_errno = i2c3_task::errno_t::i2c_err_handler_OVR;
+            }else{
+               if (sr1 & (1 << 12) ){
+                  i2c3_task::i2c_errno =  i2c3_task::errno_t::i2c_err_handler_PECERR; 
+               }else{
+                  if (sr1 & (1 << 14) ){
+                     i2c3_task::i2c_errno =  i2c3_task::errno_t::i2c_err_handler_TIMEOUT; 
+                  }else{
+                     if (sr1 & (1 << 15) ){
+                        i2c3_task::i2c_errno =  i2c3_task::errno_t::i2c_err_handler_SMB_ALERT;
+                     }else{
+                        i2c3_task::i2c_errno =  i2c3_task::errno_t::unknown_i2c_err_handler; 
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+  
+   i2c3_task::i2c_type::get()->sr1.set(0); 
+   i2c3_task::i2c_type::get()->cr1.bb_setbit<15>();
+  // i2c3_task::i2c_type::get()->cr1.bb_clearbit<15>(); 
 }
 
 extern const AP_HAL::HAL& hal;
@@ -72,12 +106,22 @@ namespace {
             return "unexpected not last byte in rxne";
          case errno_t::unexpected_flags_in_irq:
             return "unexpected flags in irq";
-         case errno_t::i2c_err_handler:
-            return "i2c errhandler";
+         case errno_t::unknown_i2c_err_handler:
+            return "unknown i2c errhandler";
          case errno_t::unknown_exti_irq:
             return "unknown exti irq";
          case errno_t::address_timed_out:
             return "timed out after sending address";
+         case errno_t:: i2c_err_handler_BERR:
+            return "bus error";
+         case errno_t::i2c_err_handler_AF:
+            return "acknowledge failure";
+         case errno_t::i2c_err_handler_ARLO:
+            return "arbitration lost";
+         case errno_t::i2c_err_handler_OVR:
+            return "under/overrun error";
+         case errno_t::i2c_err_handler_TIMEOUT:
+            return "time out error";
          default:
             return "unlisted i2c error";
       }

@@ -55,6 +55,7 @@ namespace {
       typedef quan::stm32::freertos::apm::usart_tx_rx_task<usart,txo_pin,rxi_pin> serial_port;
    };
    
+   // on header
    struct sp3{
       typedef quan::stm32::uart4                     usart;
       typedef quan::mcu::pin<quan::stm32::gpioa,0>   txo_pin; 

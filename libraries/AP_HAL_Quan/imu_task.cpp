@@ -676,8 +676,8 @@ namespace {
 
 namespace Quan{
 
-    bool eeprom_write(unsigned short, void const*, unsigned int) {return false;}
-    bool eeprom_read(void*, unsigned short, unsigned int){return false;}
+ //   bool eeprom_write(unsigned short, void const*, unsigned int) {return false;}
+ //   bool eeprom_read(void*, unsigned short, unsigned int){return false;}
 
    // called by AP_InertailSensor::wait_for_sample
    // blocks 

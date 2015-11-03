@@ -235,9 +235,11 @@ void Plane::init_ardupilot()
         if (gcs[1].initialised && (gcs[1].get_uart() != NULL)) {
             gcs[1].get_uart()->println_P(msg);
         }
+#if MAVLINK_COMM_NUM_BUFFERS > 2
         if (num_gcs > 2 && gcs[2].initialised && (gcs[2].get_uart() != NULL)) {
             gcs[2].get_uart()->println_P(msg);
         }
+#endif
     }
 #endif // CLI_ENABLED
 
@@ -542,7 +544,7 @@ void Plane::check_short_failsafe()
     // -------------------
     if(failsafe.state == FAILSAFE_NONE && (flight_stage != AP_SpdHgtControl::FLIGHT_LAND_FINAL &&
             flight_stage != AP_SpdHgtControl::FLIGHT_LAND_APPROACH)) {
-        if(failsafe.ch3_failsafe) {                                              // The condition is checked and the flag ch3_failsafe is set in radio.pde
+        if(failsafe.ch3_failsafe) { // The condition is checked and the flag ch3_failsafe is set in radio.pde
             failsafe_short_on_event(FAILSAFE_SHORT);
         }
     }

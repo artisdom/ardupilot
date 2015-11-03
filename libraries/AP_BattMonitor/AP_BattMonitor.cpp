@@ -12,8 +12,11 @@ const AP_Param::GroupInfo AP_BattMonitor::var_info[] PROGMEM = {
     // @Description: Controls enabling monitoring of the battery's voltage and current
     // @Values: 0:Disabled,3:Analog Voltage Only,4:Analog Voltage and Current,5:SMBus,6:Bebop
     // @User: Standard
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   AP_GROUPINFO("_MONITOR", 0, AP_BattMonitor, _monitoring[0], BattMonitor_TYPE_ANALOG_VOLTAGE_AND_CURRENT),
+#else
     AP_GROUPINFO("_MONITOR", 0, AP_BattMonitor, _monitoring[0], BattMonitor_TYPE_NONE),
-
+#endif
     // @Param: _VOLT_PIN
     // @DisplayName: Battery Voltage sensing pin
     // @Description: Setting this to 0 ~ 13 will enable battery voltage sensing on pins A0 ~ A13. For the 3DR power brick on APM2.5 it should be set to 13. On the PX4 it should be set to 100. On the Pixhawk powered from the PM connector it should be set to 2.
@@ -30,7 +33,10 @@ const AP_Param::GroupInfo AP_BattMonitor::var_info[] PROGMEM = {
 
     // @Param: _VOLT_MULT
     // @DisplayName: Voltage Multiplier
-    // @Description: Used to convert the voltage of the voltage sensing pin (BATT_VOLT_PIN) to the actual battery's voltage (pin_voltage * VOLT_MULT). For the 3DR Power brick on APM2 or Pixhawk, this should be set to 10.1. For the Pixhawk with the 3DR 4in1 ESC this should be 12.02. For the PX4 using the PX4IO power supply this should be set to 1.
+    // @Description: Used to convert the voltage of the voltage sensing pin (BATT_VOLT_PIN) to the actual battery's voltage (pin_voltage * VOLT_MULT). 
+    // For the 3DR Power brick on APM2 or Pixhawk, this should be set to 10.1. 
+    // For the Pixhawk with the 3DR 4in1 ESC this should be 12.02. 
+    // For the PX4 using the PX4IO power supply this should be set to 1.
     // @User: Advanced
     AP_GROUPINFO("_VOLT_MULT", 3, AP_BattMonitor, _volt_multiplier[0], AP_BATT_VOLTDIVIDER_DEFAULT),
 
@@ -46,8 +52,11 @@ const AP_Param::GroupInfo AP_BattMonitor::var_info[] PROGMEM = {
     // @Description: Voltage offset at zero current on current sensor
     // @Units: Volts
     // @User: Standard
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_GROUPINFO("_AMP_OFFSET", 5, AP_BattMonitor, _curr_amp_offset[0], 0.6f),
+#else
     AP_GROUPINFO("_AMP_OFFSET", 5, AP_BattMonitor, _curr_amp_offset[0], 0),
-
+#endif
     // @Param: _CAPACITY
     // @DisplayName: Battery capacity
     // @Description: Capacity of the battery in mAh when full
@@ -89,7 +98,9 @@ const AP_Param::GroupInfo AP_BattMonitor::var_info[] PROGMEM = {
 
     // @Param: 2_AMP_PERVOL
     // @DisplayName: Amps per volt
-    // @Description: Number of amps that a 1V reading on the current sensor corresponds to. On the APM2 or Pixhawk using the 3DR Power brick this should be set to 17. For the Pixhawk with the 3DR 4in1 ESC this should be 17.
+    // @Description: Number of amps that a 1V reading on the current sensor corresponds to. 
+    // On the APM2 or Pixhawk using the 3DR Power brick this should be set to 17. 
+    // For the Pixhawk with the 3DR 4in1 ESC this should be 17.
     // @Units: Amps/Volt
     // @User: Standard
     AP_GROUPINFO("2_AMP_PERVOL", 15, AP_BattMonitor, _curr_amp_per_volt[1], AP_BATT_CURR_AMP_PERVOLT_DEFAULT),
@@ -138,6 +149,12 @@ AP_BattMonitor::init()
     _monitoring[0] = BattMonitor_TYPE_BEBOP;
 #endif
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN 
+     state[0].instance = 0 ;
+     drivers[0] = new AP_BattMonitor_Analog(*this, 0, state[0]);
+     _num_instances = 1;
+     drivers[0]->init();
+#else
     // create each instance
     for (uint8_t instance=0; instance<AP_BATT_MONITOR_MAX_INSTANCES; instance++) {
         uint8_t monitor_type = _monitoring[instance];
@@ -164,6 +181,7 @@ AP_BattMonitor::init()
                 _num_instances++;
 #endif
                 break;
+
         }
 
         // call init function for each backend
@@ -171,6 +189,8 @@ AP_BattMonitor::init()
             drivers[instance]->init();
         }
     }
+
+#endif // CONFIG_HAL_BOARD != CONFIG_HAL_QUAN
 }
 
 // read - read the voltage and current for all instances

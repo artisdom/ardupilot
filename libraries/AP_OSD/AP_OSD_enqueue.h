@@ -20,7 +20,7 @@ namespace AP_OSD{ namespace enqueue{
    bool gps_location(quan::three_d::vect<int32_t> const & in);
    bool baro_altitude(float baro_alt_m);
    bool airspeed(float m_per_s);
-
+   bool battery(quan::three_d::vect<float> const & in); // Voltage, Current, MaH
 }}
 
 #endif // AP_OSD_ENQUEUE_H_INCLUDED

@@ -24,7 +24,7 @@ void quan::uav::osd::on_draw()
 { 
     AP_OSD::dequeue::read_stream(aircraft_info);
 
-    pxp_type pos{-150,100};
+    pxp_type pos{-150,110};
     
     do_gps(pos);
     pos.y -= 20;
@@ -63,8 +63,17 @@ void quan::uav::osd::on_draw()
     draw_text(buf,pos);
     pos.y -= 20;
 
-    sprintf(buf,"aispeed = %8.3f m/s",static_cast<double>(aircraft_info.airspeed) );
+    sprintf(buf,"airspd  = %8.3f m/s",static_cast<double>(aircraft_info.airspeed) );
     draw_text(buf,pos);
+    pos.y -= 20;
+
+    sprintf(buf,"Batt V  = %8.3f m/s",static_cast<double>(aircraft_info.battery_voltage) );
+    draw_text(buf,pos);
+    pos.y -= 20;
+   
+    sprintf(buf,"Batt I  = %8.3f m/s",static_cast<double>(aircraft_info.battery_current) );
+    draw_text(buf,pos);
+    pos.y -= 20;
       
 
 }
