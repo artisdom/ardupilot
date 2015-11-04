@@ -204,8 +204,12 @@ void Plane::init_ardupilot()
     // give AHRS the airspeed sensor
     ahrs.set_airspeed(&airspeed);
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   gps.init(NULL, serial_manager);
     // GPS Initialization
+#else
     gps.init(&DataFlash, serial_manager);
+#endif
 
     init_rc_in();               // sets up rc channels from radio
     init_rc_out();              // sets up the timer libs
@@ -318,8 +322,13 @@ void Plane::startup_ground(void)
     // ready to fly
     serial_manager.set_blocking_writes_all(false);
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    ins.set_raw_logging(false);
+    ins.set_dataflash(NULL);
+#else
     ins.set_raw_logging(should_log(MASK_LOG_IMU_RAW));
     ins.set_dataflash(&DataFlash);    
+#endif
 
     gcs_send_text_P(MAV_SEVERITY_WARNING,PSTR("\n\n Ready to FLY."));
 }

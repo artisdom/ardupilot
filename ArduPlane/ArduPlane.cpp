@@ -47,45 +47,49 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] PROGMEM = {
     SCHED_TASK(update_flight_mode,      1,   1400),
     SCHED_TASK(stabilize,               1,   3500),
     SCHED_TASK(set_servos,              1,   1600),
+
     SCHED_TASK(read_control_switch,     7,   1000),
     SCHED_TASK(gcs_retry_deferred,      1,   1000),
+
     SCHED_TASK(update_GPS_50Hz,         1,   2500),
     SCHED_TASK(update_GPS_10Hz,         5,   2500),
+
     SCHED_TASK(navigate,                5,   3000),
     SCHED_TASK(update_compass,          5,   1200),
     SCHED_TASK(read_airspeed,           5,   1200),
     SCHED_TASK(update_alt,              5,   3400),
-    SCHED_TASK(adjust_altitude_target,  5,   1000),
-    SCHED_TASK(obc_fs_check,            5,   1000),
-    SCHED_TASK(gcs_update,              1,   1700),
-    SCHED_TASK(gcs_data_stream_send,    1,   3000),
-    SCHED_TASK(update_events,           1,   1500),
-    SCHED_TASK(check_usb_mux,           5,    300),
-    SCHED_TASK(read_battery,            5,   1000),
-    SCHED_TASK(compass_accumulate,      1,   1500),
-    SCHED_TASK(barometer_accumulate,    1,    900),
-    SCHED_TASK(update_notify,           1,    300),
-    SCHED_TASK(read_rangefinder,        1,    500),
-    SCHED_TASK(compass_cal_update,      1,    100),
-#if OPTFLOW == ENABLED
-    SCHED_TASK(update_optical_flow,     1,    500),
-#endif
-    SCHED_TASK(one_second_loop,        50,   1000),
-    SCHED_TASK(check_long_failsafe,    15,   1000),
-    SCHED_TASK(read_receiver_rssi,      5,   1000),
-    SCHED_TASK(rpm_update,              5,    200),
-    SCHED_TASK(airspeed_ratio_update,  50,   1000),
-    SCHED_TASK(update_mount,            1,   1500),
-    SCHED_TASK(log_perf_info,         500,   1000),
-    SCHED_TASK(compass_save,         3000,   2500),
-    SCHED_TASK(update_logging1,         5,   1700),
-    SCHED_TASK(update_logging2,         5,   1700),
-#if FRSKY_TELEM_ENABLED == ENABLED
-    SCHED_TASK(frsky_telemetry_send,   10,    100),
-#endif
- //   SCHED_TASK(terrain_update,          5,    500),
-    SCHED_TASK(update_is_flying_5Hz,   10,    100),
-    SCHED_TASK(dataflash_periodic,      1,    300),
+///----------------------------------------
+//    SCHED_TASK(adjust_altitude_target,  5,   1000),
+//    SCHED_TASK(obc_fs_check,            5,   1000),
+//    SCHED_TASK(gcs_update,              1,   1700),
+//    SCHED_TASK(gcs_data_stream_send,    1,   3000),
+//    SCHED_TASK(update_events,           1,   1500),
+//    SCHED_TASK(check_usb_mux,           5,    300),
+//    SCHED_TASK(read_battery,            5,   1000),
+//    SCHED_TASK(compass_accumulate,      1,   1500),
+//    SCHED_TASK(barometer_accumulate,    1,    900),
+//    SCHED_TASK(update_notify,           1,    300),
+//    SCHED_TASK(read_rangefinder,        1,    500),
+//    SCHED_TASK(compass_cal_update,      1,    100),
+//#if OPTFLOW == ENABLED
+//    SCHED_TASK(update_optical_flow,     1,    500),
+//#endif
+//    SCHED_TASK(one_second_loop,        50,   1000),
+//    SCHED_TASK(check_long_failsafe,    15,   1000),
+//    SCHED_TASK(read_receiver_rssi,      5,   1000),
+//    SCHED_TASK(rpm_update,              5,    200),
+//    SCHED_TASK(airspeed_ratio_update,  50,   1000),
+//    SCHED_TASK(update_mount,            1,   1500),
+//    SCHED_TASK(log_perf_info,         500,   1000),
+//    SCHED_TASK(compass_save,         3000,   2500),
+//    SCHED_TASK(update_logging1,         5,   1700),
+//    SCHED_TASK(update_logging2,         5,   1700),
+//#if FRSKY_TELEM_ENABLED == ENABLED
+//    SCHED_TASK(frsky_telemetry_send,   10,    100),
+//#endif
+// //   SCHED_TASK(terrain_update,          5,    500),
+//    SCHED_TASK(update_is_flying_5Hz,   10,    100),
+//    SCHED_TASK(dataflash_periodic,      1,    300),
 };
 
 void Plane::setup() 

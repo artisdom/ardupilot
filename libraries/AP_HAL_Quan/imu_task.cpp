@@ -480,7 +480,7 @@ public:
       {
          mpu6000::h_args_queue = xQueueCreate(1,sizeof(inertial_sensor_args_t *));
 
-         vTaskDelay(50);
+         vTaskDelay(200);
 
          if ( ! spi_device_driver::acquire_mutex(1000)){
             panic("couldnt get spi mutex in mpu600 setup registers");
@@ -497,11 +497,11 @@ public:
          // wakeup
          mpu6000::reg_write(mpu6000::reg::pwr_mgmt1, 3U);
         // delay(100);
-         vTaskDelay(10);
+         vTaskDelay(100);
          // disable I2C
          mpu6000::reg_write(mpu6000::reg::user_ctrl, 1U << 4U);
         // delay(100);
-         vTaskDelay(1);
+         vTaskDelay(100);
          while (! whoami_test() )
          {
             vTaskDelay(10);

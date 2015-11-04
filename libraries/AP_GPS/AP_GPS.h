@@ -32,13 +32,13 @@
    maximum number of GPS instances available on this platform. If more
    than 1 then redundent sensors may be available
  */
-#if HAL_CPU_CLASS > HAL_CPU_CLASS_16
+#if (HAL_CPU_CLASS > HAL_CPU_CLASS_16)  && (CONFIG_HAL_BOARD != HAL_BOARD_QUAN)
 #define GPS_MAX_INSTANCES 2
 #else
 #define GPS_MAX_INSTANCES 1
 #endif
 
-#if HAL_CPU_CLASS >= HAL_CPU_CLASS_75
+#if (HAL_CPU_CLASS >= HAL_CPU_CLASS_75) && (CONFIG_HAL_BOARD != HAL_BOARD_QUAN)
 #define GPS_RTK_AVAILABLE 1
 #else
 #define GPS_RTK_AVAILABLE 0

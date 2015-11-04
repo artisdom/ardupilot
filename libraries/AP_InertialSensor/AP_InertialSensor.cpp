@@ -952,7 +952,7 @@ AP_InertialSensor::_init_gyro()
 
     // remove existing gyro offsets
     for (uint8_t k=0; k<num_gyros; k++) {
-        hal.console->print("remove gyro offsets\n");
+       // hal.console->print("remove gyro offsets\n");
 
         _gyro_offset[k].set(Vector3f());
         new_gyro_offset[k].zero();
@@ -962,14 +962,14 @@ AP_InertialSensor::_init_gyro()
     }
 
     for(int8_t c = 0; c < 5; c++) {
-        hal.console->print("gyro  update loop\n");
+       // hal.console->print("gyro  update loop\n");
 // Quan wait for sample ?
        // hal.scheduler->delay(5);
          wait_for_sample();
         update();
     }
 
-     hal.console->print("gyro average strategy\n");
+    // hal.console->print("gyro average strategy\n");
     // the strategy is to average 50 points over 0.5 seconds, then do it
     // again and see if the 2nd average is within a small margin of
     // the first
