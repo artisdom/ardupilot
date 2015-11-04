@@ -523,7 +523,7 @@ public:
          }
 
          spi_device_driver::set_bus_speed(0);
-         hal_printf("starting mpu6000 setup\n");
+         hal_printf("setting mpu6000 rates\n");
 
  #if 0   // reset
          mpu6000::reg_write(mpu6000::reg::pwr_mgmt1, 1U << 7U);
