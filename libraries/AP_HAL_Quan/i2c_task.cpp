@@ -73,9 +73,9 @@ namespace {
 
    void hal_printf(const char* text)
    {
-      taskENTER_CRITICAL();
+     // taskENTER_CRITICAL();
       hal.console->write(text);
-      taskEXIT_CRITICAL();
+     // taskEXIT_CRITICAL();
    }
 
    // last waketime for the i2c compass baro task
@@ -106,7 +106,7 @@ namespace {
       // need to wait for 5V on the external sensor voltage regs
       wait_for_power_up();
 
-      hal_printf("starting i2c task\n");
+    //  hal_printf("starting i2c task\n");
 
       if ( (hBaroQueue == nullptr) || (hCompassQueue == nullptr) ){
         // panic("create FreeRTOS queues failed in I2c task\n");
@@ -124,7 +124,7 @@ namespace {
          }
       }
       if (result){
-         hal_printf("Compass init succeeded\n");
+        // hal_printf("Compass init succeeded\n");
       }else{
          panic("Compass init failed\n");
       }
@@ -138,7 +138,7 @@ namespace {
            // panic("Compass and Baro init failed\n");
       }  
       if(result){
-           hal_printf(" Baro init succeeded\n");
+         //  hal_printf(" Baro init succeeded\n");
       }else{
            panic(" Baro init failed\n");
       }
@@ -402,7 +402,7 @@ namespace {
          sem->give();
          return false;
       }
-      hal_printf("init_baro - reset baro\n");
+     // hal_printf("init_baro - reset baro\n");
       delay(4);
       for ( uint8_t i = 0; i < 8; ++i){
         if (  read_16bits(baro_addr,baro_cal_base_reg + 2*i, baroCal[i]) != transfer_succeeded){
@@ -410,14 +410,14 @@ namespace {
             sem->give();
             return false;
         }
-        hal_printf("init_baro - read baro cal\n");
+       // hal_printf("init_baro - read baro cal\n");
       }
       if (! do_baro_crc()){
           hal_printf("read baro crc failed\n");
           sem->give();
           return false;
       }
-      hal_printf("init_baro - read crc succeeded\n");
+     // hal_printf("init_baro - read crc succeeded\n");
 
       // 14 degrees C is average world temperature
        // 50 Hz sample and  1 Hz cutoff
@@ -695,13 +695,9 @@ namespace {
 
    void wait_for_power_up()
    {
-      bool once = false;
-      uint32_t now_ms = hal.scheduler->millis();
+    // bool once = false;
+      uint32_t const now_ms = hal.scheduler->millis();
       if( now_ms < 200){
-         if ( ! once){
-            once = true;
-            hal_printf("I2C bus warming up\n");
-         }
          delay(200 - now_ms);
       }
    }

@@ -15,7 +15,9 @@
 
 /*
    Test of the RC Input
-   tset_task justs blinks an LED but in the timer task callback
+   shows positions of all inputs in microseconds
+
+   also blinks heartbeat LED at 0.5 Hz
 */
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
@@ -39,9 +41,13 @@ namespace {
               m_count = 0;
           
                uint8_t num_rc_in_channels = hal.rcin->num_channels();
-               for ( int i = 0; i < num_rc_in_channels; ++i){
-                uint16_t const value = hal.rcin->read(i);
-                hal.console->printf("rc in ch[%d] = %u usec\n",i,static_cast<unsigned int>(value));
+               if ( hal.rcin->num_channels() > 0){
+                  for ( int i = 0; i < num_rc_in_channels; ++i){
+                   uint16_t const value = hal.rcin->read(i);
+                   hal.console->printf("rc in ch[%d] = %u usec\n",i,static_cast<unsigned int>(value));
+                  }
+               }else{
+                  hal.console->printf("no input channels\n");
                }
                hal.gpio->toggle(red_led_pin);
           }
@@ -51,7 +57,7 @@ namespace {
       {
           hal.gpio->pinMode(red_led_pin,HAL_GPIO_OUTPUT);
           hal.gpio->write(red_led_pin,pin_off);
-          hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&test_task_t::fun, void));
+         // hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&test_task_t::fun, void));
       }
    private:
       uint32_t m_count ;
@@ -66,6 +72,7 @@ void setup()
  	hal.console->printf("Quan APM RC Input test %f\n", static_cast<double>(test_val));
    hal.gpio->pinMode(test_pin,HAL_GPIO_OUTPUT);
    hal.gpio->write(test_pin,pin_off);
+   test_task.init();
 }
 
 void quan::uav::osd::on_draw() 
@@ -79,11 +86,8 @@ namespace {
 // called forever in apm_task
 void loop() 
 {
-   uint64_t const now = hal.scheduler->millis64();
-   if ( next_event <= now ){
-      hal.gpio->toggle(test_pin);
-      next_event = now + 10U;
-   }
+   hal.scheduler->delay(1);
+   test_task.fun();
 }
 
 #if defined QUAN_WITH_OSD_OVERLAY

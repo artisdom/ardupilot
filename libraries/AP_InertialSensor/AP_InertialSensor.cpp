@@ -941,7 +941,7 @@ AP_InertialSensor::_init_gyro()
     AP_Notify::flags.initialising = true;
 
     // cold start
-    hal.console->print_P(PSTR("Init Gyro"));
+    hal.console->print_P(PSTR("Init Gyro\n"));
 
     /*
       we do the gyro calibration with no board rotation. This avoids
@@ -979,7 +979,7 @@ AP_InertialSensor::_init_gyro()
     // we try to get a good calibration estimate for up to 30 seconds
     // if the gyros are stable, we should get it in 1 second
     for (int16_t j = 0; j <= 30*4 && num_converged < num_gyros; j++) {
-         hal.console->print("###---###\n");
+        // hal.console->print("###---###\n");
         Vector3f gyro_sum[INS_MAX_INSTANCES], gyro_avg[INS_MAX_INSTANCES], gyro_diff[INS_MAX_INSTANCES];
         Vector3f accel_start;
         float diff_norm[INS_MAX_INSTANCES];
@@ -1371,14 +1371,10 @@ void AP_InertialSensor::wait_for_sample(void)
     
     bool s = Quan::wait_for_imu_sample( 22000);
  
-        
     uint32_t now = hal.scheduler->micros();
-    if (s ){
-       hal.console->printf("t = %u Y\n", static_cast<unsigned>(now/1000));
-    }else{
-      hal.console->printf("t = %u N\n",static_cast<unsigned>(now/1000));
+    if (!s ){
+      hal.console->printf("#-#\n");
     }
-
 
     if (_hil_mode && _hil.delta_time > 0) {
         _delta_time = _hil.delta_time;

@@ -14,13 +14,19 @@
 #include <stm32f4xx.h>
 
 /*
-   Test of the RC Input
-   tset_task justs blinks an LED but in the timer task callback
+   Test of the RC Output
+   Reads the inputs and sends
+   them to the outputs
 */
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 
 namespace {
+
+   int count = 0;
+   constexpr uint8_t red_led_pin = 1U;
+   constexpr uint8_t pin_off = 0U;
+   constexpr uint8_t pin_on = 1U;
 
    struct test_task_t{
 
@@ -34,33 +40,29 @@ namespace {
                hal.rcout->write(i,hal.rcin->read(i));
             }
          }
+         if (++count == 500){
+            hal.gpio->toggle(red_led_pin);
+         }
       };
 
       void init()
       {
-          hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&test_task_t::fun, void));
           for (uint8_t i =0; i < 4; ++i){
              hal.rcout->enable_ch(i);
           }
+          hal.gpio->pinMode(red_led_pin,HAL_GPIO_OUTPUT);
+          hal.gpio->write(red_led_pin,pin_off);
       }
    private:
       uint32_t m_count ;
    } test_task;
-
-   constexpr uint8_t red_led_pin = 1U;
-   constexpr uint8_t pin_off = 0U;
-   constexpr uint8_t pin_on = 1U;
 
 }
 
 // called once after init of hal before startup of apm task
 void setup() 
 {
-   float const test_val = 1.2345;
- 	hal.console->printf("Quan APM RC Output test %f\n", static_cast<double>(test_val));
-   hal.gpio->pinMode(red_led_pin,HAL_GPIO_OUTPUT);
-   hal.gpio->write(red_led_pin,pin_off);
-   
+ 	hal.console->printf("Quan APM RC Output test\n");
 }
 
 void quan::uav::osd::on_draw() 
@@ -69,17 +71,13 @@ void quan::uav::osd::on_draw()
 }
 
 namespace {
-   constexpr uint32_t incr_ms  =  333;
-   uint64_t next_event = incr_ms;
+
 }
 // called forever in apm_task
 void loop() 
 {
-   uint64_t const now = hal.scheduler->millis64();
-   if ( next_event <= now ){
-      hal.gpio->toggle(red_led_pin);
-      next_event = now + incr_ms;
-   }
+    hal.scheduler->delay(1);
+    test_task.fun();
 }
 
 #if defined QUAN_WITH_OSD_OVERLAY

@@ -70,8 +70,8 @@ namespace {
          quan::stm32::rcc::get()->apb2rstr.bb_clearbit<12>();
          setup_spi_pins();
          setup_spi_regs(); 
-         mpu6000_init();
          start_spi();
+         mpu6000_init();
          create_fram_task();
       }
       static bool acquire_mutex(uint32_t ms)
@@ -249,7 +249,7 @@ private:
          ( 1 << 0)      // (CPHA)
          | ( 1 << 1)      // (CPOL)
          | ( 1 << 2)      // (MSTR)
-         |  spi_slow_brr  // (BRR)
+         |  spi_fast_brr  // (BRR)
          |  (1 << 8)      // (SSI)
          |  (1 << 9)      // (SSM)
          ;
@@ -268,7 +268,7 @@ public:
             
    };
 
-   bool spi_device_driver::m_fast_speed = false;
+   bool spi_device_driver::m_fast_speed = true;
    QueueHandle_t spi_device_driver::h_spi_mutex = nullptr;
 
 //-----------------------------------------------------------------------
@@ -324,6 +324,7 @@ public:
          setup_pins();
          setup_exti();
          setup_dma();
+         initial_setup();
       }
 
        // imu register values
@@ -475,30 +476,67 @@ public:
          return arr[1];
       }
 
-      // assumes sample rate == 400, 200, 100, 50 Hz
-      static void setup_registers( uint16_t sample_rate_Hz, uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
+      static void initial_setup()
       {
          mpu6000::h_args_queue = xQueueCreate(1,sizeof(inertial_sensor_args_t *));
+
+         vTaskDelay(50);
 
          if ( ! spi_device_driver::acquire_mutex(1000)){
             panic("couldnt get spi mutex in mpu600 setup registers");
             return;
          }
 
+         spi_device_driver::set_bus_speed(0);
          hal_printf("starting mpu6000 setup\n");
 
          // reset
          mpu6000::reg_write(mpu6000::reg::pwr_mgmt1, 1U << 7U);
-         delay(100);
+        // delay(100);
+        vTaskDelay(100);
+         // wakeup
+         mpu6000::reg_write(mpu6000::reg::pwr_mgmt1, 3U);
+        // delay(100);
+         vTaskDelay(10);
+         // disable I2C
+         mpu6000::reg_write(mpu6000::reg::user_ctrl, 1U << 4U);
+        // delay(100);
+         vTaskDelay(1);
+         while (! whoami_test() )
+         {
+            vTaskDelay(10);
+         }
+         spi_device_driver::set_bus_speed(1);
+         spi_device_driver::release_mutex();
+
+      }
+
+      // assumes sample rate == 400, 200, 100, 50 Hz
+      static void setup_registers( uint16_t sample_rate_Hz, uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
+      {
+#if 0
+         mpu6000::h_args_queue = xQueueCreate(1,sizeof(inertial_sensor_args_t *));
+#endif
+         if ( ! spi_device_driver::acquire_mutex(1000)){
+            panic("couldnt get spi mutex in mpu600 setup registers");
+            return;
+         }
+
+         spi_device_driver::set_bus_speed(0);
+         hal_printf("starting mpu6000 setup\n");
+
+ #if 0   // reset
+         mpu6000::reg_write(mpu6000::reg::pwr_mgmt1, 1U << 7U);
+         vTaskDelay(100);
         
          // wakeup
          mpu6000::reg_write(mpu6000::reg::pwr_mgmt1, 3U);
-         delay(100);
+         vTaskDelay(100);
 
          // disable I2C
          mpu6000::reg_write(mpu6000::reg::user_ctrl, 1U << 4U);
          delay(100);
-
+#endif
          while (! whoami_test() )
          {
             delay(100);

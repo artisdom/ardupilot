@@ -1937,6 +1937,7 @@ void Plane::gcs_send_text_P(MAV_SEVERITY severity, const prog_char_t *str)
         }
     }
 #if LOGGING_ENABLED == ENABLED
+#error "dont wnt logging"
     DataFlash.Log_Write_Message_P(str);
 #endif
 }

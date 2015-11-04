@@ -247,17 +247,18 @@ void Plane::init_ardupilot()
 
     startup_ground();
 
-    // choose the nav controller
-    set_nav_controller();
-
-    set_mode((FlightMode)g.initial_mode.get());
-
-    // set the correct flight mode
-    // ---------------------------
+//    // choose the nav controller
+     set_nav_controller();
+//
+     set_mode((FlightMode)g.initial_mode.get());
+//
+//    // set the correct flight mode
+//    // ---------------------------
     reset_control_switch();
 
     // initialise sensor
 #if OPTFLOW == ENABLED
+#error "dont want optflow"
     optflow.init();
 #endif
 
