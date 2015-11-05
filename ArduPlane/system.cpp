@@ -62,6 +62,8 @@ void Plane::run_cli(AP_HAL::UARTDriver *port)
         main_menu.run();
     }
 }
+#else
+#error "CLI needs to be enabled"
 
 #endif // CLI_ENABLED
 
@@ -245,6 +247,8 @@ void Plane::init_ardupilot()
         }
 #endif
     }
+#else
+#error "cli should be enabled"
 #endif // CLI_ENABLED
 
     init_capabilities();

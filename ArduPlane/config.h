@@ -29,6 +29,7 @@
 /// change in your local copy of APM_Config.h.
 ///
 #ifdef USE_CMAKE_APM_CONFIG
+#error "Dont use this!"
  #include "APM_Config_cmake.h" // <== Prefer cmake config if it exists
 #else
  #include "APM_Config.h" // <== THIS INCLUDE, DO NOT EDIT IT. EVER.

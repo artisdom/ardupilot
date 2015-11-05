@@ -46,7 +46,11 @@ const AP_Param::Info Plane::var_info[] PROGMEM = {
     // @Description: This enables/disables the checking for three carriage returns on telemetry links on startup to enter the diagnostics command line interface
     // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   GSCALAR(cli_enabled,            "CLI_ENABLED",    1),
+#else
     GSCALAR(cli_enabled,            "CLI_ENABLED",    0),
+#endif
 #endif
 
     // @Group: SERIAL

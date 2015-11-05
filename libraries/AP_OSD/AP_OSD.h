@@ -17,6 +17,8 @@ namespace AP_OSD{
 
    // enum for all messages
    // The order is important
+   // need status, where are we bootup
+   // waiting for sats etc
    enum class msgID{
       heading , // float
       attitude, // vect3df
