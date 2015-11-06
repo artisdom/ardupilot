@@ -94,8 +94,10 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] PROGMEM = {
  //   SCHED_TASK(dataflash_periodic,      1,    300),
 };
 
+// called at start of apm task so task has started
 void Plane::setup() 
 {
+    
     cliSerial = hal.console;
 
     // load the default values of variables listed in var_info[]
