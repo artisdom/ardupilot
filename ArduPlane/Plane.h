@@ -96,6 +96,10 @@
 #include <AP_OpticalFlow/AP_OpticalFlow.h>     // Optical Flow library
 #include <AP_RSSI/AP_RSSI.h>                   // RSSI Library
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <AP_OSD/AP_OSD_enqueue.h>
+#endif
+
 // Configuration
 #include "config.h"
 

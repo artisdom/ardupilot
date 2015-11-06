@@ -6,8 +6,10 @@
 
 namespace AP_OSD { namespace dequeue{
 
+
    // The dat structure to be read by the OSD
    struct osd_info_t{
+  
       osd_info_t()
       : attitude{0.f,0.f,0.f}
       , drift{0.f,0.f,0.f}
@@ -16,8 +18,13 @@ namespace AP_OSD { namespace dequeue{
       , heading{0.f}
       , baro_altitude{0.f}
       , airspeed{0.f}
+      , battery_voltage{0.f}
+      , battery_current{0.f}
+      , battery_mAh_consumed{0.f}
+      , system_status{AP_OSD:system_status_t::bootup}
       , gps_status{0}
       {}
+
       quan::three_d::vect<float> attitude;  // pitxh deg, roll deg, yaw deg
       quan::three_d::vect<float> drift;  // x,y,z units?
       quan::three_d::vect<float> raw_compass; // vect3df
@@ -28,7 +35,8 @@ namespace AP_OSD { namespace dequeue{
       float battery_voltage; // V
       float battery_current; // A
       float battery_mAh_consumed; // mAh
-      uint8_t gps_status; // enum
+      AP_OSD::system_status_t system_status; //
+      uint8_t gps_status; // enum as per AP_GPS.h
    };
 
    void read_stream(osd_info_t& info);

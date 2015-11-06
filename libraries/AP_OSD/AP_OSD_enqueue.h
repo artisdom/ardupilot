@@ -21,6 +21,7 @@ namespace AP_OSD{ namespace enqueue{
    bool baro_altitude(float baro_alt_m);
    bool airspeed(float m_per_s);
    bool battery(quan::three_d::vect<float> const & in); // Voltage, Current, MaH
+   bool system_status(AP_OSD::system_status_t status);
 }}
 
 #endif // AP_OSD_ENQUEUE_H_INCLUDED

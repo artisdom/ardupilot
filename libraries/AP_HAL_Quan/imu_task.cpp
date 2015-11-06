@@ -40,9 +40,9 @@ namespace {
 
    void hal_printf(const char* text)
    {
-      taskENTER_CRITICAL();
+      //taskENTER_CRITICAL();
       hal.console->write(text);
-      taskEXIT_CRITICAL();
+      //taskEXIT_CRITICAL();
    }
   
    // ignore the hal function for delay
@@ -488,7 +488,7 @@ public:
          }
 
          spi_device_driver::set_bus_speed(0);
-         hal_printf("starting mpu6000 setup\n");
+       //  hal_printf("starting mpu6000 setup\n");
 
          // reset
          mpu6000::reg_write(mpu6000::reg::pwr_mgmt1, 1U << 7U);
@@ -523,7 +523,7 @@ public:
          }
 
          spi_device_driver::set_bus_speed(0);
-         hal_printf("setting mpu6000 rates\n");
+         //hal_printf("setting mpu6000 rates\n");
 
  #if 0   // reset
          mpu6000::reg_write(mpu6000::reg::pwr_mgmt1, 1U << 7U);
@@ -542,7 +542,7 @@ public:
             delay(100);
          }
         
-         hal_printf("whaomi succeeded\n");
+         //hal_printf("whaomi succeeded\n");
 
          mpu6000::reg_write(mpu6000::reg::fifo_enable, 0U);
          delay(1);
@@ -609,7 +609,7 @@ public:
          mpu6000::dma_tx_buffer[0] = (mpu6000::reg::intr_status | 0x80);
          memset(mpu6000::dma_tx_buffer+1,0,15);
 
-         hal_printf("imu init done\n");
+        // hal_printf("imu init done\n");
 
          spi_device_driver::enable_dma();
    //####################################

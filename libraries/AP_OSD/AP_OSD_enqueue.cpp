@@ -86,6 +86,7 @@ namespace {
          return false;
       }
    }
+
 }
    
 bool AP_OSD::enqueue::attitude(quan::three_d::vect<float> const & in)
@@ -131,4 +132,17 @@ bool AP_OSD::enqueue::airspeed(float in)
 bool AP_OSD::enqueue::battery(quan::three_d::vect<float> const & in)
 {
    return put_message(AP_OSD::msgID::battery,in);
+}
+
+bool AP_OSD::enqueue::system_status(AP_OSD::system_status_t status)
+{
+   if ( queue_ready_for_msg()){
+       AP_OSD::osd_message_t msg;
+       msg.id = AP_OSD::msgID::system_status;
+       msg.value.sys_status = status;  
+       xQueueSendToBack(osd_queue,&msg,0);
+       return true;
+   }else{
+      return false;
+   }
 }

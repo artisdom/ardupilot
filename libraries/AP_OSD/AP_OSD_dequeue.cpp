@@ -58,6 +58,11 @@ namespace{
       info.battery_current = msg.value.vect3df.y;
       info.battery_mAh_consumed = msg.value.vect3df.z;
    }
+   
+   void get_system_status(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
+   {
+      info.system_status = msg.value.sys_status;
+   }
 
    typedef void(*fun_ptr)(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info);
 
@@ -71,7 +76,8 @@ namespace{
       get_gps_location, // vect3di32
       get_baro_altitude, // float
       get_airspeed,
-      get_battery
+      get_battery,
+      get_system_status
    };
 
    QueueHandle_t osd_queue = nullptr;
@@ -97,7 +103,7 @@ void AP_OSD::dequeue::read_stream(AP_OSD::dequeue::osd_info_t& info)
 
    QueueHandle_t  initialise()
    {
-      osd_queue = xQueueCreate(10,sizeof(osd_message_t));
+      osd_queue = xQueueCreate(30,sizeof(osd_message_t));
       return osd_queue;
    }
 }}}
