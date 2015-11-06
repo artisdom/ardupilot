@@ -5,6 +5,7 @@
 #include <AP_Math/AP_Math.h>
 #include <AP_Param/AP_Param.h>
 #include <quan/three_d/vect.hpp>
+#include <quan/angle.hpp>
 
 namespace AP_OSD{
 
@@ -38,7 +39,7 @@ namespace AP_OSD{
       bool                                  b;
       system_status_t              sys_status;
    };
-   
+   // ID to identify what is in the message
    enum class msgID{
       heading , // float
       attitude, // vect3df
@@ -56,16 +57,22 @@ namespace AP_OSD{
       max_messages
    };
 
-   // the message sent by copy on the queue
+   // the message object sent by copy on the queue
    struct osd_message_t{
       osd_message_t(){}
       msgID id;
       osd_data_t value;
    };
+
+   struct OSD_params{
+      OSD_params();
+      quan::angle_<float>::deg artifical_horizon_pitch_adjustment;
+   };
+
+   void draw_artificial_horizon(OSD_params const & osd);
+
 }
 
-struct AP_Osd{
-  AP_Osd();
-};
+
 
 #endif // AP_OSD_H_INCLUDED

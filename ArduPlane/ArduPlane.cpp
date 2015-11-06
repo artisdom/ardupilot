@@ -97,6 +97,9 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] PROGMEM = {
 // called at start of apm task so task has started
 void Plane::setup() 
 {
+
+    AP_OSD::enqueue::initialise();
+
     cliSerial = hal.console;
 
     // load the default values of variables listed in var_info[]
@@ -165,6 +168,9 @@ void Plane::ahrs_update()
 #endif
 
     ahrs.update();
+   #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   AP_OSD::enqueue::attitude({ToDeg(ahrs.pitch),ToDeg(ahrs.roll),ToDeg(ahrs.yaw)});
+   #endif
 
     if (should_log(MASK_LOG_ATTITUDE_FAST)) {
         Log_Write_Attitude();

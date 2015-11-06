@@ -87,6 +87,7 @@ AP_ADC_ADS7844 apm1_adc;
 
 void Plane::init_ardupilot()
 {
+
     // initialise serial port
     serial_manager.init_console();
 
@@ -133,10 +134,6 @@ void Plane::init_ardupilot()
     // keep a record of how many resets have happened. This can be
     // used to detect in-flight resets
     g.num_resets.set_and_save(g.num_resets+1);
-
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-    AP_OSD::enqueue::system_status(AP_OSD::system_status_t::initialising);
-#endif
 
     // init baro before we start the GCS, so that the CLI baro test works
     barometer.init();
@@ -284,6 +281,10 @@ void Plane::init_ardupilot()
 //********************************************************************************
 void Plane::startup_ground(void)
 {
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::system_status(AP_OSD::system_status_t::initialising);
+#endif
     set_mode(INITIALISING);
 
     gcs_send_text_P(MAV_SEVERITY_WARNING,PSTR("<startup_ground> GROUND START"));
@@ -340,7 +341,7 @@ void Plane::startup_ground(void)
     ins.set_raw_logging(should_log(MASK_LOG_IMU_RAW));
     ins.set_dataflash(&DataFlash);    
 #endif
-   #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     AP_OSD::enqueue::system_status(AP_OSD::system_status_t::running);
 #endif
     gcs_send_text_P(MAV_SEVERITY_WARNING,PSTR("\n\n Ready to FLY."));
