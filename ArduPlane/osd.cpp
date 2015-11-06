@@ -7,6 +7,7 @@
 #include <quantracker/osd/osd.hpp>
 
 #include <AP_OSD/AP_OSD_dequeue.h>
+#include <AP_OSD/fonts.hpp>
 
 namespace{
 
@@ -22,58 +23,43 @@ AP_OSD::dequeue::osd_info_t const & Quan::get_osd_info()
 
 namespace {
 
+
    void do_startup_screen()
    {
       quan::uav::osd::pxp_type pos {-100,20};
       quan::uav::osd::draw_text("Air Flight Controller V1.0",pos); 
       pos.y -= 20;
-      quan::uav::osd::draw_text("Press return * 3 for cli",pos); 
+      quan::uav::osd::draw_text("Press return * 3 for cli",pos,Quan::FontID::MWOSD); 
    }
 
    // ideally hand over to osd
    // need a way for osd to take over
-   void do_cli_setup()
+   void do_cli()
    {
       quan::uav::osd::pxp_type pos {-100,20};
-      quan::uav::osd::draw_text("CLI setup",pos); 
+      quan::uav::osd::draw_text("CLI setup",pos,Quan::FontID::MWOSD); 
    }
 
-   void do_initialising_sensors()
+   void do_initialising()
    {
       quan::uav::osd::pxp_type pos {-100,20};
-      quan::uav::osd::draw_text("initialising sensors",pos); 
+      quan::uav::osd::draw_text("initialising",pos); 
+      pos.y -= 20;
+      quan::uav::osd::draw_text("Press return * 3 for cli",pos,Quan::FontID::MWOSD); 
    } 
 
-   void do_waiting_for_gps()
+   void do_running()
    {
       quan::uav::osd::pxp_type pos {-100,20};
-      quan::uav::osd::draw_text("waiting for gps fix",pos); 
+      quan::uav::osd::draw_text("running",pos); 
    }
-
-   void do_ready_to_fly()
-   {
-      quan::uav::osd::pxp_type pos {-100,20};
-      quan::uav::osd::draw_text("ready_to_fly",pos); 
-   }
-
-   void do_flying()
-   {
-      quan::uav::osd::pxp_type pos {-100,20};
-      quan::uav::osd::draw_text("flying",pos); 
-   }
-   
-   void do_system_crashed()
-   {
-       quan::uav::osd::pxp_type pos {-100,20};
-      quan::uav::osd::draw_text("system crashed",pos); 
-    }
 
    void do_unknown()
    {
       quan::uav::osd::pxp_type pos {-100,20};
-      quan::uav::osd::draw_text("unknown system state",pos); 
+      quan::uav::osd::draw_text("unknown system state - report",pos); 
    }
-
+   
 }
  
 void quan::uav::osd::on_draw() 
@@ -81,26 +67,17 @@ void quan::uav::osd::on_draw()
    AP_OSD::dequeue::read_stream(info);
 
    switch(Quan::get_osd_info().system_status){
-     case AP_OSD::system_status_t::bootup:
+     case AP_OSD::system_status_t::starting:
          do_startup_screen();
          break;
-     case AP_OSD::system_status_t::in_cli_setup:
-         do_cli_setup();
+     case AP_OSD::system_status_t::in_cli:
+         do_cli();
          break;
-     case  AP_OSD::system_status_t::initialising_sensors:
-         do_initialising_sensors();
+     case  AP_OSD::system_status_t::initialising:
+         do_initialising();
          break;
-     case AP_OSD::system_status_t::waiting_for_gps:
-         do_waiting_for_gps();
-         break;
-     case AP_OSD::system_status_t::ready_to_fly:
-         do_ready_to_fly();
-         break;
-     case AP_OSD::system_status_t::flying:
-         do_flying();
-         break;
-     case AP_OSD::system_status_t::system_crashed:
-         do_system_crashed();
+     case AP_OSD::system_status_t::running:
+         do_running();
          break;
      default:
          do_unknown();

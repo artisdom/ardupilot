@@ -21,9 +21,14 @@ namespace AP_OSD { namespace dequeue{
       , battery_voltage{0.f}
       , battery_current{0.f}
       , battery_mAh_consumed{0.f}
-      , system_status{AP_OSD:system_status_t::bootup}
+      , system_status{AP_OSD:system_status_t::starting}
       , gps_status{0}
-      {}
+      , rc_in_channels
+            {0,0,0,0,0,0,
+               0,0,0,0,0,0,
+                  0,0,0,0,0,0}
+      {
+      }
 
       quan::three_d::vect<float> attitude;  // pitxh deg, roll deg, yaw deg
       quan::three_d::vect<float> drift;  // x,y,z units?
@@ -37,6 +42,7 @@ namespace AP_OSD { namespace dequeue{
       float battery_mAh_consumed; // mAh
       AP_OSD::system_status_t system_status; //
       uint8_t gps_status; // enum as per AP_GPS.h
+      uint16_t rc_in_channels[18];
    };
 
    void read_stream(osd_info_t& info);

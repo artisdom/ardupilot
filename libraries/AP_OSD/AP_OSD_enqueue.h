@@ -22,6 +22,9 @@ namespace AP_OSD{ namespace enqueue{
    bool airspeed(float m_per_s);
    bool battery(quan::three_d::vect<float> const & in); // Voltage, Current, MaH
    bool system_status(AP_OSD::system_status_t status);
+   bool rc_inputs_0_to_5(uint16_t * arr, uint8_t n);
+   bool rc_inputs_6_to_11(uint16_t * arr, uint8_t n);
+   bool rc_inputs_12_to_17(uint16_t * arr, uint8_t n);
 }}
 
 #endif // AP_OSD_ENQUEUE_H_INCLUDED

@@ -10,22 +10,24 @@ namespace AP_OSD{
 
 // see also Plane::set_flight_stage
    enum class system_status_t{
-      bootup = 0
-     , in_cli_setup
-     , initialising_sensors
-     , waiting_for_gps
-     , ready_to_fly
-     , flying
-     , system_crashed
+      starting = 0
+     , in_cli
+     , initialising
+     , running
    };
+
+   //constexpr uint8_t osd_data_max_size = 12; // max number of bytes storable
 
    // union for sending different data types
    union osd_data_t{
+      
       osd_data_t(){}
       quan::three_d::vect<float>      vect3df;
       quan::three_d::vect<uint32_t> vect3du32;
       quan::three_d::vect<int32_t>  vect3di32;
       uint8_t                byte_array12[12];
+      int16_t                   i16_array6[6];
+      uint16_t                  u16_array6[6];
       float                                 f;
       uint8_t                              u8;
       int8_t                               i8;
@@ -48,6 +50,9 @@ namespace AP_OSD{
       airspeed,
       battery,
       system_status,
+      rcin_0_to_5,
+      rcin_6_to_11,
+      rcin_12_to_17,
       max_messages
    };
 
@@ -59,5 +64,8 @@ namespace AP_OSD{
    };
 }
 
+struct AP_Osd{
+  AP_Osd();
+};
 
 #endif // AP_OSD_H_INCLUDED

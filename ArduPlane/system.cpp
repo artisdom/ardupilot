@@ -48,6 +48,7 @@ int8_t Plane::reboot_board(uint8_t argc, const Menu::arg *argv)
 // the user wants the CLI. It never exits
 void Plane::run_cli(AP_HAL::UARTDriver *port)
 {
+
     // disable the failsafe code in the CLI
     hal.scheduler->register_timer_failsafe(NULL,1);
 
@@ -57,7 +58,9 @@ void Plane::run_cli(AP_HAL::UARTDriver *port)
     cliSerial = port;
     Menu::set_port(port);
     port->set_blocking_writes(true);
-
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::system_status(AP_OSD::system_status_t::in_cli);
+#endif 
     while (1) {
         main_menu.run();
     }
@@ -130,6 +133,10 @@ void Plane::init_ardupilot()
     // keep a record of how many resets have happened. This can be
     // used to detect in-flight resets
     g.num_resets.set_and_save(g.num_resets+1);
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::system_status(AP_OSD::system_status_t::initialising);
+#endif
 
     // init baro before we start the GCS, so that the CLI baro test works
     barometer.init();
@@ -333,7 +340,9 @@ void Plane::startup_ground(void)
     ins.set_raw_logging(should_log(MASK_LOG_IMU_RAW));
     ins.set_dataflash(&DataFlash);    
 #endif
-
+   #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::system_status(AP_OSD::system_status_t::running);
+#endif
     gcs_send_text_P(MAV_SEVERITY_WARNING,PSTR("\n\n Ready to FLY."));
 }
 

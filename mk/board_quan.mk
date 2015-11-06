@@ -194,7 +194,7 @@ endif
 # Library object files
 LIBOBJS			:=	$(SKETCHLIBOBJS)
 
-QUAN_OBJS  := fonts.o
+#QUAN_OBJS  := fonts.o
 
 ################################################################################
 # Built products
@@ -240,10 +240,12 @@ print-%:
 -include $(ALLDEPS)
 
 # Link the final object
-$(SKETCHELF): $(SKETCHOBJS) $(LIBOBJS) $(BUILDROOT)/fonts.o
+#$(SKETCHELF): $(SKETCHOBJS) $(LIBOBJS) $(BUILDROOT)/fonts.o
+#$(v)$(LD) $(LDFLAGS) -o $@ $(INIT_LIBS)  $(SKETCHOBJS) $(LIBOBJS) $(LIBS) $(BUILDROOT)/fonts.o
+$(SKETCHELF): $(SKETCHOBJS) $(LIBOBJS) 
 	@echo "Building $(SKETCHELF)"
 	$(RULEHDR)
-	$(v)$(LD) $(LDFLAGS) -o $@ $(INIT_LIBS)  $(SKETCHOBJS) $(LIBOBJS) $(LIBS) $(BUILDROOT)/fonts.o
+	$(v)$(LD) $(LDFLAGS) -o $@ $(INIT_LIBS)  $(SKETCHOBJS) $(LIBOBJS) $(LIBS)
 	$(v)cp $(SKETCHELF) .
 	@echo "Firmware is in $(BUILDELF)"
 	$(QUAN_ARM_OBJCOPY) -Obinary $(SKETCHELF) $(QUANSKETCHBIN)
@@ -257,5 +259,5 @@ SLIB_INCLUDES	=	-I$(dir $<)utility $(SKETCHLIBINCLUDES) $(patsubst %,-I%,$(QUAN_
 
 include $(MK_DIR)/build_rules.mk
 
-$(BUILDROOT)/fonts.o : $(QUANTRACKER_ROOT_DIR)/examples/osd_example1/board/fonts.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $< $(SLIB_INCLUDES)
+#$(BUILDROOT)/fonts.o : $(QUANTRACKER_ROOT_DIR)/examples/osd_example1/board/fonts.cpp
+#	$(CXX) $(CXXFLAGS) -c -o $@ $< $(SLIB_INCLUDES)

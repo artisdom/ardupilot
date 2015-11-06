@@ -64,6 +64,27 @@ namespace{
       info.system_status = msg.value.sys_status;
    }
 
+   void get_rcin_0_to_5(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
+   {
+        for ( uint8_t i = 0; i < 6; ++i){
+           info.rc_in_channels[i] = msg.value.u16_array6[i];
+        }
+   }
+
+   void get_rcin_6_to_11(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
+   {
+        for ( uint8_t i = 0; i < 6; ++i){
+           info.rc_in_channels[6 + i] = msg.value.u16_array6[i];
+        }
+   }
+
+   void get_rcin_12_to_17(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
+   {
+        for ( uint8_t i = 0; i < 6; ++i){
+           info.rc_in_channels[12 + i] = msg.value.u16_array6[i];
+        }
+   }
+   
    typedef void(*fun_ptr)(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info);
 
    // order must match enums
@@ -77,7 +98,10 @@ namespace{
       get_baro_altitude, // float
       get_airspeed,
       get_battery,
-      get_system_status
+      get_system_status,
+      get_rcin_0_to_5,
+      get_rcin_6_to_11,
+      get_rcin_12_to_17
    };
 
    QueueHandle_t osd_queue = nullptr;
