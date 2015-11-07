@@ -52,6 +52,7 @@ namespace {
    {
      AP_OSD::draw_artificial_horizon(info,osd);
      AP_OSD::draw_compass(info,osd);
+     AP_OSD::draw_batteries(info,osd);
    }
 
    void do_unknown()

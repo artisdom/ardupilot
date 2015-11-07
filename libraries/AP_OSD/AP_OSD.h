@@ -75,6 +75,7 @@ namespace AP_OSD{
 
    void draw_artificial_horizon(dequeue::osd_info_t const &,OSD_params const & osd);
    void draw_compass(dequeue::osd_info_t const &,OSD_params const & osd);
+   void draw_batteries(dequeue::osd_info_t const &,OSD_params const & osd);
 
 }
 
