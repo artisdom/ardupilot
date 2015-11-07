@@ -92,7 +92,7 @@ void AP_Scheduler::run(uint16_t time_available)
                 task_fn_t func;
                 pgm_read_block(&_tasks[i].function, &func, sizeof(func));
                 current_task = i;
-                hal.console->printf("f(%u)\n",static_cast<unsigned>(i));
+              //  hal.console->printf("f(%u)\n",static_cast<unsigned>(i));
                 func();
                 current_task = -1;
                 

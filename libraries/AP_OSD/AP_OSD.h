@@ -66,6 +66,7 @@ namespace AP_OSD{
    struct OSD_params{
       OSD_params();
       quan::angle_<float>::deg artifical_horizon_pitch_adjustment;
+      int32_t viewing_distance_px; 
    };
 
    namespace dequeue{

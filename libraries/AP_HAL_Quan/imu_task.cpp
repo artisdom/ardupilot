@@ -7,6 +7,9 @@
 #include <stm32f4xx.h>
 #include <quan/stm32/spi.hpp>
 #include <quan/stm32/gpio.hpp>
+#include <quan/stm32/tim.hpp>
+#include <quan/stm32/tim/temp_reg.hpp>
+#include <quan/stm32/get_raw_timer_frequency.hpp>
 #include <quan/stm32/rcc.hpp>
 #include <quan/three_d/vect.hpp>
 #include <quan/stm32/millis.hpp>
@@ -31,8 +34,6 @@ extern "C" void EXTI15_10_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 
 namespace {
 
-   // handle to the  1 element ins args queue
-   
    void panic(const char* text)
    {
       hal.scheduler->panic(text);
@@ -40,26 +41,21 @@ namespace {
 
    void hal_printf(const char* text)
    {
-      //taskENTER_CRITICAL();
       hal.console->write(text);
-      //taskEXIT_CRITICAL();
    }
   
-   // ignore the hal function for delay
-   // actually is only used in apm_task for setup
-   // so would be ok
    TickType_t wakeup_time = 0;
    void delay( uint32_t n)
    {
       vTaskDelayUntil(&wakeup_time,n);
    }
 
-  
   void mpu6000_init();
   void create_fram_task();
 
   struct spi_device_driver  {
 
+      // the SPI bus 
       typedef quan::stm32::spi1 spi1;
 
       static void init() 
@@ -137,17 +133,16 @@ private:
        template <typename CS_Pin>
        static bool transaction(const uint8_t *tx, uint8_t *rx, uint16_t len) 
        {
-         //taskENTER_CRITICAL();
          UBaseType_t const old_prio = uxTaskPriorityGet(NULL);
          vTaskPrioritySet(NULL,configMAX_PRIORITIES - 1 );
          bool const result = transaction_no_crit<CS_Pin>(tx,rx,len);
          vTaskPrioritySet(NULL,old_prio);
-        // taskEXIT_CRITICAL();
          return result;
        }
    private:
       static constexpr uint16_t spi_slow_brr = (0b110 << 3);
-      static constexpr uint16_t spi_fast_brr = (0b001 << 3);
+     // static constexpr uint16_t spi_fast_brr = (0b001 << 3);
+      static constexpr uint16_t spi_fast_brr = (0b010 << 3);
       static constexpr uint16_t spi_brr_and_clear_mask = ~(0b111 << 3);
    public:
       static void set_bus_speed(int speed) 
@@ -272,6 +267,8 @@ public:
    QueueHandle_t spi_device_driver::h_spi_mutex = nullptr;
 
 //-----------------------------------------------------------------------
+
+   typedef quan::stm32::tim14 mpu_watchdog;
 
    struct mpu6000{
 
@@ -492,15 +489,12 @@ public:
 
          // reset
          mpu6000::reg_write(mpu6000::reg::pwr_mgmt1, 1U << 7U);
-        // delay(100);
         vTaskDelay(100);
          // wakeup
          mpu6000::reg_write(mpu6000::reg::pwr_mgmt1, 3U);
-        // delay(100);
          vTaskDelay(100);
          // disable I2C
          mpu6000::reg_write(mpu6000::reg::user_ctrl, 1U << 4U);
-        // delay(100);
          vTaskDelay(100);
          while (! whoami_test() )
          {
@@ -514,9 +508,6 @@ public:
       // assumes sample rate == 400, 200, 100, 50 Hz
       static void setup_registers( uint16_t sample_rate_Hz, uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
       {
-#if 0
-         mpu6000::h_args_queue = xQueueCreate(1,sizeof(inertial_sensor_args_t *));
-#endif
          if ( ! spi_device_driver::acquire_mutex(1000)){
             panic("couldnt get spi mutex in mpu600 setup registers");
             return;
@@ -525,24 +516,10 @@ public:
          spi_device_driver::set_bus_speed(0);
          //hal_printf("setting mpu6000 rates\n");
 
- #if 0   // reset
-         mpu6000::reg_write(mpu6000::reg::pwr_mgmt1, 1U << 7U);
-         vTaskDelay(100);
-        
-         // wakeup
-         mpu6000::reg_write(mpu6000::reg::pwr_mgmt1, 3U);
-         vTaskDelay(100);
-
-         // disable I2C
-         mpu6000::reg_write(mpu6000::reg::user_ctrl, 1U << 4U);
-         delay(100);
-#endif
          while (! whoami_test() )
          {
             delay(100);
          }
-        
-         //hal_printf("whaomi succeeded\n");
 
          mpu6000::reg_write(mpu6000::reg::fifo_enable, 0U);
          delay(1);
@@ -612,20 +589,19 @@ public:
         // hal_printf("imu init done\n");
 
          spi_device_driver::enable_dma();
-   //####################################
-       //  taskENTER_CRITICAL();
+
          UBaseType_t const old_prio = uxTaskPriorityGet(NULL);
          vTaskPrioritySet(NULL,configMAX_PRIORITIES - 1 );
          quan::stm32::disable_exti_interrupt<mpu6000::data_ready_irq>(); 
          quan::stm32::clear_event_pending<mpu6000::data_ready_irq>();
          mpu6000::reg_write(mpu6000::reg::intr_enable, 0b00000001);
-   // TODO get correct enum for setting bus speed
+
          spi_device_driver::set_bus_speed(1) ;
          spi_device_driver::release_mutex();
-   //##########################################
+  
          quan::stm32::enable_exti_interrupt<mpu6000::data_ready_irq>(); 
+         mpu_watchdog::get()->cr1.bb_setbit<0>(); // (CEN)
          vTaskPrioritySet(NULL,old_prio);
-         //taskEXIT_CRITICAL();
       }
 
       static bool whoami_test()
@@ -677,18 +653,38 @@ namespace detail{
       mpu6000::setup_registers(sample_rate_Hz, acc_cutoff_Hz,gyro_cutoff_Hz);
    }
 
+/*
+    TODO
+    diagnose mpu6000 irq system error
+
+   // watchdog timer 
+   // rest the watchdog timer in the 
+      if no event in 1.1 * t then flag error
+         // read mpu6000 regs
+         and generate in software
+
+    if interrupt entered when mpu6000::dma_transaction_in_progress == true
+      then  last interrupt not serviced in time
+
+   // mpu6000 regs not correct
+    // read mpu6000 regs
+
+  
+   // dma pars/ regs incorrect
+       address of data command sent etc
+
+
+*/
 }} // Quan::detail
 
 // Interrupt from MPU6000
 extern "C" void EXTI15_10_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void EXTI15_10_IRQHandler()
 {      
-   // if data has been read by app then switch buffers
-   // structure for accumulating samples
-   // v filter
-   
    if (quan::stm32::is_event_pending<mpu6000::data_ready_irq>()){
 
+      mpu_watchdog::get()->cnt = 0;  
+    
       mpu6000::dma_transaction_in_progress = true;
       spi_device_driver::cs_assert<mpu6000::chip_select>(); // start transaction
       spi_device_driver::stop_spi();
@@ -702,7 +698,6 @@ extern "C" void EXTI15_10_IRQHandler()
       DMA2_Stream5->CR |= (1 << 0); // (EN) enable DMA  tx
       // 
       spi_device_driver::start_spi();
-     // hal_printf("£");
    }else{
       panic("unknown EXTI15_10 event\n");
    }
@@ -715,9 +710,6 @@ namespace {
 }
 
 namespace Quan{
-
- //   bool eeprom_write(unsigned short, void const*, unsigned int) {return false;}
- //   bool eeprom_read(void*, unsigned short, unsigned int){return false;}
 
    // called by AP_InertailSensor::wait_for_sample
    // blocks 
@@ -851,6 +843,7 @@ namespace {
    struct fram_message_t{
       static constexpr uint8_t read  = 0;
       static constexpr uint8_t write = 1;
+      static constexpr uint8_t mpu_bump  = 3;
       size_t   num_elements;
       uint32_t memory_address;
       uint16_t fram_address;
@@ -899,8 +892,14 @@ namespace {
    // call before imu init
    void fram_init()
    {
-      
       fram_write_statusreg(0b00000000);
+   }
+
+   // dont ask ! 
+   void mpu6000_bump()
+   {
+      quan::stm32::generate_software_interrupt<mpu6000::data_ready_irq>();
+      hal_printf("#*#\n");
    }
 
    // max size of a discrete read before the subsystem
@@ -913,7 +912,6 @@ namespace {
 
    void fram_read_burst(void* memory_address, uint16_t fram_address, size_t num_elements)
    {
-     // taskENTER_CRITICAL();
          UBaseType_t const old_prio = uxTaskPriorityGet(NULL);
          vTaskPrioritySet(NULL,configMAX_PRIORITIES - 1 );
          while (! spi_device_driver::acquire_mutex(1000)){
@@ -931,7 +929,6 @@ namespace {
          quan::stm32::enable_exti_interrupt<mpu6000::data_ready_irq>();
          memcpy(memory_address,fram_burst_arr + 3,num_elements);
          spi_device_driver::release_mutex();
-     // taskEXIT_CRITICAL();
          vTaskPrioritySet(NULL,old_prio);
    }
 
@@ -962,6 +959,8 @@ namespace {
             hal_printf("fram acquire mutex failed\n");
          }
          quan::stm32::disable_exti_interrupt<mpu6000::data_ready_irq>();
+
+
             uint8_t fram_burst_arr[max_fram_burst + 3];
             fram_burst_arr[0] = fram_opcode::write;
             fram_burst_arr[1] = static_cast<uint8_t>(fram_address  >> 8U) ;
@@ -999,6 +998,10 @@ namespace {
    }
 
    //task just waits for fram messages
+   // also implement watchdog
+   // if mpu600 running and no activity then take action
+
+
    void fram_task (void * params)
    {
       for(;;) {
@@ -1012,21 +1015,68 @@ namespace {
 		 	 case fram_message_t::write:
 		  		fram_write(msg.fram_address,(const void*)msg.memory_address, msg.num_elements);
 		  		break;
+          case fram_message_t::mpu_bump:
+            mpu6000_bump();
+            break;
         }
       }
    }
+
+   
+
+   void mpu6000_watch_dog_init()
+   {
+      
+      quan::stm32::module_enable<mpu_watchdog>();
+      constexpr uint32_t timer_freq = quan::stm32::get_raw_timer_frequency<mpu_watchdog>();
+      constexpr uint32_t psc = (timer_freq / static_cast<uint32_t>(1000000U)) - 1U;
+      static_assert((timer_freq % static_cast<uint32_t>(1000000U))==0U,"unexpected raw timer frequency");
+      mpu_watchdog::get()->psc = psc;
+      mpu_watchdog::get()->cnt = 0;
+      mpu_watchdog::get()->arr = 1050; // overflow in 1.05 ms
+      mpu_watchdog::get()->sr = 0;
+      mpu_watchdog::get()->dier.setbit<0>(); //(UIE)  
+
+      NVIC_SetPriority(TIM8_TRG_COM_TIM14_IRQn,13);
+      NVIC_EnableIRQ(TIM8_TRG_COM_TIM14_IRQn);
+      // dont start the timer until the mpu6000 is up and running
+   }
+}
+
+// watchdog interrupt
+extern "C" void TIM8_TRG_COM_TIM14_IRQHandler() __attribute__ ((interrupt ("IRQ")));
+extern "C" void TIM8_TRG_COM_TIM14_IRQHandler()
+{
+   mpu_watchdog::get()->sr = 0;
+   mpu_watchdog::get()->cnt = 0;
+   // send a message to h_fram_command_queue
+   fram_message_t msg;
+   msg.num_elements = 0;
+   msg.memory_address = 0;
+   msg.fram_address = 0;
+   msg.cmd = fram_message_t::mpu_bump;
+
+   BaseType_t higher_prio_task_woken = pdFALSE;
+   xQueueSendToFrontFromISR(h_fram_cmd_queue,&msg,&higher_prio_task_woken);
+
+   portEND_SWITCHING_ISR(higher_prio_task_woken);
+
+}
+
+namespace {
 
    void create_fram_task()
    {
       fram_init();
       h_fram_read_complete_semaphore = xSemaphoreCreateBinary();
       h_fram_cmd_queue = xQueueCreate(1,sizeof(fram_message_t));
+      mpu6000_watch_dog_init();
 
       xTaskCreate( 
          fram_task,"fram task", 
          1000, 
          &dummy_param, 
-         tskIDLE_PRIORITY + 3, 
+         tskIDLE_PRIORITY + 2, 
          &fram_task_handle 
       ); 
    }
@@ -1034,9 +1084,9 @@ namespace {
 }
 
 namespace Quan{
+
     bool storage_read(void * buffer,uint16_t storage_address,size_t n)
    {
-
       if ( (storage_address + n) > fram_size){
          return false;
       }
@@ -1064,7 +1114,7 @@ namespace Quan{
    }
 
    // called from the APM Storage object in apm task
-   // blocks
+   // (blocks)
    bool storage_write(uint16_t storage_address, void const * buffer,size_t n)
    {
 

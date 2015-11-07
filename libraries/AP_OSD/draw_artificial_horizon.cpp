@@ -27,16 +27,20 @@ namespace {
       // x is horizontal
       // y vertical 
       // e.g to make display natural
-      rotation (quan::angle_<float>::deg const & pitch, quan::angle_<float>::deg const & roll)
+      rotation (quan::angle_<float>::deg const & pitch, quan::angle_<float>::deg const & roll, float z)
          : cos_roll {cos (roll) }
       , sin_roll {sin (roll) }
       , cos_pitch {cos (pitch) }
       , sin_pitch {sin (pitch) }
+      , viewing_distance{z}
       {
          sin_roll_x_cos_pitch = sin_roll * cos_pitch;
          sin_roll_x_sin_pitch = sin_roll * sin_pitch;
          cos_roll_x_cos_pitch = cos_roll * cos_pitch;
          cos_roll_x_sin_pitch = cos_roll * sin_pitch;
+         view_dist_x_sin_roll_x_sin_pitch = z * sin_roll_x_sin_pitch;
+         view_dist_x_cos_roll_x_sin_pitch = z * cos_roll_x_sin_pitch;
+         view_dist_x_cos_pitch = z * cos_pitch;
       }
       // could do as a three_d op?
       quan::two_d::vect<float> operator() (quan::two_d::vect<float> const & in) const
@@ -48,13 +52,14 @@ namespace {
          // should be adjustable within constraints
          // z should be large compared with display dimensions
          // then easier to solve angle issues
-         float const z = 300.f;
+         // visual angle
+       //  float const z = viewing_distance_px;
          quan::two_d::vect<float> result {
-            in.x * cos_roll - in.y  * sin_roll_x_cos_pitch + z * sin_roll_x_sin_pitch
-            , in.x * sin_roll + in.y * cos_roll_x_cos_pitch - z * cos_roll_x_sin_pitch
+            in.x * cos_roll - in.y  * sin_roll_x_cos_pitch + view_dist_x_sin_roll_x_sin_pitch
+            , in.x * sin_roll + in.y * cos_roll_x_cos_pitch - view_dist_x_cos_roll_x_sin_pitch
          };
-#if 1
-         float z1 = in.y * sin_pitch + z * cos_pitch;
+
+         float z1 = in.y * sin_pitch + view_dist_x_cos_pitch;
          
          if (std::fabs(z1) < 0.5f) {
                int const sign_z1 = (z1 < 0.f) ? -1.f : 1.f;
@@ -64,7 +69,7 @@ namespace {
 //         if ( z1 < 0.5){
 //            z1 = 0.5;
 //         }
-         float const ratio = z / z1;
+         float const ratio = viewing_distance / z1;
          result *= ratio;
          result.x = quan::constrain<float> (
                        result.x
@@ -76,7 +81,6 @@ namespace {
                        , quan::meta::integer_min<int32_t>::value
                        , quan::meta::integer_max<int32_t>::value
                     );
-#endif
          return result;
       }
    private:
@@ -88,6 +92,10 @@ namespace {
       float sin_roll_x_sin_pitch ;
       float cos_roll_x_cos_pitch ;
       float cos_roll_x_sin_pitch ;
+      float view_dist_x_sin_roll_x_sin_pitch;
+      float view_dist_x_cos_roll_x_sin_pitch;
+      float view_dist_x_cos_pitch;
+      float viewing_distance;
    };
 }
 
@@ -100,12 +108,12 @@ void AP_OSD::draw_artificial_horizon(
 {
    
    auto pitch = info.attitude.pitch + osd.artifical_horizon_pitch_adjustment;
+   constexpr int32_t centre_rad = 5;
    if ( abs(pitch) < angle_type{30}) {
-      rotation rotate {pitch,info.attitude.roll};
+      rotation rotate {pitch,info.attitude.roll, osd.viewing_distance_px};
       constexpr int32_t width = 127;
       constexpr int32_t outer_h_bar_len = 16;
       constexpr int32_t outer_stop_height = 8;
-      constexpr int32_t centre_rad = 5;
       
       pxp_type left_end { -width / 2, 0};
       pxp_type right_end {width / 2, 0};
@@ -128,10 +136,15 @@ void AP_OSD::draw_artificial_horizon(
             rotate (pxp_type {right_end.x + i, outer_stop_height / 2}),
             rotate (pxp_type {right_end.x + i, -outer_stop_height / 2}), c
          );
-         draw_circle (centre_rad + i, {0, 0}, c);
+         
          draw_circle (centre_rad + i, rotate ( {0, 0}), c);
          draw_line (rotate (pxp_type { -20, i}), rotate (pxp_type { -centre_rad - 1 , i}), c);
          draw_line (rotate (pxp_type {20, i}), rotate (pxp_type {centre_rad + 1, i}), c);
       }
+   }else{
+       for (int32_t i = -1; i < 2; ++i) {
+         const colour_type c = (i) ? colour_type::black : colour_type::white;
+         draw_circle (centre_rad + i, {0, 0}, c);
+       }
    }
 }
