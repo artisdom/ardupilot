@@ -24,7 +24,6 @@ AP_OSD::dequeue::osd_info_t const & Quan::get_osd_info()
 
 namespace {
 
-
    void do_startup_screen()
    {
       quan::uav::osd::pxp_type pos {-100,20};
@@ -51,7 +50,8 @@ namespace {
 
    void do_running()
    {
-     AP_OSD::draw_artificial_horizon(osd);
+     AP_OSD::draw_artificial_horizon(info,osd);
+     AP_OSD::draw_compass(info,osd);
    }
 
    void do_unknown()
@@ -65,6 +65,8 @@ namespace {
 void quan::uav::osd::on_draw() 
 { 
    AP_OSD::dequeue::read_stream(info);
+
+   AP_OSD::dequeue::update(info);
 
    switch(Quan::get_osd_info().system_status){
      case AP_OSD::system_status_t::starting:
@@ -86,17 +88,5 @@ void quan::uav::osd::on_draw()
    }
     
 }
-
-
-namespace quan{ namespace uav{ namespace osd{
-
-    attitude_type get_aircraft_attitude()
-    {
-        typedef quan::angle_<float>::deg deg;
-        // yaw (z) pitch(x) roll(y) in 
-        return { deg{info.attitude.z},deg{info.attitude.x},deg{info.attitude.y}};
-    }
-
-}}}
 
 #endif  // #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN

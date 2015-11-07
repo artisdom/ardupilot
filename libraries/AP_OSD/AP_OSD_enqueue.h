@@ -13,12 +13,13 @@ namespace AP_OSD{ namespace enqueue{
    void initialise();
 
    bool attitude(quan::three_d::vect<float> const & attitude_in);
-   bool drift(quan::three_d::vect<float> const & drift_in);
-   bool raw_compass(quan::three_d::vect<float> const & raw_compass_in);
-   bool heading(float heading_in);
+ //  bool drift(quan::three_d::vect<float> const & drift_in);
+ //  bool raw_compass(quan::three_d::vect<float> const & raw_compass_in);
+ //  bool heading(float heading_in);
    bool gps_status(uint8_t in);
    bool gps_location(quan::three_d::vect<int32_t> const & in);
-   bool baro_altitude(float baro_alt_m);
+   bool home_location(quan::three_d::vect<int32_t> const & in);
+ //  bool baro_altitude(float baro_alt_m);
    bool airspeed(float m_per_s);
    bool battery(quan::three_d::vect<float> const & in); // Voltage, Current, MaH
    bool system_status(AP_OSD::system_status_t status);

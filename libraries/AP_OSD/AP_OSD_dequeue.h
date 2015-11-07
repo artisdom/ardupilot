@@ -1,51 +1,52 @@
 #ifndef AP_OSD_DEQUEUE_H_INCLUDED
 #define AP_OSD_DEQUEUE_H_INCLUDED
 
+//#include <AP_GPS/AP_GPS.h>
 #include "AP_OSD.h"
 #include "AP_OSD_enqueue.h"
+#include <quan/three_d/vect.hpp>
+#include <quan/angle.hpp>
+#include <quan/uav/osd/api.hpp>
+#include <quan/uav/position.hpp>
+#include <quan/velocity.hpp>
+#include <quan/voltage.hpp>
+#include <quan/current.hpp>
+#include <quan/charge.hpp>
 
 namespace AP_OSD { namespace dequeue{
 
-
-   // The dat structure to be read by the OSD
+   // The data structure to be read by the OSD
    struct osd_info_t{
-  
       osd_info_t()
-      : attitude{0.f,0.f,0.f}
-      , drift{0.f,0.f,0.f}
-      , raw_compass{0.f,0.f,0.f}
-      , gps_location{0,0,0}
-      , heading{0.f}
-      , baro_altitude{0.f}
-      , airspeed{0.f}
-      , battery_voltage{0.f}
-      , battery_current{0.f}
-      , battery_mAh_consumed{0.f}
-      , system_status{AP_OSD:system_status_t::starting}
-      , gps_status{0}
+      : system_status{AP_OSD:system_status_t::starting}
       , rc_in_channels
             {0,0,0,0,0,0,
                0,0,0,0,0,0,
                   0,0,0,0,0,0}
+      ,gps_status{0} // no gps
+      ,home_is_set{false}
       {
       }
 
-      quan::three_d::vect<float> attitude;  // pitxh deg, roll deg, yaw deg
-      quan::three_d::vect<float> drift;  // x,y,z units?
-      quan::three_d::vect<float> raw_compass; // vect3df
-      quan::three_d::vect<int32_t> gps_location; // lat deg1e7, lon deg1e7, alt cm
-      float heading;  // deg
-      float baro_altitude; // m
-      float airspeed; // m.s[-1]
-      float battery_voltage; // V
-      float battery_current; // A
-      float battery_mAh_consumed; // mAh
-      AP_OSD::system_status_t system_status; //
-      uint8_t gps_status; // enum as per AP_GPS.h
-      uint16_t rc_in_channels[18];
+      quan::uav::osd::attitude_type       attitude;  
+      quan::uav::osd::position_type       aircraft_position; 
+      quan::uav::osd::position_type       home_position; 
+      quan::length_<float>::m             distance_from_home;
+      quan::angle_<float>::deg            bearing_to_home;
+
+      quan::velocity_<float>::m_per_s     airspeed; 
+      quan::voltage::V                    battery_voltage; 
+      quan::current::A                    battery_current; 
+      quan::charge::mA_h                  battery_mAh_consumed; 
+      AP_OSD::system_status_t             system_status; 
+     
+      uint16_t                            rc_in_channels[18];
+      uint8_t                             gps_status; // enum as per AP_GPS.h
+      bool                                home_is_set;
    };
 
    void read_stream(osd_info_t& info);
+   void update(osd_info_t& info);
 
 }}
 

@@ -7,29 +7,20 @@
 #include <cstring>
 #include <stm32f4xx.h>
 #include <quan/uav/osd/api.hpp>
+#include <quan/uav/get_bearing_and_distance.hpp>
 
 namespace{
 
-   // these functions are put in an array indexed by the message id
-
-   void get_heading(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
-   {
-      info.heading = msg.value.f;
-   }
-
    void get_attitude(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
    {
-      info.attitude = msg.value.vect3df;
-   }
-
-   void get_raw_compass(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
-   {
-      info.raw_compass = msg.value.vect3df;
-   }
-
-   void get_drift(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
-   {
-      info.drift = msg.value.vect3df;
+      // in as float in degrees
+      typedef quan::angle_<float>::deg deg;
+      info.attitude 
+         = quan::uav::osd::attitude_type{
+               deg{msg.value.vect3df.z},
+               deg{msg.value.vect3df.x},
+               deg{msg.value.vect3df.y}
+         };
    }
 
    void get_gps_status(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
@@ -39,26 +30,33 @@ namespace{
 
    void get_gps_location(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
    {
-      info.gps_location = msg.value.vect3di32;
+      quan::angle_<int32_t>::deg10e7 lat{msg.value.vect3di32.x};
+      quan::angle_<int32_t>::deg10e7 lon{msg.value.vect3di32.y};
+      quan::length_<int32_t>::cm     alt{msg.value.vect3di32.z};
+      info.aircraft_position = quan::uav::osd::position_type{lat,lon,alt};
    }
 
-   void get_baro_altitude(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
+   void get_home_location(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
    {
-      info.baro_altitude = msg.value.f;
+      quan::angle_<int32_t>::deg10e7 lat{msg.value.vect3di32.x};
+      quan::angle_<int32_t>::deg10e7 lon{msg.value.vect3di32.y};
+      quan::length_<int32_t>::cm     alt{msg.value.vect3di32.z};
+      info.home_position = quan::uav::osd::position_type{lat,lon,alt};
+      info.home_is_set = true;
    }
 
    void get_airspeed(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
    {
-      info.airspeed = msg.value.f;
+      info.airspeed = quan::velocity_<float>::m_per_s{msg.value.f};
    }
 
    void get_battery(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
    {
-      info.battery_voltage = msg.value.vect3df.x;
-      info.battery_current = msg.value.vect3df.y;
-      info.battery_mAh_consumed = msg.value.vect3df.z;
+      info.battery_voltage = quan::voltage_<float>::V{msg.value.vect3df.x};
+      info.battery_current = quan::current_<float>::A{msg.value.vect3df.y};
+      info.battery_mAh_consumed = quan::charge_<float>::mA_h{msg.value.vect3df.z};
    }
-   
+
    void get_system_status(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
    {
       info.system_status = msg.value.sys_status;
@@ -89,13 +87,14 @@ namespace{
 
    // order must match enums
    fun_ptr funs[] = {
-      get_heading,
+   //   get_heading,
       get_attitude,
-      get_raw_compass,
-      get_drift,
+   //   get_raw_compass,
+   //   get_drift,
       get_gps_status, // uint8_t
       get_gps_location, // vect3di32
-      get_baro_altitude, // float
+      get_home_location, // vect3di32
+  //    get_baro_altitude, // float
       get_airspeed,
       get_battery,
       get_system_status,
@@ -123,7 +122,16 @@ void AP_OSD::dequeue::read_stream(AP_OSD::dequeue::osd_info_t& info)
    }
 }
 
- namespace AP_OSD { namespace dequeue {namespace detail{
+
+void AP_OSD::dequeue::update(AP_OSD::dequeue::osd_info_t& info)
+{
+   // recalc distance to home and bearing
+   quan::uav::get_bearing_and_distance(
+      info.home_position,info.aircraft_position,
+      info.bearing_to_home,info.distance_from_home);
+}
+
+namespace AP_OSD { namespace dequeue {namespace detail{
 
    QueueHandle_t  initialise()
    {

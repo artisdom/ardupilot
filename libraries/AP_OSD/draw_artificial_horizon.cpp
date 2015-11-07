@@ -94,13 +94,14 @@ namespace {
 /*
 ideally use a better calc to clip stuff to the diplay
 */
-void AP_OSD::draw_artificial_horizon(AP_OSD::OSD_params const & osd)
+void AP_OSD::draw_artificial_horizon(
+      AP_OSD::dequeue::osd_info_t const & info,
+      AP_OSD::OSD_params const & osd)
 {
-   auto const & attitude = quan::uav::osd::get_aircraft_attitude();
-   // hack just so we dont worry about it going round the back
-   auto pitch = attitude.pitch   +  osd.artifical_horizon_pitch_adjustment;
+   
+   auto pitch = info.attitude.pitch + osd.artifical_horizon_pitch_adjustment;
    if ( abs(pitch) < angle_type{30}) {
-      rotation rotate {pitch,attitude.roll};
+      rotation rotate {pitch,info.attitude.roll};
       constexpr int32_t width = 127;
       constexpr int32_t outer_h_bar_len = 16;
       constexpr int32_t outer_stop_height = 8;

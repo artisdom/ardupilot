@@ -868,6 +868,10 @@ void Plane::do_set_home(const AP_Mission::Mission_Command& cmd)
         init_home();
     } else {
         ahrs.set_home(cmd.content.location);
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::home_location({cmd.content.location.lat,cmd.content.location.lng,cmd.content.location.alt});
+#endif
         home_is_set = HOME_SET_NOT_LOCKED;
         Log_Write_Home_And_Origin();
     }

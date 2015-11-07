@@ -9,15 +9,12 @@
 
 namespace AP_OSD{
 
-// see also Plane::set_flight_stage
    enum class system_status_t{
       starting = 0
      , in_cli
      , initialising
      , running
    };
-
-   //constexpr uint8_t osd_data_max_size = 12; // max number of bytes storable
 
    // union for sending different data types
    union osd_data_t{
@@ -41,19 +38,21 @@ namespace AP_OSD{
    };
    // ID to identify what is in the message
    enum class msgID{
-      heading , // float
+    //  heading , // float
       attitude, // vect3df
-      raw_compass, // vect3df
-      drift ,  // vect3df
+  //    raw_compass, // vect3df
+    //  drift ,  // vect3df
       gps_status, // uint8_t
       gps_location, // vect3du32 lat, lon, alt
-      baro_altitude,
+      home_location,
+     // baro_altitude,
       airspeed,
       battery,
       system_status,
       rcin_0_to_5,
       rcin_6_to_11,
       rcin_12_to_17,
+      
       max_messages
    };
 
@@ -69,10 +68,13 @@ namespace AP_OSD{
       quan::angle_<float>::deg artifical_horizon_pitch_adjustment;
    };
 
-   void draw_artificial_horizon(OSD_params const & osd);
+   namespace dequeue{
+      struct osd_info_t;
+   }
+
+   void draw_artificial_horizon(dequeue::osd_info_t const &,OSD_params const & osd);
+   void draw_compass(dequeue::osd_info_t const &,OSD_params const & osd);
 
 }
-
-
 
 #endif // AP_OSD_H_INCLUDED

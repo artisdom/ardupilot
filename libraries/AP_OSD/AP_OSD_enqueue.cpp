@@ -112,25 +112,25 @@ bool AP_OSD::enqueue::attitude(quan::three_d::vect<float> const & in)
    return put_message(AP_OSD::msgID::attitude,in);
 }
 
-bool AP_OSD::enqueue::raw_compass(quan::three_d::vect<float> const & in)
-{
-  return put_message(AP_OSD::msgID::raw_compass,in);
-}
+//bool AP_OSD::enqueue::raw_compass(quan::three_d::vect<float> const & in)
+//{
+//  return put_message(AP_OSD::msgID::raw_compass,in);
+//}
 
-bool AP_OSD::enqueue::drift(quan::three_d::vect<float> const & in)
-{
-   return put_message(AP_OSD::msgID::drift,in);
-}
+//bool AP_OSD::enqueue::drift(quan::three_d::vect<float> const & in)
+//{
+//   return put_message(AP_OSD::msgID::drift,in);
+//}
 
-bool AP_OSD::enqueue::heading(float in)
-{
-   return put_message(AP_OSD::msgID::heading,in);
-}
+//bool AP_OSD::enqueue::heading(float in)
+//{
+//   return put_message(AP_OSD::msgID::heading,in);
+//}
 
-bool AP_OSD::enqueue::baro_altitude(float baro_alt_m)
-{
-   return put_message(AP_OSD::msgID::baro_altitude,baro_alt_m );
-}
+//bool AP_OSD::enqueue::baro_altitude(float baro_alt_m)
+//{
+//   return put_message(AP_OSD::msgID::baro_altitude,baro_alt_m );
+//}
 
 bool AP_OSD::enqueue::gps_status(uint8_t in)
 {
@@ -140,6 +140,11 @@ bool AP_OSD::enqueue::gps_status(uint8_t in)
 bool AP_OSD::enqueue::gps_location(quan::three_d::vect<int32_t> const & in)
 {
   return put_message(AP_OSD::msgID::gps_location,in);
+}
+
+bool AP_OSD::enqueue::home_location(quan::three_d::vect<int32_t> const & in)
+{
+   return put_message(AP_OSD::msgID::home_location,in);
 }
 
 bool AP_OSD::enqueue::airspeed(float in)

@@ -103,7 +103,11 @@ void Plane::init_home()
     gcs_send_text_P(MAV_SEVERITY_WARNING, PSTR("init home"));
 
     ahrs.set_home(gps.location());
+
     home_is_set = HOME_SET_NOT_LOCKED;
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::home_location({gps.location().lat,gps.location().lng,gps.location().alt});
+#endif
     Log_Write_Home_And_Origin();
 
     gcs_send_text_fmt(PSTR("gps alt: %lu"), (unsigned long)home.alt);
@@ -125,6 +129,9 @@ void Plane::update_home()
 {
     if (home_is_set == HOME_SET_NOT_LOCKED) {
         ahrs.set_home(gps.location());
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::home_location({gps.location().lat,gps.location().lng,gps.location().alt});
+#endif
         Log_Write_Home_And_Origin();
     }
     barometer.update_calibration();
