@@ -144,7 +144,7 @@ namespace {
 
       void begin() 
       {
-         NVIC_SetPriority(I2C3_EV_IRQn,13);
+         NVIC_SetPriority(I2C3_EV_IRQn,14);
          i2c_port::init(false,false); 
          m_mutex.init();
          m_lockup_count = 0;

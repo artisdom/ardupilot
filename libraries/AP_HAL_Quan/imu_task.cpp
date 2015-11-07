@@ -412,7 +412,7 @@ public:
          quan::stm32::nvic_enable_exti_irq<data_ready_irq>();
          NVIC_SetPriority(
             quan::stm32::detail::get_exti_irq_num<data_ready_irq::pin_value>::value
-            ,14
+            ,13
          );
          //quan::stm32::enable_exti_interrupt<data_ready_irq>(); 
       }
@@ -442,7 +442,7 @@ public:
          dma_stream->M0AR = (uint32_t)dma_rx_buffer; 
          dma_stream->NDTR = 16;
 
-         NVIC_SetPriority(DMA2_Stream0_IRQn,15); 
+         NVIC_SetPriority(DMA2_Stream0_IRQn,13); 
          NVIC_EnableIRQ(DMA2_Stream0_IRQn);
 
          // TX
@@ -686,6 +686,7 @@ extern "C" void EXTI15_10_IRQHandler()
    // if data has been read by app then switch buffers
    // structure for accumulating samples
    // v filter
+   
    if (quan::stm32::is_event_pending<mpu6000::data_ready_irq>()){
 
       mpu6000::dma_transaction_in_progress = true;
@@ -699,6 +700,7 @@ extern "C" void EXTI15_10_IRQHandler()
 
       DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
       DMA2_Stream5->CR |= (1 << 0); // (EN) enable DMA  tx
+      // 
       spi_device_driver::start_spi();
      // hal_printf("£");
    }else{
