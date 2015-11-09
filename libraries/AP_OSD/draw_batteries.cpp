@@ -1,7 +1,5 @@
 
 #include <cstdio>
-//#include <quan/uav/osd/features_api.hpp>
-//#include "osd.hpp"
 #include <cmath>
 #include <quan/min.hpp>
 #include <AP_OSD/AP_OSD_dequeue.h>
@@ -13,11 +11,9 @@ using namespace quan::uav::osd;
 
 void AP_OSD::draw_batteries(dequeue::osd_info_t const & info,OSD_params const & osd)
 {
-
    pxp_type  pos = 
-      {-155,
-      (( get_video_mode() == video_mode::pal)
-      ?-130:-80)};
+      {osd.battery_pos.x,
+      (( get_video_mode() == video_mode::pal)?osd.battery_pos.y:osd.battery_pos.z)};
 
    font_ptr font = get_font(Quan::FontID::MWOSD);
    if ( font){

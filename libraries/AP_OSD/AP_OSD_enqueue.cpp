@@ -132,9 +132,17 @@ bool AP_OSD::enqueue::attitude(quan::three_d::vect<float> const & in)
 //   return put_message(AP_OSD::msgID::baro_altitude,baro_alt_m );
 //}
 
-bool AP_OSD::enqueue::gps_status(uint8_t in)
+bool AP_OSD::enqueue::gps_status(AP_OSD::gps_info_t in)
 {
-   return put_message(AP_OSD::msgID::gps_status,in);
+   if ( queue_ready_for_msg()){
+      AP_OSD::osd_message_t msg;
+      msg.id = AP_OSD::msgID::gps_status;
+      msg.value.gps_info = in;
+      xQueueSendToBack(osd_queue,&msg,0);
+      return true;
+   }else{
+      return false;
+   }
 }
 
 bool AP_OSD::enqueue::gps_location(quan::three_d::vect<int32_t> const & in)

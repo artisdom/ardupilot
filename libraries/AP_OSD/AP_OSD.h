@@ -16,6 +16,13 @@ namespace AP_OSD{
      , running
    };
 
+   struct gps_info_t{
+        float   ground_speed_m_per_s;   
+        int32_t ground_course_cd;
+        uint8_t status;
+        uint8_t num_sats;
+   };
+
    // union for sending different data types
    union osd_data_t{
       
@@ -35,6 +42,7 @@ namespace AP_OSD{
       uint32_t                            u32;
       bool                                  b;
       system_status_t              sys_status;
+      gps_info_t                 gps_info;
    };
    // ID to identify what is in the message
    enum class msgID{
@@ -67,6 +75,8 @@ namespace AP_OSD{
       OSD_params();
       quan::angle_<float>::deg artifical_horizon_pitch_adjustment;
       int32_t viewing_distance_px; 
+      quan::three_d::vect<int32_t> battery_pos;
+      quan::three_d::vect<int32_t> gps_pos;
    };
 
    namespace dequeue{
@@ -76,7 +86,7 @@ namespace AP_OSD{
    void draw_artificial_horizon(dequeue::osd_info_t const &,OSD_params const & osd);
    void draw_compass(dequeue::osd_info_t const &,OSD_params const & osd);
    void draw_batteries(dequeue::osd_info_t const &,OSD_params const & osd);
-
+   void draw_gps(dequeue::osd_info_t const &,OSD_params const & osd);
 }
 
 #endif // AP_OSD_H_INCLUDED

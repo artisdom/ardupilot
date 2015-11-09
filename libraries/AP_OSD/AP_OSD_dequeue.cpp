@@ -13,7 +13,6 @@ namespace{
 
    void get_attitude(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
    {
-      // in as float in degrees
       typedef quan::angle_<float>::deg deg;
       info.attitude 
          = quan::uav::osd::attitude_type{
@@ -25,7 +24,10 @@ namespace{
 
    void get_gps_status(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
    {
-      info.gps_status = msg.value.u8;
+      info.gps_status = msg.value.gps_info.status;
+      info.gps_num_sats = msg.value.gps_info.num_sats;
+      info.ground_speed = quan::velocity_<float>::m_per_s{msg.value.gps_info.ground_speed_m_per_s};
+      info.ground_course = quan::angle_<float>::deg{msg.value.gps_info.ground_course_cd / 100.f};
    }
 
    void get_gps_location(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
@@ -121,7 +123,6 @@ void AP_OSD::dequeue::read_stream(AP_OSD::dequeue::osd_info_t& info)
       }
    }
 }
-
 
 void AP_OSD::dequeue::update(AP_OSD::dequeue::osd_info_t& info)
 {

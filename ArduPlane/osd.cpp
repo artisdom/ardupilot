@@ -26,10 +26,10 @@ namespace {
 
    void do_startup_screen()
    {
-      quan::uav::osd::pxp_type pos {-100,20};
+      quan::uav::osd::pxp_type pos {-140,20};
       quan::uav::osd::draw_text("Air Flight Controller V1.0",pos); 
       pos.y -= 20;
-      quan::uav::osd::draw_text("Press return * 3 for cli",pos,Quan::FontID::MWOSD); 
+      quan::uav::osd::draw_text("Press return x 3 CLI",pos,Quan::FontID::MWOSD); 
    }
 
    // ideally hand over to osd
@@ -42,10 +42,11 @@ namespace {
 
    void do_initialising()
    {
-      quan::uav::osd::pxp_type pos {-100,20};
+      quan::uav::osd::pxp_type pos {-140,20};
       quan::uav::osd::draw_text("initialising",pos); 
+     
       pos.y -= 20;
-      quan::uav::osd::draw_text("Press return * 3 for cli",pos,Quan::FontID::MWOSD); 
+      quan::uav::osd::draw_text("Press return x 3 for CLI",pos,Quan::FontID::MWOSD); 
    } 
 
    void do_running()
@@ -53,6 +54,7 @@ namespace {
      AP_OSD::draw_artificial_horizon(info,osd);
      AP_OSD::draw_compass(info,osd);
      AP_OSD::draw_batteries(info,osd);
+     AP_OSD::draw_gps(info,osd);
    }
 
    void do_unknown()

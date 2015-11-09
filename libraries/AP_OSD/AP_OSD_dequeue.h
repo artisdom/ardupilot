@@ -24,6 +24,7 @@ namespace AP_OSD { namespace dequeue{
                0,0,0,0,0,0,
                   0,0,0,0,0,0}
       ,gps_status{0} // no gps
+      ,gps_num_sats{0}
       ,home_is_set{false}
       {
       }
@@ -42,6 +43,9 @@ namespace AP_OSD { namespace dequeue{
      
       uint16_t                            rc_in_channels[18];
       uint8_t                             gps_status; // enum as per AP_GPS.h
+      uint8_t                             gps_num_sats;
+      quan::velocity_<float>::m_per_s     ground_speed;
+      quan::angle_<float>::deg            ground_course;
       bool                                home_is_set;
    };
 

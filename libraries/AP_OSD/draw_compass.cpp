@@ -46,13 +46,6 @@ void AP_OSD::draw_compass (dequeue::osd_info_t const & info,AP_OSD::OSD_params c
       draw_bitmap(home_arrow, pos, vect, heading - home_bearing);
    }
    
-/*
-   bitmap_ptr compass_arrow = get_bitmap(BitmapID::compass_arrow);
-   if (compass_arrow) {
-      size_type const vect = get_size(compass_arrow) / 2;
-      draw_bitmap (compass_arrow,pos,vect,heading);
-   }
-*/
    int32_t cir_rad = 20;
    for ( int32_t i = -2; i < 3; ++i){
       color_type ncol_type
@@ -97,9 +90,8 @@ void AP_OSD::draw_compass (dequeue::osd_info_t const & info,AP_OSD::OSD_params c
          angle_type{360 - 22.5} + heading,
          ncol_type1
       );
-
-      
    }
+
    font_ptr font = get_font(Quan::FontID::MWOSD);
    if (font) {
       size_type const char_size = get_size(font );

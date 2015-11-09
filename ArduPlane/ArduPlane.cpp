@@ -450,6 +450,21 @@ void Plane::update_GPS_10Hz(void)
     // get position from AHRS
     have_position = ahrs.get_position(current_loc);
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
+    AP_OSD::gps_info_t gps_info;
+    gps_info.ground_speed_m_per_s   = gps.ground_speed();
+    gps_info.ground_course_cd       = gps.ground_course_cd();
+    gps_info.num_sats               = gps.num_sats();
+    gps_info.status                 = gps.status();
+
+    AP_OSD::enqueue::gps_status(gps_info);
+    if ( have_position){
+      AP_OSD::enqueue::gps_location({gps.location().lat,gps.location().lng,gps.location().alt});
+    }
+
+#endif
+
     static uint32_t last_gps_msg_ms;
     if (gps.last_message_time_ms() != last_gps_msg_ms && gps.status() >= AP_GPS::GPS_OK_FIX_3D) {
         last_gps_msg_ms = gps.last_message_time_ms();

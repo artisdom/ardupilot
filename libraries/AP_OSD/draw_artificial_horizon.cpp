@@ -145,6 +145,9 @@ void AP_OSD::draw_artificial_horizon(
 
    for (int32_t i = -1; i < 2; ++i) {
       const colour_type c = (i) ? colour_type::black : colour_type::white;
-      draw_circle (centre_rad + i, {0, 0}, c);
+      draw_circle(centre_rad + i, {0, 0}, c);
+      draw_line({-20,i},{-centre_rad - 1 ,i},c);
+      draw_line({centre_rad + 1 ,i},{20,i},c);
+      draw_line( {i,centre_rad + 1 },{i,10},c);
    }
 }
