@@ -55,6 +55,7 @@ namespace {
      AP_OSD::draw_compass(info,osd);
      AP_OSD::draw_batteries(info,osd);
      AP_OSD::draw_gps(info,osd);
+     AP_OSD::draw_control_mode(info,osd);
    }
 
    void do_unknown()

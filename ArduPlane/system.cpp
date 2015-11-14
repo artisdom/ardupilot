@@ -357,6 +357,7 @@ void Plane::set_mode(enum FlightMode mode)
         // don't switch modes if we are already in the correct mode.
         return;
     }
+
     if(g.auto_trim > 0 && control_mode == MANUAL)
         trim_control_surfaces();
 
@@ -471,6 +472,9 @@ void Plane::set_mode(enum FlightMode mode)
         set_guided_WP();
         break;
     }
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::control_mode(mode);
+#endif 
 
     // start with throttle suppressed in auto_throttle modes
     throttle_suppressed = auto_throttle_mode;
