@@ -24,6 +24,7 @@ namespace AP_OSD{ namespace enqueue{
    bool rc_inputs_0_to_5(uint16_t * arr, uint8_t n);
    bool rc_inputs_6_to_11(uint16_t * arr, uint8_t n);
    bool rc_inputs_12_to_17(uint16_t * arr, uint8_t n);
+   bool control_mode( uint8_t value);  // see Arduplane/defines.h
 }}
 
 #endif // AP_OSD_ENQUEUE_H_INCLUDED

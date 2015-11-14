@@ -84,6 +84,11 @@ namespace{
            info.rc_in_channels[12 + i] = msg.value.u16_array6[i];
         }
    }
+
+   void get_control_mode(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
+   {
+       info.control_mode = msg.value.u8;
+   }
    
    typedef void(*fun_ptr)(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info);
 
@@ -102,7 +107,8 @@ namespace{
       get_system_status,
       get_rcin_0_to_5,
       get_rcin_6_to_11,
-      get_rcin_12_to_17
+      get_rcin_12_to_17,
+      get_control_mode
    };
 
    QueueHandle_t osd_queue = nullptr;

@@ -9,6 +9,7 @@ AP_OSD::OSD_params::OSD_params()
  ,viewing_distance_px{250}
  ,battery_pos{110,-130,-80}
  ,gps_pos{-160,-130,-80}
+ ,control_mode_pos{35,-130,-80}
 {}
 
 

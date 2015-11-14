@@ -26,6 +26,7 @@ namespace AP_OSD { namespace dequeue{
       ,gps_status{0} // no gps
       ,gps_num_sats{0}
       ,home_is_set{false}
+      ,control_mode{16} // initialising
       {
       }
 
@@ -47,6 +48,7 @@ namespace AP_OSD { namespace dequeue{
       quan::velocity_<float>::m_per_s     ground_speed;
       quan::angle_<float>::deg            ground_course;
       bool                                home_is_set;
+      uint8_t                             control_mode;
    };
 
    void read_stream(osd_info_t& info);

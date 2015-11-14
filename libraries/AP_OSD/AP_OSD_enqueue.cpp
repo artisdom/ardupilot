@@ -193,3 +193,29 @@ bool AP_OSD::enqueue::rc_inputs_12_to_17(uint16_t * ar, uint8_t n)
    return put_message(AP_OSD::msgID::rcin_12_to_17,ar,n);
 }
 
+/*
+    MANUAL        = 0,
+    CIRCLE        = 1,
+    STABILIZE     = 2,
+    TRAINING      = 3,
+    ACRO          = 4,
+    FLY_BY_WIRE_A = 5,
+    FLY_BY_WIRE_B = 6,
+    CRUISE        = 7,
+    AUTOTUNE      = 8,
+    AUTO          = 10,
+    RTL           = 11,
+    LOITER        = 12,
+    GUIDED        = 15,
+    INITIALISING  = 16
+*/
+
+bool AP_OSD::enqueue::control_mode(uint8_t mode)
+{
+   if ( mode < 17){
+      return put_message(AP_OSD::msgID::control_mode,mode);
+   }else{
+      return false;
+   }
+}
+

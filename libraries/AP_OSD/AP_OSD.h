@@ -42,7 +42,7 @@ namespace AP_OSD{
       uint32_t                            u32;
       bool                                  b;
       system_status_t              sys_status;
-      gps_info_t                 gps_info;
+      gps_info_t                     gps_info;
    };
    // ID to identify what is in the message
    enum class msgID{
@@ -60,7 +60,7 @@ namespace AP_OSD{
       rcin_0_to_5,
       rcin_6_to_11,
       rcin_12_to_17,
-      
+      control_mode,
       max_messages
    };
 
@@ -77,6 +77,7 @@ namespace AP_OSD{
       int32_t viewing_distance_px; 
       quan::three_d::vect<int32_t> battery_pos;
       quan::three_d::vect<int32_t> gps_pos;
+      quan::three_d::vect<int32_t> control_mode_pos;
    };
 
    namespace dequeue{
@@ -87,6 +88,7 @@ namespace AP_OSD{
    void draw_compass(dequeue::osd_info_t const &,OSD_params const & osd);
    void draw_batteries(dequeue::osd_info_t const &,OSD_params const & osd);
    void draw_gps(dequeue::osd_info_t const &,OSD_params const & osd);
+   void draw_control_mode(dequeue::osd_info_t const &,OSD_params const & osd);
 }
 
 #endif // AP_OSD_H_INCLUDED
