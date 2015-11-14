@@ -20,13 +20,13 @@ DigitalLPF<T>::DigitalLPF() {
 // add a new raw value to the filter, retrieve the filtered result
 template <class T>
 T DigitalLPF<T>::apply(const T &sample, float cutoff_freq, float dt) {
-    if (cutoff_freq <= 0.0f || dt <= 0.0f) {
+    if (cutoff_freq <= 0 || dt <= 0) {
         _output = sample;
         return _output;
     }
 
-    float rc = 1.0f/(M_2PI_F*cutoff_freq);
-    float alpha = constrain_float(dt/(dt+rc), 0.0f, 1.0f);
+    float rc = 1/(M_2PI_F*cutoff_freq);
+    float alpha = constrain_float(dt/(dt+rc), 0,1);
     _output += (sample - _output) * alpha;
     return _output;
 }
@@ -46,7 +46,7 @@ void DigitalLPF<T>::reset(T value) {
 // LowPassFilter
 ////////////////////////////////////////////////////////////////////////////////////////////
 template <class T>
-LowPassFilter<T>::LowPassFilter() : _cutoff_freq(0.0f) { 
+LowPassFilter<T>::LowPassFilter() : _cutoff_freq(0) { 
   
 }
 // constructor
@@ -89,6 +89,6 @@ void LowPassFilter<T>::reset(T value) {
 template class LowPassFilter<int>;
 template class LowPassFilter<long>;
 template class LowPassFilter<float>;
-template class LowPassFilter<double>;
+//template class LowPassFilter<double>;
 template class LowPassFilter<Vector2f>;
 template class LowPassFilter<Vector3f>;

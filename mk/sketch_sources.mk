@@ -82,7 +82,8 @@ else
 v =
 endif
 
-FORCE:
+FORCE: $(SKETCHELF)
+
 
 $(BUILDROOT)/make.flags: FORCE
 	@mkdir -p $(BUILDROOT)

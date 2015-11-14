@@ -63,12 +63,18 @@ public:
     float get_sample_freq(void) const;
     T apply(const T &sample);
 
+    void reset(T const & value, uint32_t n);
+
 protected:
     struct DigitalBiquadFilter<T>::biquad_params _params;
     
 private:
     DigitalBiquadFilter<T> _filter;
 };
+
+ 
+
+
 
 // Uncomment this, if you decide to remove the instantiations in the implementation file
 /*

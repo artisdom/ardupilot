@@ -17,6 +17,8 @@
 #include "AP_RangeFinder_PulsedLightLRF.h"
 #include <AP_HAL/AP_HAL.h>
 
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 extern const AP_HAL::HAL& hal;
 
 /* 
@@ -116,3 +118,6 @@ void AP_RangeFinder_PulsedLightLRF::update(void)
         set_status(RangeFinder::RangeFinder_NoData);
     }
 }
+
+#endif
+

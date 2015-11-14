@@ -95,6 +95,10 @@
 #include <AP_RSSI/AP_RSSI.h>                   // RSSI Library
 #include <AP_Parachute/AP_Parachute.h>
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <AP_OSD/AP_OSD_enqueue.h>
+#endif
+
 // Configuration
 #include "config.h"
 
@@ -106,6 +110,7 @@
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #include <SITL/SITL.h>
 #endif
+
 
 /*
   a plane specific arming class
@@ -990,6 +995,8 @@ public:
     int8_t process_logs(uint8_t argc, const Menu::arg *argv);
     int8_t setup_mode(uint8_t argc, const Menu::arg *argv);
     int8_t setup_factory(uint8_t argc, const Menu::arg *argv);
+    int8_t setup_set(uint8_t argc, const Menu::arg *argv);
+    int8_t setup_show(uint8_t argc, const Menu::arg *argv);
     int8_t setup_erase(uint8_t argc, const Menu::arg *argv);
     int8_t test_mode(uint8_t argc, const Menu::arg *argv);
     int8_t reboot_board(uint8_t argc, const Menu::arg *argv);

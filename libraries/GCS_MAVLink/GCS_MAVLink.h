@@ -21,8 +21,12 @@
 #define MAVLINK_MESSAGE_CRC(msgid) mavlink_get_message_crc(msgid)
 
 // allow four telemetry ports
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#define MAVLINK_COMM_NUM_BUFFERS 1
+#else
+// allow four telemetry ports
 #define MAVLINK_COMM_NUM_BUFFERS 4
-
+#endif
 /*
   The MAVLink protocol code generator does its own alignment, so
   alignment cast warnings can be ignored

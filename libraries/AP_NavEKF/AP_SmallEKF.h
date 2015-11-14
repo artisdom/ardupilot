@@ -33,6 +33,8 @@
 
 #include <AP_Math/vectorN.h>
 
+class AP_AHRS_NavEKF;
+
 class SmallEKF
 {
 public:

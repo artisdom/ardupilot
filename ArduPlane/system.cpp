@@ -46,6 +46,7 @@ int8_t Plane::reboot_board(uint8_t argc, const Menu::arg *argv)
 // the user wants the CLI. It never exits
 void Plane::run_cli(AP_HAL::UARTDriver *port)
 {
+
     // disable the failsafe code in the CLI
     hal.scheduler->register_timer_failsafe(NULL,1);
 
@@ -55,7 +56,9 @@ void Plane::run_cli(AP_HAL::UARTDriver *port)
     cliSerial = port;
     Menu::set_port(port);
     port->set_blocking_writes(true);
-
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::system_status(AP_OSD::system_status_t::in_cli);
+#endif 
     while (1) {
         main_menu.run();
     }
@@ -76,6 +79,7 @@ static void failsafe_check_static()
 
 void Plane::init_ardupilot()
 {
+
     // initialise serial port
     serial_manager.init_console();
 
@@ -190,8 +194,12 @@ void Plane::init_ardupilot()
     // give AHRS the airspeed sensor
     ahrs.set_airspeed(&airspeed);
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   gps.init(NULL, serial_manager);
     // GPS Initialization
+#else
     gps.init(&DataFlash, serial_manager);
+#endif
 
     init_rc_in();               // sets up rc channels from radio
     init_rc_out();              // sets up the timer libs
@@ -221,27 +229,32 @@ void Plane::init_ardupilot()
         if (gcs[1].initialised && (gcs[1].get_uart() != NULL)) {
             gcs[1].get_uart()->println(msg);
         }
+#if MAVLINK_COMM_NUM_BUFFERS > 2
         if (num_gcs > 2 && gcs[2].initialised && (gcs[2].get_uart() != NULL)) {
             gcs[2].get_uart()->println(msg);
         }
+#endif
     }
+#else
+#error "cli should be enabled"
 #endif // CLI_ENABLED
 
     init_capabilities();
 
     startup_ground();
 
-    // choose the nav controller
-    set_nav_controller();
-
-    set_mode((FlightMode)g.initial_mode.get());
-
-    // set the correct flight mode
-    // ---------------------------
+//    // choose the nav controller
+     set_nav_controller();
+//
+     set_mode((FlightMode)g.initial_mode.get());
+//
+//    // set the correct flight mode
+//    // ---------------------------
     reset_control_switch();
 
     // initialise sensor
 #if OPTFLOW == ENABLED
+#error "dont want optflow"
     optflow.init();
 #endif
 
@@ -252,6 +265,10 @@ void Plane::init_ardupilot()
 //********************************************************************************
 void Plane::startup_ground(void)
 {
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::system_status(AP_OSD::system_status_t::initialising);
+#endif
     set_mode(INITIALISING);
 
     gcs_send_text(MAV_SEVERITY_INFO,"<startup_ground> GROUND START");
@@ -301,10 +318,19 @@ void Plane::startup_ground(void)
     // ready to fly
     serial_manager.set_blocking_writes_all(false);
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    ins.set_raw_logging(false);
+    ins.set_dataflash(NULL);
+#else
     ins.set_raw_logging(should_log(MASK_LOG_IMU_RAW));
     ins.set_dataflash(&DataFlash);    
-
+#endif
     gcs_send_text(MAV_SEVERITY_INFO,"\n\n Ready to FLY.");
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::system_status(AP_OSD::system_status_t::running);
+#endif
+
 }
 
 enum FlightMode Plane::get_previous_mode() {
@@ -317,6 +343,7 @@ void Plane::set_mode(enum FlightMode mode)
         // don't switch modes if we are already in the correct mode.
         return;
     }
+
     if(g.auto_trim > 0 && control_mode == MANUAL)
         trim_control_surfaces();
 
@@ -434,6 +461,9 @@ void Plane::set_mode(enum FlightMode mode)
         set_guided_WP();
         break;
     }
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::control_mode(mode);
+#endif 
 
     // start with throttle suppressed in auto_throttle modes
     throttle_suppressed = auto_throttle_mode;
@@ -531,7 +561,7 @@ void Plane::check_short_failsafe()
     // -------------------
     if(failsafe.state == FAILSAFE_NONE && (flight_stage != AP_SpdHgtControl::FLIGHT_LAND_FINAL &&
             flight_stage != AP_SpdHgtControl::FLIGHT_LAND_APPROACH)) {
-        if(failsafe.ch3_failsafe) {                                              // The condition is checked and the flag ch3_failsafe is set in radio.pde
+        if(failsafe.ch3_failsafe) { // The condition is checked and the flag ch3_failsafe is set in radio.pde
             failsafe_short_on_event(FAILSAFE_SHORT);
         }
     }
@@ -689,6 +719,7 @@ void Plane::servo_write(uint8_t ch, uint16_t pwm)
 bool Plane::should_log(uint32_t mask)
 {
 #if LOGGING_ENABLED == ENABLED
+#error dont want logging
     if (!(mask & g.log_bitmask) || in_mavlink_delay) {
         return false;
     }

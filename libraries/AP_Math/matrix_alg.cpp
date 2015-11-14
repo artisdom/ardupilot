@@ -57,7 +57,7 @@ float detnxn(const float C[],const uint8_t n)
       }
     }
 
-    if (A[c + iy] != 0.0) {
+    if (A[c + iy] != 0.f) {
       if (iy != 0) {
         ipiv[j] = (int8_t)((j + iy) + 1);
         ix = j;
@@ -81,7 +81,7 @@ float detnxn(const float C[],const uint8_t n)
     jy = c + n;
     for (b_j = 1; b_j <= n - 1 - j; b_j++) {
       smax = A[jy];
-      if (A[jy] != 0.0) {
+      if (A[jy] != 0.f) {
         ix = c + 1;
         i0 = (iy - j) + (2*n);
         for (ijA = n + 1 + iy; ijA + 1 <= i0; ijA++) {

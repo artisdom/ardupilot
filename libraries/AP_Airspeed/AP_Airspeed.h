@@ -8,10 +8,14 @@
 #include <AP_Param/AP_Param.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include <AP_Vehicle/AP_Vehicle.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include "AP_Airspeed_Quan.h"
+#else
 #include "AP_Airspeed_Backend.h"
 #include "AP_Airspeed_analog.h"
 #include "AP_Airspeed_PX4.h"
 #include "AP_Airspeed_I2C.h"
+#endif
 
 class Airspeed_Calibration {
 public:
@@ -51,8 +55,10 @@ public:
         _last_update_ms(0),
         _calibration(parms),
         _last_saved_ratio(0.0f),
-        _counter(0),
-        analog(_pin)
+        _counter(0)
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+       ,analog(_pin)
+#endif
     {
 		AP_Param::setup_object_defaults(this, var_info);
     };
@@ -187,16 +193,22 @@ private:
 
     float get_pressure(void);
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_Airspeed_Quan m_backend;
+#else
     AP_Airspeed_Analog analog;
 #if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
     AP_Airspeed_PX4    digital;
 #else
     AP_Airspeed_I2C    digital;
 #endif
+#endif
 };
 
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 // the virtual pin for digital airspeed sensors
 #define AP_AIRSPEED_I2C_PIN 65
+#endif
 
 #endif // __AP_AIRSPEED_H__
 

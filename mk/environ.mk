@@ -202,6 +202,13 @@ ifneq ($(findstring flymaple, $(MAKECMDGOALS)),)
 HAL_BOARD = HAL_BOARD_FLYMAPLE
 endif
 
+###################################################
+ifneq ($(findstring quan, $(MAKECMDGOALS)),)
+HAL_BOARD = HAL_BOARD_QUAN
+endif
+
+######################################
+
 # default to SITL
 ifeq ($(HAL_BOARD),)
 HAL_BOARD = HAL_BOARD_SITL

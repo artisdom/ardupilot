@@ -15,6 +15,9 @@
  */
 
 #include <AP_HAL/AP_HAL.h>
+
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 #include "AP_RangeFinder_LightWareSerial.h"
 #include <AP_SerialManager/AP_SerialManager.h>
 #include <ctype.h>
@@ -62,7 +65,7 @@ bool AP_RangeFinder_LightWareSerial::get_reading(uint16_t &reading_cm)
         char c = uart->read();
         if (c == '\r') {
             linebuf[linebuf_len] = 0;
-            sum += atof(linebuf);
+            sum += static_cast<float>(atof(linebuf));
             count++;
             linebuf_len = 0;
         } else if (isdigit(c) || c == '.') {
@@ -97,3 +100,5 @@ void AP_RangeFinder_LightWareSerial::update(void)
         set_status(RangeFinder::RangeFinder_NoData);
     }
 }
+
+#endif

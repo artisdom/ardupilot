@@ -7,6 +7,16 @@
 #include <AP_HAL/AP_HAL.h>
 #include <StorageManager/StorageManager.h>
 
+// todo add separateley
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <AP_HAL_Quan/AP_HAL_Quan.h>
+
+void quan::uav::osd::on_draw() 
+{ 
+  draw_text("Quan APM Storage test",{-100,50});
+}
+#endif
+
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 #define DO_INITIALISATION 1
@@ -45,19 +55,36 @@ void setup(void)
 {
     hal.console->println("StorageTest startup...");
 #if DO_INITIALISATION
+    uint32_t start_write_time = hal.scheduler->millis();
+    uint32_t total_storage_written = 0;
     for (uint8_t type=0; type<4; type++) {
         const StorageAccess &storage = all_storage[type];
-        hal.console->printf("Init type %u\n", (unsigned)type);
+        hal.console->printf("Init type %u of size %u\n", (unsigned)type,(unsigned)storage.size());
+        
         for (uint16_t i=0; i<storage.size(); i++) {
             storage.write_byte(i, pvalue(i));
         }
+        total_storage_written += storage.size();
     }
+    uint32_t end_write_time = hal.scheduler->millis();
+    hal.console->printf("To individual write %u bytes took %u ms\n"
+      ,static_cast<unsigned>(total_storage_written)
+      ,static_cast<unsigned>(end_write_time - start_write_time) );
 #endif
+}
+
+namespace {
+   uint32_t count = 0;
+
 }
 
 void loop(void)
 {
-    static uint32_t count;
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   // need some yield time for quan
+    hal.scheduler->delay(20);
+#endif
+
     uint8_t type = get_random() % 4;
     const StorageAccess &storage = all_storage[type];
     uint16_t offset = get_random() % storage.size();
@@ -92,7 +119,7 @@ void loop(void)
 
     count++;
     if (count % 10000 == 0) {
-        hal.console->printf("%u ops\n", count);
+        hal.console->printf("%u ops\n", (unsigned)count);
     }
 }
 

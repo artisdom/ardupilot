@@ -23,6 +23,8 @@
  */
 
 #include <AP_HAL/AP_HAL.h>
+
+
 #include "AP_AHRS.h"
 
 #if HAL_CPU_CLASS >= HAL_CPU_CLASS_150
@@ -30,7 +32,10 @@
 #include <AP_NavEKF2/AP_NavEKF2.h>
 #include <AP_NavEKF/AP_Nav_Common.h>              // definitions shared by inertial and ekf nav filters
 
+// atm we will stick with the DCM
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 #define AP_AHRS_NAVEKF_AVAILABLE 1
+#endif
 #define AP_AHRS_NAVEKF_SETTLE_TIME_MS 20000     // time in milliseconds the ekf needs to settle after being started
 
 class AP_AHRS_NavEKF : public AP_AHRS_DCM

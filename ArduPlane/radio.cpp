@@ -156,6 +156,33 @@ void Plane::read_radio()
         control_failsafe(channel_throttle->radio_in);
         return;
     }
+    
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+  // update rc to osd
+   uint8_t const num_channels = hal.rcin->num_channels();
+   uint16_t chan_ar[6];
+   if ( num_channels > 12){
+      uint8_t const n = num_channels - 12;
+      for(uint8_t i = 0; i < 6; ++i){
+         chan_ar[i] = (i < n)? hal.rcin->read(i + 12):0;
+      }
+      AP_OSD::enqueue::rc_inputs_12_to_17(chan_ar,6);
+   }
+   if ( num_channels > 6){
+      uint8_t const n = num_channels - 6;
+      for(uint8_t i = 0; i < 6; ++i){
+         chan_ar[i] = (i < n)? hal.rcin->read(i + 6) :0;
+      }
+      AP_OSD::enqueue::rc_inputs_6_to_11(chan_ar,6);
+   }
+   if ( num_channels > 0){;
+      for(uint8_t i = 0; i < 6; ++i){
+         chan_ar[i] = (i < num_channels)? hal.rcin->read(i) :0;
+      }
+      AP_OSD::enqueue::rc_inputs_0_to_5(chan_ar,6);
+   }
+      
+#endif
 
     failsafe.last_valid_rc_ms = millis();
 

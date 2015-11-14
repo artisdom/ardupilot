@@ -26,6 +26,8 @@
 #include "AP_RangeFinder_MaxsonarI2CXL.h"
 #include <AP_HAL/AP_HAL.h>
 
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 extern const AP_HAL::HAL& hal;
 
 /* 
@@ -123,3 +125,6 @@ void AP_RangeFinder_MaxsonarI2CXL::update(void)
         set_status(RangeFinder::RangeFinder_NoData);
     }
 }
+
+#endif
+

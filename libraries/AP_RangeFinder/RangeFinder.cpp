@@ -15,6 +15,7 @@
  */
 
 #include "RangeFinder.h"
+#include "RangeFinder_Backend.h"
 #include "AP_RangeFinder_analog.h"
 #include "AP_RangeFinder_PulsedLightLRF.h"
 #include "AP_RangeFinder_MaxsonarI2CXL.h"
@@ -469,6 +470,7 @@ void RangeFinder::update(void)
  */
 void RangeFinder::detect_instance(uint8_t instance)
 {
+ #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
     uint8_t type = _type[instance];
 #if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
     if (type == RangeFinder_TYPE_PLI2C || 
@@ -539,6 +541,8 @@ void RangeFinder::detect_instance(uint8_t instance)
             return;
         }
     }
+
+#endif // CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 }
 
 // query status
@@ -602,8 +606,8 @@ void RangeFinder::update_pre_arm_check(uint8_t instance)
     // Check that the range finder has been exercised through a realistic range of movement
     if (((state[instance].pre_arm_distance_max - state[instance].pre_arm_distance_min) > RANGEFINDER_PREARM_REQUIRED_CHANGE_CM) &&
          (state[instance].pre_arm_distance_max < RANGEFINDER_PREARM_ALT_MAX_CM) &&
-         ((int16_t)state[instance].pre_arm_distance_min < (max(_ground_clearance_cm[instance],min_distance_cm(instance)) + 10)) &&
-         ((int16_t)state[instance].pre_arm_distance_min > (min(_ground_clearance_cm[instance],min_distance_cm(instance)) - 10))) {
+         ((int16_t)state[instance].pre_arm_distance_min < (max(_ground_clearance_cm[instance].get(),min_distance_cm(instance)) + 10)) &&
+         ((int16_t)state[instance].pre_arm_distance_min > (min(_ground_clearance_cm[instance].get(),min_distance_cm(instance)) - 10))) {
         state[instance].pre_arm_check = true;
     }
 }

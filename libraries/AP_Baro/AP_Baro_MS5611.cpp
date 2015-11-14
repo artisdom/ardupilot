@@ -21,7 +21,12 @@
 */
 
 #include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 #include "AP_Baro.h"
+
+#include "FreeRTOS.h"
+#include <task.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -355,13 +360,16 @@ void AP_Baro_MS56XX::_timer(void)
 
 void AP_Baro_MS56XX::update()
 {
+  //  hal.console->printf("in update\n");
     if (!_use_timer) {
         // if we're not using the timer then accumulate one more time
         // to cope with the calibration loop and minimise lag
+        // hal.console->printf("in accumulate\n");
         accumulate();
     }
 
     if (!_updated) {
+      //  hal.console->printf("didnt update ... returning\n"); 
         return;
     }
     uint32_t sD1, sD2;
@@ -369,12 +377,16 @@ void AP_Baro_MS56XX::update()
 
     // Suspend timer procs because these variables are written to
     // in "_update".
-    hal.scheduler->suspend_timer_procs();
+  //  taskENTER_CRITICAL();
+   // hal.console->printf("suspending timer procs\n"); 
+   hal.scheduler->suspend_timer_procs();
+    
     sD1 = _s_D1; _s_D1 = 0;
     sD2 = _s_D2; _s_D2 = 0;
     d1count = _d1_count; _d1_count = 0;
     d2count = _d2_count; _d2_count = 0;
     _updated = false;
+   // hal.console->printf("resuming timer procs\n"); 
     hal.scheduler->resume_timer_procs();
 
     if (d1count != 0) {
@@ -383,6 +395,7 @@ void AP_Baro_MS56XX::update()
     if (d2count != 0) {
         _D2 = ((float)sD2) / d2count;
     }
+   // hal.console->printf("calculating\n"); 
     _calculate();
 }
 
@@ -517,3 +530,5 @@ void AP_Baro_MS56XX::accumulate(void)
         _timer();
     }
 }
+
+#endif // #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN

@@ -15,6 +15,7 @@
 #define HAL_BOARD_FLYMAPLE 6
 #define HAL_BOARD_LINUX    7
 #define HAL_BOARD_VRBRAIN  8
+#define HAL_BOARD_QUAN     9
 #define HAL_BOARD_EMPTY    99
 
 // default board subtype is -1
@@ -62,6 +63,8 @@
 #define HAL_INS_LSM9DS0 11
 #define HAL_INS_RASPILOT 12
 #define HAL_INS_MPU9250_I2C 13
+#define HAL_INS_QUAN 17
+
 
 // barometer driver types
 #define HAL_BARO_BMP085     1
@@ -72,6 +75,8 @@
 #define HAL_BARO_HIL        6
 #define HAL_BARO_VRBRAIN    7
 #define HAL_BARO_MS5637_I2C 8
+#define HAL_BARO_QUAN       11
+
 
 // compass driver types
 #define HAL_COMPASS_HMC5843   1
@@ -82,8 +87,9 @@
 #define HAL_COMPASS_AK8963_I2C  6
 #define HAL_COMPASS_HMC5843_MPU6000 7
 #define HAL_COMPASS_RASPILOT  8
-#define HAL_COMPASS_AK8963_MPU9250_I2C  9
 
+#define HAL_COMPASS_AK8963_MPU9250_I2C  9
+#define HAL_COMPASS_QUAN      11
 // Heat Types
 #define HAL_LINUX_HEAT_PWM 1
 
@@ -244,6 +250,19 @@
 #define HAL_INS_DEFAULT HAL_INS_HIL
 #define HAL_BARO_DEFAULT HAL_BARO_HIL
 #define HAL_COMPASS_DEFAULT HAL_COMPASS_HIL
+#define CONFIG_HAL_BOARD_SUBTYPE HAL_BOARD_SUBTYPE_NONE
+
+#elif CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#define AP_HAL_BOARD_DRIVER AP_HAL_Quan
+#define HAL_BOARD_NAME "QUAN"
+// NB This causes issues since if its class 150 then code always assumes PX4
+// 
+#define HAL_CPU_CLASS HAL_CPU_CLASS_150
+#define HAL_STORAGE_SIZE            4096
+#define HAL_STORAGE_SIZE_AVAILABLE  HAL_STORAGE_SIZE
+#define HAL_INS_DEFAULT HAL_INS_QUAN
+#define HAL_BARO_DEFAULT HAL_BARO_QUAN
+#define HAL_COMPASS_DEFAULT HAL_COMPASS_QUAN
 #define CONFIG_HAL_BOARD_SUBTYPE HAL_BOARD_SUBTYPE_NONE
 
 #elif CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN

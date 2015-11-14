@@ -1,5 +1,8 @@
 // -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
+#ifdef min
+#undef  min
+#endif
 #include "Plane.h"
 
 /*
@@ -123,7 +126,14 @@ void Plane::stick_mix_channel(RC_Channel *channel, int16_t &servo_out)
         
     ch_inf = (float)channel->radio_in - (float)channel->radio_trim;
     ch_inf = fabsf(ch_inf);
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#ifdef min
+#undef min
+#endif
+    ch_inf = quan::min(ch_inf, 400.0f);
+#else
     ch_inf = min(ch_inf, 400.0f);
+#endif
     ch_inf = ((400.0f - ch_inf) / 400.0f);
     servo_out *= ch_inf;
     servo_out += channel->pwm_to_angle();
@@ -583,10 +593,13 @@ bool Plane::suppress_throttle(void)
     
     if (control_mode==AUTO && 
         auto_state.takeoff_complete == false) {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   using quan::max;
+#endif
 
         uint32_t launch_duration_ms = ((int32_t)g.takeoff_throttle_delay)*100 + 2000;
         if (is_flying() &&
-            millis() - started_flying_ms > max(launch_duration_ms,5000) && // been flying >5s in any mode
+            millis() - started_flying_ms > max(launch_duration_ms,5000U) && // been flying >5s in any mode
             adjusted_relative_altitude_cm() > 500 && // are >5m above AGL/home
             labs(ahrs.pitch_sensor) < 3000 && // not high pitch, which happens when held before launch
             gps_movement) { // definate gps movement

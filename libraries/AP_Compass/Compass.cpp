@@ -1,6 +1,7 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 #include <AP_HAL/AP_HAL.h>
 #include "Compass.h"
+#include "AP_Compass_Backend.h"
 #include <AP_Vehicle/AP_Vehicle.h>
 
 extern AP_HAL::HAL& hal;
@@ -50,8 +51,11 @@ const AP_Param::GroupInfo Compass::var_info[] = {
     // @Description: Enable or disable the automatic learning of compass offsets
     // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_GROUPINFO("LEARN",  3, Compass, _learn, 0),
+#else
     AP_GROUPINFO("LEARN",  3, Compass, _learn, COMPASS_LEARN_DEFAULT),
-
+#endif
     // @Param: USE
     // @DisplayName: Use compass for yaw
     // @Description: Enable or disable the use of the compass (instead of the GPS) for determining heading
@@ -64,8 +68,11 @@ const AP_Param::GroupInfo Compass::var_info[] = {
     // @Description: Enable or disable the automatic calculation of the declination based on gps location
     // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_GROUPINFO("AUTODEC",5, Compass, _auto_declination, 0),
+#else
     AP_GROUPINFO("AUTODEC",5, Compass, _auto_declination, 1),
-
+#endif
     // @Param: MOTCT
     // @DisplayName: Motor interference compensation type
     // @Description: Set motor interference compensation type to disabled, throttle or current.  Do not change manually.
@@ -97,18 +104,28 @@ const AP_Param::GroupInfo Compass::var_info[] = {
 
     // @Param: ORIENT
     // @DisplayName: Compass orientation
+
     // @Description: The orientation of the compass relative to the autopilot board. This will default to the right value for each board type, but can be changed if you have an external compass. See the documentation for your external compass for the right value. The correct orientation should give the X axis forward, the Y axis to the right and the Z axis down. So if your aircraft is pointing west it should show a positive value for the Y axis, and a value close to zero for the X axis. On a PX4 or Pixhawk with an external compass the correct value is zero if the compass is correctly oriented. NOTE: This orientation is combined with any AHRS_ORIENTATION setting.
     // @Values: 0:None,1:Yaw45,2:Yaw90,3:Yaw135,4:Yaw180,5:Yaw225,6:Yaw270,7:Yaw315,8:Roll180,9:Roll180Yaw45,10:Roll180Yaw90,11:Roll180Yaw135,12:Pitch180,13:Roll180Yaw225,14:Roll180Yaw270,15:Roll180Yaw315,16:Roll90,17:Roll90Yaw45,18:Roll90Yaw90,19:Roll90Yaw135,20:Roll270,21:Roll270Yaw45,22:Roll270Yaw90,23:Roll270Yaw136,24:Pitch90,25:Pitch270,26:Pitch180Yaw90,27:Pitch180Yaw270,28:Roll90Pitch90,29:Roll180Pitch90,30:Roll270Pitch90,31:Roll90Pitch180,32:Roll270Pitch180,33:Roll90Pitch270,34:Roll180Pitch270,35:Roll270Pitch270,36:Roll90Pitch180Yaw90,37:Roll90Yaw270,38:Yaw293Pitch68Roll90
     // @User: Advanced
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   AP_GROUPINFO("ORIENT", 8, Compass, _state[0].orientation, ROTATION_YAW_180),
+#else
     AP_GROUPINFO("ORIENT", 8, Compass, _state[0].orientation, ROTATION_NONE),
+#endif
 
     // @Param: EXTERNAL
     // @DisplayName: Compass is attached via an external cable
     // @Description: Configure compass so it is attached externally. This is auto-detected on PX4 and Pixhawk, but must be set correctly on an APM2. Set to 1 if the compass is externally connected. When externally connected the COMPASS_ORIENT option operates independently of the AHRS_ORIENTATION board orientation option
     // @Values: 0:Internal,1:External
     // @User: Advanced
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_GROUPINFO("EXTERNAL", 9, Compass, _state[0].external, 1),
+#else
     AP_GROUPINFO("EXTERNAL", 9, Compass, _state[0].external, 0),
-
+#endif
+#if COMPASS_MAX_INSTANCES > 1
     // @Param: OFS2_X
     // @DisplayName: Compass2 offsets in milligauss on the X axis
     // @Description: Offset to be added to compass2's x-axis values to compensate for metal in the frame
@@ -449,6 +466,8 @@ void Compass::_detect_backends(void)
     _add_backend(AP_Compass_PX4::detect(*this));
 #elif HAL_COMPASS_DEFAULT == HAL_COMPASS_AK8963_MPU9250
     _add_backend(AP_Compass_AK8963::detect_mpu9250(*this, 0));
+#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_QUAN
+     _add_backend(AP_Compass_Quan::detect(*this));
 #else
     #error Unrecognised HAL_COMPASS_TYPE setting
 #endif

@@ -31,7 +31,9 @@
    maximum number of GPS instances available on this platform. If more
    than 1 then redundent sensors may be available
  */
+
 #define GPS_MAX_INSTANCES 2
+
 #define GPS_RTK_INJECT_TO_ALL 127
 
 class DataFlash_Class;

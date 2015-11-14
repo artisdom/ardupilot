@@ -280,12 +280,14 @@ Vector3<T> &Vector3<T>::operator -=(const Vector3<T> &v)
 template <typename T>
 bool Vector3<T>::is_nan(void) const
 {
+    using std::isnan;
     return isnan(x) || isnan(y) || isnan(z);
 }
 
 template <typename T>
 bool Vector3<T>::is_inf(void) const
 {
+    using std::isinf;
     return isinf(x) || isinf(y) || isinf(z);
 }
 

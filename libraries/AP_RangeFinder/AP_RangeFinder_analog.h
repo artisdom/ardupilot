@@ -3,6 +3,9 @@
 #ifndef __AP_RANGEFINDER_ANALOG_H__
 #define __AP_RANGEFINDER_ANALOG_H__
 
+#include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 #include "RangeFinder.h"
 #include "RangeFinder_Backend.h"
 
@@ -24,5 +27,7 @@ private:
 
     AP_HAL::AnalogSource *source;
 };
+
+#endif //quan
 #endif // __AP_RANGEFINDER_ANALOG_H__
 

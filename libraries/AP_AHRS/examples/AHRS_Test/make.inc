@@ -28,3 +28,5 @@ LIBRARIES += GCS_MAVLink
 LIBRARIES += RC_Channel
 LIBRARIES += StorageManager
 LIBRARIES += AP_OpticalFlow
+LIBRARIES += AP_OSD
+

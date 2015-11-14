@@ -17,6 +17,8 @@
 
 #include "NavioLED.h"
 
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 #define NAVIO_LED_BRIGHT 0x0    // full brightness
 #define NAVIO_LED_MEDIUM 0x7F    // medium brightness
 #define NAVIO_LED_DIM    0x4F    // dim brightness
@@ -27,3 +29,5 @@ NavioLED::NavioLED() :
 {
 
 }
+
+#endif

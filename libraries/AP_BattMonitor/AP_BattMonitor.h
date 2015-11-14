@@ -6,9 +6,13 @@
 #include <AP_Param/AP_Param.h>
 #include <AP_Math/AP_Math.h>
 
+#include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#define AP_BATT_MONITOR_MAX_INSTANCES       1
+#else
 // maximum number of battery monitors
 #define AP_BATT_MONITOR_MAX_INSTANCES       2
-
+#endif
 // first monitor is always the primary monitor
 #define AP_BATT_PRIMARY_INSTANCE            0
 
@@ -17,6 +21,7 @@
 
 // declare backend class
 class AP_BattMonitor_Backend;
+
 class AP_BattMonitor_Analog;
 class AP_BattMonitor_SMBus;
 class AP_BattMonitor_SMBus_I2C;

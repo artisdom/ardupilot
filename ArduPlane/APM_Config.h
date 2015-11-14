@@ -8,3 +8,26 @@
 // longer valid! You should switch to using CONFIG_HAL_BOARD via the HAL_BOARD
 // flag in your local config.mk instead.
 
+#define GPS_PROTOCOL             GPS_PROTOCOL_AUTO
+#define CLI_ENABLED              ENABLED
+
+#define RANGEFINDER_ENABLED      DISABLED
+
+#define MAGNETOMETER		         ENABLED
+#define MAG_ORIENTATION	         AP_COMPASS_COMPONENTS_DOWN_PINS_FORWARD
+
+// does nothing
+#define AIRSPEED_SENSOR          ENABLED
+#define FLIGHT_MODE_CHANNEL      6
+/*
+default 
+airspeed_sensor.enabled  in AP_Airspeed.cpp
+*/
+
+#define LOGGING_ENABLED          DISABLED
+#define MOUNT                    DISABLED
+#define CAMERA                   DISABLED
+#define FRSKY_TELEM_ENABLED      DISABLED
+#define OBC_FAILSAFE             DISABLED
+#define OPTFLOW                  DISABLED
+

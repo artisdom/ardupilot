@@ -26,6 +26,18 @@
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
+// do something on osd to check its running ok
+void quan::uav::osd::on_draw() 
+{ 
+    pxp_type pos{-140,50};
+    draw_text("Quan APM Airspeed Test",pos);
+}
+
+#endif
+
+
 static AP_Vehicle::FixedWing aparm;
 
 AP_Airspeed airspeed(aparm);
@@ -33,8 +45,9 @@ AP_Airspeed airspeed(aparm);
 void setup()
 {
     hal.console->println("ArduPilot Airspeed library test");
-
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
     AP_Param::set_object_value(&airspeed, airspeed.var_info, "_PIN", 65);
+#endif
     AP_Param::set_object_value(&airspeed, airspeed.var_info, "_ENABLE", 1);
     AP_Param::set_object_value(&airspeed, airspeed.var_info, "_USE", 1);
 
@@ -44,13 +57,19 @@ void setup()
 
 void loop(void)
 {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+     hal.scheduler->delay(100);
+#else
     static uint32_t timer;
     if((hal.scheduler->millis() - timer) > 100) {
         timer = hal.scheduler->millis();
+#endif
         airspeed.read();
         hal.console->printf("airspeed %.2f healthy=%u\n", airspeed.get_airspeed(), airspeed.healthy());
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
     }
     hal.scheduler->delay(1);
+#endif
 }
 
 AP_HAL_MAIN();

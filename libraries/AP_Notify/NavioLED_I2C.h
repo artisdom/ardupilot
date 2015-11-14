@@ -19,11 +19,15 @@
 
 #include "NavioLED.h"
 
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 class NavioLED_I2C : public NavioLED
 {
 protected:
     virtual bool hw_init(void);
     virtual bool hw_set_rgb(uint8_t r, uint8_t g, uint8_t b);
 };
+
+#endif // #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 
 #endif // __TOSHIBA_LED_I2C_H__

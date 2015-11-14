@@ -88,9 +88,11 @@ void AP_Baro::calibrate()
 {
     // reset the altitude offset when we calibrate. The altitude
     // offset is supposed to be for within a flight
+   // hal.console->printf("set and save\n");
     _alt_offset.set_and_save(0);
 
     // start by assuming all sensors are calibrated (for healthy() test)
+   // hal.console->printf("num sensors = %u\n",static_cast<unsigned int>( _num_sensors));
     for (uint8_t i=0; i<_num_sensors; i++) {
         sensors[i].calibrated = true;
         sensors[i].alt_ok = true;
@@ -99,26 +101,30 @@ void AP_Baro::calibrate()
     // let the barometer settle for a full second after startup
     // the MS5611 reads quite a long way off for the first second,
     // leading to about 1m of error if we don't wait
+    hal.console->printf("health checking\n");
     for (uint8_t i = 0; i < 10; i++) {
         uint32_t tstart = hal.scheduler->millis();
         do {
+           // hal.console->printf("call update\n");
             update();
+           // hal.console->printf("update done\n");
             if (hal.scheduler->millis() - tstart > 500) {
                 hal.scheduler->panic("PANIC: AP_Baro::read unsuccessful "
                         "for more than 500ms in AP_Baro::calibrate [2]\r\n");
             }
             hal.scheduler->delay(10);
         } while (!healthy());
+       //  hal.console->printf("done do\n");
         hal.scheduler->delay(100);
     }
-
+   // hal.console->printf("health check done\n");
     // now average over 5 values for the ground pressure and
     // temperature settings
     float sum_pressure[BARO_MAX_INSTANCES] = {0};
     float sum_temperature[BARO_MAX_INSTANCES] = {0};
     uint8_t count[BARO_MAX_INSTANCES] = {0};
     const uint8_t num_samples = 5;
-
+     //hal.console->printf("averaging\n");
     for (uint8_t c = 0; c < num_samples; c++) {
         uint32_t tstart = hal.scheduler->millis();
         do {
@@ -137,6 +143,7 @@ void AP_Baro::calibrate()
         }
         hal.scheduler->delay(100);
     }
+    // hal.console->printf("set and save 2\n");
     for (uint8_t i=0; i<_num_sensors; i++) {
         if (count[i] == 0) {
             sensors[i].calibrated = false;
@@ -294,6 +301,7 @@ void AP_Baro::init(void)
     }
 #elif HAL_BARO_DEFAULT == HAL_BARO_MS5611 && HAL_BARO_MS5611_I2C_BUS == 0
     {
+       // hal.console->printf("quan baro\n");
         drivers[0] = new AP_Baro_MS5611(*this, new AP_SerialBus_I2C(hal.i2c, HAL_BARO_MS5611_I2C_ADDR), false);
         _num_drivers = 1;
     }
@@ -315,6 +323,7 @@ void AP_Baro::init(void)
         drivers[0] = new AP_Baro_MS5607(*this, new AP_SerialBus_I2C(hal.i2c1, HAL_BARO_MS5607_I2C_ADDR), true);
         _num_drivers = 1;
     }
+<<<<<<< HEAD
 #elif HAL_BARO_DEFAULT == HAL_BARO_MS5637_I2C
     {
         AP_SerialBus *bus = new AP_SerialBus_I2C(HAL_BARO_MS5611_I2C_POINTER,
@@ -323,6 +332,14 @@ void AP_Baro::init(void)
         _num_drivers = 1;
     }
 #endif
+=======
+#elif HAL_BARO_DEFAULT == HAL_BARO_QUAN
+   {
+     drivers[0] = new AP_Baro_Quan(*this);
+     _num_drivers = 1;
+   }
+#endif    
+>>>>>>> quantracker_master
     if (_num_drivers == 0 || _num_sensors == 0 || drivers[0] == NULL) {
         hal.scheduler->panic("Baro: unable to initialise driver");
     }
@@ -347,6 +364,10 @@ void AP_Baro::update(void)
         sensors[i].healthy = (now - sensors[i].last_update_ms < 500) && !is_zero(sensors[i].pressure);
     }
 
+    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    using std::isnan;
+    using std::isinf;
+    #endif
     for (uint8_t i=0; i<_num_sensors; i++) {
         if (sensors[i].healthy) {
             // update altitude calculation

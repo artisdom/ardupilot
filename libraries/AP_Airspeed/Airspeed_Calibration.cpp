@@ -131,6 +131,11 @@ void AP_Airspeed::update_calibration(const Vector3f &vground)
 
     float zratio = _calibration.update(true_airspeed, vground);
 
+    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    using std::isnan;
+    using std::isinf;
+    #endif
+
     if (isnan(zratio) || isinf(zratio)) {
         return;
     }

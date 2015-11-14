@@ -57,6 +57,8 @@ extern const AP_HAL::HAL& hal;
  #define ARSPD_DEFAULT_PIN 16
 #elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX
  #define ARSPD_DEFAULT_PIN AP_AIRSPEED_I2C_PIN
+#elif CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+ #define ARSPD_DEFAULT_PIN 2
 #else
  #define ARSPD_DEFAULT_PIN 0
 #endif
@@ -86,8 +88,17 @@ const AP_Param::GroupInfo AP_Airspeed::var_info[] = {
     // @DisplayName: Airspeed ratio
     // @Description: Airspeed calibration ratio
     // @Increment: 0.1
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    // using differential pressure in Pa
+    // V = sqrt( 2 * dP / rho) where dP is differential pressure in Pa
+    // and rho is density in kg.m[-3]
+    // rho == 1.225 kg.m[-3] at sea level and 15 c
+    // a better formula would take into account
+    // altitude and air temperature
+    AP_GROUPINFO("RATIO",  3, AP_Airspeed, _ratio, 1.633),
+#else
     AP_GROUPINFO("RATIO",  3, AP_Airspeed, _ratio, 1.9936f),
-
+#endif
     // @Param: PIN
     // @DisplayName: Airspeed pin
     // @Description: The analog pin number that the airspeed sensor is connected to. Set this to 0..9 for the APM2 analog pins. Set to 64 on an APM1 for the dedicated airspeed port on the end of the board. Set to 11 on PX4 for the analog airspeed port. Set to 15 on the Pixhawk for the analog airspeed port. Set to 65 on the PX4 or Pixhawk for an EagleTree or MEAS I2C airspeed sensor.
@@ -96,19 +107,35 @@ const AP_Param::GroupInfo AP_Airspeed::var_info[] = {
 
     // @Param: AUTOCAL
     // @DisplayName: Automatic airspeed ratio calibration
-    // @Description: If this is enabled then the APM will automatically adjust the ARSPD_RATIO during flight, based upon an estimation filter using ground speed and true airspeed. The automatic calibration will save the new ratio to EEPROM every 2 minutes if it changes by more than 5%. This option should be enabled for a calibration flight then disabled again when calibration is complete. Leaving it enabled all the time is not recommended.
+    // @Description: If this is enabled then the APM will automatically adjust the ARSPD_RATIO during flight, based upon an estimation filter using ground speed and true airspeed.
+    // The automatic calibration will save the new ratio to EEPROM every 2 minutes if it changes by more than 5%. 
+    // This option should be enabled for a calibration flight then disabled again when calibration is complete. 
+    // Leaving it enabled all the time is not recommended.
     // @User: Advanced
     AP_GROUPINFO("AUTOCAL",  5, AP_Airspeed, _autocal, 0),
 
     // @Param: TUBE_ORDER
     // @DisplayName: Control pitot tube order
-    // @Description: This parameter allows you to control whether the order in which the tubes are attached to your pitot tube matters. If you set this to 0 then the top connector on the sensor needs to be the dynamic pressure. If set to 1 then the bottom connector needs to be the dynamic pressure. If set to 2 (the default) then the airspeed driver will accept either order. The reason you may wish to specify the order is it will allow your airspeed sensor to detect if the aircraft it receiving excessive pressure on the static port, which would otherwise be seen as a positive airspeed.
+    // @Description: This parameter allows you to control whether the order in which the tubes
+    // are attached to your pitot tube matters. 
+    // If you set this to 0 then the top connector on the sensor needs to be the dynamic pressure.
+    // If set to 1 then the bottom connector needs to be the dynamic pressure. 
+    // If set to 2 (the default) then the airspeed driver will accept either order. 
+    // The reason you may wish to specify the order is it will allow your airspeed sensor to detect 
+    // if the aircraft it receiving excessive pressure on the static port, which would otherwise 
+    // be seen as a positive airspeed.
     // @User: Advanced
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   AP_GROUPINFO("TUBE_ORDER",  6, AP_Airspeed, _tube_order, 0),
+#else
     AP_GROUPINFO("TUBE_ORDER",  6, AP_Airspeed, _tube_order, 2),
-
+#endif
     // @Param: SKIP_CAL
     // @DisplayName: Skip airspeed calibration on startup
-    // @Description: This parameter allows you to skip airspeed offset calibration on startup, instead using the offset from the last calibration. This may be desirable if the offset variance between flights for your sensor is low and you want to avoid having to cover the pitot tube on each boot.
+    // @Description: This parameter allows you to skip airspeed offset calibration on startup, 
+    // instead using the offset from the last calibration. 
+    // This may be desirable if the offset variance between flights for your sensor 
+    //is low and you want to avoid having to cover the pitot tube on each boot.
     // @Values: 0:Disable,1:Enable
     // @User: Advanced
     AP_GROUPINFO("SKIP_CAL",  7, AP_Airspeed, _skip_cal, 0),
@@ -131,8 +158,12 @@ void AP_Airspeed::init()
     _last_saved_ratio = _ratio;
     _counter = 0;
     
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    m_backend.init();
+#else
     analog.init();
     digital.init();
+#endif
 }
 
 // read the airspeed sensor
@@ -146,23 +177,30 @@ float AP_Airspeed::get_pressure(void)
         return _hil_pressure;
     }
     float pressure = 0;
+ 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+     _healthy = m_backend.get_differential_pressure(pressure);
+#else
     if (_pin == AP_AIRSPEED_I2C_PIN) {
         _healthy = digital.get_differential_pressure(pressure);
     } else {
-        _healthy = analog.get_differential_pressure(pressure);
+      _healthy = analog.get_differential_pressure(pressure);
     }
+#endif
     return pressure;
 }
 
 // get a temperature reading if possible
 bool AP_Airspeed::get_temperature(float &temperature)
 {
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
     if (!_enable) {
         return false;
     }
     if (_pin == AP_AIRSPEED_I2C_PIN) {
         return digital.get_temperature(temperature);
     }
+#endif
     return false;
 }
 
@@ -221,7 +259,7 @@ void AP_Airspeed::read(void)
         airspeed_pressure = -airspeed_pressure;
         // no break
     case PITOT_TUBE_ORDER_POSITIVE:
-        if (airspeed_pressure < -32) {
+        if (airspeed_pressure < -32.f) {
             // we're reading more than about -8m/s. The user probably has
             // the ports the wrong way around
             _healthy = false;
@@ -232,7 +270,7 @@ void AP_Airspeed::read(void)
         airspeed_pressure = fabsf(airspeed_pressure);
         break;
     }
-    airspeed_pressure       = max(airspeed_pressure, 0);
+    airspeed_pressure       = max(airspeed_pressure, 0.f);
     _last_pressure          = airspeed_pressure;
     _raw_airspeed           = sqrtf(airspeed_pressure * _ratio);
     _airspeed               = 0.7f * _airspeed  +  0.3f * _raw_airspeed;

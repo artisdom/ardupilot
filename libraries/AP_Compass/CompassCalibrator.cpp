@@ -61,6 +61,9 @@
 #include "CompassCalibrator.h"
 #include <AP_HAL/AP_HAL.h>
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <quan/malloc_free.hpp>
+#endif
 extern const AP_HAL::HAL& hal;
 
 ////////////////////////////////////////////////////////////
@@ -148,6 +151,11 @@ void CompassCalibrator::update(bool &failure) {
     if(!fitting()) {
         return;
     }
+
+    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    using std::isnan;
+   // using std::isinf;
+    #endif
 
     if(_status == COMPASS_CAL_RUNNING_STEP_ONE) {
         if (_fit_step >= 10) {
@@ -246,9 +254,13 @@ bool CompassCalibrator::set_status(compass_cal_status_t status) {
             }
 
             if (_sample_buffer == NULL) {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+             _sample_buffer = (CompassSample*)quan::malloc(sizeof(CompassSample)*COMPASS_CAL_NUM_SAMPLES);
+#else
                 _sample_buffer =
                         (CompassSample*) malloc(sizeof(CompassSample) *
                                                 COMPASS_CAL_NUM_SAMPLES);
+#endif
             }
 
             if(_sample_buffer != NULL) {
@@ -303,7 +315,10 @@ bool CompassCalibrator::set_status(compass_cal_status_t status) {
             return false;
     };
 }
-
+    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    using std::isnan;
+   // using std::isinf;
+    #endif
 bool CompassCalibrator::fit_acceptable() {
     if( !isnan(_fitness) &&
         _params.radius > 150 && _params.radius < 950 && //Earth's magnetic field strength range: 250-850mG

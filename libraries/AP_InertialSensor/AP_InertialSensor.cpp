@@ -10,6 +10,10 @@
 #include <AP_Vehicle/AP_Vehicle.h>
 #include <AP_Math/AP_Math.h>
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <AP_HAL_Quan/imu_task.hpp>
+#endif
+
 /*
   enable TIMING_DEBUG to track down scheduling issues with the main
   loop. Output is on the debug console
@@ -521,6 +525,8 @@ AP_InertialSensor::detect_backends(void)
     _add_backend(AP_InertialSensor_MPU9250::detect_i2c(*this,
                                                        HAL_INS_MPU9250_I2C_POINTER,
                                                        HAL_INS_MPU9250_I2C_ADDR));
+#elif HAL_INS_DEFAULT == HAL_INS_QUAN
+     _add_backend(AP_InertialSensor_Quan::detect(*this));
 #else
     #error Unrecognised HAL_INS_TYPE setting
 #endif
@@ -563,6 +569,9 @@ bool AP_InertialSensor::calibrate_accel(AP_InertialSensor_UserInteract* interact
                                         float &trim_roll,
                                         float &trim_pitch)
 {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   using quan::min;
+#endif
     uint8_t num_accels = min(get_accel_count(), INS_MAX_INSTANCES);
     Vector3f samples[INS_MAX_INSTANCES][6];
     Vector3f new_offsets[INS_MAX_INSTANCES];
@@ -910,7 +919,7 @@ bool AP_InertialSensor::use_accel(uint8_t instance) const
 void
 AP_InertialSensor::_init_gyro()
 {
-    uint8_t num_gyros = min(get_gyro_count(), INS_MAX_INSTANCES);
+    uint8_t num_gyros = quan::min(get_gyro_count(), INS_MAX_INSTANCES);
     Vector3f last_average[INS_MAX_INSTANCES], best_avg[INS_MAX_INSTANCES];
     Vector3f new_gyro_offset[INS_MAX_INSTANCES];
     float best_diff[INS_MAX_INSTANCES];
@@ -928,7 +937,11 @@ AP_InertialSensor::_init_gyro()
     AP_Notify::flags.initialising = true;
 
     // cold start
+<<<<<<< HEAD
     hal.console->print("Init Gyro");
+=======
+    hal.console->print_P(PSTR("Init Gyro\n"));
+>>>>>>> quantracker_master
 
     /*
       we do the gyro calibration with no board rotation. This avoids
@@ -939,6 +952,8 @@ AP_InertialSensor::_init_gyro()
 
     // remove existing gyro offsets
     for (uint8_t k=0; k<num_gyros; k++) {
+       // hal.console->print("remove gyro offsets\n");
+
         _gyro_offset[k].set(Vector3f());
         new_gyro_offset[k].zero();
         best_diff[k] = 0;
@@ -947,10 +962,14 @@ AP_InertialSensor::_init_gyro()
     }
 
     for(int8_t c = 0; c < 5; c++) {
-        hal.scheduler->delay(5);
+       // hal.console->print("gyro  update loop\n");
+// Quan wait for sample ?
+       // hal.scheduler->delay(5);
+         wait_for_sample();
         update();
     }
 
+    // hal.console->print("gyro average strategy\n");
     // the strategy is to average 50 points over 0.5 seconds, then do it
     // again and see if the 2nd average is within a small margin of
     // the first
@@ -960,6 +979,7 @@ AP_InertialSensor::_init_gyro()
     // we try to get a good calibration estimate for up to 30 seconds
     // if the gyros are stable, we should get it in 1 second
     for (int16_t j = 0; j <= 30*4 && num_converged < num_gyros; j++) {
+        // hal.console->print("###---###\n");
         Vector3f gyro_sum[INS_MAX_INSTANCES], gyro_avg[INS_MAX_INSTANCES], gyro_diff[INS_MAX_INSTANCES];
         Vector3f accel_start;
         float diff_norm[INS_MAX_INSTANCES];
@@ -974,6 +994,7 @@ AP_InertialSensor::_init_gyro()
         }
         accel_start = get_accel(0);
         for (i=0; i<50; i++) {
+// Quan wait for sample ?
             update();
             for (uint8_t k=0; k<num_gyros; k++) {
                 gyro_sum[k] += get_gyro(k);
@@ -1348,6 +1369,31 @@ void AP_InertialSensor::wait_for_sample(void)
         return;
     }
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    
+    // block up to 1 sample period
+    // if no sample then report, which should nt happen when running
+    // so should prob be a panic
+    // actually seems too short for tests where there is no other
+    
+    bool s = Quan::wait_for_imu_sample( 22000);
+ 
+    uint32_t now = hal.scheduler->micros();
+    if (!s ){
+      hal.console->printf("#-#\n");
+    }
+
+    if (_hil_mode && _hil.delta_time > 0) {
+        _delta_time = _hil.delta_time;
+        _hil.delta_time = 0;
+    }else{
+        _delta_time = (now - _last_sample_usec) * 1.0e-6f;
+    }
+    _last_sample_usec = now;
+    _next_sample_usec = now + _sample_period_usec;
+   // hal.console->printf("AP_INS [4]\n");
+#else
+
     uint32_t now = hal.scheduler->micros();
 
     if (_next_sample_usec == 0 && _delta_time <= 0) {
@@ -1361,6 +1407,7 @@ void AP_InertialSensor::wait_for_sample(void)
     if (_next_sample_usec - now <=_sample_period_usec) {
         // we're ahead on time, schedule next sample at expected period
         uint32_t wait_usec = _next_sample_usec - now;
+// 
         hal.scheduler->delay_microseconds_boost(wait_usec);
         uint32_t now2 = hal.scheduler->micros();
         if (now2+100 < _next_sample_usec) {
@@ -1428,6 +1475,8 @@ check_sample:
     }
 #endif
 
+#endif
+//hal.console->printf("AP_INS [5]\n");
     _have_sample = true;
 }
 

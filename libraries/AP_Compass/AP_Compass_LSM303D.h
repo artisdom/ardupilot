@@ -3,6 +3,7 @@
 
 #include <AP_Common/AP_Common.h>
 #include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 #include <AP_Math/AP_Math.h>
 
 #include "Compass.h"
@@ -56,3 +57,5 @@ public:
     // detect the sensor
     static AP_Compass_Backend *detect_spi(Compass &compass);
 };
+
+#endif

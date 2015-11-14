@@ -25,6 +25,7 @@
 
 #include <AP_Math/AP_Math.h>
 #include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 
 #include "AP_Compass_HMC5843.h"
 #include <AP_InertialSensor/AP_InertialSensor.h>
@@ -243,8 +244,25 @@ bool AP_Compass_HMC5843::re_initialise()
 
 bool AP_Compass_HMC5843::_detect_version()
 {
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    // AirOSD dev board needs time to warm up
+    // possibly since Mag is on 5V but board can start at 2V
+    // and PSU needs time to get to 5V
+    bool once = false;
+    uint32_t now_ms = hal.scheduler->millis();
+    if( now_ms < 200){
+      if ( ! once){
+         once = true;
+         hal.console->printf("HMC5843 Compass warming up\n");
+      }
+      hal.scheduler->delay(200 - now_ms);
+    }
+
+#endif
     _base_config = 0x0;
 
+    
     if (!write_register(ConfigRegA, SampleAveraging_8<<5 | DataOutputRate_75HZ<<2 | NormalOperation) ||
         !read_register(ConfigRegA, &_base_config)) {
         return false;
@@ -569,3 +587,6 @@ bool AP_HMC5843_SerialBus_MPU6000::start_measurements()
 
     return true;
 }
+
+#endif // #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+

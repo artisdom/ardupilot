@@ -36,6 +36,7 @@
   often they should be called (in 20ms units) and the maximum time
   they are expected to take (in microseconds)
  */
+
 const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(read_radio,              1,    700),
     SCHED_TASK(check_short_failsafe,    1,   1000),
@@ -44,36 +45,41 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(update_flight_mode,      1,   1400),
     SCHED_TASK(stabilize,               1,   3500),
     SCHED_TASK(set_servos,              1,   1600),
+
     SCHED_TASK(read_control_switch,     7,   1000),
     SCHED_TASK(gcs_retry_deferred,      1,   1000),
+
     SCHED_TASK(update_GPS_50Hz,         1,   2500),
     SCHED_TASK(update_GPS_10Hz,         5,   2500),
+
     SCHED_TASK(navigate,                5,   3000),
     SCHED_TASK(update_compass,          5,   1200),
     SCHED_TASK(read_airspeed,           5,   1200),
     SCHED_TASK(update_alt,              5,   3400),
+///----------------------------------------
     SCHED_TASK(adjust_altitude_target,  5,   1000),
     SCHED_TASK(obc_fs_check,            5,   1000),
     SCHED_TASK(gcs_update,              1,   1700),
     SCHED_TASK(gcs_data_stream_send,    1,   3000),
     SCHED_TASK(update_events,           1,   1500),
-    SCHED_TASK(check_usb_mux,           5,    300),
+  //  SCHED_TASK(check_usb_mux,           5,    300),
     SCHED_TASK(read_battery,            5,   1000),
     SCHED_TASK(compass_accumulate,      1,   1500),
     SCHED_TASK(barometer_accumulate,    1,    900),
     SCHED_TASK(update_notify,           1,    300),
-    SCHED_TASK(read_rangefinder,        1,    500),
+  //  SCHED_TASK(read_rangefinder,        1,    500),
     SCHED_TASK(compass_cal_update,      1,    100),
 #if OPTFLOW == ENABLED
+#error dont want optflow
     SCHED_TASK(update_optical_flow,     1,    500),
 #endif
     SCHED_TASK(one_second_loop,        50,   1000),
     SCHED_TASK(check_long_failsafe,    15,   1000),
     SCHED_TASK(read_receiver_rssi,      5,   1000),
-    SCHED_TASK(rpm_update,              5,    200),
+ //   SCHED_TASK(rpm_update,              5,    200),
     SCHED_TASK(airspeed_ratio_update,  50,   1000),
     SCHED_TASK(update_mount,            1,   1500),
-    SCHED_TASK(log_perf_info,         500,   1000),
+  //  SCHED_TASK(log_perf_info,         500,   1000),
     SCHED_TASK(compass_save,         3000,   2500),
     SCHED_TASK(update_logging1,         5,   1700),
     SCHED_TASK(update_logging2,         5,   1700),
@@ -86,8 +92,12 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(dataflash_periodic,      1,    300),
 };
 
+// called at start of apm task so task has started
 void Plane::setup() 
 {
+
+    AP_OSD::enqueue::initialise();
+
     cliSerial = hal.console;
 
     // load the default values of variables listed in var_info[]
@@ -107,9 +117,10 @@ void Plane::setup()
 
 void Plane::loop()
 {
+    
     // wait for an INS sample
     ins.wait_for_sample();
-
+   
     uint32_t timer = micros();
 
     delta_us_fast_loop  = timer - fast_loopTimer_us;
@@ -155,6 +166,9 @@ void Plane::ahrs_update()
 #endif
 
     ahrs.update();
+   #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   AP_OSD::enqueue::attitude({ToDeg(ahrs.pitch),ToDeg(ahrs.roll),ToDeg(ahrs.yaw)});
+   #endif
 
     if (should_log(MASK_LOG_ATTITUDE_FAST)) {
         Log_Write_Attitude();
@@ -421,6 +435,21 @@ void Plane::update_GPS_10Hz(void)
 {
     // get position from AHRS
     have_position = ahrs.get_position(current_loc);
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
+    AP_OSD::gps_info_t gps_info;
+    gps_info.ground_speed_m_per_s   = gps.ground_speed();
+    gps_info.ground_course_cd       = gps.ground_course_cd();
+    gps_info.num_sats               = gps.num_sats();
+    gps_info.status                 = gps.status();
+
+    AP_OSD::enqueue::gps_status(gps_info);
+    if ( have_position){
+      AP_OSD::enqueue::gps_location({gps.location().lat,gps.location().lng,gps.location().alt});
+    }
+
+#endif
 
     static uint32_t last_gps_msg_ms;
     if (gps.last_message_time_ms() != last_gps_msg_ms && gps.status() >= AP_GPS::GPS_OK_FIX_3D) {
@@ -904,4 +933,29 @@ void Plane::update_optical_flow(void)
 }
 #endif
 
+//<<<<<<< HEAD
 AP_HAL_MAIN_CALLBACKS(&plane);
+//=======
+///*
+//  compatibility with old pde style build
+// */
+//// for HAL_BOARD_QUAN will prob put in a task
+////#if  CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+//void setup(void);
+//void loop(void);
+//
+//void setup(void)
+//{
+//    plane.setup();
+//   // hal.console->printf("setup done\n");
+//}
+//void loop(void)
+//{
+//   // hal.console->printf("loop\n");
+//    plane.loop();
+//}
+//
+//AP_HAL_MAIN();
+//
+////#endif  // CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+//>>>>>>> quantracker_master

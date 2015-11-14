@@ -692,7 +692,11 @@ bool Plane::verify_loiter_to_alt()
 bool Plane::verify_RTL()
 {
     update_loiter();
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   if (auto_state.wp_distance <= (uint32_t)quan::max(static_cast<uint32_t>(g.waypoint_radius),0U) ||
+#else
 	if (auto_state.wp_distance <= (uint32_t)max(g.waypoint_radius,0) || 
+#endif
         nav_controller->reached_loiter_target()) {
 			gcs_send_text(MAV_SEVERITY_INFO,"Reached home");
 			return true;
@@ -826,7 +830,11 @@ bool Plane::verify_change_alt()
 
 bool Plane::verify_within_distance()
 {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    if (auto_state.wp_distance < quan::max(condition_value,0)) {
+#else
     if (auto_state.wp_distance < max(condition_value,0)) {
+#endif
         condition_value = 0;
         return true;
     }
@@ -875,6 +883,10 @@ void Plane::do_set_home(const AP_Mission::Mission_Command& cmd)
         init_home();
     } else {
         ahrs.set_home(cmd.content.location);
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::home_location({cmd.content.location.lat,cmd.content.location.lng,cmd.content.location.alt});
+#endif
         home_is_set = HOME_SET_NOT_LOCKED;
         Log_Write_Home_And_Origin();
         GCS_MAVLINK::send_home_all(cmd.content.location);

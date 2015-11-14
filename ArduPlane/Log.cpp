@@ -4,6 +4,7 @@
 
 #if LOGGING_ENABLED == ENABLED
 
+
 #if CLI_ENABLED == ENABLED
 // Code to Write and Read packets from DataFlash.log memory
 // Code to interact with the user to dump or erase logs
@@ -365,7 +366,7 @@ void Plane::Log_Write_Sonar()
     DataFlash.WriteBlock(&pkt, sizeof(pkt));
 
     DataFlash.Log_Write_RFND(rangefinder);
-#endif
+#endif  //RANGEFINDER_ENABLED == ENABLED
 }
 
 struct PACKED log_Optflow {
@@ -399,7 +400,7 @@ void Plane::Log_Write_Optflow()
     };
     DataFlash.WriteBlock(&pkt, sizeof(pkt));
 }
-#endif
+#endif //OPTFLOW == ENABLED
 
 struct PACKED log_Arm_Disarm {
     LOG_PACKET_HEADER;
@@ -465,7 +466,7 @@ void Plane::Log_Write_Home_And_Origin()
     if (ahrs.get_NavEKF_const().getOriginLLH(ekf_orig)) {
         DataFlash.Log_Write_Origin(LogOriginType::ekf_origin, ekf_orig);
     }
-#endif
+#endif // AP_AHRS_NAVEKF_AVAILABLE
 
     // log ahrs home if set
     if (home_is_set != HOME_UNSET) {
@@ -553,7 +554,7 @@ void Plane::log_init(void)
     arming.set_logging_available(DataFlash.CardInserted());
 }
 
-#else // LOGGING_ENABLED
+#else // LOGGING_ENABLED == false
 
  #if CLI_ENABLED == ENABLED
 bool Plane::print_log_menu(void) { return true; }
@@ -566,7 +567,7 @@ int8_t Plane::process_logs(uint8_t argc, const Menu::arg *argv) { return 0; }
 void Plane::do_erase_logs(void) {}
 void Plane::Log_Write_Attitude(void) {}
 void Plane::Log_Write_Performance() {}
-void Plane::Log_Write_Startup(uint8_t type) {}
+bool Plane::Log_Write_Startup(uint8_t type) { return false;}
 void Plane::Log_Write_Control_Tuning() {}
 void Plane::Log_Write_TECS_Tuning(void) {}
 void Plane::Log_Write_Nav_Tuning() {}

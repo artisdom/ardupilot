@@ -20,6 +20,9 @@
  */
 
 #include <AP_HAL/AP_HAL.h>
+
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
 #include <AP_Common/AP_Common.h>
 #include <AP_Math/AP_Math.h>
 #include "RangeFinder.h"
@@ -85,6 +88,8 @@ void AP_RangeFinder_analog::update_voltage(void)
  */
 void AP_RangeFinder_analog::update(void)
 {
+
+
     update_voltage();
     float v = state.voltage_mv * 0.001f;
     float dist_m = 0;
@@ -107,6 +112,11 @@ void AP_RangeFinder_analog::update(void)
             dist_m = 0;
         }
         dist_m = scaling / (v - offset);
+
+    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   // using std::isnan;
+    using std::isinf;
+    #endif
         if (isinf(dist_m) || dist_m > max_distance_cm * 0.01f) {
             dist_m = max_distance_cm * 0.01f;
         }
@@ -120,4 +130,7 @@ void AP_RangeFinder_analog::update(void)
     // update range_valid state based on distance measured
     update_status();
 }
+
+#endif
+
 

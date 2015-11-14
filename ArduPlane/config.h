@@ -1,3 +1,5 @@
+
+
 // -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 //
 //////////////////////////////////////////////////////////////////////////////
@@ -27,6 +29,7 @@
 /// change in your local copy of APM_Config.h.
 ///
 #ifdef USE_CMAKE_APM_CONFIG
+#error "Dont use this!"
  #include "APM_Config_cmake.h" // <== Prefer cmake config if it exists
 #else
  #include "APM_Config.h" // <== THIS INCLUDE, DO NOT EDIT IT. EVER.
@@ -78,7 +81,15 @@
 #endif
 #endif
 
-#define RANGEFINDER_ENABLED ENABLED
+
+#ifndef RANGEFINDER_ENABLED
+#if HAL_CPU_CLASS > HAL_CPU_CLASS_16
+# define RANGEFINDER_ENABLED ENABLED
+#else
+# define RANGEFINDER_ENABLED DISABLED
+#endif
+#endif
+
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////

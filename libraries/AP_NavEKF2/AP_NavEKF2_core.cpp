@@ -411,10 +411,200 @@ void NavEKF2_core::UpdateFilter(bool predict)
     calcOutputStatesFast();
 
     // stop the timer used for load measurement
+<<<<<<< HEAD
     hal.util->perf_end(_perf_UpdateFilter);
 #if EK2_DISABLE_INTERRUPTS
     irqrestore(istate);
 #endif
+=======
+    perf_end(_perf_UpdateFilter);
+}
+
+// select fusion of velocity, position and height measurements
+void NavEKF2_core::SelectVelPosFusion()
+{
+    // check for and read new GPS data
+    readGpsData();
+
+    if (RecallGPS() && PV_AidingMode != AID_RELATIVE) {
+        fuseVelData = true;
+        fusePosData = true;
+    } else {
+        fuseVelData = false;
+        fusePosData = false;
+    }
+
+    // check for and read new height data
+    readHgtData();
+
+    // If we haven't received height data for a while, then declare the height data as being timed out
+    // set timeout period based on whether we have vertical GPS velocity available to constrain drift
+    hgtRetryTime_ms = (useGpsVertVel && !velTimeout) ? frontend.hgtRetryTimeMode0_ms : frontend.hgtRetryTimeMode12_ms;
+    if (imuSampleTime_ms - lastHgtReceived_ms > hgtRetryTime_ms) {
+        hgtTimeout = true;
+    }
+
+    // command fusion of height data
+    // wait until the EKF time horizon catches up with the measurement
+    if (RecallBaro()) {
+        // enable fusion
+        fuseHgtData = true;
+    }
+
+    // perform fusion
+    if (fuseVelData || fusePosData || fuseHgtData) {
+        // ensure that the covariance prediction is up to date before fusing data
+        if (!covPredStep) CovariancePrediction();
+        FuseVelPosNED();
+    }
+}
+
+// select fusion of magnetometer data
+void NavEKF2_core::SelectMagFusion()
+{
+    // start performance timer
+    perf_begin(_perf_FuseMagnetometer);
+
+    // check for and read new magnetometer measurements
+    readMagData();
+
+    // If we are using the compass and the magnetometer has been unhealthy for too long we declare a timeout
+    if (magHealth) {
+        magTimeout = false;
+        lastHealthyMagTime_ms = imuSampleTime_ms;
+    } else if ((imuSampleTime_ms - lastHealthyMagTime_ms) > frontend.magFailTimeLimit_ms && use_compass()) {
+        magTimeout = true;
+    }
+
+    bool temp = RecallMag();
+
+    // determine if conditions are right to start a new fusion cycle
+    // wait until the EKF time horizon catches up with the measurement
+    bool dataReady = (temp && statesInitialised && use_compass() && yawAlignComplete);
+    if (dataReady) {
+        // ensure that the covariance prediction is up to date before fusing data
+        if (!covPredStep) CovariancePrediction();
+        // If we haven't performed the first airborne magnetic field update or have inhibited magnetic field learning, then we use the simple method of declination to maintain heading
+        if(inhibitMagStates) {
+            fuseCompass();
+            magHealth = true;
+            magTimeout = false;
+        } else {
+            // fuse the three magnetometer componenents sequentially
+            for (mag_state.obsIndex = 0; mag_state.obsIndex <= 2; mag_state.obsIndex++) FuseMagnetometer();
+        }
+    }
+
+    // stop performance timer
+    perf_end(_perf_FuseMagnetometer);
+}
+
+// select fusion of true airspeed measurements
+void NavEKF2_core::SelectTasFusion()
+{
+    // get true airspeed measurement
+    readAirSpdData();
+
+    // If we haven't received airspeed data for a while, then declare the airspeed data as being timed out
+    if (imuSampleTime_ms - tasDataNew.time_ms > frontend.tasRetryTime_ms) {
+        tasTimeout = true;
+    }
+
+    // if the filter is initialised, wind states are not inhibited and we have data to fuse, then perform TAS fusion
+    tasDataWaiting = (statesInitialised && !inhibitWindStates && newDataTas);
+    if (tasDataWaiting)
+    {
+        // ensure that the covariance prediction is up to date before fusing data
+        if (!covPredStep) CovariancePrediction();
+        FuseAirspeed();
+        prevTasStep_ms = imuSampleTime_ms;
+        tasDataWaiting = false;
+        newDataTas = false;
+    }
+}
+
+// select fusion of synthetic sideslip measurements
+// synthetic sidelip fusion only works for fixed wing aircraft and relies on the average sideslip being close to zero
+// it requires a stable wind for best results and should not be used for aerobatic flight with manoeuvres that induce large sidslip angles (eg knife-edge, spins, etc)
+void NavEKF2_core::SelectBetaFusion()
+{
+    // set true when the fusion time interval has triggered
+    bool f_timeTrigger = ((imuSampleTime_ms - prevBetaStep_ms) >= frontend.betaAvg_ms);
+    // set true when use of synthetic sideslip fusion is necessary because we have limited sensor data or are dead reckoning position
+    bool f_required = !(use_compass() && useAirspeed() && ((imuSampleTime_ms - lastPosPassTime_ms) < frontend.gpsRetryTimeNoTAS_ms));
+    // set true when sideslip fusion is feasible (requires zero sideslip assumption to be valid and use of wind states)
+    bool f_feasible = (assume_zero_sideslip() && !inhibitWindStates);
+    // use synthetic sideslip fusion if feasible, required and enough time has lapsed since the last fusion
+    if (f_feasible && f_required && f_timeTrigger) {
+        // ensure that the covariance prediction is up to date before fusing data
+        if (!covPredStep) CovariancePrediction();
+        FuseSideslip();
+        prevBetaStep_ms = imuSampleTime_ms;
+    }
+}
+
+// select fusion of optical flow measurements
+void NavEKF2_core::SelectFlowFusion()
+{
+    // start performance timer
+    perf_begin(_perf_FuseOptFlow);
+    // Perform Data Checks
+    // Check if the optical flow data is still valid
+    flowDataValid = ((imuSampleTime_ms - flowValidMeaTime_ms) < 1000);
+    // Check if the optical flow sensor has timed out
+    bool flowSensorTimeout = ((imuSampleTime_ms - flowValidMeaTime_ms) > 5000);
+    // Check if the fusion has timed out (flow measurements have been rejected for too long)
+    bool flowFusionTimeout = ((imuSampleTime_ms - prevFlowFuseTime_ms) > 5000);
+    // check is the terrain offset estimate is still valid
+    gndOffsetValid = ((imuSampleTime_ms - gndHgtValidTime_ms) < 5000);
+    // Perform tilt check
+    bool tiltOK = (Tnb_flow.c.z > frontend.DCM33FlowMin);
+    // Constrain measurements to zero if we are using optical flow and are on the ground
+    if (frontend._fusionModeGPS == 3 && !takeOffDetected && filterArmed) {
+        ofDataDelayed.flowRadXYcomp.zero();
+        ofDataDelayed.flowRadXY.zero();
+        flowDataValid = true;
+    }
+    // If the flow measurements have been rejected for too long and we are relying on them, then revert to constant position mode
+    if ((flowSensorTimeout || flowFusionTimeout) && PV_AidingMode == AID_RELATIVE) {
+        PV_AidingMode = AID_NONE;
+        // reset the velocity
+        ResetVelocity();
+        // store the current position to be used to as a sythetic position measurement
+        lastKnownPositionNE.x = stateStruct.position.x;
+        lastKnownPositionNE.y = stateStruct.position.y;
+        // reset the position
+        ResetPosition();
+    }
+    // if we do have valid flow measurements, fuse data into a 1-state EKF to estimate terrain height
+    // we don't do terrain height estimation in optical flow only mode as the ground becomes our zero height reference
+    if ((newDataFlow || newDataRng) && tiltOK) {
+        // fuse range data into the terrain estimator if available
+        fuseRngData = newDataRng;
+        // fuse optical flow data into the terrain estimator if available and if there is no range data (range data is better)
+        fuseOptFlowData = (newDataFlow && !fuseRngData);
+        // Estimate the terrain offset (runs a one state EKF)
+        EstimateTerrainOffset();
+        // Indicate we have used the range data
+        newDataRng = false;
+    }
+
+    // Fuse optical flow data into the main filter if not excessively tilted and we are in the correct mode
+    if (newDataFlow && tiltOK && PV_AidingMode == AID_RELATIVE)
+    {
+        // Set the flow noise used by the fusion processes
+        R_LOS = sq(max(frontend._flowNoise.get(), 0.05f));
+        // ensure that the covariance prediction is up to date before fusing data
+        if (!covPredStep) CovariancePrediction();
+        // Fuse the optical flow X and Y axis data into the main filter sequentially
+        FuseOptFlow();
+        // reset flag to indicate that no new flow data is available for fusion
+        newDataFlow = false;
+    }
+
+    // stop the performance timer
+    perf_end(_perf_FuseOptFlow);
+>>>>>>> quantracker_master
 }
 
 /*

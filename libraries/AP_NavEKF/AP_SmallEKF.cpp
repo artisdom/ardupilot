@@ -107,12 +107,17 @@ void SmallEKF::RunEKF(float delta_time, const Vector3f &delta_angles, const Vect
     }
     
 }
+namespace{
+
+    Vector3f gimDelAngCorrected;
+    Vector3f gimDelAngPrev;
+}
 
 // state prediction
 void SmallEKF::predictStates()
 {
-    static Vector3f gimDelAngCorrected;
-    static Vector3f gimDelAngPrev;
+//    static Vector3f gimDelAngCorrected;
+//    static Vector3f gimDelAngPrev;
 
     // NED gravity vector m/s^2
     const Vector3f gravityNED(0, 0, GRAVITY_MSS);

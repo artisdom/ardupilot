@@ -22,7 +22,9 @@
 #include <AP_Math/AP_Math.h>
 #include "Filter.h"
 #include "DerivativeFilter.h"
-
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <cmath>
+#endif
 
 template <class T,  uint8_t FILTER_SIZE>
 void DerivativeFilter<T,FILTER_SIZE>::update(T sample, uint32_t timestamp)
@@ -100,7 +102,10 @@ float DerivativeFilter<T,FILTER_SIZE>::slope(void)
         result = 0;
         break;
     }
-
+    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    using std::isnan;
+    using std::isinf;
+    #endif
     // cope with numerical errors
     if (isnan(result) || isinf(result)) {
         result = 0;

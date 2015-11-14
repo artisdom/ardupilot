@@ -61,6 +61,15 @@
  # define HAL_GPIO_C_LED_PIN        27
  # define HAL_GPIO_LED_ON           HIGH
  # define HAL_GPIO_LED_OFF          LOW
+#elif CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+// heartbeat led PB12 pin 33
+ # define HAL_GPIO_A_LED_PIN        1
+//  PC14
+ # define HAL_GPIO_B_LED_PIN        2
+//  PC15
+ # define HAL_GPIO_C_LED_PIN        3
+ # define HAL_GPIO_LED_ON           HIGH
+ # define HAL_GPIO_LED_OFF          LOW
 #else
 #error "Unknown board type in AP_Notify"
 #endif

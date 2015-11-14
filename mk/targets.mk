@@ -61,9 +61,15 @@ bbbmini: HAL_BOARD = HAL_BOARD_LINUX
 bbbmini: TOOLCHAIN = BBONE
 bbbmini: all
 
+quan: HAL_BOARD = HAL_BOARD_QUAN
+quan: TOOLCHAIN = QUAN_ARM
+quan: all
+
 empty: HAL_BOARD = HAL_BOARD_EMPTY
 empty: TOOLCHAIN = AVR
 empty: all
+
+
 
 # cope with HIL targets
 %-hil: EXTRAFLAGS += "-DHIL_MODE=HIL_MODE_SENSORS "

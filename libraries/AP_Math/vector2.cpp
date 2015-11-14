@@ -66,12 +66,14 @@ Vector2<T> &Vector2<T>::operator -=(const Vector2<T> &v)
 template <typename T>
 bool Vector2<T>::is_nan(void) const
 {
+    using std::isnan;
     return isnan(x) || isnan(y);
 }
 
 template <typename T>
 bool Vector2<T>::is_inf(void) const
 {
+    using std::isinf;
     return isinf(x) || isinf(y);
 }
 
