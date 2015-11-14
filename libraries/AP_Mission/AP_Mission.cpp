@@ -6,7 +6,7 @@
 #include "AP_Mission.h"
 #include <AP_Terrain/AP_Terrain.h>
 
-const AP_Param::GroupInfo AP_Mission::var_info[] PROGMEM = {
+const AP_Param::GroupInfo AP_Mission::var_info[] = {
 
     // @Param: TOTAL
     // @DisplayName: Total mission commands
@@ -43,7 +43,7 @@ void AP_Mission::init()
 
     // prevent an easy programming error, this will be optimised out
     if (sizeof(union Content) != 12) {
-        hal.scheduler->panic(PSTR("AP_Mission Content must be 12 bytes"));
+        hal.scheduler->panic("AP_Mission Content must be 12 bytes");
     }
 
     _last_change_time_ms = hal.scheduler->millis();
@@ -722,6 +722,9 @@ bool AP_Mission::mavlink_to_mission_cmd(const mavlink_mission_item_t& packet, AP
             if (fabsf(packet.x) > 90.0f || fabsf(packet.y) > 180.0f) {
                 return false;
             }
+        }
+        if (fabsf(packet.z) >= LOCATION_ALT_MAX_M) {
+            return false;
         }
 
         switch (packet.frame) {

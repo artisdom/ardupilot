@@ -60,11 +60,6 @@
 
 #define MAGNETOMETER ENABLED
 
-// low power cpus are not supported
-#if HAL_CPU_CLASS < HAL_CPU_CLASS_75
- # error ArduCopter ver3.3 and higher is not supported on APM1, APM2 boards
-#endif
-
 // run at 400Hz on all systems
 # define MAIN_LOOP_RATE    400
 # define MAIN_LOOP_SECONDS 0.0025f
@@ -122,8 +117,6 @@
   # define RATE_YAW_IMAX                        4500
   # define RATE_YAW_FF                          0.02
   # define RATE_YAW_FILT_HZ                     20.0f
-  # define HELI_STAB_COLLECTIVE_MIN_DEFAULT     0
-  # define HELI_STAB_COLLECTIVE_MAX_DEFAULT     1000
   # define THR_MIN_DEFAULT                      0
   # define AUTOTUNE_ENABLED                     DISABLED
 #endif
@@ -743,6 +736,13 @@
 
 #ifndef AC_RALLY
  #define AC_RALLY   ENABLED
+#endif
+
+#ifndef AC_TERRAIN
+ #define AC_TERRAIN ENABLED
+ #if !AC_RALLY
+  #error Terrain relies on Rally which is disabled
+ #endif
 #endif
 
 //////////////////////////////////////////////////////////////////////////////

@@ -102,7 +102,7 @@ bool AP_InertialSensor_Flymaple::_init_sensor(void)
     uint8_t data;
     hal.i2c->readRegister(FLYMAPLE_ACCELEROMETER_ADDRESS, FLYMAPLE_ACCELEROMETER_ADXLREG_DEVID, &data);
     if (data != FLYMAPLE_ACCELEROMETER_XL345_DEVID)
-        hal.scheduler->panic(PSTR("AP_InertialSensor_Flymaple: could not find ADXL345 accelerometer sensor"));
+        hal.scheduler->panic("AP_InertialSensor_Flymaple: could not find ADXL345 accelerometer sensor");
     hal.i2c->writeRegister(FLYMAPLE_ACCELEROMETER_ADDRESS, FLYMAPLE_ACCELEROMETER_ADXLREG_POWER_CTL, 0x00);
     hal.scheduler->delay(5);
     hal.i2c->writeRegister(FLYMAPLE_ACCELEROMETER_ADDRESS, FLYMAPLE_ACCELEROMETER_ADXLREG_POWER_CTL, 0xff);
@@ -124,7 +124,7 @@ bool AP_InertialSensor_Flymaple::_init_sensor(void)
     // Expect to read the same as the Gyro I2C adress:
     hal.i2c->readRegister(FLYMAPLE_GYRO_ADDRESS, FLYMAPLE_GYRO_WHO_AM_I, &data);
     if (data != FLYMAPLE_GYRO_ADDRESS)
-        hal.scheduler->panic(PSTR("AP_InertialSensor_Flymaple: could not find ITG-3200 accelerometer sensor"));
+        hal.scheduler->panic("AP_InertialSensor_Flymaple: could not find ITG-3200 accelerometer sensor");
     hal.i2c->writeRegister(FLYMAPLE_GYRO_ADDRESS, FLYMAPLE_GYRO_PWR_MGM, 0x00);
     hal.scheduler->delay(1);
     // Sample rate divider: with 8kHz internal clock (see FLYMAPLE_GYRO_DLPF_FS), 
@@ -245,6 +245,7 @@ void AP_InertialSensor_Flymaple::_accumulate(void)
         // Adjust for chip scaling to get radians/sec
         gyro *= FLYMAPLE_GYRO_SCALE_R_S;
         _rotate_and_correct_gyro(_gyro_instance, gyro);
+        _notify_new_gyro_raw_sample(_gyro_instance, gyro);
         _gyro_filtered = _gyro_filter.apply(gyro);
         _have_gyro_sample = true;
         _last_gyro_timestamp = now;

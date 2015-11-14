@@ -15,16 +15,11 @@
  */
 
 #include <AP_Common/AP_Common.h>
-#include <AP_Progmem/AP_Progmem.h>
 #include <AP_Param/AP_Param.h>
 #include <StorageManager/StorageManager.h>
 #include <fenv.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_HAL/AP_HAL.h>
-#include <AP_HAL_AVR/AP_HAL_AVR.h>
-#include <AP_HAL_SITL/AP_HAL_SITL.h>
-#include <AP_HAL_Linux/AP_HAL_Linux.h>
-#include <AP_HAL_Empty/AP_HAL_Empty.h>
 #include <AP_ADC/AP_ADC.h>
 #include <AP_Declination/AP_Declination.h>
 #include <AP_ADC_AnalogSource/AP_ADC_AnalogSource.h>
@@ -37,7 +32,6 @@
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include <AP_GPS/AP_GPS.h>
 #include <AP_AHRS/AP_AHRS.h>
-#include <SITL/SITL.h>
 #include <AP_Compass/AP_Compass.h>
 #include <AP_Baro/AP_Baro.h>
 #include <AP_InertialSensor/AP_InertialSensor.h>
@@ -70,9 +64,13 @@
 #include "LogReader.h"
 #include "DataFlashFileReader.h"
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+#include <SITL/SITL.h>
+#endif
+
 #define streq(x, y) (!strcmp(x, y))
 
-const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 class ReplayVehicle {
 public:
@@ -91,7 +89,7 @@ public:
     AP_InertialNav_NavEKF inertial_nav{ahrs};
     AP_Vehicle::FixedWing aparm;
     AP_Airspeed airspeed{aparm};
-    DataFlash_Class dataflash{PSTR("Replay v0.1")};
+    DataFlash_Class dataflash{"Replay v0.1"};
 
 private:
     Parameters g;
@@ -108,7 +106,7 @@ ReplayVehicle replayvehicle;
 #define GOBJECT(v, name, class) { AP_PARAM_GROUP, name, Parameters::k_param_ ## v, &replayvehicle.v, {group_info : class::var_info} }
 #define GOBJECTN(v, pname, name, class) { AP_PARAM_GROUP, name, Parameters::k_param_ ## pname, &replayvehicle.v, {group_info : class::var_info} }
 
-const AP_Param::Info ReplayVehicle::var_info[] PROGMEM = {
+const AP_Param::Info ReplayVehicle::var_info[] = {
     GSCALAR(dummy,         "_DUMMY", 0),
 
     // barometer ground calibration. The GND_ prefix is chosen for
@@ -148,7 +146,7 @@ const AP_Param::Info ReplayVehicle::var_info[] PROGMEM = {
 void ReplayVehicle::load_parameters(void)
 {
     if (!AP_Param::check_var_info()) {
-        hal.scheduler->panic(PSTR("Bad parameter table"));
+        hal.scheduler->panic("Bad parameter table");
     }
 }
 
@@ -174,7 +172,7 @@ enum {
     LOG_CHEK_MSG=100
 };
 
-static const struct LogStructure log_structure[] PROGMEM = {
+static const struct LogStructure log_structure[] = {
     LOG_COMMON_STRUCTURES,
     { LOG_CHEK_MSG, sizeof(log_Chek),
       "CHEK", "QccCLLffff",  "TimeUS,Roll,Pitch,Yaw,Lat,Lng,Alt,VN,VE,VD" }
@@ -206,14 +204,15 @@ void ReplayVehicle::setup(void)
     ins.set_hil_mode();
 }
 
-class Replay {
+class Replay : public AP_HAL::HAL::Callbacks {
 public:
-    void setup();
-    void loop();
-
     Replay(ReplayVehicle &vehicle) :
         filename("log.bin"),
         _vehicle(vehicle) { }
+
+    // HAL::Callbacks implementation.
+    void setup() override;
+    void loop() override;
 
     void flush_dataflash(void);
 
@@ -233,7 +232,7 @@ private:
     ReplayVehicle &_vehicle;
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-    SITL sitl;
+    SITL::SITL sitl;
 #endif
 
     LogReader logreader{_vehicle.ahrs, _vehicle.ins, _vehicle.barometer, _vehicle.compass, _vehicle.gps, _vehicle.airspeed, _vehicle.dataflash, log_structure, ARRAY_SIZE(log_structure), nottypes};
@@ -280,6 +279,7 @@ private:
     } user_parameters[100];
 
     void set_ins_update_rate(uint16_t update_rate);
+    void inhibit_gyro_cal();
 
     void usage(void);
     void set_user_parameters(void);
@@ -462,14 +462,15 @@ public:
     bool handle_log_format_msg(const struct log_Format &f);
     bool handle_msg(const struct log_Format &f, uint8_t *msg);
 
-    uint64_t last_imu_timestamp;
+    uint64_t last_clock_timestamp;
 private:
     MsgHandler *handler;
 };
 
 bool IMUCounter::handle_log_format_msg(const struct log_Format &f) {
-    if (!strncmp(f.name,"IMU",4)) {
-        // an IMU message
+    if (!strncmp(f.name,"IMU",4) ||
+        !strncmp(f.name,"IMT",4)) {
+        // an IMU or IMT message message
         handler = new MsgHandler(f);
     }
 
@@ -477,16 +478,17 @@ bool IMUCounter::handle_log_format_msg(const struct log_Format &f) {
 };
 
 bool IMUCounter::handle_msg(const struct log_Format &f, uint8_t *msg) {
-    if (strncmp(f.name,"IMU",4)) {
+    if (strncmp(f.name,"IMU",4) &&
+        strncmp(f.name,"IMT",4)) {
         // not an IMU message
         return true;
     }
 
-    if (handler->field_value(msg, "TimeUS", last_imu_timestamp)) {
-    } else if (handler->field_value(msg, "TimeMS", last_imu_timestamp)) {
-        last_imu_timestamp *= 1000;
+    if (handler->field_value(msg, "TimeUS", last_clock_timestamp)) {
+    } else if (handler->field_value(msg, "TimeMS", last_clock_timestamp)) {
+        last_clock_timestamp *= 1000;
     } else {
-        ::printf("Unable to find timestamp in IMU message");
+        ::printf("Unable to find timestamp in message");
     }
     return true;
 }
@@ -501,32 +503,47 @@ bool Replay::find_log_info(struct log_information &info)
         perror(filename);
         exit(1);
     }
+    char clock_source[5] = { };
     int samplecount = 0;
     uint64_t prev = 0;
     uint64_t smallest_delta = 0;
     prev = 0;
-    while (samplecount < 1000) {
+    const uint16_t samples_required = 1000;
+    while (samplecount < samples_required) {
         char type[5];
         if (!reader.update(type)) {
             break;
         }
-        if (streq(type, "IMU")) {
-            if (prev == 0) {
-                prev = reader.last_imu_timestamp;
+
+        if (strlen(clock_source) == 0) {
+            // if you want to add a clock source, also add it to
+            // handle_msg and handle_log_format_msg, above
+            if (streq(type, "IMU")) {
+                memcpy(clock_source, "IMU", 3);
+            } else if (streq(type, "IMT")) {
+                memcpy(clock_source, "IMT", 3);
             } else {
-                uint64_t delta = reader.last_imu_timestamp - prev;
+                continue;
+            }
+        }
+        if (streq(type, clock_source)) {
+            if (prev == 0) {
+                prev = reader.last_clock_timestamp;
+            } else {
+                uint64_t delta = reader.last_clock_timestamp - prev;
                 if (smallest_delta == 0 || delta < smallest_delta) {
                     smallest_delta = delta;
                 }
                 samplecount++;
             }
         }
+
         if (streq(type, "IMU2") && !info.have_imu2) {
             info.have_imu2 = true;
         }
     }
     if (smallest_delta == 0) {
-        ::printf("Unable to determine log rate - insufficient IMU messages?!");
+        ::printf("Unable to determine log rate - insufficient IMU/IMT messages? (need=%d got=%d)", samples_required, samplecount);
         return false;
     }
 
@@ -591,6 +608,7 @@ void Replay::setup()
 
     _vehicle.setup();
 
+    inhibit_gyro_cal();
     set_ins_update_rate(log_info.update_rate);
 
     feenableexcept(FE_INVALID | FE_OVERFLOW);
@@ -631,6 +649,19 @@ void Replay::set_ins_update_rate(uint16_t _update_rate) {
     }
 }
 
+void Replay::inhibit_gyro_cal() {
+    // swiped from LR_MsgHandler.cpp; until we see PARM messages, we
+    // don't have a PARM handler available to set parameters.
+    enum ap_var_type var_type;
+    AP_Param *vp = AP_Param::find("INS_GYR_CAL", &var_type);
+    if (vp == NULL) {
+        ::fprintf(stderr, "No GYR_CAL parameter found\n");
+        abort();
+    }
+    ((AP_Float *)vp)->set(AP_InertialSensor::GYRO_CAL_NEVER);
+
+    // logreader.set_parameter("GYR_CAL", AP_InertialSensor::GYRO_CAL_NEVER);
+}
 
 /*
   setup user -p parameters
@@ -1095,19 +1126,4 @@ void Replay::report_checks(void)
     }
 }
 
-/*
-  compatibility with old pde style build
- */
-void setup(void);
-void loop(void);
-
-void setup(void)
-{
-    replay.setup();
-}
-void loop(void)
-{
-    replay.loop();
-}
-
-AP_HAL_MAIN();
+AP_HAL_MAIN_CALLBACKS(&replay);

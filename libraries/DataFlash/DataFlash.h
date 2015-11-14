@@ -38,7 +38,7 @@ class DataFlash_Class
 public:
     FUNCTOR_TYPEDEF(print_mode_fn, void, AP_HAL::BetterStream*, uint8_t);
     FUNCTOR_TYPEDEF(vehicle_startup_message_Log_Writer, void);
-    DataFlash_Class(const prog_char_t *firmware_string) :
+    DataFlash_Class(const char *firmware_string) :
         _startup_messagewriter(DFMessageWriter_DFLogStart(*this,firmware_string)),
         _vehicle_messages(NULL)
         { }
@@ -63,12 +63,11 @@ public:
     bool WriteCriticalBlock(const void *pBuffer, uint16_t size);
 
     // high level interface
-    uint16_t find_last_log(void);
+    uint16_t find_last_log() const;
     void get_log_boundaries(uint16_t log_num, uint16_t & start_page, uint16_t & end_page);
     void get_log_info(uint16_t log_num, uint32_t &size, uint32_t &time_utc);
     int16_t get_log_data(uint16_t log_num, uint16_t page, uint32_t offset, uint16_t len, uint8_t *data);
     uint16_t get_num_logs(void);
-#ifndef DATAFLASH_NO_CLI
     void LogReadProcess(uint16_t log_num,
                                 uint16_t start_page, uint16_t end_page, 
                                 print_mode_fn printMode,
@@ -76,7 +75,6 @@ public:
     void DumpPageInfo(AP_HAL::BetterStream *port);
     void ShowDeviceInfo(AP_HAL::BetterStream *port);
     void ListAvailableLogs(AP_HAL::BetterStream *port);
-#endif // DATAFLASH_NO_CLI
 
     uint16_t bufferspace_available();
 
@@ -85,7 +83,7 @@ public:
     uint16_t StartNewLog(void);
     void AddLogFormats(const struct LogStructure *structures, uint8_t num_types);
     void EnableWrites(bool enable);
-    void Log_Write_SysInfo(const prog_char_t *firmware_string);
+    void Log_Write_SysInfo(const char *firmware_string);
     bool Log_Write_Format(const struct LogStructure *structure);
     bool Log_Write_Parameter(const char *name, float value);
     void Log_Write_GPS(const AP_GPS &gps, uint8_t instance, int32_t relative_alt);
@@ -107,7 +105,6 @@ public:
     bool Log_Write_MavCmd(uint16_t cmd_total, const mavlink_mission_item_t& mav_cmd);
     void Log_Write_Radio(const mavlink_radio_t &packet);
     bool Log_Write_Message(const char *message);
-    bool Log_Write_Message_P(const prog_char_t *message);
     void Log_Write_Camera(const AP_AHRS &ahrs, const AP_GPS &gps, const Location &current_loc);
     void Log_Write_ESC(void);
     void Log_Write_Airspeed(AP_Airspeed &airspeed);
@@ -358,6 +355,7 @@ struct PACKED log_EKF1 {
     float velN;
     float velE;
     float velD;
+    float posD_dot;
     float posN;
     float posE;
     float posD;
@@ -397,6 +395,7 @@ struct PACKED log_NKF2 {
     int16_t magX;
     int16_t magY;
     int16_t magZ;
+    uint8_t index;
 };
 
 struct PACKED log_EKF3 {
@@ -445,6 +444,25 @@ struct PACKED log_EKF4 {
     uint8_t faults;
     uint8_t timeouts;
     uint16_t solution;
+    uint16_t gps;
+};
+
+struct PACKED log_NKF4 {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    int16_t sqrtvarV;
+    int16_t sqrtvarP;
+    int16_t sqrtvarH;
+    int16_t sqrtvarM;
+    int16_t sqrtvarVT;
+    float   tiltErr;
+    int8_t  offsetNorth;
+    int8_t  offsetEast;
+    uint8_t faults;
+    uint8_t timeouts;
+    uint16_t solution;
+    uint16_t gps;
+    int8_t primary;
 };
 
 struct PACKED log_EKF5 {
@@ -799,25 +817,33 @@ Format characters in the format string for binary log messages
     { LOG_SIMSTATE_MSG, sizeof(log_AHRS), \
       "SIM","QccCfLL","TimeUS,Roll,Pitch,Yaw,Alt,Lat,Lng" }, \
     { LOG_EKF1_MSG, sizeof(log_EKF1), \
-      "EKF1","QccCffffffccc","TimeUS,Roll,Pitch,Yaw,VN,VE,VD,PN,PE,PD,GX,GY,GZ" }, \
+      "EKF1","QccCfffffffccc","TimeUS,Roll,Pitch,Yaw,VN,VE,VD,dPD,PN,PE,PD,GX,GY,GZ" }, \
     { LOG_EKF2_MSG, sizeof(log_EKF2), \
       "EKF2","Qbbbcchhhhhh","TimeUS,Ratio,AZ1bias,AZ2bias,VWN,VWE,MN,ME,MD,MX,MY,MZ" }, \
     { LOG_EKF3_MSG, sizeof(log_EKF3), \
       "EKF3","Qcccccchhhc","TimeUS,IVN,IVE,IVD,IPN,IPE,IPD,IMX,IMY,IMZ,IVT" }, \
     { LOG_EKF4_MSG, sizeof(log_EKF4), \
-      "EKF4","QcccccccbbBBH","TimeUS,SV,SP,SH,SMX,SMY,SMZ,SVT,OFN,EFE,FS,TS,SS" }, \
+      "EKF4","QcccccccbbBBHH","TimeUS,SV,SP,SH,SMX,SMY,SMZ,SVT,OFN,OFE,FS,TS,SS,GPS" }, \
     { LOG_EKF5_MSG, sizeof(log_EKF5), \
       "EKF5","QBhhhcccCC","TimeUS,normInnov,FIX,FIY,AFI,HAGL,offset,RI,meaRng,errHAGL" }, \
     { LOG_NKF1_MSG, sizeof(log_EKF1), \
-      "NKF1","QccCffffffccc","TimeUS,Roll,Pitch,Yaw,VN,VE,VD,PN,PE,PD,GX,GY,GZ" }, \
+      "NKF1","QccCfffffffccc","TimeUS,Roll,Pitch,Yaw,VN,VE,VD,dPD,PN,PE,PD,GX,GY,GZ" }, \
     { LOG_NKF2_MSG, sizeof(log_NKF2), \
-      "NKF2","Qbccccchhhhhh","TimeUS,AZbias,GSX,GSY,GSZ,VWN,VWE,MN,ME,MD,MX,MY,MZ" }, \
+      "NKF2","QbccccchhhhhhB","TimeUS,AZbias,GSX,GSY,GSZ,VWN,VWE,MN,ME,MD,MX,MY,MZ,MI" }, \
     { LOG_NKF3_MSG, sizeof(log_NKF3), \
       "NKF3","Qcccccchhhcc","TimeUS,IVN,IVE,IVD,IPN,IPE,IPD,IMX,IMY,IMZ,IYAW,IVT" }, \
-    { LOG_NKF4_MSG, sizeof(log_EKF4), \
-      "NKF4","QcccccccbbBBH","TimeUS,SV,SP,SH,SMX,SMY,SMZ,SVT,OFN,EFE,FS,TS,SS" }, \
+    { LOG_NKF4_MSG, sizeof(log_NKF4), \
+      "NKF4","QcccccfbbBBHHb","TimeUS,SV,SP,SH,SM,SVT,errRP,OFN,OFE,FS,TS,SS,GPS,PI" }, \
     { LOG_NKF5_MSG, sizeof(log_EKF5), \
       "NKF5","QBhhhcccCC","TimeUS,normInnov,FIX,FIY,AFI,HAGL,offset,RI,meaRng,errHAGL" }, \
+    { LOG_NKF6_MSG, sizeof(log_EKF1), \
+      "NKF6","QccCfffffffccc","TimeUS,Roll,Pitch,Yaw,VN,VE,VD,dPD,PN,PE,PD,GX,GY,GZ" }, \
+    { LOG_NKF7_MSG, sizeof(log_NKF2), \
+      "NKF7","QbccccchhhhhhB","TimeUS,AZbias,GSX,GSY,GSZ,VWN,VWE,MN,ME,MD,MX,MY,MZ,MI" }, \
+    { LOG_NKF8_MSG, sizeof(log_NKF3), \
+      "NKF8","Qcccccchhhcc","TimeUS,IVN,IVE,IVD,IPN,IPE,IPD,IMX,IMY,IMZ,IYAW,IVT" }, \
+    { LOG_NKF9_MSG, sizeof(log_NKF4), \
+      "NKF9","QcccccfbbBBHHb","TimeUS,SV,SP,SH,SM,SVT,errRP,OFN,OFE,FS,TS,SS,GPS,PI" }, \
     { LOG_TERRAIN_MSG, sizeof(log_TERRAIN), \
       "TERR","QBLLHffHH","TimeUS,Status,Lat,Lng,Spacing,TerrH,CHeight,Pending,Loaded" }, \
     { LOG_GPS_UBX1_MSG, sizeof(log_Ubx1), \
@@ -895,11 +921,7 @@ Format characters in the format string for binary log messages
     { LOG_RPM_MSG, sizeof(log_RPM), \
       "RPM",  "Qff", "TimeUS,rpm1,rpm2" }
 
-#if HAL_CPU_CLASS >= HAL_CPU_CLASS_75
 #define LOG_COMMON_STRUCTURES LOG_BASE_STRUCTURES, LOG_EXTRA_STRUCTURES
-#else
-#define LOG_COMMON_STRUCTURES LOG_BASE_STRUCTURES
-#endif
 
 // message types 0 to 128 reversed for vehicle specific use
 
@@ -981,6 +1003,10 @@ enum LogMessages {
     LOG_NKF3_MSG,
     LOG_NKF4_MSG,
     LOG_NKF5_MSG,
+    LOG_NKF6_MSG,
+    LOG_NKF7_MSG,
+    LOG_NKF8_MSG,
+    LOG_NKF9_MSG,
 };
 
 enum LogOriginType {

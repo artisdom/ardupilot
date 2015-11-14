@@ -5,13 +5,8 @@
 
 // Libraries
 #include <AP_Common/AP_Common.h>
-#include <AP_Progmem/AP_Progmem.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_HAL/AP_HAL.h>
-#include <AP_HAL_AVR/AP_HAL_AVR.h>
-#include <AP_HAL_PX4/AP_HAL_PX4.h>
-#include <AP_HAL_Linux/AP_HAL_Linux.h>
-#include <AP_HAL_Empty/AP_HAL_Empty.h>
 #include <AP_Math/AP_Math.h>        // ArduPilot Mega Vector/Matrix math Library
 #include <RC_Channel/RC_Channel.h>     // RC Channel Library
 #include <AP_Motors/AP_Motors.h>
@@ -37,7 +32,7 @@
 #include <AP_BattMonitor/AP_BattMonitor.h>
 #include <AP_RangeFinder/AP_RangeFinder.h>
 
-const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 RC_Channel rc1(0), rc2(1), rc3(2), rc4(3);
 
@@ -99,13 +94,13 @@ void motor_order_test()
 
     motors.armed(true);
     for (int8_t i=1; i <= 4; i++) {
-		hal.console->printf_P(PSTR("Motor %d\n"),(int)i);
+		hal.console->printf("Motor %d\n",(int)i);
         int elapsed =0,stop;
 		int start = hal.scheduler->micros();                                                   //Time Test
         motors.output_test(i, 1150);
         stop = hal.scheduler->micros();
         elapsed = stop - start;
-        hal.console->printf_P(PSTR("  Elapsed Time: %dus\n"),elapsed);
+        hal.console->printf("  Elapsed Time: %dus\n",elapsed);
         hal.scheduler->delay(300);
         motors.output_test(i, 1000);
         hal.scheduler->delay(2000);

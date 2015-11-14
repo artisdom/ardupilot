@@ -159,7 +159,7 @@ bool AP_InertialSensor_L3G4200D::_init_sensor(void)
     uint8_t data = 0;
     hal.i2c->readRegister(ADXL345_ACCELEROMETER_ADDRESS, ADXL345_ACCELEROMETER_ADXLREG_DEVID, &data);
     if (data != ADXL345_ACCELEROMETER_XL345_DEVID) {
-        hal.scheduler->panic(PSTR("AP_InertialSensor_L3G4200D: could not find ADXL345 accelerometer sensor"));
+        hal.scheduler->panic("AP_InertialSensor_L3G4200D: could not find ADXL345 accelerometer sensor");
     }
     hal.i2c->writeRegister(ADXL345_ACCELEROMETER_ADDRESS, ADXL345_ACCELEROMETER_ADXLREG_POWER_CTL, 0x00);
     hal.scheduler->delay(5);
@@ -188,7 +188,7 @@ bool AP_InertialSensor_L3G4200D::_init_sensor(void)
     // Expect to read the right 'WHO_AM_I' value
     hal.i2c->readRegister(L3G4200D_I2C_ADDRESS, L3G4200D_REG_WHO_AM_I, &data);
     if (data != L3G4200D_REG_WHO_AM_I_VALUE)
-        hal.scheduler->panic(PSTR("AP_InertialSensor_L3G4200D: could not find L3G4200D gyro sensor"));
+        hal.scheduler->panic("AP_InertialSensor_L3G4200D: could not find L3G4200D gyro sensor");
 
     // setup for 800Hz sampling with 110Hz filter
     hal.i2c->writeRegister(L3G4200D_I2C_ADDRESS, 
@@ -321,6 +321,7 @@ void AP_InertialSensor_L3G4200D::_accumulate(void)
                 // Adjust for chip scaling to get radians/sec
                 gyro *= L3G4200D_GYRO_SCALE_R_S;
                 _rotate_and_correct_gyro(_gyro_instance, gyro);
+                _notify_new_gyro_raw_sample(_gyro_instance, gyro);
                 _data[_data_idx].gyro_filtered = _gyro_filter.apply(gyro);
                 _have_gyro_sample = true;
             }

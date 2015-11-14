@@ -6,7 +6,7 @@
 extern const AP_HAL::HAL& hal;
 
 // table of user settable parameters
-const AP_Param::GroupInfo AP_L1_Control::var_info[] PROGMEM = {
+const AP_Param::GroupInfo AP_L1_Control::var_info[] = {
     // @Param: PERIOD
     // @DisplayName: L1 control period
     // @Description: Period in seconds of L1 tracking loop. This parameter is the primary control for agressiveness of turns in auto mode. This needs to be larger for less responsive airframes. The default of 20 is quite conservative, but for most RC aircraft will lead to reasonable flight. For smaller more agile aircraft a value closer to 15 is appropriate, or even as low as 10 for some very agile aircraft. When tuning, change this value in small increments, as a value that is much too small (say 5 or 10 below the right value) can lead to very radical turns, and a risk of stalling.
@@ -21,6 +21,13 @@ const AP_Param::GroupInfo AP_L1_Control::var_info[] PROGMEM = {
 	// @Range: 0.6-1.0
 	// @Increment: 0.05
     AP_GROUPINFO("DAMPING",   1, AP_L1_Control, _L1_damping, 0.75f),
+
+    // @Param: XTRACK_I
+    // @DisplayName: L1 control crosstrack integrator gain
+    // @Description: Crosstrack error integrator gain. This gain is applied to the crosstrack error to ensure it converges to zero. Set to zero to disable. Smaller values converge slower, higher values will cause crosstrack error oscillation.
+    // @Range: 0 to 0.1
+    // @Increment: 0.01
+    AP_GROUPINFO("XTRACK_I",   2, AP_L1_Control, _L1_xtrack_i_gain, 0.02),
 
     AP_GROUPEND
 };
@@ -128,7 +135,6 @@ void AP_L1_Control::_prevent_indecision(float &Nu)
 }
 
 // update L1 control for waypoint navigation
-// this function costs about 3.5 milliseconds on a AVR2560
 void AP_L1_Control::update_waypoint(const struct Location &prev_WP, const struct Location &next_WP)
 {
 
@@ -179,7 +185,7 @@ void AP_L1_Control::update_waypoint(const struct Location &prev_WP, const struct
     Vector2f A_air = location_diff(prev_WP, _current_loc);
 
 	// calculate distance to target track, for reporting
-	_crosstrack_error = AB % A_air;
+	_crosstrack_error = A_air % AB;
 
 	//Determine if the aircraft is behind a +-135 degree degree arc centred on WP A
 	//and further than L1 distance from WP A. Then use WP A as the L1 reference point
@@ -202,11 +208,29 @@ void AP_L1_Control::update_waypoint(const struct Location &prev_WP, const struct
 		ltrackVel = _groundspeed_vector * AB; // Velocity along track
 		float Nu2 = atan2f(xtrackVel,ltrackVel);
 		//Calculate Nu1 angle (Angle to L1 reference point)
-		float xtrackErr = A_air % AB;
-		float sine_Nu1 = xtrackErr/max(_L1_dist, 0.1f);
+		float sine_Nu1 = _crosstrack_error/max(_L1_dist, 0.1f);
 		//Limit sine of Nu1 to provide a controlled track capture angle of 45 deg
 		sine_Nu1 = constrain_float(sine_Nu1, -0.7071f, 0.7071f);
 		float Nu1 = asinf(sine_Nu1);
+
+        // compute integral error component to converge to a crosstrack of zero when traveling
+		// straight but reset it when disabled or if it changes. That allows for much easier
+		// tuning by having it re-converge each time it changes.
+		if (_L1_xtrack_i_gain <= 0 || !is_equal(_L1_xtrack_i_gain, _L1_xtrack_i_gain_prev)) {
+		    _L1_xtrack_i = 0;
+		    _L1_xtrack_i_gain_prev = _L1_xtrack_i_gain;
+		} else if (fabsf(Nu1) < radians(5)) {
+
+            const float dt = 0.1f; // 10Hz
+            _L1_xtrack_i += Nu1 * _L1_xtrack_i_gain * dt;
+
+            // an AHRS_TRIM_X=0.1 will drift to about 0.08 so 0.1 is a good worst-case to clip at
+            _L1_xtrack_i = constrain_float(_L1_xtrack_i, -0.1f, 0.1f);
+		}
+
+		// to converge to zero we must push Nu1 harder
+        Nu1 += _L1_xtrack_i;
+
 		Nu = Nu1 + Nu2;
 		_nav_bearing = atan2f(AB.y, AB.x) + Nu1; // bearing (radians) from AC to L1 point		
 	}	

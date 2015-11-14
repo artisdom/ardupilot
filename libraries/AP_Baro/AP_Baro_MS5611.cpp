@@ -34,8 +34,26 @@ extern const AP_HAL::HAL& hal;
 #define CMD_MS5611_PROM_C5 0xAA
 #define CMD_MS5611_PROM_C6 0xAC
 #define CMD_MS5611_PROM_CRC 0xAE
-#define CMD_CONVERT_D1_OSR4096 0x48   // Maximum resolution (oversampling)
-#define CMD_CONVERT_D2_OSR4096 0x58   // Maximum resolution (oversampling)
+
+#define ADDR_CMD_CONVERT_D1_OSR256  0x40 /* write to this address to start pressure conversion */
+#define ADDR_CMD_CONVERT_D1_OSR512  0x42 /* write to this address to start pressure conversion */
+#define ADDR_CMD_CONVERT_D1_OSR1024 0x44 /* write to this address to start pressure conversion */
+#define ADDR_CMD_CONVERT_D1_OSR2048 0x46 /* write to this address to start pressure conversion */
+#define ADDR_CMD_CONVERT_D1_OSR4096 0x48 /* write to this address to start pressure conversion */
+#define ADDR_CMD_CONVERT_D2_OSR256  0x50 /* write to this address to start temperature conversion */
+#define ADDR_CMD_CONVERT_D2_OSR512  0x52 /* write to this address to start temperature conversion */
+#define ADDR_CMD_CONVERT_D2_OSR1024 0x54 /* write to this address to start temperature conversion */
+#define ADDR_CMD_CONVERT_D2_OSR2048 0x56 /* write to this address to start temperature conversion */
+#define ADDR_CMD_CONVERT_D2_OSR4096 0x58 /* write to this address to start temperature conversion */
+
+/*
+  use an OSR of 1024 to reduce the self-heating effect of the
+  sensor. Information from MS tells us that some individual sensors
+  are quite sensitive to this effect and that reducing the OSR can
+  make a big difference
+ */
+#define ADDR_CMD_CONVERT_D1			ADDR_CMD_CONVERT_D1_OSR1024
+#define ADDR_CMD_CONVERT_D2			ADDR_CMD_CONVERT_D2_OSR1024
 
 // SPI Device //////////////////////////////////////////////////////////////////
 
@@ -51,11 +69,11 @@ void AP_SerialBus_SPI::init()
 {
     _spi = hal.spi->device(_device);
     if (_spi == NULL) {
-        hal.scheduler->panic(PSTR("did not get valid SPI device driver!"));
+        hal.scheduler->panic("did not get valid SPI device driver!");
     }
     _spi_sem = _spi->get_semaphore();
     if (_spi_sem == NULL) {
-        hal.scheduler->panic(PSTR("AP_SerialBus_SPI did not get valid SPI semaphroe!"));
+        hal.scheduler->panic("AP_SerialBus_SPI did not get valid SPI semaphroe!");
     }
     _spi->set_bus_speed(_speed);
 }
@@ -111,7 +129,7 @@ void AP_SerialBus_I2C::init()
 {
     _i2c_sem = _i2c->get_semaphore();
     if (_i2c_sem == NULL) {
-        hal.scheduler->panic(PSTR("AP_SerialBus_I2C did not get valid I2C semaphore!"));
+        hal.scheduler->panic("AP_SerialBus_I2C did not get valid I2C semaphore!");
     }
 }
 
@@ -168,8 +186,13 @@ AP_Baro_MS56XX::AP_Baro_MS56XX(AP_Baro &baro, AP_SerialBus *serial, bool use_tim
 {
     _instance = _frontend.register_sensor();
     _serial->init();
+
+    // we need to suspend timers to prevent other SPI drivers grabbing
+    // the bus while we do the long initialisation
+    hal.scheduler->suspend_timer_procs();
+
     if (!_serial->sem_take_blocking()){
-        hal.scheduler->panic(PSTR("PANIC: AP_Baro_MS56XX: failed to take serial semaphore for init"));
+        hal.scheduler->panic("PANIC: AP_Baro_MS56XX: failed to take serial semaphore for init");
     }
 
     _serial->write(CMD_MS5611_RESET);
@@ -185,11 +208,11 @@ AP_Baro_MS56XX::AP_Baro_MS56XX(AP_Baro &baro, AP_SerialBus *serial, bool use_tim
     _C6 = _serial->read_16bits(CMD_MS5611_PROM_C6);
 
     if (!_check_crc()) {
-        hal.scheduler->panic(PSTR("Bad CRC on MS5611"));
+        hal.scheduler->panic("Bad CRC on MS5611");
     }
 
     // Send a command to read Temp first
-    _serial->write(CMD_CONVERT_D2_OSR4096);
+    _serial->write(ADDR_CMD_CONVERT_D2);
     _last_timer = hal.scheduler->micros();
     _state = 0;
 
@@ -199,6 +222,8 @@ AP_Baro_MS56XX::AP_Baro_MS56XX(AP_Baro &baro, AP_SerialBus *serial, bool use_tim
     _d2_count = 0;
 
     _serial->sem_give();
+
+    hal.scheduler->resume_timer_procs();
 
     if (_use_timer) {
         hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&AP_Baro_MS56XX::_timer, void));
@@ -283,16 +308,16 @@ void AP_Baro_MS56XX::_timer(void)
                 _d2_count = 16;
             }
 
-            if (_serial->write(CMD_CONVERT_D1_OSR4096)) {      // Command to read pressure
+            if (_serial->write(ADDR_CMD_CONVERT_D1)) {      // Command to read pressure
                 _state++;
             }
         } else {
             /* if read fails, re-initiate a temperature read command or we are
              * stuck */
-            _serial->write(CMD_CONVERT_D2_OSR4096);
+            _serial->write(ADDR_CMD_CONVERT_D2);
         }
     } else {
-        uint32_t d1 = _serial->read_24bits(0);;
+        uint32_t d1 = _serial->read_24bits(0);
         if (d1 != 0) {
             // occasional zero values have been seen on the PXF
             // board. These may be SPI errors, but safest to ignore
@@ -309,18 +334,18 @@ void AP_Baro_MS56XX::_timer(void)
             _updated = true;
 
             if (_state == 4) {
-                if (_serial->write(CMD_CONVERT_D2_OSR4096)) { // Command to read temperature
+                if (_serial->write(ADDR_CMD_CONVERT_D2)) { // Command to read temperature
                     _state = 0;
                 }
             } else {
-                if (_serial->write(CMD_CONVERT_D1_OSR4096)) { // Command to read pressure
+                if (_serial->write(ADDR_CMD_CONVERT_D1)) { // Command to read pressure
                     _state++;
                 }
             }
         } else {
             /* if read fails, re-initiate a pressure read command or we are
              * stuck */
-            _serial->write(CMD_CONVERT_D1_OSR4096);
+            _serial->write(ADDR_CMD_CONVERT_D1);
         }
     }
 
@@ -351,7 +376,7 @@ void AP_Baro_MS56XX::update()
     d2count = _d2_count; _d2_count = 0;
     _updated = false;
     hal.scheduler->resume_timer_procs();
-    
+
     if (d1count != 0) {
         _D1 = ((float)sD1) / d1count;
     }
@@ -375,12 +400,11 @@ void AP_Baro_MS5611::_calculate()
     float SENS;
 
     // Formulas from manufacturer datasheet
-    // sub -20c temperature compensation is not included
+    // sub -15c temperature compensation is not included
 
-    // we do the calculations using floating point
-    // as this is much faster on an AVR2560, and also allows
-    // us to take advantage of the averaging of D1 and D1 over
-    // multiple samples, giving us more precision
+    // we do the calculations using floating point allows us to take advantage
+    // of the averaging of D1 and D1 over multiple samples, giving us more
+    // precision
     dT = _D2-(((uint32_t)_C5)<<8);
     TEMP = (dT * _C6)/8388608;
     OFF = _C2 * 65536.0f + (_C4 * dT) / 128;
@@ -415,12 +439,11 @@ void AP_Baro_MS5607::_calculate()
     float SENS;
 
     // Formulas from manufacturer datasheet
-    // sub -20c temperature compensation is not included
+    // sub -15c temperature compensation is not included
 
-    // we do the calculations using floating point
-    // as this is much faster on an AVR2560, and also allows
-    // us to take advantage of the averaging of D1 and D1 over
-    // multiple samples, giving us more precision
+    // we do the calculations using floating point allows us to take advantage
+    // of the averaging of D1 and D1 over multiple samples, giving us more
+    // precision
     dT = _D2-(((uint32_t)_C5)<<8);
     TEMP = (dT * _C6)/8388608;
     OFF = _C2 * 131072.0f + (_C4 * dT) / 64;
@@ -440,6 +463,45 @@ void AP_Baro_MS5607::_calculate()
     float pressure = (_D1*SENS/2097152 - OFF)/32768;
     float temperature = (TEMP + 2000) * 0.01f;
     _copy_to_frontend(_instance, pressure, temperature);
+}
+
+/* MS563 Class */
+AP_Baro_MS5637::AP_Baro_MS5637(AP_Baro &baro, AP_SerialBus *serial, bool use_timer)
+    : AP_Baro_MS56XX(baro, serial, use_timer)
+{
+}
+
+// Calculate Temperature and compensated Pressure in real units (Celsius degrees*100, mbar*100).
+void AP_Baro_MS5637::_calculate()
+{
+    int32_t dT, TEMP;
+    int64_t OFF, SENS;
+    int32_t raw_pressure = _D1;
+    int32_t raw_temperature = _D2;
+
+    // Formulas from manufacturer datasheet
+    // sub -15c temperature compensation is not included
+
+    dT = raw_temperature - (((uint32_t)_C5) << 8);
+    TEMP = 2000 + ((int64_t)dT * (int64_t)_C6) / 8388608;
+    OFF = (int64_t)_C2 * (int64_t)131072 + ((int64_t)_C4 * (int64_t)dT) / (int64_t)64;
+    SENS = (int64_t)_C1 * (int64_t)65536 + ((int64_t)_C3 * (int64_t)dT) / (int64_t)128;
+
+    if (TEMP < 2000) {
+        // second order temperature compensation when under 20 degrees C
+        int32_t T2 = ((int64_t)3 * ((int64_t)dT * (int64_t)dT) / (int64_t)8589934592);
+        int64_t aux = (TEMP - 2000) * (TEMP - 2000);
+        int64_t OFF2 = 61 * aux / 16;
+        int64_t SENS2 = 29 * aux / 16;
+
+        TEMP = TEMP - T2;
+        OFF = OFF - OFF2;
+        SENS = SENS - SENS2;
+    }
+
+    int32_t pressure = ((int64_t)raw_pressure * SENS / (int64_t)2097152 - OFF) / (int64_t)32768;
+    float temperature = TEMP * 0.01f;
+    _copy_to_frontend(_instance, (float)pressure, temperature);
 }
 
 /*

@@ -33,19 +33,6 @@
 
 #include <AP_OpticalFlow/AP_OpticalFlow.h>
 
-// Copter defaults to EKF on by default, all others off
-#if APM_BUILD_TYPE(APM_BUILD_ArduCopter)
-# define AHRS_EKF_USE_ALWAYS     1
-#else
-# define AHRS_EKF_USE_ALWAYS     0
-#endif
-
-#if APM_BUILD_TYPE(APM_BUILD_ArduPlane)
-#define AHRS_EKF_USE_DEFAULT    1
-#else
-#define AHRS_EKF_USE_DEFAULT    0
-#endif
-
 #define AP_AHRS_TRIM_LIMIT 10.0f        // maximum trim angle in degrees
 #define AP_AHRS_RP_P_MIN   0.05f        // minimum value for AHRS_RP_P parameter
 #define AP_AHRS_YAW_P_MIN  0.05f        // minimum value for AHRS_YAW_P parameter
@@ -89,10 +76,7 @@ public:
         AP_Param::setup_object_defaults(this, var_info);
 
         // base the ki values by the sensors maximum drift
-        // rate. The APM2 has gyros which are much less drift
-        // prone than the APM1, so we should have a lower ki,
-        // which will make us less prone to increasing omegaI
-        // incorrectly due to sensor noise
+        // rate.
         _gyro_drift_limit = ins.get_gyro_drift_rate();
 
         // enable centrifugal correction by default
@@ -401,8 +385,20 @@ public:
 
     // return the amount of yaw angle change due to the last yaw angle reset in radians
     // returns the time of the last yaw angle reset or 0 if no reset has ever occurred
-    virtual uint32_t getLastYawResetAngle(float &yawAng) {
-        return false;
+    virtual uint32_t getLastYawResetAngle(float &yawAng) const {
+        return 0;
+    };
+
+    // return the amount of NE position change in metres due to the last reset
+    // returns the time of the last reset or 0 if no reset has ever occurred
+    virtual uint32_t getLastPosNorthEastReset(Vector2f &pos) const {
+        return 0;
+    };
+
+    // return the amount of NE velocity change in metres/sec due to the last reset
+    // returns the time of the last reset or 0 if no reset has ever occurred
+    virtual uint32_t getLastVelNorthEastReset(Vector2f &vel) const {
+        return 0;
     };
 
     // Resets the baro so that it reads zero at the current height

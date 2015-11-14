@@ -6,13 +6,7 @@
 
 #include <stdarg.h>
 #include <AP_Common/AP_Common.h>
-#include <AP_Progmem/AP_Progmem.h>
 #include <AP_HAL/AP_HAL.h>
-#include <AP_HAL_AVR/AP_HAL_AVR.h>
-#include <AP_HAL_SITL/AP_HAL_SITL.h>
-#include <AP_HAL_Linux/AP_HAL_Linux.h>
-#include <AP_HAL_PX4/AP_HAL_PX4.h>
-#include <AP_HAL_Empty/AP_HAL_Empty.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_ADC/AP_ADC.h>
@@ -50,7 +44,7 @@
 #include <unistd.h>
 #include <stdio.h>
 
-const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 static int accel_fd[INS_MAX_INSTANCES];
 static int gyro_fd[INS_MAX_INSTANCES];
@@ -63,7 +57,7 @@ static uint32_t gyro_deltat_min[INS_MAX_INSTANCES];
 static uint32_t gyro_deltat_max[INS_MAX_INSTANCES];
 static DataFlash_File DataFlash("/fs/microsd/VIBTEST");
 
-static const struct LogStructure log_structure[] PROGMEM = {
+static const struct LogStructure log_structure[] = {
     LOG_COMMON_STRUCTURES,
     LOG_EXTRA_STRUCTURES
 };
@@ -210,7 +204,7 @@ void loop(void)
 }
 
 #else
-const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 void setup() {}
 void loop() {}
 #endif // CONFIG_HAL_BOARD

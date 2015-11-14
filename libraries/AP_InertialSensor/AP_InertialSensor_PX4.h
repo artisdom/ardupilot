@@ -6,7 +6,6 @@
 #include <AP_HAL/AP_HAL.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
 
-#include <AP_Progmem/AP_Progmem.h>
 #include "AP_InertialSensor.h"
 #include <drivers/drv_accel.h>
 #include <drivers/drv_gyro.h>
@@ -77,12 +76,6 @@ private:
     // Low Pass filters for gyro and accel
     LowPassFilter2pVector3f _accel_filter[INS_MAX_INSTANCES];
     LowPassFilter2pVector3f _gyro_filter[INS_MAX_INSTANCES];
-
-    Vector3f _delta_angle_accumulator[INS_MAX_INSTANCES];
-    Vector3f _delta_velocity_accumulator[INS_MAX_INSTANCES];
-    float _delta_velocity_dt[INS_MAX_INSTANCES];
-    Vector3f _last_delAng[INS_MAX_INSTANCES];
-    Vector3f _last_gyro[INS_MAX_INSTANCES];
 
 #ifdef AP_INERTIALSENSOR_PX4_DEBUG
     uint32_t _gyro_meas_count[INS_MAX_INSTANCES];

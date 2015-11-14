@@ -219,7 +219,7 @@ NOINLINE void Copter::send_extended_status1(mavlink_channel_t chan)
         battery_current = battery.current_amps() * 100;
     }
 
-#if AP_TERRAIN_AVAILABLE
+#if AP_TERRAIN_AVAILABLE && AC_TERRAIN
     switch (terrain.status()) {
     case AP_Terrain::TerrainStatusDisabled:
         break;
@@ -642,7 +642,7 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         break;
 
     case MSG_TERRAIN:
-#if AP_TERRAIN_AVAILABLE
+#if AP_TERRAIN_AVAILABLE && AC_TERRAIN
         CHECK_PAYLOAD_SIZE(TERRAIN_REQUEST);
         copter.terrain.send_request(chan);
 #endif
@@ -753,7 +753,7 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
 }
 
 
-const AP_Param::GroupInfo GCS_MAVLINK::var_info[] PROGMEM = {
+const AP_Param::GroupInfo GCS_MAVLINK::var_info[] = {
     // @Param: RAW_SENS
     // @DisplayName: Raw sensor stream rate
     // @Description: Stream rate of RAW_IMU, SCALED_IMU2, SCALED_PRESSURE, and SENSOR_OFFSETS to ground station
@@ -961,7 +961,7 @@ GCS_MAVLINK::data_stream_send(void)
         send_message(MSG_HWSTATUS);
         send_message(MSG_SYSTEM_TIME);
         send_message(MSG_RANGEFINDER);
-#if AP_TERRAIN_AVAILABLE
+#if AP_TERRAIN_AVAILABLE && AC_TERRAIN
         send_message(MSG_TERRAIN);
 #endif
         send_message(MSG_BATTERY2);
@@ -1022,12 +1022,12 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
     case MAVLINK_MSG_ID_PARAM_REQUEST_LIST:         // MAV ID: 21
     {
         // mark the firmware version in the tlog
-        send_text_P(MAV_SEVERITY_WARNING, PSTR(FIRMWARE_STRING));
+        send_text(MAV_SEVERITY_INFO, FIRMWARE_STRING);
 
 #if defined(PX4_GIT_VERSION) && defined(NUTTX_GIT_VERSION)
-        send_text_P(MAV_SEVERITY_WARNING, PSTR("PX4: " PX4_GIT_VERSION " NuttX: " NUTTX_GIT_VERSION));
+        send_text(MAV_SEVERITY_INFO, "PX4: " PX4_GIT_VERSION " NuttX: " NUTTX_GIT_VERSION);
 #endif
-        send_text_P(MAV_SEVERITY_WARNING, PSTR("Frame: " FRAME_CONFIG_STRING));
+        send_text(MAV_SEVERITY_INFO, "Frame: " FRAME_CONFIG_STRING);
         handle_param_request_list(msg);
         break;
     }
@@ -1377,13 +1377,17 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                 if (copter.init_arm_motors(true)) {
                     result = MAV_RESULT_ACCEPTED;
                 }
-            } else if (is_zero(packet.param1) && (copter.mode_has_manual_throttle(copter.control_mode) || copter.ap.land_complete || is_equal(packet.param2,21196.0f)))  {
+            } else if (is_zero(packet.param1) && (copter.ap.land_complete || is_equal(packet.param2,21196.0f)))  {
                 // force disarming by setting param2 = 21196 is deprecated
                 copter.init_disarm_motors();
                 result = MAV_RESULT_ACCEPTED;
             } else {
                 result = MAV_RESULT_UNSUPPORTED;
             }
+            break;
+
+        case MAV_CMD_GET_HOME_POSITION:
+            send_home(copter.ahrs.get_home());
             break;
 
         case MAV_CMD_DO_SET_SERVO:
@@ -1511,6 +1515,26 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
             break;
 
+        case MAV_CMD_DO_SEND_BANNER: {
+            result = MAV_RESULT_ACCEPTED;
+
+            send_text(MAV_SEVERITY_INFO, FIRMWARE_STRING);
+
+            #if defined(PX4_GIT_VERSION) && defined(NUTTX_GIT_VERSION)
+            send_text(MAV_SEVERITY_INFO, "PX4: " PX4_GIT_VERSION " NuttX: " NUTTX_GIT_VERSION);
+            #endif
+
+            send_text(MAV_SEVERITY_INFO, "Frame: " FRAME_CONFIG_STRING);
+
+            // send system ID if we can
+            char sysid[40];
+            if (hal.util->get_system_id(sysid)) {
+                send_text(MAV_SEVERITY_INFO, sysid);
+            }
+
+            break;
+        }
+
         default:
             result = MAV_RESULT_UNSUPPORTED;
             break;
@@ -1525,6 +1549,33 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
     case MAVLINK_MSG_ID_COMMAND_ACK:        // MAV ID: 77
     {
         copter.command_ack_counter++;
+        break;
+    }
+
+    case MAVLINK_MSG_ID_SET_ATTITUDE_TARGET:   // MAV ID: 82
+    {
+        // decode packet
+        mavlink_set_attitude_target_t packet;
+        mavlink_msg_set_attitude_target_decode(msg, &packet);
+
+        // ensure type_mask specifies to use attitude and thrust
+        if ((packet.type_mask & ((1<<7)|(1<<6))) != 0) {
+            break;
+        }
+
+        // convert thrust to climb rate
+        packet.thrust = constrain_float(packet.thrust, 0.0f, 1.0f);
+        float climb_rate_cms = 0.0f;
+        if (is_equal(packet.thrust, 0.5f)) {
+            climb_rate_cms = 0.0f;
+        } else if (packet.thrust > 0.5f) {
+            // climb at up to WPNAV_SPEED_UP
+            climb_rate_cms = (packet.thrust - 0.5f) * 2.0f * copter.wp_nav.get_speed_up();
+        } else {
+            // descend at up to WPNAV_SPEED_DN
+            climb_rate_cms = (0.5f - packet.thrust) * 2.0f * -fabsf(copter.wp_nav.get_speed_down());
+        }
+        copter.guided_set_angle(Quaternion(packet.q[0],packet.q[1],packet.q[2],packet.q[3]), climb_rate_cms);
         break;
     }
 
@@ -1736,7 +1787,6 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         }
         break;
 
-#if HAL_CPU_CLASS > HAL_CPU_CLASS_16
     case MAVLINK_MSG_ID_SERIAL_CONTROL:
         handle_serial_control(msg, copter.gps);
         break;
@@ -1745,8 +1795,6 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         handle_gps_inject(msg, copter.gps);
         result = MAV_RESULT_ACCEPTED;
         break;
-
-#endif
 
 #if PRECISION_LANDING == ENABLED
         case MAVLINK_MSG_ID_LANDING_TARGET:
@@ -1780,7 +1828,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
     case MAVLINK_MSG_ID_TERRAIN_DATA:
     case MAVLINK_MSG_ID_TERRAIN_CHECK:
-#if AP_TERRAIN_AVAILABLE
+#if AP_TERRAIN_AVAILABLE && AC_TERRAIN
         copter.terrain.handle_data(chan, msg);
 #endif
         break;
@@ -1793,12 +1841,12 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
         if (packet.idx >= copter.rally.get_rally_total() ||
             packet.idx >= copter.rally.get_rally_max()) {
-            send_text_P(MAV_SEVERITY_WARNING,PSTR("bad rally point message ID"));
+            send_text(MAV_SEVERITY_NOTICE,"bad rally point message ID");
             break;
         }
 
         if (packet.count != copter.rally.get_rally_total()) {
-            send_text_P(MAV_SEVERITY_WARNING,PSTR("bad rally point message count"));
+            send_text(MAV_SEVERITY_NOTICE,"bad rally point message count");
             break;
         }
 
@@ -1811,7 +1859,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         rally_point.flags = packet.flags;
 
         if (!copter.rally.set_rally_point_with_index(packet.idx, rally_point)) {
-            send_text_P(MAV_SEVERITY_CRITICAL, PSTR("error setting rally point"));
+            send_text(MAV_SEVERITY_CRITICAL, "error setting rally point");
         }
 
         break;
@@ -1819,27 +1867,27 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
     //send a rally point to the GCS
     case MAVLINK_MSG_ID_RALLY_FETCH_POINT: {
-        //send_text_P(MAV_SEVERITY_CRITICAL, PSTR("## getting rally point in GCS_Mavlink.cpp 1")); // #### TEMP
+        //send_text(MAV_SEVERITY_INFO, "## getting rally point in GCS_Mavlink.cpp 1"); // #### TEMP
 
         mavlink_rally_fetch_point_t packet;
         mavlink_msg_rally_fetch_point_decode(msg, &packet);
 
-        //send_text_P(MAV_SEVERITY_CRITICAL, PSTR("## getting rally point in GCS_Mavlink.cpp 2")); // #### TEMP
+        //send_text(MAV_SEVERITY_INFO, "## getting rally point in GCS_Mavlink.cpp 2"); // #### TEMP
 
         if (packet.idx > copter.rally.get_rally_total()) {
-            send_text_P(MAV_SEVERITY_WARNING, PSTR("bad rally point index"));
+            send_text(MAV_SEVERITY_NOTICE, "bad rally point index");
             break;
         }
 
-        //send_text_P(MAV_SEVERITY_CRITICAL, PSTR("## getting rally point in GCS_Mavlink.cpp 3")); // #### TEMP
+        //send_text(MAV_SEVERITY_INFO, "## getting rally point in GCS_Mavlink.cpp 3"); // #### TEMP
 
         RallyLocation rally_point;
         if (!copter.rally.get_rally_point_with_index(packet.idx, rally_point)) {
-           send_text_P(MAV_SEVERITY_WARNING, PSTR("failed to set rally point"));
+           send_text(MAV_SEVERITY_NOTICE, "failed to set rally point");
            break;
         }
 
-        //send_text_P(MAV_SEVERITY_CRITICAL, PSTR("## getting rally point in GCS_Mavlink.cpp 4")); // #### TEMP
+        //send_text(MAV_SEVERITY_INFO, "## getting rally point in GCS_Mavlink.cpp 4"); // #### TEMP
 
         mavlink_msg_rally_point_send_buf(msg,
                                          chan, msg->sysid, msg->compid, packet.idx,
@@ -1847,7 +1895,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                                          rally_point.alt, rally_point.break_alt, rally_point.land_dir,
                                          rally_point.flags);
 
-        //send_text_P(MAV_SEVERITY_CRITICAL, PSTR("## getting rally point in GCS_Mavlink.cpp 5")); // #### TEMP
+        //send_text(MAV_SEVERITY_INFO, "## getting rally point in GCS_Mavlink.cpp 5"); // #### TEMP
 
         break;
     }
@@ -1861,6 +1909,29 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         // send message to Notify
         AP_Notify::handle_led_control(msg);
         break;
+
+    case MAVLINK_MSG_ID_SET_HOME_POSITION:
+    {
+        mavlink_set_home_position_t packet;
+        mavlink_msg_set_home_position_decode(msg, &packet);
+        if((packet.latitude == 0) && (packet.longitude == 0) && (packet.altitude == 0)) {
+            copter.set_home_to_current_location_and_lock();
+        } else {
+            // sanity check location
+            if (labs(packet.latitude) > 90*10e7 || labs(packet.longitude) > 180 * 10e7) {
+                break;
+            }
+            Location new_home_loc;
+            new_home_loc.lat = packet.latitude;
+            new_home_loc.lng = packet.longitude;
+            new_home_loc.alt = packet.altitude * 100;
+            if (copter.far_from_EKF_origin(new_home_loc)) {
+                break;
+            }
+            copter.set_home_and_lock(new_home_loc);
+        }
+        break;
+    }
 
     }     // end switch
 } // end handle mavlink
@@ -1894,7 +1965,7 @@ void Copter::mavlink_delay_cb()
     }
     if (tnow - last_5s > 5000) {
         last_5s = tnow;
-        gcs_send_text_P(MAV_SEVERITY_WARNING, PSTR("Initialising APM..."));
+        gcs_send_text(MAV_SEVERITY_INFO, "Initialising APM...");
     }
     check_usb_mux();
 
@@ -1954,11 +2025,11 @@ void Copter::gcs_check_input(void)
     }
 }
 
-void Copter::gcs_send_text_P(MAV_SEVERITY severity, const prog_char_t *str)
+void Copter::gcs_send_text(MAV_SEVERITY severity, const char *str)
 {
     for (uint8_t i=0; i<num_gcs; i++) {
         if (gcs[i].initialised) {
-            gcs[i].send_text_P(severity, str);
+            gcs[i].send_text(severity, str);
         }
     }
 }
@@ -1968,12 +2039,12 @@ void Copter::gcs_send_text_P(MAV_SEVERITY severity, const prog_char_t *str)
  *  only one fits in the queue, so if you send more than one before the
  *  last one gets into the serial buffer then the old one will be lost
  */
-void Copter::gcs_send_text_fmt(const prog_char_t *fmt, ...)
+void Copter::gcs_send_text_fmt(MAV_SEVERITY severity, const char *fmt, ...)
 {
     va_list arg_list;
-    gcs[0].pending_status.severity = (uint8_t)MAV_SEVERITY_WARNING;
+    gcs[0].pending_status.severity = (uint8_t)severity;
     va_start(arg_list, fmt);
-    hal.util->vsnprintf_P((char *)gcs[0].pending_status.text,
+    hal.util->vsnprintf((char *)gcs[0].pending_status.text,
             sizeof(gcs[0].pending_status.text), fmt, arg_list);
     va_end(arg_list);
     gcs[0].send_message(MSG_STATUSTEXT);

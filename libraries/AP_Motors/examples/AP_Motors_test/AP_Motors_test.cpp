@@ -5,13 +5,8 @@
 
 // Libraries
 #include <AP_Common/AP_Common.h>
-#include <AP_Progmem/AP_Progmem.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_HAL/AP_HAL.h>
-#include <AP_HAL_AVR/AP_HAL_AVR.h>
-#include <AP_HAL_PX4/AP_HAL_PX4.h>
-#include <AP_HAL_Linux/AP_HAL_Linux.h>
-#include <AP_HAL_Empty/AP_HAL_Empty.h>
 #include <AP_Math/AP_Math.h>        // ArduPilot Mega Vector/Matrix math Library
 #include <RC_Channel/RC_Channel.h>     // RC Channel Library
 #include <AP_Motors/AP_Motors.h>
@@ -37,7 +32,7 @@
 #include <AP_BattMonitor/AP_BattMonitor.h>
 #include <AP_RangeFinder/AP_RangeFinder.h>
 
-const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 RC_Channel rc1(0), rc2(1), rc3(2), rc4(3);
 
@@ -116,7 +111,7 @@ void motor_order_test()
     hal.console->println("testing motor order");
     motors.armed(true);
     for (int8_t i=1; i <= AP_MOTORS_MAX_NUM_MOTORS; i++) {
-        hal.console->printf_P(PSTR("Motor %d\n"),(int)i);
+        hal.console->printf("Motor %d\n",(int)i);
         motors.output_test(i, 1150);
         hal.scheduler->delay(300);
         motors.output_test(i, 1000);
@@ -169,7 +164,7 @@ void stability_test()
     };
     uint32_t testing_array_rows = 32;
 
-    hal.console->printf_P(PSTR("\nTesting stability patch\nThrottle Min:%d Max:%d\n"),(int)rc3.radio_min,(int)rc3.radio_max);
+    hal.console->printf("\nTesting stability patch\nThrottle Min:%d Max:%d\n",(int)rc3.radio_min,(int)rc3.radio_max);
 
     // arm motors
     motors.armed(true);
@@ -190,7 +185,7 @@ void stability_test()
         avg_out = ((hal.rcout->read(0) + hal.rcout->read(1) + hal.rcout->read(2) + hal.rcout->read(3))/4);
 
         // display input and output
-        hal.console->printf_P(PSTR("R:%5d \tP:%5d \tY:%5d \tT:%5d\tMOT1:%5d \tMOT2:%5d \tMOT3:%5d \tMOT4:%5d \t ThrIn/AvgOut:%5d/%5d\n"),
+        hal.console->printf("R:%5d \tP:%5d \tY:%5d \tT:%5d\tMOT1:%5d \tMOT2:%5d \tMOT3:%5d \tMOT4:%5d \t ThrIn/AvgOut:%5d/%5d\n",
                 (int)roll_in,
                 (int)pitch_in,
                 (int)yaw_in,
