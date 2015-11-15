@@ -16,9 +16,9 @@ namespace{
       typedef quan::angle_<float>::deg deg;
       info.attitude 
          = quan::uav::osd::attitude_type{
-               deg{msg.value.vect3df.z},
-               deg{msg.value.vect3df.x},
-               deg{msg.value.vect3df.y}
+               deg{msg.value.vect3df.z}, // yaw
+               deg{msg.value.vect3df.x}, // pitch
+               deg{msg.value.vect3df.y}  // roll
          };
    }
 
