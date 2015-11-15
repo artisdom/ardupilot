@@ -24,3 +24,4 @@ LIBRARIES += AP_Param
 LIBRARIES += Filter
 #LIBRARIES += GCS_MAVLink
 LIBRARIES += StorageManager
+LIBRARIES += AP_OSD
