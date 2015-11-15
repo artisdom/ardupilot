@@ -36,7 +36,8 @@ namespace {
 
    void panic(const char* text)
    {
-      hal.scheduler->panic(text);
+     // hal.scheduler->panic(text);
+      hal.console->write(text);
    }
 
    void hal_printf(const char* text)

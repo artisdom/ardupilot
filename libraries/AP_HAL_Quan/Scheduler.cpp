@@ -1,8 +1,9 @@
 
-#include "Scheduler.h"
 
 #include <stm32f4xx.h>
 #include "FreeRTOS.h"
+#include "Scheduler.h"
+#include <cstdio>
 #include <task.h>
 #include <semphr.h>
 #include <quan/stm32/tim.hpp>
@@ -10,13 +11,10 @@
 #include <quan/stm32/get_raw_timer_frequency.hpp>
 #include <quan/max.hpp>
 #include "i2c_task.hpp"
-//#include <quan/stm32/gpio.hpp>
-//#include <resources.hpp>
 
 using namespace Quan;
 
 extern const AP_HAL::HAL& hal;
-
 
 namespace {
 
@@ -57,110 +55,6 @@ extern "C" void TIM8_UP_TIM13_IRQHandler()
       ++ timer_micros_ovflo_count;
    }
 }
-
-
-#if 0
-namespace {
-
-   // for vTaskDelayUntil
- //  TickType_t last_scheduler_timer_task_wake_time = 0;
-   // The queue for task messages
-   // could be more sophisticated
-   // to remove tasks as well as add
-  // QueueHandle_t scheduler_timer_task_message_queue = nullptr;
-   // max number of timer task procs
- //  constexpr uint32_t max_scheduler_timer_procs = 4;
- //  constexpr uint32_t scheduler_timer_task_queue_length = max_scheduler_timer_procs;
-
-   // static temp for new task from queue
- //  AP_HAL::MemberProc new_scheduler_timer_task_proc = nullptr;
-   // the array of timer procs to call in the slot
- //  AP_HAL::MemberProc timer_procs[max_scheduler_timer_procs] = {nullptr};
-
-  // bool m_in_timer_process = false;
-
-  // bool request_timer_procs_suspended = false;
-
-  // bool timer_procs_suspended = false;
-
-   void scheduler_timer_task(void * params)
-   {
-      scheduler_timer_task_message_queue = xQueueCreate(2,sizeof(AP_HAL::MemberProc));
-      if ( scheduler_timer_task_message_queue == nullptr){
-         hal.scheduler->panic("Create Sched timer_task Q failed");
-      }
-
-      for(;;){
-
-         while ( uxQueueMessagesWaiting(scheduler_timer_task_message_queue) != 0){
-            xQueueReceive(scheduler_timer_task_message_queue,&new_scheduler_timer_task_proc,0);
-            if ( (new_scheduler_timer_task_proc == nullptr) == false){
-               bool new_proc_installed = false;
-               // check for duplicate
-               for ( auto const & pfn : timer_procs){
-                  if ( new_scheduler_timer_task_proc == pfn){
-                     new_proc_installed = true;
-                     break;
-                  }
-               }
-               // check for free slot
-               if (!new_proc_installed){
-                  for (auto & pfn : timer_procs){
-                     if (pfn == nullptr){
-                        pfn = new_scheduler_timer_task_proc;
-                        new_proc_installed = true;
-                        break;
-                     }
-                  }
-               }
-               if (! new_proc_installed){
-                   hal.console->printf("Install Sched timer task proc failed\n");
-               }
-            }
-         }
-         // 
-         if ( request_timer_procs_suspended){
-            timer_procs_suspended = true;
-         }else{
-            timer_procs_suspended = false;
-            // run all the functions
-            for ( auto& pfn : timer_procs){
-               if ( (pfn == nullptr) == false){
-               //   taskENTER_CRITICAL();
-                  m_in_timer_process = true;
-                  pfn();
-                  m_in_timer_process = false;
-                //  taskEXIT_CRITICAL();
-               }
-            } 
-         }
-         // can add other tasks here
-         // e.g A2D
-         // and sleep 1 ms till next time
-         vTaskDelayUntil(&last_scheduler_timer_task_wake_time, 1);
-      }
-   }
-
-   TaskHandle_t scheduler_timer_task_handle;
-   void * dummy_params;
-
-/*
- TODO look at functions to assess how much memory to allocate
-  Check for task safe etc
-*/
-   void create_scheduler_timer_task()
-   {
-      xTaskCreate(
-         scheduler_timer_task,"scheduler_timer_task",
-         1000,
-         &dummy_params,
-         tskIDLE_PRIORITY + 2, // want slightly higher than apm task priority
-         & scheduler_timer_task_handle
-      ) ;
-   }
-
-} // namespace
-#endif
 
 QuanScheduler::QuanScheduler()
 {}
@@ -327,10 +221,17 @@ void QuanScheduler::system_initialized()
    m_system_initialised = true;
 }
 
-void QuanScheduler::panic(const prog_char_t *errormsg) {
-    hal.console->println_P(errormsg);
-   
-    for(;;){ hal.scheduler->delay(1000);}
+void QuanScheduler::panic(const char *errormsg,...) 
+{
+// TODO
+    va_list args;
+    va_start(args, errormsg);
+    char buf[256];
+    int n = vsprintf(buf, errormsg, args);
+    va_end(args);
+    hal.console->write((uint8_t const *)buf,n);
+    hal.console->printf("\n");
+    for(;;){ hal.scheduler->delay(10);}
 }
 
 // TODO wdt

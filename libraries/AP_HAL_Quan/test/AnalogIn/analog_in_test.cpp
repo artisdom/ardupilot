@@ -1,5 +1,7 @@
 
 #include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
 #include <AP_Common/AP_Common.h>
 #include <AP_Progmem/AP_Progmem.h>
 #include <AP_Param/AP_Param.h>
@@ -13,17 +15,11 @@
 #include <cstring>
 #include <stm32f4xx.h>
 
-/*
-   Test of the Timer task
-   tset_task justs blinks an LED but in the timer task callback
-*/
-
-const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 namespace {
 
    constexpr uint8_t red_led_pin = 1U;
-   // Pin2 == PC14
    constexpr uint8_t test_pin = 2U;
 
    constexpr uint8_t pin_off = 0U;
@@ -121,46 +117,8 @@ void loop()
    }
 }
 
-#if defined QUAN_WITH_OSD_OVERLAY
+
 AP_HAL_MAIN();
-#else
-void create_apm_task();
-void create_timer_task();
 
-extern "C" {
-   int main (void) 
-   {
-      osd_setup(); 
-      create_draw_task(); 
-      create_apm_task(); 
-      vTaskStartScheduler (); 
-   }
-}
-
-namespace { 
-   char dummy_param = 0; 
-   TaskHandle_t task_handle = NULL; 
-   void apm_task(void * params) 
-   { 
-      hal.init(0, NULL);
-      setup();
-      hal.scheduler->system_initialized(); 
-      test_task.init();
-      for(;;){ 
-         loop(); 
-      } 
-   } 
-} 
-
-void create_apm_task() 
-{ 
-  xTaskCreate( 
-      apm_task,"apm task", 
-      5000, 
-      &dummy_param, 
-      tskIDLE_PRIORITY + 1, 
-      &task_handle 
-  ); 
-}
 #endif
 

@@ -1,6 +1,8 @@
 
 #include <AP_HAL/AP_HAL.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <quantracker/osd/osd.hpp>
+#include <task.h>
 
 #include "HAL_Quan_Class.h"
 #include "AP_HAL_Quan_Private.h"
@@ -50,6 +52,12 @@ HAL_Quan::HAL_Quan()
 )
 {}
 
+// ignore callbacks for now
+void HAL_Quan::run(int argc, char * const argv[], Callbacks* callbacks) const
+{
+   this->init(argc,argv);
+}
+
 // called as first item at the startup of apm_task before the main forever loop
 void HAL_Quan::init(int argc,char* const argv[]) const 
 {
@@ -64,6 +72,44 @@ void HAL_Quan::init(int argc,char* const argv[]) const
    scheduler->init(NULL); // start i2c_task
 }
 
-const HAL_Quan AP_HAL_Quan;
+namespace {
+   const HAL_Quan hal_quan;
+}
+
+const AP_HAL::HAL& AP_HAL::get_HAL() 
+{
+    return hal_quan;
+}
+
+void setup();
+void loop();
+
+namespace { 
+   char dummy_param = 0; 
+   TaskHandle_t task_handle = NULL; 
+   void apm_task(void * params) 
+   { 
+      hal_quan.run(0, NULL,NULL);
+      setup();
+      hal_quan.scheduler->system_initialized(); 
+      for(;;){ 
+         loop(); 
+      } 
+
+   } 
+} 
+
+void create_apm_task() 
+{ 
+  xTaskCreate( 
+      apm_task,"apm task", 
+      4000, 
+      &dummy_param, 
+      tskIDLE_PRIORITY + 1, 
+      &task_handle 
+  ); 
+}
+
+
 
 #endif  // CONFIG_HAL_BOARD == HAL_BOARD_QUAN

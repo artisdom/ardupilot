@@ -67,7 +67,8 @@ namespace {
    void panic(const char* text)
    {
      // taskENTER_CRITICAL();
-      hal.scheduler->panic(text);
+     // hal.scheduler->panic(text);
+      hal.console->write(text);
      // taskEXIT_CRITICAL();
    }
 

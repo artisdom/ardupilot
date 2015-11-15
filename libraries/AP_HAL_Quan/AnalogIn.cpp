@@ -1,11 +1,11 @@
 
 #include <AP_HAL/AP_HAL.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-
-#include <AP_HAL_Quan/AP_HAL_Quan.h>
 #include <stm32f4xx.h>
 #include "FreeRTOS.h"
 #include <semphr.h>
+#include <task.h>
+#include <AP_HAL_Quan/AP_HAL_Quan.h>
 #include "AnalogIn.h"
 #include <Filter/Filter.h>
 #include <Filter/Butter.h>
