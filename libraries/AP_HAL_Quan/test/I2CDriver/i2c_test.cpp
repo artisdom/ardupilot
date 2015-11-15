@@ -14,35 +14,27 @@
 #include <cstring>
 #include <stm32f4xx.h>
 
-//#define QUAN_WITH_OSD_OVERLAY
-
 #error "need to disable the i2c_task in quan scheduler.cpp for this to work atm"
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 
 namespace {
 
-   // connect a HMC5883 mag to i2c3 on pA8 scl, pa9 sda to test
+   // connect a HMC5883 mag and MS5611 baro to test
 
    constexpr uint8_t red_led_pin = 1U;
-   // Pin2 == PC14
+ 
    constexpr uint8_t test_pin = 2U;
 
    constexpr uint8_t pin_off = 0U;
    constexpr uint8_t pin_on = 1U;
 
    constexpr uint8_t mag_addr = 0x1E;
-  // static const uint8_t mag_configA = 0x0;
-  // static const uint8_t configB = 0x1;
    constexpr uint8_t mag_modereg =  0x02;
    uint8_t mag_msb_x = 0x03;
    constexpr uint8_t mag_single_measurement = 0x01;
    uint8_t values [6] = {0,0,0,0,0,0};
-
    constexpr uint8_t baro_addr = 0x77;
-
    constexpr uint8_t ConfigRegA = 0x00;
-   // convert pressure
-   // takes 
    static uint8_t baro_start_pressure_conv = 0x48;
    static uint8_t baro_read_adc = 0x00;
 

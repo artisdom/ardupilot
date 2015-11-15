@@ -14,8 +14,7 @@
 #include <stm32f4xx.h>
 
 /*
-   Test of the Timer task
-   tset_task justs blinks an LED but in the timer task callback
+  test of basic storage function
 */
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
@@ -31,23 +30,24 @@ namespace {
 
    struct test_task_t{
 
-      test_task_t(): m_count{0}{}
+      test_task_t(): m_count{false}{}
 
       void fun()
       {
-         // if ( m_count == 0){
-          //   ++ m_count;
-//              char const text [] = "This is a string of stuff\n";
-//             hal.storage->write_block(5000,text,27);
-
+          hal.gpio->toggle(red_led_pin);
+          if ( m_count == false){
+             char const text [] = "This is a string of stuff\n";
+             hal.storage->write_block(5000,text,27);
+             m_count == true;
+          }else{
              char buffer[100];
              
              hal.storage->read_block(buffer,5000,27);
 
              hal.console->write((unsigned char const*)buffer,27);
              hal.console->printf("-------------------------\n");
-         // }
-         
+             m_count == false;
+          }
       };
 
       void init()
@@ -57,7 +57,7 @@ namespace {
           
       }
    private:
-      uint32_t m_count ;
+      bool m_count ;
    } test_task;
 
 }
@@ -68,6 +68,7 @@ void setup()
  	hal.console->printf("Quan APM Storage test\n");
    hal.gpio->pinMode(test_pin,HAL_GPIO_OUTPUT);
    hal.gpio->write(test_pin,pin_off);
+   test_task.init();
 }
 
 void quan::uav::osd::on_draw() 
@@ -92,46 +93,6 @@ void loop()
    }
 }
 
-#if defined QUAN_WITH_OSD_OVERLAY
 AP_HAL_MAIN();
-#else
-void create_apm_task();
-void create_timer_task();
 
-extern "C" {
-   int main (void) 
-   {
-      osd_setup(); 
-      create_draw_task(); 
-      create_apm_task(); 
-      vTaskStartScheduler (); 
-   }
-}
-
-namespace { 
-   char dummy_param = 0; 
-   TaskHandle_t task_handle = NULL; 
-   void apm_task(void * params) 
-   { 
-      hal.init(0, NULL);
-      setup();
-      hal.scheduler->system_initialized(); 
-      test_task.init();
-      for(;;){ 
-         loop(); 
-      } 
-   } 
-} 
-
-void create_apm_task() 
-{ 
-  xTaskCreate( 
-      apm_task,"apm task", 
-      5000, 
-      &dummy_param, 
-      tskIDLE_PRIORITY + 1, 
-      &task_handle 
-  ); 
-}
-#endif
 

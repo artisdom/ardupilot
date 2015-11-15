@@ -89,10 +89,8 @@ namespace {
 // called once after init of hal before startup of apm task
 void setup() 
 {
-   float const test_val = 1.2345;
- 	hal.console->printf("Quan APM Analogin test %f\n", static_cast<double>(test_val));
-   hal.gpio->pinMode(test_pin,HAL_GPIO_OUTPUT);
-   hal.gpio->write(test_pin,pin_off);
+ 	hal.console->printf("Quan APM Analogin test\n");
+   test_task.init();
 }
 
 void quan::uav::osd::on_draw() 
@@ -117,8 +115,6 @@ void loop()
    }
 }
 
-
 AP_HAL_MAIN();
 
 #endif
-

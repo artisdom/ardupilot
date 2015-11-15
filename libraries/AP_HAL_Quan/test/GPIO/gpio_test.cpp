@@ -2,9 +2,6 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Common/AP_Common.h>
 #include <AP_Progmem/AP_Progmem.h>
-// for pin number defines
-//#include <AP_Notify.h>
-// but includes a lot of stuff then
 #include <AP_Param/AP_Param.h>
 #include <StorageManager/StorageManager.h>
 #include <AP_Math/AP_Math.h>
@@ -35,7 +32,6 @@ void setup()
    }
 
 	hal.console->write((uint8_t const*)text,strlen(text));
-
 }
 
 void quan::uav::osd::on_draw() 

@@ -14,6 +14,8 @@
 #include <cstring>
 #include <stm32f4xx.h>
 
+#error "This isnt connected"
+
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 
 namespace {

@@ -13,7 +13,7 @@
 #include <task.h>
 
 // uncomment to start OSD as well
-#define QUAN_WITH_OSD_OVERLAY
+
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 
 namespace {
@@ -36,13 +36,10 @@ void setup()
 
 }
 
-#if defined QUAN_WITH_OSD_OVERLAY
 void quan::uav::osd::on_draw() 
 { 
   draw_text("Quan APM Scheduler test",{-100,50});
 }
-#endif
-
 
 void loop() 
 {
@@ -52,44 +49,6 @@ void loop()
    hal.scheduler->delay_microseconds(200);
 }
 
-#if defined QUAN_WITH_OSD_OVERLAY
 AP_HAL_MAIN();
-#else
-void create_apm_task();
 
-extern "C" {
-   int main (void) 
-   {
-     // osd_setup(); 
-     // create_draw_task(); 
-      create_apm_task(); 
-      vTaskStartScheduler (); 
-   }
-}
-
-namespace { 
-   char dummy_param = 0; 
-   TaskHandle_t task_handle = NULL; 
-   void apm_task(void * params) 
-   { 
-      hal.init(0, NULL);
-      setup();
-      hal.scheduler->system_initialized(); 
-      for(;;){ 
-         loop(); 
-      } 
-   } 
-} 
-
-void create_apm_task() 
-{ 
-  xTaskCreate( 
-      apm_task,"apm task", 
-      5000, 
-      &dummy_param, 
-      tskIDLE_PRIORITY + 1, 
-      &task_handle 
-  ); 
-}
-#endif
 

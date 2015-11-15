@@ -13,8 +13,7 @@
 #include <cstring>
 
 /*
-   Test of the Timer task
-   tset_task justs blinks an LED but in the timer task callback
+   Sceduler test
 */
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
@@ -44,7 +43,6 @@ namespace {
       {
           hal.gpio->pinMode(red_led_pin,HAL_GPIO_OUTPUT);
           hal.gpio->write(red_led_pin,pin_off);
-          hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&test_task_t::fun, void));
       }
    private:
       uint32_t m_count ;
@@ -66,8 +64,6 @@ void quan::uav::osd::on_draw()
    draw_text("Quan APM Sched Timer test",{-140,50});
 }
 
-
-
 namespace {
    uint64_t next_event = 10U;
 }
@@ -81,46 +77,4 @@ void loop()
    }
 }
 
-#if defined QUAN_WITH_OSD_OVERLAY
 AP_HAL_MAIN();
-#else
-void create_apm_task();
-void create_timer_task();
-
-extern "C" {
-   int main (void) 
-   {
-      osd_setup(); 
-      create_draw_task(); 
-      create_apm_task(); 
-      vTaskStartScheduler (); 
-   }
-}
-
-namespace { 
-   char dummy_param = 0; 
-   TaskHandle_t task_handle = NULL; 
-   void apm_task(void * params) 
-   { 
-      hal.init(0, NULL);
-      setup();
-      hal.scheduler->system_initialized(); 
-      test_task.init();
-      for(;;){ 
-         loop(); 
-      } 
-   } 
-} 
-
-void create_apm_task() 
-{ 
-  xTaskCreate( 
-      apm_task,"apm task", 
-      5000, 
-      &dummy_param, 
-      tskIDLE_PRIORITY + 1, 
-      &task_handle 
-  ); 
-}
-#endif
-

@@ -7,3 +7,5 @@ LIBRARIES += AP_Param
 LIBRARIES += AP_Progmem
 LIBRARIES += StorageManager
 LIBRARIES += Filter
+LIBRARIES += AP_OSD
+
