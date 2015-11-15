@@ -68,32 +68,36 @@ namespace {
 void loop(void)
 {
     
-    ins.wait_for_sample();
-    float heading = 0;
-    if (++counter10_Hz == 5){
-        counter10_Hz = 0;
-        compass.read();
-        heading = compass.calculate_heading(ahrs.get_dcm_matrix());
-        AP_OSD::enqueue::heading(ToDeg(heading));
+   ins.wait_for_sample();
+   float heading = 0;
+   if (++counter10_Hz == 5){
+      counter10_Hz = 0;
+      compass.read();
 
-        baro.update();
-        AP_OSD::enqueue::baro_altitude(baro.get_altitude());
+      baro.update();
 
-        gps.update();
-        AP_OSD::enqueue::gps_status(gps.status());
-        AP_OSD::enqueue::gps_location(
-            {gps.location().lat,gps.location().lng,gps.location().alt}
-        );
+      gps.update();
 
-        airspeed.read();
-        AP_OSD::enqueue::airspeed(airspeed.get_airspeed());
+      AP_OSD::gps_info_t gps_info;
+      gps_info.ground_speed_m_per_s   = gps.ground_speed();
+      gps_info.ground_course_cd       = gps.ground_course_cd();
+      gps_info.num_sats               = gps.num_sats();
+      gps_info.status                 = gps.status();
 
-        battery_monitor.read();
-        AP_OSD::enqueue::battery(
-            {battery_monitor.voltage(),
-               battery_monitor.current_amps(),
-                  battery_monitor.current_total_mah()}
-        );
+      AP_OSD::enqueue::gps_status(gps_info);
+      AP_OSD::enqueue::gps_location(
+         {gps.location().lat,gps.location().lng,gps.location().alt}
+      );
+
+      airspeed.read();
+      AP_OSD::enqueue::airspeed(airspeed.get_airspeed());
+
+      battery_monitor.read();
+      AP_OSD::enqueue::battery(
+         {battery_monitor.voltage(),
+            battery_monitor.current_amps(),
+               battery_monitor.current_total_mah()}
+      );
 
     }
 
