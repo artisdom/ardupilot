@@ -146,14 +146,10 @@ void Plane::init_ardupilot()
     usb_connected = true;
     check_usb_mux();
 
-    // setup serial port for telem1
-    gcs[1].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink, 0);
-
-    // setup serial port for telem2
-    gcs[2].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink, 1);
-
-    // setup serial port for fourth telemetry port (not used by default)
-    gcs[3].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink, 2);
+   // set up telemetry
+   for (uint8_t i = 1; i < MAVLINK_COMM_NUM_BUFFERS; ++i){
+       gcs[i].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink, i -1);
+   }
 
     // setup frsky
 #if FRSKY_TELEM_ENABLED == ENABLED
@@ -226,17 +222,18 @@ void Plane::init_ardupilot()
     if (g.cli_enabled == 1) {
         const char *msg = "\nPress ENTER 3 times to start interactive setup\n";
         cliSerial->println(msg);
+#if MAVLINK_COMM_NUM_BUFFERS > 1
         if (gcs[1].initialised && (gcs[1].get_uart() != NULL)) {
             gcs[1].get_uart()->println(msg);
         }
+#endif
 #if MAVLINK_COMM_NUM_BUFFERS > 2
         if (num_gcs > 2 && gcs[2].initialised && (gcs[2].get_uart() != NULL)) {
             gcs[2].get_uart()->println(msg);
         }
 #endif
     }
-#else
-#error "cli should be enabled"
+
 #endif // CLI_ENABLED
 
     init_capabilities();

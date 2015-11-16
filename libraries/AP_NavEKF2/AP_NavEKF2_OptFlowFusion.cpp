@@ -83,7 +83,7 @@ void NavEKF2_core::SelectFlowFusion()
     if (newDataFlow && tiltOK && PV_AidingMode == AID_RELATIVE)
     {
         // Set the flow noise used by the fusion processes
-        R_LOS = sq(max(frontend->_flowNoise, 0.05f));
+        R_LOS = sq(max(frontend->_flowNoise.get(), 0.05f));
         // Fuse the optical flow X and Y axis data into the main filter sequentially
         FuseOptFlow();
         // reset flag to indicate that no new flow data is available for fusion

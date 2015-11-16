@@ -11,6 +11,7 @@
 #include <AP_Math/AP_Math.h>
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <AP_InertialSensor/AP_InertialSensor_Quan.h>
 #include <AP_HAL_Quan/imu_task.hpp>
 #endif
 
@@ -937,11 +938,8 @@ AP_InertialSensor::_init_gyro()
     AP_Notify::flags.initialising = true;
 
     // cold start
-<<<<<<< HEAD
+
     hal.console->print("Init Gyro");
-=======
-    hal.console->print_P(PSTR("Init Gyro\n"));
->>>>>>> quantracker_master
 
     /*
       we do the gyro calibration with no board rotation. This avoids

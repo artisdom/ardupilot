@@ -125,7 +125,6 @@ const AP_Param::GroupInfo Compass::var_info[] = {
 #else
     AP_GROUPINFO("EXTERNAL", 9, Compass, _state[0].external, 0),
 #endif
-#if COMPASS_MAX_INSTANCES > 1
     // @Param: OFS2_X
     // @DisplayName: Compass2 offsets in milligauss on the X axis
     // @Description: Offset to be added to compass2's x-axis values to compensate for metal in the frame

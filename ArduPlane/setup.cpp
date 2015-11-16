@@ -68,14 +68,14 @@ int8_t Plane::setup_set(uint8_t argc, const Menu::arg *argv)
 
     if(argc!=3)
     {
-        cliSerial->printf_P(PSTR("Invalid command. Usage: set <name> <value>\n"));
+        cliSerial->printf("Invalid command. Usage: set <name> <value>\n");
         return 0;
     }
 
     param = AP_Param::find(argv[1].str, &p_type);
     if(!param)
     {
-        cliSerial->printf_P(PSTR("Param not found: %s\n"), argv[1].str);
+        cliSerial->printf("Param not found: %s\n", argv[1].str);
         return 0;
     }
 
@@ -85,7 +85,7 @@ int8_t Plane::setup_set(uint8_t argc, const Menu::arg *argv)
             value_int8 = (int8_t)(argv[2].i);
             if(argv[2].i!=value_int8)
             {
-                cliSerial->printf_P(PSTR("Value out of range for type INT8\n"));
+                cliSerial->printf("Value out of range for type INT8\n");
                 return 0;
             }
             ((AP_Int8*)param)->set_and_save(value_int8);
@@ -94,7 +94,7 @@ int8_t Plane::setup_set(uint8_t argc, const Menu::arg *argv)
             value_int16 = (int16_t)(argv[2].i);
             if(argv[2].i!=value_int16)
             {
-                cliSerial->printf_P(PSTR("Value out of range for type INT16\n"));
+                cliSerial->printf("Value out of range for type INT16\n");
                 return 0;
             }
             ((AP_Int16*)param)->set_and_save(value_int16);
@@ -108,7 +108,7 @@ int8_t Plane::setup_set(uint8_t argc, const Menu::arg *argv)
             ((AP_Float*)param)->set_and_save(argv[2].f);
             break;
         default:
-            cliSerial->printf_P(PSTR("Cannot set parameter of type %d.\n"), p_type);
+            cliSerial->printf("Cannot set parameter of type %d.\n", p_type);
             break;
     }
 
@@ -137,7 +137,7 @@ int8_t Plane::setup_show(uint8_t argc, const Menu::arg *argv)
 
         if(!param)
         {
-            cliSerial->printf_P(PSTR("Parameter not found: '%s'\n"), argv[1]);
+            cliSerial->printf("Parameter not found: '%s'\n", argv[1].str);
             return 0;
         }
         AP_Param::show(param, argv[1].str, type, cliSerial);

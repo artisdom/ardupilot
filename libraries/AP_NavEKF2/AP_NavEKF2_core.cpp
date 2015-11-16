@@ -14,7 +14,7 @@
 extern const AP_HAL::HAL& hal;
 
 #define earthRate 0.000072921f // earth rotation rate (rad/sec)
-
+#pragma message "WARNING WARNING WARNING ########### Broken just testing build ##############################################"
 // when the wind estimation first starts with no airspeed sensor,
 // assume 3m/s to start
 #define STARTUP_WIND_SPEED 3.0f
@@ -411,13 +411,12 @@ void NavEKF2_core::UpdateFilter(bool predict)
     calcOutputStatesFast();
 
     // stop the timer used for load measurement
-<<<<<<< HEAD
+
     hal.util->perf_end(_perf_UpdateFilter);
 #if EK2_DISABLE_INTERRUPTS
     irqrestore(istate);
 #endif
-=======
-    perf_end(_perf_UpdateFilter);
+
 }
 
 // select fusion of velocity, position and height measurements
@@ -439,7 +438,7 @@ void NavEKF2_core::SelectVelPosFusion()
 
     // If we haven't received height data for a while, then declare the height data as being timed out
     // set timeout period based on whether we have vertical GPS velocity available to constrain drift
-    hgtRetryTime_ms = (useGpsVertVel && !velTimeout) ? frontend.hgtRetryTimeMode0_ms : frontend.hgtRetryTimeMode12_ms;
+    hgtRetryTime_ms = (useGpsVertVel && !velTimeout) ? frontend->hgtRetryTimeMode0_ms : frontend->hgtRetryTimeMode12_ms;
     if (imuSampleTime_ms - lastHgtReceived_ms > hgtRetryTime_ms) {
         hgtTimeout = true;
     }
@@ -454,7 +453,8 @@ void NavEKF2_core::SelectVelPosFusion()
     // perform fusion
     if (fuseVelData || fusePosData || fuseHgtData) {
         // ensure that the covariance prediction is up to date before fusing data
-        if (!covPredStep) CovariancePrediction();
+        //if (!covPredStep) 
+        CovariancePrediction();
         FuseVelPosNED();
     }
 }
@@ -463,7 +463,7 @@ void NavEKF2_core::SelectVelPosFusion()
 void NavEKF2_core::SelectMagFusion()
 {
     // start performance timer
-    perf_begin(_perf_FuseMagnetometer);
+    hal.util->perf_begin(_perf_FuseMagnetometer);
 
     // check for and read new magnetometer measurements
     readMagData();
@@ -472,7 +472,7 @@ void NavEKF2_core::SelectMagFusion()
     if (magHealth) {
         magTimeout = false;
         lastHealthyMagTime_ms = imuSampleTime_ms;
-    } else if ((imuSampleTime_ms - lastHealthyMagTime_ms) > frontend.magFailTimeLimit_ms && use_compass()) {
+    } else if ((imuSampleTime_ms - lastHealthyMagTime_ms) > frontend->magFailTimeLimit_ms && use_compass()) {
         magTimeout = true;
     }
 
@@ -483,7 +483,8 @@ void NavEKF2_core::SelectMagFusion()
     bool dataReady = (temp && statesInitialised && use_compass() && yawAlignComplete);
     if (dataReady) {
         // ensure that the covariance prediction is up to date before fusing data
-        if (!covPredStep) CovariancePrediction();
+       // if (!covPredStep) 
+           CovariancePrediction();
         // If we haven't performed the first airborne magnetic field update or have inhibited magnetic field learning, then we use the simple method of declination to maintain heading
         if(inhibitMagStates) {
             fuseCompass();
@@ -496,7 +497,7 @@ void NavEKF2_core::SelectMagFusion()
     }
 
     // stop performance timer
-    perf_end(_perf_FuseMagnetometer);
+    hal.util->perf_end(_perf_FuseMagnetometer);
 }
 
 // select fusion of true airspeed measurements
@@ -506,7 +507,7 @@ void NavEKF2_core::SelectTasFusion()
     readAirSpdData();
 
     // If we haven't received airspeed data for a while, then declare the airspeed data as being timed out
-    if (imuSampleTime_ms - tasDataNew.time_ms > frontend.tasRetryTime_ms) {
+    if (imuSampleTime_ms - tasDataNew.time_ms > frontend->tasRetryTime_ms) {
         tasTimeout = true;
     }
 
@@ -515,7 +516,8 @@ void NavEKF2_core::SelectTasFusion()
     if (tasDataWaiting)
     {
         // ensure that the covariance prediction is up to date before fusing data
-        if (!covPredStep) CovariancePrediction();
+       // if (!covPredStep) 
+            CovariancePrediction();
         FuseAirspeed();
         prevTasStep_ms = imuSampleTime_ms;
         tasDataWaiting = false;
@@ -529,15 +531,16 @@ void NavEKF2_core::SelectTasFusion()
 void NavEKF2_core::SelectBetaFusion()
 {
     // set true when the fusion time interval has triggered
-    bool f_timeTrigger = ((imuSampleTime_ms - prevBetaStep_ms) >= frontend.betaAvg_ms);
+    bool f_timeTrigger = ((imuSampleTime_ms - prevBetaStep_ms) >= frontend->betaAvg_ms);
     // set true when use of synthetic sideslip fusion is necessary because we have limited sensor data or are dead reckoning position
-    bool f_required = !(use_compass() && useAirspeed() && ((imuSampleTime_ms - lastPosPassTime_ms) < frontend.gpsRetryTimeNoTAS_ms));
+    bool f_required = !(use_compass() && useAirspeed() && ((imuSampleTime_ms - lastPosPassTime_ms) < frontend->gpsRetryTimeNoTAS_ms));
     // set true when sideslip fusion is feasible (requires zero sideslip assumption to be valid and use of wind states)
     bool f_feasible = (assume_zero_sideslip() && !inhibitWindStates);
     // use synthetic sideslip fusion if feasible, required and enough time has lapsed since the last fusion
     if (f_feasible && f_required && f_timeTrigger) {
         // ensure that the covariance prediction is up to date before fusing data
-        if (!covPredStep) CovariancePrediction();
+      //  if (!covPredStep) 
+            CovariancePrediction();
         FuseSideslip();
         prevBetaStep_ms = imuSampleTime_ms;
     }
@@ -547,7 +550,7 @@ void NavEKF2_core::SelectBetaFusion()
 void NavEKF2_core::SelectFlowFusion()
 {
     // start performance timer
-    perf_begin(_perf_FuseOptFlow);
+    hal.util->perf_begin(_perf_FuseOptFlow);
     // Perform Data Checks
     // Check if the optical flow data is still valid
     flowDataValid = ((imuSampleTime_ms - flowValidMeaTime_ms) < 1000);
@@ -558,9 +561,9 @@ void NavEKF2_core::SelectFlowFusion()
     // check is the terrain offset estimate is still valid
     gndOffsetValid = ((imuSampleTime_ms - gndHgtValidTime_ms) < 5000);
     // Perform tilt check
-    bool tiltOK = (Tnb_flow.c.z > frontend.DCM33FlowMin);
+    bool tiltOK = (Tnb_flow.c.z > frontend->DCM33FlowMin);
     // Constrain measurements to zero if we are using optical flow and are on the ground
-    if (frontend._fusionModeGPS == 3 && !takeOffDetected && filterArmed) {
+    if (frontend->_fusionModeGPS == 3 && !takeOffDetected /*&& filterArmed*/) {
         ofDataDelayed.flowRadXYcomp.zero();
         ofDataDelayed.flowRadXY.zero();
         flowDataValid = true;
@@ -593,9 +596,10 @@ void NavEKF2_core::SelectFlowFusion()
     if (newDataFlow && tiltOK && PV_AidingMode == AID_RELATIVE)
     {
         // Set the flow noise used by the fusion processes
-        R_LOS = sq(max(frontend._flowNoise.get(), 0.05f));
+        R_LOS = sq(max(frontend->_flowNoise.get(), 0.05f));
         // ensure that the covariance prediction is up to date before fusing data
-        if (!covPredStep) CovariancePrediction();
+      //  if (!covPredStep) 
+            CovariancePrediction();
         // Fuse the optical flow X and Y axis data into the main filter sequentially
         FuseOptFlow();
         // reset flag to indicate that no new flow data is available for fusion
@@ -603,8 +607,8 @@ void NavEKF2_core::SelectFlowFusion()
     }
 
     // stop the performance timer
-    perf_end(_perf_FuseOptFlow);
->>>>>>> quantracker_master
+   hal.util->perf_end(_perf_FuseOptFlow);
+
 }
 
 /*

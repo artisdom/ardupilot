@@ -14,7 +14,7 @@ AP_Compass_Quan::AP_Compass_Quan(Compass &compass)
 {
    m_instance = register_compass();
    set_dev_id(m_instance,AP_COMPASS_TYPE_QUAN);
-   set_milligauss_ratio(m_instance,1.0f);
+  // set_milligauss_ratio(m_instance,1.0f);
    set_external(m_instance, true);
 }
 

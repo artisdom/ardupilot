@@ -934,28 +934,32 @@ void Plane::update_optical_flow(void)
 #endif
 
 //<<<<<<< HEAD
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+void setup(void);
+void loop(void);
+
+void setup(void)
+{
+    plane.setup();
+   // hal.console->printf("setup done\n");
+}
+void loop(void)
+{
+   // hal.console->printf("loop\n");
+    plane.loop();
+}
+
+AP_HAL_MAIN();
+#else
 AP_HAL_MAIN_CALLBACKS(&plane);
+#endif
 //=======
 ///*
 //  compatibility with old pde style build
 // */
 //// for HAL_BOARD_QUAN will prob put in a task
 ////#if  CONFIG_HAL_BOARD != HAL_BOARD_QUAN
-//void setup(void);
-//void loop(void);
-//
-//void setup(void)
-//{
-//    plane.setup();
-//   // hal.console->printf("setup done\n");
-//}
-//void loop(void)
-//{
-//   // hal.console->printf("loop\n");
-//    plane.loop();
-//}
-//
-//AP_HAL_MAIN();
-//
+
+
 ////#endif  // CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 //>>>>>>> quantracker_master

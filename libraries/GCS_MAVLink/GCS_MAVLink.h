@@ -20,7 +20,7 @@
 // into progmem
 #define MAVLINK_MESSAGE_CRC(msgid) mavlink_get_message_crc(msgid)
 
-// allow four telemetry ports
+// allow 1 telemetry port
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #define MAVLINK_COMM_NUM_BUFFERS 1
 #else
