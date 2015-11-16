@@ -81,15 +81,15 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(update_mount,            1,   1500),
   //  SCHED_TASK(log_perf_info,         500,   1000),
     SCHED_TASK(compass_save,         3000,   2500),
-    SCHED_TASK(update_logging1,         5,   1700),
-    SCHED_TASK(update_logging2,         5,   1700),
-    SCHED_TASK(parachute_check,         5,    500),
+//    SCHED_TASK(update_logging1,         5,   1700),
+//    SCHED_TASK(update_logging2,         5,   1700),
+//    SCHED_TASK(parachute_check,         5,    500),
 #if FRSKY_TELEM_ENABLED == ENABLED
     SCHED_TASK(frsky_telemetry_send,   10,    100),
 #endif
-    SCHED_TASK(terrain_update,          5,    500),
+   // SCHED_TASK(terrain_update,          5,    500),
     SCHED_TASK(update_is_flying_5Hz,   10,    100),
-    SCHED_TASK(dataflash_periodic,      1,    300),
+  //  SCHED_TASK(dataflash_periodic,      1,    300),
 };
 
 // called at start of apm task so task has started
