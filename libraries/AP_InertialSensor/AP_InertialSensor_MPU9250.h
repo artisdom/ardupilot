@@ -44,9 +44,6 @@ public:
     /* update accel and gyro state */
     bool update();
 
-    bool gyro_sample_available(void) { return _have_sample_available; }
-    bool accel_sample_available(void) { return _have_sample_available; }
-
     AuxiliaryBus *get_auxiliary_bus();
 
     static AP_InertialSensor_MPU9250 &from(AP_InertialSensor_Backend &backend) {
@@ -71,36 +68,10 @@ private:
     uint8_t              _register_read( uint8_t reg );
     void                 _register_write( uint8_t reg, uint8_t val );
     bool                 _hardware_init(void);
-    bool                 _sample_available();
 
     AP_MPU9250_BusDriver *_bus;
     AP_HAL::Semaphore *_bus_sem;
     AP_MPU9250_AuxiliaryBus *_auxiliar_bus = nullptr;
-
-    // support for updating filter at runtime
-    int16_t _last_gyro_filter_hz;
-    int16_t _last_accel_filter_hz;
-
-    // change the filter frequency
-    void _set_accel_filter(uint8_t filter_hz);
-    void _set_gyro_filter(uint8_t filter_hz);
-
-    // This structure is used to pass data from the timer which reads
-    // the sensor to the main thread. The _shared_data_idx is used to
-    // prevent race conditions by ensuring the data is fully updated
-    // before being used by the consumer
-    struct {
-        Vector3f _accel_filtered;
-        Vector3f _gyro_filtered;
-    } _shared_data[2];
-    volatile uint8_t _shared_data_idx;
-
-    // Low Pass filters for gyro and accel 
-    LowPassFilter2pVector3f _accel_filter;
-    LowPassFilter2pVector3f _gyro_filter;
-
-    // do we currently have a sample pending?
-    bool _have_sample_available;
 
     // gyro and accel instances
     uint8_t _gyro_instance;

@@ -123,15 +123,11 @@ private:
     void _apply_servo_filter(float deltat);
     uint16_t _airspeed_sensor(float airspeed);
     uint16_t _ground_sonar();
-    float _gyro_drift(void);
     float _rand_float(void);
     Vector3f _rand_vec3f(void);
     void _fdm_input_step(void);
 
     void wait_clock(uint64_t wait_time_usec);
-
-    pthread_t _fdm_thread_ctx;
-    void _fdm_thread(void);
 
     // internal state
     enum vehicle_type _vehicle;
@@ -141,7 +137,6 @@ private:
     struct sockaddr_in _rcout_addr;
     pid_t _parent_pid;
     uint32_t _update_count;
-    bool _motors_on;
 
     AP_Baro *_barometer;
     AP_InertialSensor *_ins;
