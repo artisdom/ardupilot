@@ -11,8 +11,8 @@ extern const AP_HAL::HAL& hal;
 
 AP_InertialSensor_Quan::AP_InertialSensor_Quan(AP_InertialSensor &imu)
 : AP_InertialSensor_Backend(imu)
- ,m_accel_id{imu.register_accel(imu.get_sample_rate())} 
- ,m_gyro_id{imu.register_gyro(imu.get_sample_rate())}
+ ,m_accel_id{imu.register_accel(0)} 
+ ,m_gyro_id{imu.register_gyro(0)}
 {
   _product_id = AP_PRODUCT_ID_QUAN;
 }
