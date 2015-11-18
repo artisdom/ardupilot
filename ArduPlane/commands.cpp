@@ -52,7 +52,7 @@ void Plane::set_next_WP(const struct Location &loc)
     // location as the previous waypoint, to prevent immediately
     // considering the waypoint complete
     if (location_passed_point(current_loc, prev_WP_loc, next_WP_loc)) {
-        gcs_send_text(MAV_SEVERITY_NOTICE, "Resetting prev_WP");
+        gcs_send_text(MAV_SEVERITY_NOTICE, "Resetting previous waypoint");
         prev_WP_loc = current_loc;
     }
 
@@ -100,7 +100,7 @@ void Plane::set_guided_WP(void)
 // -------------------------------
 void Plane::init_home()
 {
-    gcs_send_text(MAV_SEVERITY_INFO, "init home");
+    gcs_send_text(MAV_SEVERITY_INFO, "Init HOME");
 
     ahrs.set_home(gps.location());
 
@@ -111,7 +111,7 @@ void Plane::init_home()
     Log_Write_Home_And_Origin();
     GCS_MAVLINK::send_home_all(gps.location());
 
-    gcs_send_text_fmt(MAV_SEVERITY_INFO, "gps alt: %lu", (unsigned long)home.alt);
+    gcs_send_text_fmt(MAV_SEVERITY_INFO, "GPS alt: %lu", (unsigned long)home.alt);
 
     // Save Home to EEPROM
     mission.write_home_to_storage();
