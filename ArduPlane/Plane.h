@@ -94,6 +94,7 @@
 #include <AP_OpticalFlow/AP_OpticalFlow.h>     // Optical Flow library
 #include <AP_RSSI/AP_RSSI.h>                   // RSSI Library
 #include <AP_Parachute/AP_Parachute.h>
+#include <AP_ADSB/AP_ADSB.h>
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <AP_OSD/AP_OSD_enqueue.h>
@@ -564,6 +565,17 @@ private:
     AP_Terrain terrain {ahrs, mission, rally};
 #endif
 
+    AP_ADSB adsb {ahrs};
+    struct {
+
+        // for Loiter_and_descend behavior, keeps track of rate changes
+        uint32_t time_last_alt_change_ms;
+
+        // previous wp to restore to when switching between modes back to AUTO
+        Location prev_wp;
+    } adsb_state;
+
+
     // Outback Challenge Failsafe Support
 #if OBC_FAILSAFE == ENABLED
     APM_OBC obc {mission, barometer, gps, rcmap};
@@ -914,6 +926,8 @@ private:
     void update_logging1(void);
     void update_logging2(void);
     void terrain_update(void);
+    void adsb_update(void);
+    void adsb_handle_vehicle_threats(void);
     void update_flight_mode(void);
     void stabilize();
     void set_servos_idle(void);

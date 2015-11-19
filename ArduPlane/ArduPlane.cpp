@@ -90,6 +90,8 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
    // SCHED_TASK(terrain_update,          5,    500),
     SCHED_TASK(update_is_flying_5Hz,   10,    100),
   //  SCHED_TASK(dataflash_periodic,      1,    300),
+    SCHED_TASK(adsb_update,            50,    500),
+
 };
 
 // called at start of apm task so task has started
@@ -373,6 +375,7 @@ void Plane::terrain_update(void)
     terrain.update();
 #endif
 }
+
 
 void Plane::dataflash_periodic(void)
 {
@@ -933,7 +936,6 @@ void Plane::update_optical_flow(void)
 }
 #endif
 
-//<<<<<<< HEAD
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 void setup(void);
 void loop(void);
@@ -953,13 +955,4 @@ AP_HAL_MAIN();
 #else
 AP_HAL_MAIN_CALLBACKS(&plane);
 #endif
-//=======
-///*
-//  compatibility with old pde style build
-// */
-//// for HAL_BOARD_QUAN will prob put in a task
-////#if  CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 
-
-////#endif  // CONFIG_HAL_BOARD != HAL_BOARD_QUAN
-//>>>>>>> quantracker_master
