@@ -91,7 +91,6 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(update_is_flying_5Hz,   10,    100),
   //  SCHED_TASK(dataflash_periodic,      1,    300),
     SCHED_TASK(adsb_update,            50,    500),
-
 };
 
 // called at start of apm task so task has started
