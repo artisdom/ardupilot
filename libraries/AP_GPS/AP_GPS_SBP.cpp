@@ -69,7 +69,7 @@ AP_GPS_SBP::AP_GPS_SBP(AP_GPS &_gps, AP_GPS::GPS_State &_state,
     //Externally visible state
     state.status = AP_GPS::NO_FIX;
     state.have_vertical_velocity = true;
-    state.last_gps_time_ms = last_heatbeat_received_ms = hal.scheduler->millis();
+    state.last_gps_time_ms = last_heatbeat_received_ms = AP_HAL::millis();
 
 }
 
@@ -95,7 +95,7 @@ AP_GPS_SBP::inject_data(uint8_t *data, uint8_t len)
 {
 
     if (port->txspace() > len) {
-        last_injected_data_ms = hal.scheduler->millis();
+        last_injected_data_ms = AP_HAL::millis();
         port->write(data, len);
     } else {
         Debug("PIKSI: Not enough TXSPACE");
@@ -191,7 +191,7 @@ void
 AP_GPS_SBP::_sbp_process_message() {
     switch(parser_state.msg_type) {
         case SBP_HEARTBEAT_MSGTYPE:
-            last_heatbeat_received_ms = hal.scheduler->millis();
+            last_heatbeat_received_ms = AP_HAL::millis();
             break;
 
         case SBP_GPS_TIME_MSGTYPE:
@@ -247,7 +247,7 @@ AP_GPS_SBP::_attempt_state_update()
     //
     // If we have a full update available, save it
     //
-    uint32_t now = hal.scheduler->millis();
+    uint32_t now = AP_HAL::millis();
     bool ret = false;
 
     if (now - last_heatbeat_received_ms > SBP_TIMEOUT_HEATBEAT) {
@@ -465,7 +465,7 @@ AP_GPS_SBP::logging_log_full_update()
 
     struct log_SbpHealth pkt = {
         LOG_PACKET_HEADER_INIT(LOG_MSG_SBPHEALTH),
-        time_us                    : hal.scheduler->micros64(),
+        time_us                    : AP_HAL::micros64(),
         crc_error_counter          : crc_error_counter,
         last_injected_data_ms      : last_injected_data_ms,
         last_iar_num_hypotheses    : last_iar_num_hypotheses,
@@ -491,7 +491,7 @@ AP_GPS_SBP::logging_log_raw_sbp(uint16_t msg_type,
 
     logging_write_headers();
 
-    uint64_t time_us = hal.scheduler->micros64();
+    uint64_t time_us = AP_HAL::micros64();
 
     struct log_SbpRAW1 pkt = {
         LOG_PACKET_HEADER_INIT(LOG_MSG_SBPRAW1),
