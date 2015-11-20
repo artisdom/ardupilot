@@ -190,7 +190,7 @@ float AP_ADC_ADS1115::_convert_register_data_to_mv(int16_t word) const
         default:
             pga = 0.0f;
             hal.console->printf("Wrong gain");
-            hal.scheduler->panic("ADS1115: wrong gain selected");
+            AP_HAL::panic("ADS1115: wrong gain selected");
             break;
     }
 
@@ -200,7 +200,7 @@ float AP_ADC_ADS1115::_convert_register_data_to_mv(int16_t word) const
 void AP_ADC_ADS1115::_update() 
 {
     /* TODO: make update rate configurable */
-    if (hal.scheduler->micros() - _last_update_timestamp < 100000) {
+    if (AP_HAL::micros() - _last_update_timestamp < 100000) {
         return;
     }
 
@@ -243,7 +243,7 @@ void AP_ADC_ADS1115::_update()
 
     _i2c_sem->give();
 
-    _last_update_timestamp = hal.scheduler->micros();
+    _last_update_timestamp = AP_HAL::micros();
 }
 
 #endif // // CONFIG_HAL_BOARD != HAL_BOARD_QUAN
