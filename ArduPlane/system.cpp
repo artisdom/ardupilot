@@ -803,13 +803,3 @@ bool Plane::disarm_motors(void)
 
     return true;
 }
-
-uint32_t Plane::millis(void) const
-{
-    return hal.scheduler->millis();
-}
-
-uint32_t Plane::micros(void) const
-{
-    return hal.scheduler->micros();
-}
