@@ -62,8 +62,7 @@ public:
     float get_cutoff_freq(void) const;
     float get_sample_freq(void) const;
     T apply(const T &sample);
-    void reset(void);
-
+    void reset();
     void reset(T const & value, uint32_t n);
 
 protected:
