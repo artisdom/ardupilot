@@ -90,6 +90,9 @@ void Plane::read_airspeed(void)
     if (ahrs.airspeed_estimate(&aspeed)) {
         smoothed_airspeed = smoothed_airspeed * 0.8f + aspeed * 0.2f;
     }
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::airspeed(airspeed.get_airspeed());
+#endif
 }
 
 void Plane::zero_airspeed(bool in_startup)
