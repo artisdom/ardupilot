@@ -95,13 +95,11 @@
 #include <AP_RSSI/AP_RSSI.h>                   // RSSI Library
 #include <AP_Parachute/AP_Parachute.h>
 #include <AP_ADSB/AP_ADSB.h>
-<<<<<<< HEAD
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <AP_OSD/AP_OSD_enqueue.h>
 #endif
-=======
->>>>>>> Plane: Add support for handing ADS-B traffic
+
 
 // Configuration
 #include "config.h"

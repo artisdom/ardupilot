@@ -549,7 +549,6 @@ void NavEKF2_core::selectHeightForFusion()
     // Read range finder data and check for new data in the buffer
     // This data is used by both height and optical flow fusion processing
     readRangeFinder();
-<<<<<<< HEAD
     rangeDataToFuse = storedRange.recall(rangeDataDelayed,imuDataDelayed.time_ms);
 
     // read baro height data from the sensor and check for new data in the buffer
@@ -559,17 +558,6 @@ void NavEKF2_core::selectHeightForFusion()
     // determine if we should be using a height source other than baro
     bool usingRangeForHgt = (frontend->_altSource == 1 && imuSampleTime_ms - rngValidMeaTime_ms < 500 && frontend->_fusionModeGPS == 3);
     bool usingGpsForHgt = (frontend->_altSource == 2 && imuSampleTime_ms - lastTimeGpsReceived_ms < 500 && validOrigin);
-=======
-    rangeDataToFuse = RecallRange();
-
-    // read baro height data from the sensor and check for new data in the buffer
-    readBaroData();
-    baroDataToFuse = RecallBaro();
-
-    // determine if we should be using a height source other than baro
-    bool usingRangeForHgt = (frontend->_altSource == 1 && imuSampleTime_ms - rngValidMeaTime_ms < 500);
-    bool usingGpsForHgt = (frontend->_altSource == 2 && imuSampleTime_ms - lastTimeGpsReceived_ms < 500);
->>>>>>> AP_NavEKF2: Rework selection of height measurements for fusion
 
     // if there is new baro data to fuse, calculate filterred baro data required by other processes
     if (baroDataToFuse) {
