@@ -11,7 +11,7 @@ void Quan::QuanSemaphore::init()
    if(m_mutex_handle == nullptr){
       m_mutex_handle = xSemaphoreCreateMutex(); 
       if(m_mutex_handle == nullptr){ 
-         hal.scheduler->panic("create semaphore failed");
+         AP_HAL::panic("create semaphore failed");
       }
    }
 }

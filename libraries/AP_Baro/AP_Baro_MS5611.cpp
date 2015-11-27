@@ -74,11 +74,11 @@ void AP_SerialBus_SPI::init()
 {
     _spi = hal.spi->device(_device);
     if (_spi == NULL) {
-        hal.scheduler->panic("did not get valid SPI device driver!");
+        AP_HAL::panic("did not get valid SPI device driver!");
     }
     _spi_sem = _spi->get_semaphore();
     if (_spi_sem == NULL) {
-        hal.scheduler->panic("AP_SerialBus_SPI did not get valid SPI semaphroe!");
+        AP_HAL::panic("AP_SerialBus_SPI did not get valid SPI semaphroe!");
     }
     _spi->set_bus_speed(_speed);
 }
@@ -134,7 +134,7 @@ void AP_SerialBus_I2C::init()
 {
     _i2c_sem = _i2c->get_semaphore();
     if (_i2c_sem == NULL) {
-        hal.scheduler->panic("AP_SerialBus_I2C did not get valid I2C semaphore!");
+        AP_HAL::panic("AP_SerialBus_I2C did not get valid I2C semaphore!");
     }
 }
 
@@ -197,7 +197,7 @@ AP_Baro_MS56XX::AP_Baro_MS56XX(AP_Baro &baro, AP_SerialBus *serial, bool use_tim
     hal.scheduler->suspend_timer_procs();
 
     if (!_serial->sem_take_blocking()){
-        hal.scheduler->panic("PANIC: AP_Baro_MS56XX: failed to take serial semaphore for init");
+        AP_HAL::panic("PANIC: AP_Baro_MS56XX: failed to take serial semaphore for init");
     }
 
     _serial->write(CMD_MS5611_RESET);
@@ -213,7 +213,7 @@ AP_Baro_MS56XX::AP_Baro_MS56XX(AP_Baro &baro, AP_SerialBus *serial, bool use_tim
     _C6 = _serial->read_16bits(CMD_MS5611_PROM_C6);
 
     if (!_check_crc()) {
-        hal.scheduler->panic("Bad CRC on MS5611");
+        AP_HAL::panic("Bad CRC on MS5611");
     }
 
     // Send a command to read Temp first

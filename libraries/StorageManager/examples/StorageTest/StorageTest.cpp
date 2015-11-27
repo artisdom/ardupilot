@@ -55,7 +55,7 @@ void setup(void)
 {
     hal.console->println("StorageTest startup...");
 #if DO_INITIALISATION
-    uint32_t start_write_time = hal.scheduler->millis();
+    uint32_t start_write_time = AP_HAL::millis();
     uint32_t total_storage_written = 0;
     for (uint8_t type=0; type<4; type++) {
         const StorageAccess &storage = all_storage[type];
@@ -66,7 +66,7 @@ void setup(void)
         }
         total_storage_written += storage.size();
     }
-    uint32_t end_write_time = hal.scheduler->millis();
+    uint32_t end_write_time = AP_HAL::millis();
     hal.console->printf("To individual write %u bytes took %u ms\n"
       ,static_cast<unsigned>(total_storage_written)
       ,static_cast<unsigned>(end_write_time - start_write_time) );

@@ -67,7 +67,7 @@ namespace {
    void panic(const char* text)
    {
      // taskENTER_CRITICAL();
-     // hal.scheduler->panic(text);
+     // AP_HAL::panic(text);
       hal.console->write(text);
      // taskEXIT_CRITICAL();
    }
@@ -541,7 +541,7 @@ namespace {
    {
       uint8_t raw_mag_values[6] = {0,0,0,0,0,0};
       if ( p_i2c->readRegisters(mag_addr,mag_msb_x,6,raw_mag_values) == transfer_succeeded){
-         time_out = hal.scheduler->millis();
+         time_out = AP_HAL::millis();
          copy_new_values(raw_mag_values,result_out);
          return true;
       }else{
@@ -568,7 +568,7 @@ namespace {
          if ( uxQueueSpacesAvailable(hCompassQueue) != 0 ){
             Quan::detail::compass_args args;
             args.field = filtered_compass;
-            args.time_us = hal.scheduler->micros();
+            args.time_us = AP_HAL::micros();
             xQueueSendToBack(hCompassQueue,&args,0);
          }
          return true;
@@ -697,7 +697,7 @@ namespace {
    void wait_for_power_up()
    {
     // bool once = false;
-      uint32_t const now_ms = hal.scheduler->millis();
+      uint32_t const now_ms = AP_HAL::millis();
       if( now_ms < 200){
          delay(200 - now_ms);
       }

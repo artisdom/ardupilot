@@ -9,10 +9,10 @@ public:
     QuanScheduler();
     void     init(void* machtnichts);
     void     delay(uint16_t ms);
-    uint32_t millis();
-    uint32_t micros();
-    uint64_t millis64();
-    uint64_t micros64();
+//    uint32_t millis();
+//    uint32_t micros();
+//    uint64_t millis64();
+//    uint64_t micros64();
     void     delay_microseconds(uint16_t us);
     void     register_delay_callback(AP_HAL::Proc,uint16_t min_time_ms);
     void     register_timer_process(AP_HAL::MemberProc);
@@ -24,7 +24,7 @@ public:
     bool     system_initializing();
     void     system_initialized();
 
-    void     panic(const char* errormsg,...);
+  //  void     panic(const char* errormsg,...);
     void     reboot(bool hold_in_bootloader);
 };
 

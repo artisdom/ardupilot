@@ -447,7 +447,7 @@ namespace {
 // called forever in apm_task
 void loop() 
 {
-   uint64_t const now = hal.scheduler->millis64();
+   uint32_t const now = AP_HAL::millis();
    if ( next_led_event <= now ){
       hal.gpio->toggle(red_led_pin);
       next_led_event = now + interval;

@@ -61,8 +61,8 @@ void loop(void)
      hal.scheduler->delay(100);
 #else
     static uint32_t timer;
-    if((hal.scheduler->millis() - timer) > 100) {
-        timer = hal.scheduler->millis();
+    if((AP_HAL::millis() - timer) > 100) {
+        timer = AP_HAL::millis();
 #endif
         airspeed.read();
         hal.console->printf("airspeed %.2f healthy=%u\n", airspeed.get_airspeed(), airspeed.healthy());

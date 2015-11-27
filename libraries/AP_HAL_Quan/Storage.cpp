@@ -22,14 +22,14 @@ void QuanStorage::init(void*)
 void QuanStorage::read_block(void* dst, uint16_t eeprom_address, size_t n) 
 {
    if ( !Quan::storage_read(dst,eeprom_address,n) ){
-      hal.scheduler->panic("eeprom read failed");
+      AP_HAL::panic("eeprom read failed");
    }
 }
 
 void QuanStorage::write_block(uint16_t eeprom_address, const void* src, size_t n)
 {
    if ( !Quan::storage_write(eeprom_address,src,n) ){
-      hal.scheduler->panic("eeprom write failed");
+      AP_HAL::panic("eeprom write failed");
    }  
 }
 

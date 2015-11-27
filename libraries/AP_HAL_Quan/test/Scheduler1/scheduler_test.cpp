@@ -70,7 +70,7 @@ namespace {
 // called forever in apm_task
 void loop() 
 {
-   uint64_t const now = hal.scheduler->millis64();
+   int32_t const now = AP_HAL::millis();
    if ( next_event <= now ){
       hal.gpio->toggle(test_pin);
       next_event = now + 10U;

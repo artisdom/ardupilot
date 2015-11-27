@@ -11,7 +11,7 @@ extern const AP_HAL::HAL& hal;
 bool AP_Airspeed_Quan::init()
 {
    // give time for sensor to stabilise
-   uint32_t now = hal.scheduler->millis();
+   uint32_t now = AP_HAL::millis();
    if ( now < 5000){
          hal.scheduler->delay(5000 - now);
    }

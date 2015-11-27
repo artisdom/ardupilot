@@ -52,6 +52,8 @@ HAL_Quan::HAL_Quan()
 )
 {}
 
+void AP_HAL::init() {}
+
 // ignore callbacks for now
 void HAL_Quan::run(int argc, char * const argv[], Callbacks* callbacks) const
 {

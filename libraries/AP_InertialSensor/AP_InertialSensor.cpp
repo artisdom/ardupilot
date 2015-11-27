@@ -1380,8 +1380,8 @@ void AP_InertialSensor::wait_for_sample(void)
     
     bool s = Quan::wait_for_imu_sample( 22000);
  
-    uint32_t now = hal.scheduler->micros();
-// not very useful unless yoy turn off gcs messages
+    uint32_t now = AP_HAL::micros();
+// not very useful unless  turn off gcs messages
 //    if (!s ){
 //      hal.console->printf("#-#\n");
 //    }
@@ -1394,7 +1394,6 @@ void AP_InertialSensor::wait_for_sample(void)
     }
     _last_sample_usec = now;
     _next_sample_usec = now + _sample_period_usec;
-   // hal.console->printf("AP_INS [4]\n");
 #else
 
     uint32_t now = AP_HAL::micros();

@@ -11,6 +11,7 @@
 #include <quan/stm32/get_raw_timer_frequency.hpp>
 #include <quan/max.hpp>
 #include "i2c_task.hpp"
+#include <AP_HAL/system.h>
 
 using namespace Quan;
 
@@ -82,12 +83,12 @@ namespace{
 
 void QuanScheduler::delay(uint16_t delay_length_ms)
 {
-   uint64_t const end_of_delay_ms  = millis64() + delay_length_ms;
+   uint64_t const end_of_delay_ms  = AP_HAL::millis64() + delay_length_ms;
    for (;;){
-      uint64_t const time_now_ms = millis64();
+      uint64_t const time_now_ms = AP_HAL::millis64();
       if ( m_delay_callback && (( time_now_ms + m_delay_callback_min_delay_ms) < end_of_delay_ms)){
          m_delay_callback();
-         if ( millis64() < end_of_delay_ms){
+         if ( AP_HAL::millis64() < end_of_delay_ms){
             vTaskDelay(1);
          }else{
             break; // end of delay
@@ -101,7 +102,8 @@ void QuanScheduler::delay(uint16_t delay_length_ms)
    }
 }
 
-uint64_t QuanScheduler::micros64() {
+
+uint64_t AP_HAL::micros64() {
    taskENTER_CRITICAL();
    uint32_t const hi1 = timer_micros_ovflo_count;
    uint16_t const lo1 = usec_timer::get()->cnt;
@@ -116,30 +118,30 @@ uint64_t QuanScheduler::micros64() {
    }
 }
 
-uint64_t QuanScheduler::millis64() 
+uint64_t AP_HAL::millis64() 
 {
    return micros64() / 1000ULL;
 }
 
-uint32_t QuanScheduler::millis() {
+uint32_t AP_HAL::millis() {
     return millis64();
 }
 
-uint32_t QuanScheduler::micros() {
+uint32_t AP_HAL::micros() {
     return micros64();
 }
 
  // delay longer than 1 ms will in fact actively yield to other tasks
 void QuanScheduler::delay_microseconds(uint16_t us)
 {
-   uint64_t const end_of_delay_us = micros64() + us;
+   uint64_t const end_of_delay_us = AP_HAL::micros64() + us;
    uint64_t const delay_ms = us / 1000;
    // yields
    if ( delay_ms > 0){
       delay(delay_ms);
    }
    // not going critical here. yield away!
-   while (micros64() < end_of_delay_us){ 
+   while (AP_HAL::micros64() < end_of_delay_us){ 
       asm volatile ("nop":::);
    }
 }
@@ -221,7 +223,7 @@ void QuanScheduler::system_initialized()
    m_system_initialised = true;
 }
 
-void QuanScheduler::panic(const char *errormsg,...) 
+void AP_HAL::panic(const char *errormsg,...) 
 {
 // TODO
     va_list args;

@@ -50,14 +50,14 @@ namespace {
 
   void start_thread_timer()
   {
-    thread_timer = hal.scheduler->millis();
+    thread_timer = AP_HAL::millis();
   }
 
   void check_thread_timer()
   {
-    if ( (hal.scheduler->millis() - thread_timer) > max_task_time_ms ){
+    if ( (AP_HAL::millis() - thread_timer) > max_task_time_ms ){
        vTaskDelay(delay_time_ms);
-       thread_timer = hal.scheduler->millis();
+       thread_timer = AP_HAL::millis();
     }
   }
 }

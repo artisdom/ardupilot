@@ -250,7 +250,7 @@ bool AP_Compass_HMC5843::_detect_version()
     // possibly since Mag is on 5V but board can start at 2V
     // and PSU needs time to get to 5V
     bool once = false;
-    uint32_t now_ms = hal.scheduler->millis();
+    uint32_t now_ms = AP_HAL::millis();
     if( now_ms < 200){
       if ( ! once){
          once = true;
