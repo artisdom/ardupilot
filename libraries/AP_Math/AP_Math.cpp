@@ -7,7 +7,7 @@
 float safe_asin(float v)
 {
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-    using std::is_nan;
+    using std::isnan;
 #endif
     if (isnan(v)) {
         return 0.0f;
@@ -29,7 +29,7 @@ float safe_asin(float v)
 float safe_sqrt(float v)
 {
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-    using std::is_nan;
+    using std::isnan;
 #endif
     float ret = sqrtf(v);
     if (isnan(ret)) {

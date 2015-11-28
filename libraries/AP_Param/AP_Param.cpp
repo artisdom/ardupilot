@@ -39,6 +39,7 @@ extern const AP_HAL::HAL &hal;
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include "FreeRTOS.h"
 #include <task.h>
+#include <cmath>
 #endif
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
@@ -1338,7 +1339,7 @@ void AP_Param::set_float(float value, enum ap_var_type var_type)
 {
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     using std::isnan;
-    using std::is_inf;
+    using std::isinf;
 #endif
 
     if (isnan(value) || isinf(value)) {

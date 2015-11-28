@@ -35,4 +35,4 @@ help:
 	@echo "  erleboard - the ErleBoard legacy design"
 	@echo "  minlure - the drone lure for MinnowBoard and others"
 	@echo "  erlebrain2 - the Erle-Brain 2 board"
-   @echo "  quan - the quantracker Air OSD FC board ( make upload_sp to upload)"
+	@echo "  quan - the quantracker Air OSD FC board ( make upload_sp to upload)"

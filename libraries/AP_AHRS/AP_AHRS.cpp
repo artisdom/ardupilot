@@ -267,6 +267,10 @@ void AP_AHRS::update_trig(void)
         _sin_yaw = 0.0f;
         _cos_yaw = 1.0f;
     }
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    using std::isnan;
+    using std::isinf;
+#endif
 
     if (isinf(_cos_roll) || isnan(_cos_roll)) {
         _cos_roll = cosf(roll);
