@@ -21,7 +21,7 @@
 #ifndef __AP_COMPASS_BACKEND_H__
 #define __AP_COMPASS_BACKEND_H__
 
-//#include "Compass.h"
+#include "Compass.h"
 
 class Compass;  // forward declaration
 class AP_Compass_Backend

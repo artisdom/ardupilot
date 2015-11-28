@@ -4,23 +4,19 @@
 
 #include <AP_HAL/AP_HAL.h>
 
-
-template <typename Coefficients, typename ValueType = float>
+template <typename Coefficients>
 class Butter2
 {
 public:
-
-  void reset(ValueType const & init){ hist[0] = init; hist[1] =init;}
-  ValueType filter(ValueType const & input)
+  float filter(float input)
   {
-        ValueType newhist = input + Coefficients::A1*hist[1] + Coefficients::A2*hist[0];
-        ValueType ret = (newhist + 2*hist[1] + hist[0])/Coefficients::GAIN;
+        float newhist = input + Coefficients::A1*hist[1] + Coefficients::A2*hist[0];
+        float ret = (newhist + 2*hist[1] + hist[0])/Coefficients::GAIN;
         hist[0] = hist[1]; hist[1] = newhist;
         return ret;
   }
-   
 private:
-    ValueType hist[2];
+    float hist[2];
 };
 
 struct butter100_025_coeffs
@@ -109,7 +105,6 @@ struct butter50_8_coeffs
   static constexpr float A2 = -0.2523246263f;
   static constexpr float GAIN = 6.881181354e+00f;
 };
-typedef Butter2<butter50_8_coeffs> butter100hz16_0;//100hz sample, 16hz fcut
 typedef Butter2<butter50_8_coeffs> butter50hz8_0; //50hz sample, 8hz fcut
 typedef Butter2<butter50_8_coeffs> butter10hz1_6; //10hz sample, 1.6hz fcut
 

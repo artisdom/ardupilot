@@ -2,11 +2,10 @@
 #ifndef __AP_ADC_ADS7844_H__
 #define __AP_ADC_ADS7844_H__
 
-#include <AP_HAL/AP_HAL.h>
-#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 
 #include <inttypes.h>
 #include "AP_ADC.h"
+#include <AP_HAL/AP_HAL.h>
 
 class AP_ADC_ADS7844 : public AP_ADC
 {
@@ -32,5 +31,4 @@ private:
     AP_HAL::Semaphore  *_spi_sem;
 };
 
-#endif // CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 #endif

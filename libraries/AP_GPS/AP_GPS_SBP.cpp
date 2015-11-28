@@ -24,9 +24,6 @@
 #include "AP_GPS.h"
 #include "AP_GPS_SBP.h"
 #include <DataFlash/DataFlash.h>
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-#include <quan/min.hpp>
-#endif
 
 extern const AP_HAL::HAL& hal;
 
@@ -500,7 +497,7 @@ AP_GPS_SBP::logging_log_raw_sbp(uint16_t msg_type,
         sender_id       : sender_id,
         msg_len         : msg_len,
     };
-    memcpy(pkt.data1, msg_buff, quan::min(msg_len,64U)); 
+    memcpy(pkt.data1, msg_buff, min(msg_len,64)); 
     gps._DataFlash->WriteBlock(&pkt, sizeof(pkt));    
 
     if (msg_len > 64) {

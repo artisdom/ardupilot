@@ -218,7 +218,7 @@ AP_Baro_MS56XX::AP_Baro_MS56XX(AP_Baro &baro, AP_SerialBus *serial, bool use_tim
 
     // Send a command to read Temp first
     _serial->write(ADDR_CMD_CONVERT_D2);
-    _last_timer = hal.scheduler->micros();
+    _last_timer = AP_HAL::micros();
     _state = 0;
 
     _s_D1 = 0;
@@ -291,7 +291,7 @@ bool AP_Baro_MS56XX::_check_crc(void)
 void AP_Baro_MS56XX::_timer(void)
 {
     // Throttle read rate to 100hz maximum.
-    if (hal.scheduler->micros() - _last_timer < 10000) {
+    if (AP_HAL::micros() - _last_timer < 10000) {
         return;
     }
 
@@ -354,39 +354,33 @@ void AP_Baro_MS56XX::_timer(void)
         }
     }
 
-    _last_timer = hal.scheduler->micros();
+    _last_timer = AP_HAL::micros();
     _serial->sem_give();
 }
 
 void AP_Baro_MS56XX::update()
 {
-  //  hal.console->printf("in update\n");
     if (!_use_timer) {
         // if we're not using the timer then accumulate one more time
         // to cope with the calibration loop and minimise lag
-        // hal.console->printf("in accumulate\n");
         accumulate();
     }
 
     if (!_updated) {
-      //  hal.console->printf("didnt update ... returning\n"); 
         return;
     }
     uint32_t sD1, sD2;
     uint8_t d1count, d2count;
 
     // Suspend timer procs because these variables are written to
-    // in "_update".
-  //  taskENTER_CRITICAL();
-   // hal.console->printf("suspending timer procs\n"); 
+    // in "_update". 
    hal.scheduler->suspend_timer_procs();
     
     sD1 = _s_D1; _s_D1 = 0;
     sD2 = _s_D2; _s_D2 = 0;
     d1count = _d1_count; _d1_count = 0;
     d2count = _d2_count; _d2_count = 0;
-    _updated = false;
-   // hal.console->printf("resuming timer procs\n"); 
+    _updated = false; 
     hal.scheduler->resume_timer_procs();
 
     if (d1count != 0) {
@@ -395,7 +389,6 @@ void AP_Baro_MS56XX::update()
     if (d2count != 0) {
         _D2 = ((float)sD2) / d2count;
     }
-   // hal.console->printf("calculating\n"); 
     _calculate();
 }
 

@@ -744,7 +744,7 @@ void NavEKF_core::SelectFlowFusion()
         memset(&flowIncrStateDelta[0], 0, sizeof(flowIncrStateDelta));
         flowUpdateCount = 0;
         // Set the flow noise used by the fusion processes
-        R_LOS = sq(max(frontend._flowNoise.get(), 0.05f));
+        R_LOS = sq(max(frontend._flowNoise, 0.05f));
         // ensure that the covariance prediction is up to date before fusing data
         if (!covPredStep) CovariancePrediction();
         // Fuse the optical flow X and Y axis data into the main filter sequentially

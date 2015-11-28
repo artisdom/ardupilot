@@ -6,7 +6,10 @@
 // returned.
 float safe_asin(float v)
 {
-    if (std::isnan(v)) {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    using std::is_nan;
+#endif
+    if (isnan(v)) {
         return 0.0f;
     }
     if (v >= 1.0f) {
@@ -25,8 +28,11 @@ float safe_asin(float v)
 // real input should have been zero
 float safe_sqrt(float v)
 {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    using std::is_nan;
+#endif
     float ret = sqrtf(v);
-    if (std::isnan(ret)) {
+    if (isnan(ret)) {
         return 0;
     }
     return ret;

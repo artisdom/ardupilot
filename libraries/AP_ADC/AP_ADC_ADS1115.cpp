@@ -1,7 +1,5 @@
 #include <AP_HAL/AP_HAL.h>
 
-#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
-
 #include "AP_ADC_ADS1115.h"
 
 #define ADS1115_ADDRESS_ADDR_GND    0x48 // address pin low (GND)
@@ -245,6 +243,3 @@ void AP_ADC_ADS1115::_update()
 
     _last_update_timestamp = AP_HAL::micros();
 }
-
-#endif // // CONFIG_HAL_BOARD != HAL_BOARD_QUAN
-

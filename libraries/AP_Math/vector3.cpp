@@ -280,14 +280,18 @@ Vector3<T> &Vector3<T>::operator -=(const Vector3<T> &v)
 template <typename T>
 bool Vector3<T>::is_nan(void) const
 {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     using std::isnan;
+#endif
     return isnan(x) || isnan(y) || isnan(z);
 }
 
 template <typename T>
 bool Vector3<T>::is_inf(void) const
 {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     using std::isinf;
+#endif
     return isinf(x) || isinf(y) || isinf(z);
 }
 

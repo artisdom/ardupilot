@@ -19,9 +19,11 @@
 
 #ifndef QUATERNION_H
 #define QUATERNION_H
-
-//#include <math.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <cmath>
+#else
+#include <math.h>
+#endif
 #if defined(MATH_CHECK_INDEXES) && (MATH_CHECK_INDEXES == 1)
 #include <assert.h>
 #endif
@@ -51,7 +53,9 @@ public:
     // check if any elements are NAN
     bool        is_nan(void) const
     {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
         using std::isnan;
+#endif
         return isnan(q1) || isnan(q2) || isnan(q3) || isnan(q4);
     }
 

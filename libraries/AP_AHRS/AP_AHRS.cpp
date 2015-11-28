@@ -25,27 +25,21 @@ const AP_Param::GroupInfo AP_AHRS::var_info[] = {
 
     // @Param: GPS_GAIN
     // @DisplayName: AHRS GPS gain
-    // @Description: This controls how how much to use the GPS to correct the attitude. 
-    // This should never be set to zero for a plane as it would result in the plane
-    // losing control in turns. For a plane please use the default value of 1.0.
+    // @Description: This controls how how much to use the GPS to correct the attitude. This should never be set to zero for a plane as it would result in the plane losing control in turns. For a plane please use the default value of 1.0.
     // @Range: 0.0 1.0
     // @Increment: .01
     AP_GROUPINFO("GPS_GAIN",  2, AP_AHRS, gps_gain, 1.0f),
 
     // @Param: GPS_USE
     // @DisplayName: AHRS use GPS for navigation
-    // @Description: This controls whether to use dead-reckoning or GPS based navigation. 
-    // If set to 0 then the GPS won't be used for navigation, 
-    // and only dead reckoning will be used. 
-    // A value of zero should never be used for normal flight.
+    // @Description: This controls whether to use dead-reckoning or GPS based navigation. If set to 0 then the GPS won't be used for navigation, and only dead reckoning will be used. A value of zero should never be used for normal flight.
     // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
     AP_GROUPINFO("GPS_USE",  3, AP_AHRS, _gps_use, 1),
 
     // @Param: YAW_P
     // @DisplayName: Yaw P
-    // @Description: This controls the weight the compass or GPS has on the heading. 
-    // A higher value means the heading will track the yaw source (GPS or compass) more rapidly.
+    // @Description: This controls the weight the compass or GPS has on the heading. A higher value means the heading will track the yaw source (GPS or compass) more rapidly.
     // @Range: 0.1 0.4
     // @Increment: .01
     AP_GROUPINFO("YAW_P", 4,    AP_AHRS, _kp_yaw, 0.2f),
@@ -59,10 +53,7 @@ const AP_Param::GroupInfo AP_AHRS::var_info[] = {
 
     // @Param: WIND_MAX
     // @DisplayName: Maximum wind
-    // @Description: This sets the maximum allowable difference between 
-    // ground speed and airspeed. 
-    // This allows the plane to cope with a failing airspeed sensor. 
-    // A value of zero means to use the airspeed as is.
+    // @Description: This sets the maximum allowable difference between ground speed and airspeed. This allows the plane to cope with a failing airspeed sensor. A value of zero means to use the airspeed as is.
     // @Range: 0 127
     // @Units: m/s
     // @Increment: 1
@@ -72,8 +63,7 @@ const AP_Param::GroupInfo AP_AHRS::var_info[] = {
 
     // @Param: TRIM_X
     // @DisplayName: AHRS Trim Roll
-    // @Description: Compensates for the roll angle difference between the control board and the frame. 
-    // Positive values make the vehicle roll right.
+    // @Description: Compensates for the roll angle difference between the control board and the frame. Positive values make the vehicle roll right.
     // @Units: Radians
     // @Range: -0.1745 +0.1745
     // @Increment: 0.01
@@ -81,8 +71,7 @@ const AP_Param::GroupInfo AP_AHRS::var_info[] = {
 
     // @Param: TRIM_Y
     // @DisplayName: AHRS Trim Pitch
-    // @Description: Compensates for the pitch angle difference between the control board and the frame. 
-    // Positive values make the vehicle pitch up/back.
+    // @Description: Compensates for the pitch angle difference between the control board and the frame. Positive values make the vehicle pitch up/back.
     // @Units: Radians
     // @Range: -0.1745 +0.1745
     // @Increment: 0.01
@@ -99,31 +88,14 @@ const AP_Param::GroupInfo AP_AHRS::var_info[] = {
 
     // @Param: ORIENTATION
     // @DisplayName: Board Orientation
-    // @Description: Overall board orientation relative to the standard orientation for the board type. 
-    //This rotates the IMU and compass readings to allow the board to be oriented in your vehicle 
-    // at any 90 or 45 degree angle. This option takes affect on next boot. 
-    //After changing you will need to re-level your vehicle.
-    // @Values: 0:None,1:Yaw45,2:Yaw90,3:Yaw135,4:Yaw180,5:Yaw225,6:Yaw270,
-    // 7:Yaw315,8:Roll180,9:Roll180Yaw45,10:Roll180Yaw90,11:Roll180Yaw135,
-    // 12:Pitch180,13:Roll180Yaw225,14:Roll180Yaw270,15:Roll180Yaw315,
-    // 16:Roll90,17:Roll90Yaw45,18:Roll90Yaw90,19:Roll90Yaw135,20:Roll270,
-    // 21:Roll270Yaw45,22:Roll270Yaw90,23:Roll270Yaw136,24:Pitch90,25:Pitch270,
-    // 26:Pitch180Yaw90,27:Pitch180Yaw270,28:Roll90Pitch90,29:Roll180Pitch90,
-    // 30:Roll270Pitch90,31:Roll90Pitch180,32:Roll270Pitch180,33:Roll90Pitch270,
-    // 34:Roll180Pitch270,35:Roll270Pitch270,36:Roll90Pitch180Yaw90,37:Roll90Yaw270
+    // @Description: Overall board orientation relative to the standard orientation for the board type. This rotates the IMU and compass readings to allow the board to be oriented in your vehicle at any 90 or 45 degree angle. This option takes affect on next boot. After changing you will need to re-level your vehicle.
+    // @Values: 0:None,1:Yaw45,2:Yaw90,3:Yaw135,4:Yaw180,5:Yaw225,6:Yaw270,7:Yaw315,8:Roll180,9:Roll180Yaw45,10:Roll180Yaw90,11:Roll180Yaw135,12:Pitch180,13:Roll180Yaw225,14:Roll180Yaw270,15:Roll180Yaw315,16:Roll90,17:Roll90Yaw45,18:Roll90Yaw90,19:Roll90Yaw135,20:Roll270,21:Roll270Yaw45,22:Roll270Yaw90,23:Roll270Yaw136,24:Pitch90,25:Pitch270,26:Pitch180Yaw90,27:Pitch180Yaw270,28:Roll90Pitch90,29:Roll180Pitch90,30:Roll270Pitch90,31:Roll90Pitch180,32:Roll270Pitch180,33:Roll90Pitch270,34:Roll180Pitch270,35:Roll270Pitch270,36:Roll90Pitch180Yaw90,37:Roll90Yaw270
     // @User: Advanced
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
- // try Yaw90
-    AP_GROUPINFO("ORIENTATION", 9, AP_AHRS, _board_orientation, ROTATION_YAW_270),
-#else
     AP_GROUPINFO("ORIENTATION", 9, AP_AHRS, _board_orientation, 0),
-#endif
+
     // @Param: COMP_BETA
     // @DisplayName: AHRS Velocity Complementary Filter Beta Coefficient
-    // @Description: This controls the time constant for the cross-over frequency 
-    // used to fuse AHRS (airspeed and heading) and GPS data to estimate ground velocity. 
-    // Time constant is 0.1/beta. A larger time constant will use GPS data less and a 
-    // small time constant will use air data less.
+    // @Description: This controls the time constant for the cross-over frequency used to fuse AHRS (airspeed and heading) and GPS data to estimate ground velocity. Time constant is 0.1/beta. A larger time constant will use GPS data less and a small time constant will use air data less.
     // @Range: 0.001 0.5
     // @Increment: .01
     // @User: Advanced
@@ -131,10 +103,7 @@ const AP_Param::GroupInfo AP_AHRS::var_info[] = {
 
     // @Param: GPS_MINSATS
     // @DisplayName: AHRS GPS Minimum satellites
-    // @Description: Minimum number of satellites visible to use GPS 
-    // for velocity based corrections attitude correction. 
-    // This defaults to 6, which is about the point at which the velocity 
-    // numbers from a GPS become too unreliable for accurate correction of the accelerometers.
+    // @Description: Minimum number of satellites visible to use GPS for velocity based corrections attitude correction. This defaults to 6, which is about the point at which the velocity numbers from a GPS become too unreliable for accurate correction of the accelerometers.
     // @Range: 0 10
     // @Increment: 1
     // @User: Advanced
@@ -148,9 +117,7 @@ const AP_Param::GroupInfo AP_AHRS::var_info[] = {
 #if AP_AHRS_NAVEKF_AVAILABLE
     // @Param: EKF_TYPE
     // @DisplayName: Use NavEKF Kalman filter for attitude and position estimation
-    // @Description: This controls whether the NavEKF Kalman filter is used for attitude 
-    // and position estimation and whether fallback to the DCM algorithm is allowed. 
-    // Note that on copters "disabled" is not available, and will be the same as "enabled - no fallback"
+    // @Description: This controls whether the NavEKF Kalman filter is used for attitude and position estimation and whether fallback to the DCM algorithm is allowed. Note that on copters "disabled" is not available, and will be the same as "enabled - no fallback"
     // @Values: 0:Disabled,1:Enabled,2:Enable EKF2
     // @User: Advanced
     AP_GROUPINFO("EKF_TYPE",  14, AP_AHRS, _ekf_type, 1),
@@ -293,11 +260,6 @@ void AP_AHRS::update_trig(void)
         _sin_roll = temp.c.y / _cos_pitch;
     }
 
-    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-    using std::isnan;
-    using std::isinf;
-    #endif
-
     // sanity checks
     if (yaw_vector.is_inf() || yaw_vector.is_nan()) {
         yaw_vector.x = 0.0f;
@@ -305,8 +267,6 @@ void AP_AHRS::update_trig(void)
         _sin_yaw = 0.0f;
         _cos_yaw = 1.0f;
     }
-
-    
 
     if (isinf(_cos_roll) || isnan(_cos_roll)) {
         _cos_roll = cosf(roll);

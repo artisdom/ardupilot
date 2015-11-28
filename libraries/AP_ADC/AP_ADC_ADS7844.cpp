@@ -56,7 +56,6 @@
 
 #include <AP_Common/AP_Common.h>
 #include <AP_HAL/AP_HAL.h>
-#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 
 #include "AP_ADC_ADS7844.h"
 
@@ -268,6 +267,3 @@ uint16_t AP_ADC_ADS7844::num_samples_available(const uint8_t *channel_numbers)
     }
     return min_count;
 }
-
-#endif // #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
-
