@@ -63,6 +63,12 @@ LIBTOKENS += \
 	AP_HAL_FLYMAPLE
 endif
 
+ifeq ($(HAL_BOARD),HAL_BOARD_QUAN)
+LIBTOKENS += \
+   AP_HAL_Quan \
+   AP_OSD
+endif
+
 #
 # Find sketchbook libraries referenced by the sketch.
 #
