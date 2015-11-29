@@ -65,6 +65,10 @@ quan: HAL_BOARD = HAL_BOARD_QUAN
 quan: TOOLCHAIN = QUAN_ARM
 quan: all
 
+quan-upload: HAL_BOARD = HAL_BOARD_QUAN
+quan-upload: $(SKETCH).bin
+	stm32flash -b 115200 -f -v -w $(SKETCH).bin /dev/ttyUSB0
+
 empty: HAL_BOARD = HAL_BOARD_EMPTY
 empty: TOOLCHAIN = AVR
 empty: all
