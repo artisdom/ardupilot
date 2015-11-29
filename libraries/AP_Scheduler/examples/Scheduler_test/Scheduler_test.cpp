@@ -10,7 +10,6 @@
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
-
 class SchedTest {
 public:
     void setup();
