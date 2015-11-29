@@ -122,4 +122,21 @@ Tracker::Tracker(void)
 
 Tracker tracker;
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+void setup(void);
+void loop(void);
+
+void setup(void)
+{
+   tracker.setup();
+   // hal.console->printf("setup done\n");
+}
+void loop(void)
+{
+   // hal.console->printf("loop\n");
+    tracker.loop();
+}
+AP_HAL_MAIN();
+#else
 AP_HAL_MAIN_CALLBACKS(&tracker);
+#endif

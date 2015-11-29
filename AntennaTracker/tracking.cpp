@@ -129,6 +129,9 @@ void Tracker::tracking_update_position(const mavlink_global_position_int_t &msg)
  */
 void Tracker::tracking_update_pressure(const mavlink_scaled_pressure_t &msg)
 {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   using std::isnan;
+#endif
     float local_pressure = barometer.get_pressure();
     float aircraft_pressure = msg.press_abs*100.0f;
 
