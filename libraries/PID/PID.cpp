@@ -45,7 +45,9 @@ float PID::get_pid(float error, float scaler)
     // Compute derivative component if time has elapsed
     if ((fabsf(_kd) > 0) && (dt > 0)) {
         float derivative;
-
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   using std::isnan;
+#endif
 		if (isnan(_last_derivative)) {
 			// we've just done a reset, suppress the first derivative
 			// term as we don't want a sudden change in input to cause
