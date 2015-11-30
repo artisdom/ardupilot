@@ -4,7 +4,15 @@
 
 /*
 Test min max overlaods for AP_Param
+
+
 */
+
+template <typename A, typename B>
+auto max1(A const & one, B const & two) -> decltype (one + two)
+{
+  return one > two ? one: two;
+}
 
 
 template <typename T>
@@ -42,5 +50,7 @@ int main()
    fun(v1);
    fun(v2);
    fun(v3);
+
+   max1(xx,x);
 
 }
