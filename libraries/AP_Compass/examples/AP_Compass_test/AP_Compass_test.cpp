@@ -8,7 +8,6 @@
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
-
 static Compass compass;
 
 uint32_t timer;
@@ -26,45 +25,20 @@ void setup() {
     compass.set_declination(ToRad(0.0f)); // set local difference between magnetic north and true north
 
     hal.scheduler->delay(1000);
-    timer = hal.scheduler->micros();
+    timer = AP_HAL::micros();
 }
-
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-void quan::uav::osd::on_draw() 
-{ 
-/*
-   could do something more exciting?
-*/
-    pxp_type pos{-140,50};
-    draw_text("Quan APM Compass Test",pos);
-}
-#endif
 
 void loop()
 {
-   // static float min[3], max[3], offset[3];
+    static float min[3], max[3], offset[3];
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-     hal.scheduler->delay(100);
-     // no need to accumulate
-#else
     compass.accumulate();
-    if((hal.scheduler->micros()- timer) > 100000L)
-    {
-#endif
-        timer = hal.scheduler->micros();
-        compass.read();
-       // unsigned long read_time = hal.scheduler->micros() - timer;
-        Vector3f raw_field = compass.get_raw_field();
 
-        hal.console->printf(
-            "raw field [%.2f x, %.2f y, %.2f z]\n",
-             static_cast<double>(raw_field.x) 
-            ,static_cast<double>(raw_field.y)
-            ,static_cast<double>(raw_field.z)
-        );
-      
-#if 0
+    if((AP_HAL::micros()- timer) > 100000L)
+    {
+        timer = AP_HAL::micros();
+        compass.read();
+        unsigned long read_time = AP_HAL::micros() - timer;
         float heading;
 
         if (!compass.healthy()) {
@@ -101,7 +75,7 @@ void loop()
 
         // display all to user
         hal.console->printf("Heading: %.2f (%3d,%3d,%3d) i2c error: %u",
-			    static_cast<double>(ToDeg(heading)),
+			    ToDeg(heading),
 			    (int)mag.x,
 			    (int)mag.y,
 			    (int)mag.z, 
@@ -109,19 +83,14 @@ void loop()
 
         // display offsets
         hal.console->printf(" offsets(%.2f, %.2f, %.2f)",
-                      static_cast<double>(offset[0]) 
-                     ,static_cast<double>(offset[1])
-                     ,static_cast<double>(offset[2]));
+                      offset[0], offset[1], offset[2]);
 
         hal.console->printf(" t=%u", (unsigned)read_time);
 
         hal.console->println();
-#endif
-#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
     } else {
 	    hal.scheduler->delay(1);
     }
-#endif
 }
 
 AP_HAL_MAIN();
