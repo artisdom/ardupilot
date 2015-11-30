@@ -9,10 +9,6 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_InertialSensor/AP_InertialSensor.h>
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-#include <quantracker/osd/osd.hpp>
-#endif
-
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 AP_InertialSensor ins;
@@ -20,13 +16,6 @@ AP_InertialSensor ins;
 static void display_offsets_and_scaling();
 static void run_test();
 static void run_calibration();
-
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-void quan::uav::osd::on_draw() 
-{ 
-   draw_text("Quan APM INS_generic test",{-140,50});
-}
-#endif
 
 void setup(void)
 {
@@ -100,7 +89,6 @@ static void display_offsets_and_scaling()
     Vector3f gyro_offsets = ins.get_gyro_offsets();
 
     // display results
-
     hal.console->printf(
             "\nAccel Offsets X:%10.8f \t Y:%10.8f \t Z:%10.8f\n",
                     accel_offsets.x,
@@ -116,7 +104,6 @@ static void display_offsets_and_scaling()
                     gyro_offsets.x,
                     gyro_offsets.y,
                     gyro_offsets.z);
-
 }
 
 static void run_test()
@@ -124,7 +111,7 @@ static void run_test()
     Vector3f accel;
     Vector3f gyro;
     float length;
-	 uint8_t counter = 0;
+	uint8_t counter = 0;
 
     // flush any user input
     while( hal.console->available() ) {
@@ -139,6 +126,7 @@ static void run_test()
 
         // wait until we have a sample
         ins.wait_for_sample();
+
         // read samples from ins
         ins.update();
         accel = ins.get_accel();
@@ -150,15 +138,7 @@ static void run_test()
 			// display results
 			hal.console->printf("Accel X:%4.2f \t Y:%4.2f \t Z:%4.2f \t len:%4.2f \t Gyro X:%4.2f \t Y:%4.2f \t Z:%4.2f\n", 
 								  accel.x, accel.y, accel.z, length, gyro.x, gyro.y, gyro.z);
-
 		}
-
-       char buffer[100];
-             
-             hal.storage->read_block(buffer,5000,27);
-
-             hal.console->write((unsigned char const*)buffer,27);
-             hal.console->printf("-------------------------\n");
     }
 
     // clear user input
