@@ -57,7 +57,7 @@
         return 0; \
     } \
     }
-#endif CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-#endif
+#endif // CONFIG_MAIN_WITHOUT_ARGC_ARGV  
+#endif // CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 
 #endif // __AP_HAL_MAIN_H__
