@@ -60,52 +60,6 @@ void setup()
     gps.init(NULL, serial_manager);
 }
 
-namespace {
-
-    AP_GPS::GPS_Status df_gps_status = AP_GPS::NO_GPS;
-
-    uint8_t led_update_count = 0;
-}
-
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-void quan::uav::osd::on_draw() 
-{ 
-/*
-  NO_GPS = 0,             ///< No GPS connected/detected
-        NO_FIX = 1,             ///< Receiving valid GPS messages but no lock
-        GPS_OK_FIX_2D = 2,      ///< Receiving valid messages and 2D lock
-        GPS_OK_FIX_3D = 3,      ///< Receiving valid messages and 3D lock
-        GPS_OK_FIX_3D_DGPS = 4, ///< Receiving valid messages and 3D lock with differential improvements
-        GPS_OK_FIX_3D_RTK = 5,  ///<
-*/
-   pxp_type pos{-140,50};
-   switch ( df_gps_status){
-       case AP_GPS::NO_GPS:
-         draw_text("No GPS",pos);
-         break;
-       case AP_GPS::NO_FIX:
-         draw_text("No Fix",pos);
-         break;
-       case AP_GPS::GPS_OK_FIX_2D:
-         draw_text("2D Fix",pos);
-         break;
-       case AP_GPS::GPS_OK_FIX_3D:
-         draw_text("3D Fix",pos);
-         break;
-       case AP_GPS::GPS_OK_FIX_3D_DGPS:
-         draw_text("3D Fix dgps",pos);
-         break;
-       case AP_GPS::GPS_OK_FIX_3D_RTK:
-         draw_text("3D Fix RTK",pos);
-         break;
-       default:
-         draw_text("GPS state out of range",pos);
-         break;
-   }
-   
-}
-#endif
-
 void loop()
 {
     static uint32_t last_msg_ms;
@@ -137,14 +91,8 @@ void loop()
                             gps.time_week(),
                             (unsigned long)gps.time_week_ms(),
                             gps.status());
+    }
 
-        df_gps_status = gps.status();
-       
-    }
-    if ( ++led_update_count ==2){
-       led_update_count = 0;
-       board_led.update();
-    }
     // Delay for 10 mS will give us 100 Hz invocation rate
     hal.scheduler->delay(10);
 }
