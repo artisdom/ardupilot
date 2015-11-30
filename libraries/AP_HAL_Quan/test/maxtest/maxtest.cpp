@@ -1,4 +1,5 @@
 
+#include <AP_Param/AP_Param.h>
 #include <quan/min.hpp>
 #include <quan/max.hpp>
 
@@ -27,9 +28,6 @@ int main()
    AP_Float x;
    AP_Int16 xx;
 
-   static_assert(quan::is_model_of<quan::AP_Param_Archetype,decltype(x)>::value, "AP_Param archetype failing");
-   static_assert(quan::is_model_of<quan::AP_Param_Archetype,decltype(xx)>::value, "AP_Param archetype failing");
-  // x = 1;
 
    float z = max(19.f,19.f);
 
@@ -51,6 +49,6 @@ int main()
    fun(v2);
    fun(v3);
 
-   max1(xx,x);
+  char arr[ max1(1,3)];
 
 }
