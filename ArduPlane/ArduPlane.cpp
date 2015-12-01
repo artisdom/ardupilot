@@ -95,9 +95,9 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 // called at start of apm task so task has started
 void Plane::setup() 
 {
-
+ #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     AP_OSD::enqueue::initialise();
-
+#endif
     cliSerial = hal.console;
 
     // load the default values of variables listed in var_info[]
