@@ -251,7 +251,6 @@ void Plane::init_ardupilot()
 
     // initialise sensor
 #if OPTFLOW == ENABLED
-#error "dont want optflow"
     optflow.init();
 #endif
 
