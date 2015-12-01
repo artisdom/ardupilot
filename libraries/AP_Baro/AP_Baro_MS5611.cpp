@@ -21,12 +21,7 @@
 */
 
 #include <AP_HAL/AP_HAL.h>
-#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
-
 #include "AP_Baro.h"
-
-#include "FreeRTOS.h"
-#include <task.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -373,14 +368,13 @@ void AP_Baro_MS56XX::update()
     uint8_t d1count, d2count;
 
     // Suspend timer procs because these variables are written to
-    // in "_update". 
-   hal.scheduler->suspend_timer_procs();
-    
+    // in "_update".
+    hal.scheduler->suspend_timer_procs();
     sD1 = _s_D1; _s_D1 = 0;
     sD2 = _s_D2; _s_D2 = 0;
     d1count = _d1_count; _d1_count = 0;
     d2count = _d2_count; _d2_count = 0;
-    _updated = false; 
+    _updated = false;
     hal.scheduler->resume_timer_procs();
 
     if (d1count != 0) {
@@ -523,5 +517,3 @@ void AP_Baro_MS56XX::accumulate(void)
         _timer();
     }
 }
-
-#endif // #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
