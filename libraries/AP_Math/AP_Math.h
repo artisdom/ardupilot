@@ -173,7 +173,10 @@ static inline float constrain_float(float amt, float low, float high)
 	// floating point errors through any function that uses
 	// constrain_float(). The normal float semantics already handle -Inf
 	// and +Inf
-	if (std::isnan(amt)) {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+ using std::isnan;
+#endif
+	if (isnan(amt)) {
 		return (low+high)*0.5f;
 	}
 	return ((amt)<(low)?(low):((amt)>(high)?(high):(amt)));
@@ -223,6 +226,7 @@ static inline float pythagorous3(float a, float b, float c) {
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <quan/min.hpp>
 #include <quan/max.hpp>
+
 using quan::min;
 using quan::max;
 #else
