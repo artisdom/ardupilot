@@ -15,6 +15,8 @@
  along with this program. If not, see http://www.gnu.org/licenses./
  */
 
+#include <AP_HAL/AP_HAL.h>
+
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include "Plane.h"
 
