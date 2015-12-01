@@ -715,7 +715,6 @@ void Plane::servo_write(uint8_t ch, uint16_t pwm)
 bool Plane::should_log(uint32_t mask)
 {
 #if LOGGING_ENABLED == ENABLED
-#error dont want logging
     if (!(mask & g.log_bitmask) || in_mavlink_delay) {
         return false;
     }
