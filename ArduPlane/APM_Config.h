@@ -8,6 +8,9 @@
 // longer valid! You should switch to using CONFIG_HAL_BOARD via the HAL_BOARD
 // flag in your local config.mk instead.
 
+//only for quan
+#if defined QUAN_CUSTOM_AP_PARAMS
+
 #define GPS_PROTOCOL             GPS_PROTOCOL_AUTO
 #define CLI_ENABLED              ENABLED
 
@@ -30,4 +33,7 @@ airspeed_sensor.enabled  in AP_Airspeed.cpp
 #define FRSKY_TELEM_ENABLED      DISABLED
 #define OBC_FAILSAFE             DISABLED
 #define OPTFLOW                  DISABLED
+
+#endif
+
 
