@@ -589,12 +589,14 @@ void GCS_MAVLINK::handle_param_set(mavlink_message_t *msg, DataFlash_Class *Data
      */
     bool force_save = !is_equal(packet.param_value, old_value);
 
+
     // save the change
     vp->save(force_save);
-
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
     if (DataFlash != NULL) {
         DataFlash->Log_Write_Parameter(key, vp->cast_to_float(var_type));
     }
+#endif
 }
 
 
