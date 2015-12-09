@@ -47,16 +47,17 @@ void Tracker::init_tracker()
     // port with SERIAL0_BAUD. check_usb_mux() fixes this if need be.    
     usb_connected = true;
     check_usb_mux();
-
+#if MAVLINK_COMM_NUM_BUFFERS > 1
     // setup serial port for telem1 and start snooping for vehicle data
     gcs[1].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink, 0);
     gcs[1].set_snoop(mavlink_snoop_static);
-#if MAVLINK_COMM_NUM_BUFFERS > 1
+#endif
+#if MAVLINK_COMM_NUM_BUFFERS > 2
     // setup serial port for telem2 and start snooping for vehicle data
     gcs[2].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink, 1);
     gcs[2].set_snoop(mavlink_snoop_static);
 #endif
-#if MAVLINK_COMM_NUM_BUFFERS > 2
+#if MAVLINK_COMM_NUM_BUFFERS > 3
     // setup serial port for fourth telemetry port (not used by default) and start snooping for vehicle data
     gcs[3].setup_uart(serial_manager, AP_SerialManager::SerialProtocol_MAVLink, 2);
     gcs[3].set_snoop(mavlink_snoop_static);
