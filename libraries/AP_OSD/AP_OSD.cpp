@@ -10,7 +10,8 @@ AP_OSD::OSD_params::OSD_params()
  ,battery_pos{110,-130,-80}
  ,gps_pos{-160,-130,-80}
  ,control_mode_pos{35,-130,-80}
- ,airspeed_pos{-160,-100,80}
+ ,airspeed_pos{-160,-100,-80}
+ ,homeinfo_pos{-160,90,70}
 {}
 
 

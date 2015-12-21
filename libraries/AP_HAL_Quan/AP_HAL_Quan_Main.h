@@ -10,6 +10,7 @@
 \
 void osd_setup();\
 void create_draw_task();\
+void create_telemetry_transmitter_task();\
 void create_apm_task();\
 extern "C" void vTaskStartScheduler();\
 \
@@ -19,6 +20,7 @@ extern "C" {\
       osd_setup(); \
    \
       create_draw_task(); \
+      create_telemetry_transmitter_task();\
       create_apm_task(); \
    \
       vTaskStartScheduler(); \

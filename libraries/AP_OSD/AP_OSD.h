@@ -79,6 +79,7 @@ namespace AP_OSD{
       quan::three_d::vect<int32_t> gps_pos;
       quan::three_d::vect<int32_t> control_mode_pos;
       quan::three_d::vect<int32_t> airspeed_pos;
+      quan::three_d::vect<int32_t> homeinfo_pos;
    };
 
    namespace dequeue{
@@ -91,6 +92,7 @@ namespace AP_OSD{
    void draw_gps(dequeue::osd_info_t const &,OSD_params const & osd);
    void draw_control_mode(dequeue::osd_info_t const &,OSD_params const & osd);
    void draw_airspeed(dequeue::osd_info_t const &,OSD_params const & osd);
+   void draw_homeinfo(dequeue::osd_info_t const &,OSD_params const & osd);
 }
 
 #endif // AP_OSD_H_INCLUDED

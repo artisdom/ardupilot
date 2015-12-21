@@ -88,6 +88,19 @@ LIBRARY_PATH=
 
 include $(MK_DIR)/find_tools.mk
 
+ifeq ($(QUAN_TARGET_VEHICLE),)
+$(error "QUAN_TARGET_VEHICLE not defined")
+endif
+
+ifeq ($(QUAN_TARGET_VEHICLE),QUAN_APM_ARDUPLANE)
+TELEMETRY_DIRECTION = QUAN_OSD_TELEM_TRANSMITTER
+endif
+
+ifeq ($(QUAN_TARGET_VEHICLE),QUAN_APM_ANTENNATRACKER)
+TELEMETRY_DIRECTION = QUAN_OSD_TELEM_RECEIVER
+endif
+
+
 # specific flags for stm32f4
 QUAN_DEFINES = QUAN_STM32F4 QUAN_FREERTOS $(TELEMETRY_DIRECTION) STM32F40_41xxx \
 QUAN_OSD_SOFTWARE_SYNCSEP HSE_VALUE=8000000 QUAN_OSD_BOARD_TYPE=4 QUAN_CUSTOM_AP_PARAMS
@@ -111,7 +124,7 @@ QUAN_LINKER_FLAGS  = -T$(LINKER_SCRIPT) -$(OPTIMISATION_LEVEL) -nostartfiles -no
 
 #------------------------------------------- ardupilot stuff --------
 
-#VERBOSE = True
+VERBOSE = True
 #
 # Tool options
 #
@@ -172,17 +185,22 @@ endif
 INIT_LIB_PREFIX = $(TOOLCHAIN_PREFIX)/lib/gcc/arm-none-eabi/$(TOOLCHAIN_GCC_VERSION)/armv7e-m/fpu/
 INIT_LIBS = $(INIT_LIB_PREFIX)crti.o $(INIT_LIB_PREFIX)crtn.o 
 
-#LIBS ?= -lm -lpthread
-#LIBS ?= -lm   
+#ifneq ($(findstring CYGWIN, $(SYSTYPE)),)
+#LIBS += -lwinmm -lstdc++
+#endif
 
-ifneq ($(findstring CYGWIN, $(SYSTYPE)),)
-LIBS += -lwinmm -lstdc++
+LIBS = -Wl,--undefined=_sbrk  
+
+ifeq ($(QUAN_TARGET_VEHICLE),QUAN_APM_ANTENNATRACKER)
+LIBS += $(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_osd_rx.a 
 endif
 
-LIBS += -Wl,--undefined=_sbrk  \
-$(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_system.a  \
-$(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_graphics_api.a\
-$(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_osd.a 
+ifeq ($(QUAN_TARGET_VEHICLE),QUAN_APM_ARDUPLANE)
+LIBS += $(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_osd_tx.a
+endif
+
+LIBS += $(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_system.a  \
+$(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_graphics_api.a
 
 
 ifeq ($(VERBOSE),)
