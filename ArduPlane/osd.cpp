@@ -23,6 +23,8 @@
 #include <quan/where.hpp>
 #include <task.h>
 #include <quantracker/osd/osd.hpp>
+#include <quantracker/osd/telemetry_transmitter.hpp>
+#include <quan/tracker/zapp4/position.hpp>
 
 #include <AP_OSD/AP_OSD_dequeue.h>
 #include <AP_OSD/fonts.hpp>
@@ -75,6 +77,7 @@ namespace {
      AP_OSD::draw_gps(info,osd);
      AP_OSD::draw_control_mode(info,osd);
      AP_OSD::draw_airspeed(info,osd);
+     AP_OSD::draw_homeinfo(info,osd);
    }
 
    void do_unknown()
@@ -110,6 +113,19 @@ void quan::uav::osd::on_draw()
 
    }
     
+}
+// todo
+void on_telemetry_transmitted()
+{
+    quan::uav::osd::norm_position_type norm_pos;
+    norm_pos.lat = info.aircraft_position.lat;
+    norm_pos.lon = info.aircraft_position.lon;
+    norm_pos.alt = info.aircraft_position.alt;
+
+    uint8_t encoded [19];
+    quan::tracker::zapp4::encode_position(norm_pos,encoded);
+    write_telemetry_data((const char*)encoded,19);
+
 }
 
 #endif  // #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
