@@ -55,16 +55,16 @@ void AP_OSD::draw_gps(dequeue::osd_info_t const & info,OSD_params const & osd)
    auto font_size = get_size(font);
    char buf[100];
    if ( valid_fix){
-      sprintf(buf,"lon:%8.3f",static_cast<double>(info.aircraft_position.lon.numeric_value() * 1.e-7f));
+      sprintf(buf,"Lon:%10.5f",static_cast<double>(info.aircraft_position.lon.numeric_value() * 1.e-7f));
       draw_text(buf,pos,font);
       pos.y += font_size.y;
-      sprintf(buf,"lat:%8.3f",static_cast<double>(info.aircraft_position.lat.numeric_value() * 1.e-7f));
+      sprintf(buf,"Lat:%10.5f",static_cast<double>(info.aircraft_position.lat.numeric_value() * 1.e-7f));
       draw_text(buf,pos,font);
    }else{
       sprintf(buf,"%u sats",static_cast<unsigned>(info.gps_num_sats));
       draw_text(buf,pos,font);
       pos.y += font_size.y;
-      sprintf(buf,"GPS: %s",gps_status_txt);
+      sprintf(buf,"GPS:%s",gps_status_txt);
       draw_text(buf,pos,font);
    }
   
