@@ -12,6 +12,7 @@ AP_OSD::OSD_params::OSD_params()
  ,control_mode_pos{40,-140,-80}
  ,airspeed_pos{-170,-100,-80}
  ,homeinfo_pos{-170,100,70}
+
 {}
 
 
