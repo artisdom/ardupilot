@@ -93,6 +93,10 @@ void setup()
    test_task.init();
 }
 
+void on_telemetry_transmitted()
+{
+}
+
 void quan::uav::osd::on_draw() 
 { 
    draw_text("Quan APM Sched Timer test",{-140,50});
