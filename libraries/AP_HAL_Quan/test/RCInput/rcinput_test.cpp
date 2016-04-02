@@ -19,7 +19,8 @@
    also blinks heartbeat LED at 0.5 Hz
 */
 
-const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
+//const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 namespace {
 
@@ -75,6 +76,10 @@ void setup()
 void quan::uav::osd::on_draw() 
 { 
    draw_text("Quan APM Sched RC Input test",{-140,50});
+}
+
+void on_telemetry_transmitted()
+{
 }
 
 // called forever in apm_task
