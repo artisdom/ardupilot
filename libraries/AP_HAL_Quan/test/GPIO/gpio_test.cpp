@@ -1,15 +1,20 @@
 
 #include <AP_HAL/AP_HAL.h>
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
 #include <AP_Common/AP_Common.h>
 #include <AP_Progmem/AP_Progmem.h>
 #include <AP_Param/AP_Param.h>
 #include <StorageManager/StorageManager.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
+
+#include <quantracker/osd/osd.hpp>
 #include <task.h>
 #include <cstring>
 
-const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 namespace {
    constexpr uint8_t heartbeat_led = 1U;
@@ -32,6 +37,10 @@ void setup()
    }
 
 	hal.console->write((uint8_t const*)text,strlen(text));
+}
+
+void on_telemetry_transmitted()
+{
 }
 
 void quan::uav::osd::on_draw() 
@@ -67,4 +76,7 @@ void loop()
 }
 
 AP_HAL_MAIN();
+
+#endif
+
 
