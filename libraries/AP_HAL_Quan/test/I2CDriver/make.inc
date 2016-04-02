@@ -1,6 +1,6 @@
-LIBRARIES += AP_Common
-LIBRARIES += AP_HAL
-LIBRARIES += AP_HAL_Quan
+#LIBRARIES += AP_Common
+#LIBRARIES += AP_HAL
+#LIBRARIES += AP_HAL_Quan
 # To include Notify requires pretty much everything
 #LIBRARIES += AP_Notify
 #LIBRARIES += GCS_MAVLink
@@ -10,8 +10,8 @@ LIBRARIES += AP_HAL_Quan
 #LIBRARIES += AP_HAL_Empty
 #LIBRARIES += AP_HAL_SITL
 LIBRARIES += AP_Math
-LIBRARIES += AP_Param
-LIBRARIES += AP_Progmem
-LIBRARIES += StorageManager
-LIBRARIES += AP_HAL_Empty
+#LIBRARIES += AP_Param
+#LIBRARIES += AP_Progmem
+#LIBRARIES += StorageManager
+#LIBRARIES += AP_HAL_Empty
 LIBRARIES += Filter

@@ -14,8 +14,8 @@
 #include <cstring>
 #include <stm32f4xx.h>
 
-#error "need to disable the i2c_task in quan scheduler.cpp for this to work atm"
-const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
+#pragma message  "need to disable the i2c_task in quan scheduler.cpp for this to work atm"
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 namespace {
 
@@ -169,6 +169,10 @@ void setup()
    hal.gpio->write(test_pin,pin_off);
 }
 
+void on_telemetry_transmitted()
+{
+}
+
 void quan::uav::osd::on_draw() 
 { 
    draw_text("Quan APM I2C test",{-140,50});
@@ -188,7 +192,7 @@ void loop()
  
 }
 
-#if defined QUAN_WITH_OSD_OVERLAY
+#if 1
 AP_HAL_MAIN();
 #else
 void create_apm_task();
