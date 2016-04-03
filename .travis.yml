@@ -33,7 +33,8 @@ before_install:
 install:
    - echo building the quantracker libs
    - cd /home/travis/ap_lib/quantracker && make osd_libs
+   - cd /home/travis
    - export QUAN_TARGET_VEHICLE=QUAN_APM_ARDUPLANE
    - export QUANTRACKER_ROOT_DIR=/home/travis/ap_lib/quantracker
    
-script:  cd ardupilot/ArduPlane && make quan
+script: pwd && cd ardupilot/ArduPlane && make quan
