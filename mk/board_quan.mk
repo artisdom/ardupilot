@@ -1,7 +1,11 @@
 
-QUANTRACKER_ROOT_DIR = /home/andy/cpp/projects/quantracker/
+# A typical invocation in ArduPlane would be
+# make QUAN_TARGET_VEHICLE=QUAN_APM_ARDUPLANE QUANTRACKER_ROOT_DIR=/home/andy/ap_lib/quantracker/ quan
+#QUANTRACKER_ROOT_DIR = /home/andy/cpp/projects/quantracker/
+
 ifeq ($(QUANTRACKER_ROOT_DIR), )
-$(error "QUANTRACKER_ROOT_DIR must be defined to the path to the quantracker root directory.")
+# See http://github.com/kwikius/quantracker
+$(error QUANTRACKER_ROOT_DIR must be defined to the path to the quantracker root directory.)
 endif
 
 TARGET_PROCESSOR = STM32F4
