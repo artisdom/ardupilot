@@ -14,7 +14,7 @@ addons:
     - lib32z1
 
 before_install:
-# install the dependencies
+# install the quantracker dependencies
    - echo retrieving and building the installer
    - mkdir air_installer_tmp && cd air_installer_tmp
    - wget https://github.com/kwikius/air_installer/archive/install_test.zip
