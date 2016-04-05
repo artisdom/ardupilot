@@ -19,7 +19,7 @@
    them to the outputs
 */
 
-const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 namespace {
 
@@ -70,6 +70,10 @@ void quan::uav::osd::on_draw()
    draw_text("Quan APM Sched RC Output test",{-140,50});
 }
 
+void on_telemetry_transmitted()
+{
+}
+
 namespace {
 
 }
@@ -80,46 +84,8 @@ void loop()
     test_task.fun();
 }
 
-#if defined QUAN_WITH_OSD_OVERLAY
+
 AP_HAL_MAIN();
-#else
-void create_apm_task();
-void create_timer_task();
 
-extern "C" {
-   int main (void) 
-   {
-      osd_setup(); 
-      create_draw_task(); 
-      create_apm_task(); 
-      vTaskStartScheduler (); 
-   }
-}
 
-namespace { 
-   char dummy_param = 0; 
-   TaskHandle_t task_handle = NULL; 
-   void apm_task(void * params) 
-   { 
-      hal.init(0, NULL);
-      setup();
-      hal.scheduler->system_initialized(); 
-      test_task.init();
-      for(;;){ 
-         loop(); 
-      } 
-   } 
-} 
-
-void create_apm_task() 
-{ 
-  xTaskCreate( 
-      apm_task,"apm task", 
-      5000, 
-      &dummy_param, 
-      tskIDLE_PRIORITY + 1, 
-      &task_handle 
-  ); 
-}
-#endif
 
