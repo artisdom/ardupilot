@@ -17,7 +17,7 @@
   test of basic storage function
 */
 
-const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 namespace {
 
@@ -69,6 +69,10 @@ void setup()
    hal.gpio->pinMode(test_pin,HAL_GPIO_OUTPUT);
    hal.gpio->write(test_pin,pin_off);
    test_task.init();
+}
+
+void on_telemetry_transmitted()
+{
 }
 
 void quan::uav::osd::on_draw() 
