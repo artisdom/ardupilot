@@ -13,10 +13,10 @@
 #include <cstring>
 
 /*
-   Sceduler test
+   Scheduler test
 */
 
-const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 namespace {
 
@@ -63,6 +63,11 @@ void quan::uav::osd::on_draw()
 { 
    draw_text("Quan APM Sched Timer test",{-140,50});
 }
+
+void on_telemetry_transmitted()
+{
+}
+
 
 namespace {
    uint64_t next_event = 10U;
