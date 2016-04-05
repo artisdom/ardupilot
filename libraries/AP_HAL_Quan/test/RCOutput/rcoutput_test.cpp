@@ -19,6 +19,7 @@
    them to the outputs
 */
 
+
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 namespace {
