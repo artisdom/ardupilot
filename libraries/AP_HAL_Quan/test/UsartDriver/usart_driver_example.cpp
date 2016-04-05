@@ -8,9 +8,10 @@
 #include <AP_Math/AP_Math.h>
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
 
+#include <quantracker/osd/osd.hpp>
 #include <task.h>
 
-const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 // called once in apm_task before loop
 void setup() 
@@ -21,6 +22,10 @@ void setup()
 
    const char text[] = "Hi from Apm Quan Scheduler\n";
 	hal.console->write((uint8_t const*)text,strlen(text));
+}
+
+void on_telemetry_transmitted()
+{
 }
 
 void quan::uav::osd::on_draw() 
