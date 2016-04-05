@@ -37,4 +37,4 @@ install:
    - export QUAN_TARGET_VEHICLE=QUAN_APM_ARDUPLANE
    - export QUANTRACKER_ROOT_DIR=/home/travis/ap_lib/quantracker/
    
-script: ls && make quan
+script: make quan && cd /home/travis/build/kwikius/ardupilot/libraries/AP_HAL_Quan/test/AnalogIn && make quan
