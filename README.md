@@ -7,14 +7,14 @@ BuildInfo
 ---------
 
 Building apm_quantracker
+TODO export env vars
 
-
-
-
-Dependencies.
+Dependencies
+------------
 
 The dependencies can be retrieved on linux by downloading building and running the installer
- http
+air_installer from github.
+
 
 
 
