@@ -13,7 +13,11 @@ static Compass compass;
 
 uint32_t timer;
 
-void setup() {
+void setup();
+void loop();
+
+void setup() 
+{
     hal.console->println("Compass library test");
 
     AP_BoardConfig{}.init(); // initialise the board drivers
