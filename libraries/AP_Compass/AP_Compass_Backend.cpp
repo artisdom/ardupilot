@@ -7,16 +7,25 @@
 
 extern const AP_HAL::HAL& hal;
 
-AP_Compass_Backend::AP_Compass_Backend(Compass &compass) :
-    _compass(compass)
-{}
-
-void AP_Compass_Backend::rotate_field(Vector3f &mag, uint8_t instance)
+AP_Compass_Backend::AP_Compass_Backend(Compass &compass, const char* name, uint8_t index, bool external) :
+    _compass{compass}, _name{name},_index{index},_is_external{external}
 {
-    Compass::mag_state &state = _compass._state[instance];
-    mag.rotate(MAG_BOARD_ORIENTATION);
+  if (index >= compass.max_backends){
+     AP_HAL::panic("array index out of range in AP_Compass_Backend");
+  }
+}
 
-    if (!state.external) {
+
+bool AP_Compass_Backend::install(){ return _compass._add_backend(*this);}
+
+bool AP_Compass_Backend::is_installed() const { return _compass._backends[_index] == this;}
+
+void AP_Compass_Backend::rotate_field(Vector3f &mag)
+{
+    Compass::mag_state &state = _compass._state[_index];
+    mag.rotate(get_compass_orientation<AP_HAL::Tag_BoardType>());
+
+    if (! _is_external) {
         // and add in AHRS_ORIENTATION setting if not an external compass
         mag.rotate(_compass._board_orientation);
     } else {
@@ -25,21 +34,21 @@ void AP_Compass_Backend::rotate_field(Vector3f &mag, uint8_t instance)
     }
 }
 
-void AP_Compass_Backend::publish_raw_field(const Vector3f &mag, uint32_t time_us, uint8_t instance)
+void AP_Compass_Backend::publish_raw_field(const Vector3f &mag, uint32_t time_us)
 {
-    Compass::mag_state &state = _compass._state[instance];
+    Compass::mag_state &state = _compass._state[_index];
 
     // note that we do not set last_update_usec here as otherwise the
     // EKF and DCM would end up consuming compass data at the full
     // sensor rate. We want them to consume only the filtered fields
     state.last_update_ms = AP_HAL::millis();
 
-    _compass._calibrator[instance].new_sample(mag);
+    _compass._calibrator[_index].new_sample(mag);
 }
 
-void AP_Compass_Backend::correct_field(Vector3f &mag, uint8_t i)
+void AP_Compass_Backend::correct_field(Vector3f &mag)
 {
-    Compass::mag_state &state = _compass._state[i];
+    Compass::mag_state &state = _compass._state[_index];
 
     if (state.diagonals.get().is_zero()) {
         state.diagonals.set(Vector3f(1.0f,1.0f,1.0f));
@@ -55,7 +64,7 @@ void AP_Compass_Backend::correct_field(Vector3f &mag, uint8_t i)
      * being applied so it can be logged correctly
      */
     mag += offsets;
-    if(_compass._motor_comp_type != AP_COMPASS_MOT_COMP_DISABLED && !is_zero(_compass._thr_or_curr)) {
+    if(_compass.get_motor_compensation_type() != Compass::Motor_compensation_type::Disabled && !is_zero(_compass._thr_or_curr)) {
         state.motor_offset = mot * _compass._thr_or_curr;
         mag += state.motor_offset;
     } else {
@@ -74,9 +83,9 @@ void AP_Compass_Backend::correct_field(Vector3f &mag, uint8_t i)
 /*
   copy latest data to the frontend from a backend
  */
-void AP_Compass_Backend::publish_filtered_field(const Vector3f &mag, uint8_t instance)
+void AP_Compass_Backend::publish_filtered_field(const Vector3f &mag)
 {
-    Compass::mag_state &state = _compass._state[instance];
+    Compass::mag_state &state = _compass._state[_index];
 
     state.field = mag;
 
@@ -84,41 +93,18 @@ void AP_Compass_Backend::publish_filtered_field(const Vector3f &mag, uint8_t ins
     state.last_update_usec = AP_HAL::micros();
 }
 
-void AP_Compass_Backend::set_last_update_usec(uint32_t last_update, uint8_t instance)
+void AP_Compass_Backend::set_last_update_usec(uint32_t last_update)
 {
-    Compass::mag_state &state = _compass._state[instance];
+    Compass::mag_state &state = _compass._state[_index];
     state.last_update_usec = last_update;
-}
-
-/*
-  register a new backend with frontend, returning instance which
-  should be used in publish_field()
- */
-uint8_t AP_Compass_Backend::register_compass(void) const
-{ 
-    return _compass.register_compass(); 
 }
 
 
 /*
   set dev_id for an instance
 */
-void AP_Compass_Backend::set_dev_id(uint8_t instance, uint32_t dev_id)
+void AP_Compass_Backend::set_dev_id(uint32_t dev_id)
 {
-    _compass._state[instance].dev_id.set(dev_id);
+    _compass._state[_index].dev_id.set(dev_id);
 }
 
-/*
-  set external for an instance
-*/
-void AP_Compass_Backend::set_external(uint8_t instance, bool external)
-{
-    if (_compass._state[instance].external != 2) {
-        _compass._state[instance].external.set(external);
-    }
-}
-
-bool AP_Compass_Backend::is_external(uint8_t instance)
-{
-    return _compass._state[instance].external;
-}

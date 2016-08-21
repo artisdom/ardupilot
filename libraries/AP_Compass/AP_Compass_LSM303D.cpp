@@ -19,6 +19,7 @@
 #include <AP_Math/AP_Math.h>
 
 #include "AP_Compass_LSM303D.h"
+#include "AP_Compass_device_ids.h"
 
 extern const AP_HAL::HAL &hal;
 
@@ -154,16 +155,17 @@ extern const AP_HAL::HAL &hal;
 #define LSM303D_MAG_DEFAULT_RANGE_GA          2
 #define LSM303D_MAG_DEFAULT_RATE            100
 
-AP_Compass_LSM303D::AP_Compass_LSM303D(Compass &compass, AP_HAL::OwnPtr<AP_HAL::Device> dev)
-    : AP_Compass_Backend(compass)
+AP_Compass_LSM303D::AP_Compass_LSM303D(Compass &compass, AP_HAL::OwnPtr<AP_HAL::Device> dev, uint8_t index, bool external_compass)
+    : AP_Compass_Backend(compass,"LSM303D",index, external_compass)
     , _dev(std::move(dev))
 {
 }
 
 AP_Compass_Backend *AP_Compass_LSM303D::probe(Compass &compass,
-                                              AP_HAL::OwnPtr<AP_HAL::Device> dev)
+                                              AP_HAL::OwnPtr<AP_HAL::Device> dev, uint8_t index, bool external_compass)
 {
-    AP_Compass_LSM303D *sensor = new AP_Compass_LSM303D(compass, std::move(dev));
+    AP_Compass_LSM303D *sensor = new AP_Compass_LSM303D(compass, std::move(dev), index,external_compass);
+
     if (!sensor || !sensor->init()) {
         delete sensor;
         return nullptr;
@@ -258,7 +260,6 @@ bool AP_Compass_LSM303D::init()
     if (LSM303D_DRDY_M_PIN < 0) {
         return false;
     }
-
     _drdy_pin_m = hal.gpio->channel(LSM303D_DRDY_M_PIN);
     _drdy_pin_m->mode(HAL_GPIO_INPUT);
 
@@ -269,17 +270,11 @@ bool AP_Compass_LSM303D::init()
     if (!success) {
         return false;
     }
-
-    _initialised = true;
-
-    /* register the compass instance in the frontend */
-    _compass_instance = register_compass();
-    set_dev_id(_compass_instance, AP_COMPASS_TYPE_LSM303D);
-
-#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX && CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RASPILOT
-    // FIXME: wrong way to force internal compass
-    set_external(_compass_instance, false);
-#endif
+    _initialised = install();
+    if (! _initialised){
+       return false;
+    }
+    set_dev_id(AP_COMPASS_TYPE_LSM303D);
 
     hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&AP_Compass_LSM303D::_update, void));
 
@@ -360,13 +355,13 @@ void AP_Compass_LSM303D::_update()
     raw_field = Vector3f(_mag_x, _mag_y, _mag_z) * _mag_range_scale;
 
     // rotate raw_field from sensor frame to body frame
-    rotate_field(raw_field, _compass_instance);
+    rotate_field(raw_field);
 
     // publish raw_field (uncorrected point sample) for calibration use
-    publish_raw_field(raw_field, time_us, _compass_instance);
+    publish_raw_field(raw_field, time_us);
 
     // correct raw_field for known errors
-    correct_field(raw_field, _compass_instance);
+    correct_field(raw_field);
 
     _mag_x_accum += raw_field.x;
     _mag_y_accum += raw_field.y;
@@ -405,7 +400,7 @@ void AP_Compass_LSM303D::read()
     _mag_x_accum = _mag_y_accum = _mag_z_accum = 0;
     hal.scheduler->resume_timer_procs();
 
-    publish_filtered_field(field, _compass_instance);
+    publish_filtered_field(field);
 }
 
 void AP_Compass_LSM303D::_disable_i2c()

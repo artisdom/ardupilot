@@ -13,54 +13,33 @@
 #include "CompassCalibrator.h"
 #include "AP_Compass_Backend.h"
 
-// compass product id
-#define AP_COMPASS_TYPE_UNKNOWN         0x00
-#define AP_COMPASS_TYPE_HIL             0x01
-#define AP_COMPASS_TYPE_HMC5843         0x02
-#define AP_COMPASS_TYPE_HMC5883L        0x03
-#define AP_COMPASS_TYPE_PX4             0x04
-#define AP_COMPASS_TYPE_VRBRAIN         0x05
-#define AP_COMPASS_TYPE_AK8963_MPU9250  0x06
-#define AP_COMPASS_TYPE_AK8963_I2C      0x07
-#define AP_COMPASS_TYPE_LSM303D         0x08
-#define AP_COMPASS_TYPE_LSM9DS1         0x09
-#define AP_COMPASS_TYPE_BMM150          0x0A
-
-// motor compensation types (for use with motor_comp_enabled)
-#define AP_COMPASS_MOT_COMP_DISABLED    0x00
-#define AP_COMPASS_MOT_COMP_THROTTLE    0x01
-#define AP_COMPASS_MOT_COMP_CURRENT     0x02
-
-// setup default mag orientation for some board types
-#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX && CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RASPILOT
-# define MAG_BOARD_ORIENTATION ROTATION_ROLL_180
-#elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX && CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP
-# define MAG_BOARD_ORIENTATION ROTATION_YAW_90
-#elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX && (CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_ERLEBRAIN2 || \
-      CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXFMINI)
-# define MAG_BOARD_ORIENTATION ROTATION_YAW_270
-#else
-# define MAG_BOARD_ORIENTATION ROTATION_NONE
-#endif
+template <typename Board> enum Rotation get_compass_orientation();
 
 /**
    maximum number of compass instances available on this platform. If more
    than 1 then redundant sensors may be available
  */
-#define COMPASS_MAX_INSTANCES 3
-#define COMPASS_MAX_BACKEND   3
 
-//MAXIMUM COMPASS REPORTS
-#define MAX_CAL_REPORTS 10
-#define CONTINUOUS_REPORTS 0
-#define AP_COMPASS_MAX_XYZ_ANG_DIFF radians(50.0f)
-#define AP_COMPASS_MAX_XY_ANG_DIFF radians(30.0f)
-#define AP_COMPASS_MAX_XY_LENGTH_DIFF 100.0f
+class Compass;
+
+bool install_compass_backend_hil(Compass& c);
+
+template <typename Board> void install_compass_backends(Compass& c);
+
+/*
+ If all compasses are functioning then an average could be used
+  rather than just a single compass.
+
+  Should be possible to orientate internal compasses differently on the board
+*/
 
 class Compass
 {
-friend class AP_Compass_Backend;
+   friend class AP_Compass_Backend;
+
 public:
+    enum class Motor_compensation_type : uint8_t {Disabled = 0, Throttle = 1, Current = 2};
+    static constexpr uint32_t max_backends = 3;
     /// Constructor
     ///
     Compass();
@@ -213,11 +192,12 @@ public:
     ///
     /// @param  comp_type           0 = disabled, 1 = enabled use throttle, 2 = enabled use current
     ///
-    void motor_compensation_type(const uint8_t comp_type);
+    void motor_compensation_type(Motor_compensation_type comp_type);
 
     /// get the motor compensation value.
-    uint8_t get_motor_compensation_type() const {
-        return _motor_comp_type;
+    Motor_compensation_type get_motor_compensation_type() const 
+    {
+        return static_cast<Motor_compensation_type>(_motor_comp_type.get());
     }
 
     /// Set the motor compensation factor x/y/z values.
@@ -247,7 +227,7 @@ public:
     /// Set the throttle as a percentage from 0.0 to 1.0
     /// @param thr_pct              throttle expressed as a percentage from 0 to 1.0
     void set_throttle(float thr_pct) {
-        if (_motor_comp_type == AP_COMPASS_MOT_COMP_THROTTLE) {
+        if (get_motor_compensation_type() == Motor_compensation_type::Throttle) {
             _thr_or_curr = thr_pct;
         }
     }
@@ -255,7 +235,7 @@ public:
     /// Set the current used by system in amps
     /// @param amps                 current flowing to the motors expressed in amps
     void set_current(float amps) {
-        if (_motor_comp_type == AP_COMPASS_MOT_COMP_CURRENT) {
+        if (get_motor_compensation_type() == Motor_compensation_type::Current) {
             _thr_or_curr = amps;
         }
     }
@@ -292,8 +272,8 @@ public:
     struct {
         Vector3f Bearth;
         float last_declination;
-        bool healthy[COMPASS_MAX_INSTANCES];
-        Vector3f field[COMPASS_MAX_INSTANCES];
+        bool healthy[max_backends];
+        Vector3f field[max_backends];
     } _hil;
 
     enum LearnType {
@@ -308,17 +288,12 @@ public:
     }
     
 private:
-    /// Register a new compas driver, allocating an instance number
-    ///
-    /// @return number of compass instances
-    uint8_t register_compass(void);
 
-    // load backend drivers
-    bool _add_backend(AP_Compass_Backend *backend, const char *name, bool external);
+    bool _add_backend(AP_Compass_Backend& backend);
     void _detect_backends(void);
 
     //keep track of number of calibration reports sent
-    uint8_t _reports_sent[COMPASS_MAX_INSTANCES];
+    uint8_t _reports_sent[max_backends];
 
     //autoreboot after compass calibration
     bool _compass_cal_autoreboot;
@@ -326,7 +301,7 @@ private:
     bool _cal_has_run;
 
     // backend objects
-    AP_Compass_Backend *_backends[COMPASS_MAX_BACKEND];
+    AP_Compass_Backend *_backends[max_backends];
     uint8_t     _backend_count;
 
     // number of registered compasses.
@@ -362,7 +337,7 @@ private:
 
     struct mag_state {
         AP_Int8     external;
-        bool        healthy;
+        bool        healthy;  // could go to backend
         AP_Int8     orientation;
         AP_Vector3f offset;
         AP_Vector3f diagonals;
@@ -379,20 +354,20 @@ private:
         Vector3i    mag_history[_mag_history_size];
 
         // factors multiplied by throttle and added to compass outputs
-        AP_Vector3f motor_compensation;
+        AP_Vector3f motor_compensation;    
 
         // latest compensation added to compass
-        Vector3f    motor_offset;
+        Vector3f    motor_offset;    // could go to backend
 
         // corrected magnetic field strength
-        Vector3f    field;
+        Vector3f    field;            // could go to backend
 
         // when we last got data
-        uint32_t    last_update_ms;
-        uint32_t    last_update_usec;
-    } _state[COMPASS_MAX_INSTANCES];
+        uint32_t    last_update_ms;  //  // could go to backend
+        uint32_t    last_update_usec;  // could go to backend
+    } _state[max_backends];
 
-    CompassCalibrator _calibrator[COMPASS_MAX_INSTANCES];
+    CompassCalibrator _calibrator[max_backends];
 
     // if we want HIL only
     bool _hil_mode:1;

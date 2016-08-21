@@ -13,15 +13,15 @@ uint8_t Copter::mavlink_compassmot(mavlink_channel_t chan)
     // compassmot not implemented for tradheli
     return 1;
 #else
-    int8_t   comp_type;                 // throttle or current based compensation
-    Vector3f compass_base[COMPASS_MAX_INSTANCES];           // compass vector when throttle is zero
-    Vector3f motor_impact[COMPASS_MAX_INSTANCES];           // impact of motors on compass vector
-    Vector3f motor_impact_scaled[COMPASS_MAX_INSTANCES];    // impact of motors on compass vector scaled with throttle
-    Vector3f motor_compensation[COMPASS_MAX_INSTANCES];     // final compensation to be stored to eeprom
+    Compass::Motor_compensation_type   comp_type = Compass::Motor_compensation_type::Disabled;// throttle or current based compensation
+    Vector3f compass_base[Compass::max_backends];           // compass vector when throttle is zero
+    Vector3f motor_impact[Compass::max_backends];           // impact of motors on compass vector
+    Vector3f motor_impact_scaled[Compass::max_backends];    // impact of motors on compass vector scaled with throttle
+    Vector3f motor_compensation[Compass::max_backends];     // final compensation to be stored to eeprom
     float    throttle_pct;              // throttle as a percentage 0.0 ~ 1.0
     float    throttle_pct_max = 0.0f;   // maximum throttle reached (as a percentage 0~1.0)
     float    current_amps_max = 0.0f;   // maximum current reached
-    float    interference_pct[COMPASS_MAX_INSTANCES];       // interference as a percentage of total mag field (for reporting purposes only)
+    float    interference_pct[Compass::max_backends];       // interference as a percentage of total mag field (for reporting purposes only)
     uint32_t last_run_time;
     uint32_t last_send_time;
     bool     updated = false;           // have we updated the compensation vector at least once
@@ -36,7 +36,7 @@ uint8_t Copter::mavlink_compassmot(mavlink_channel_t chan)
     }
 
     // initialise output
-    for (uint8_t i=0; i<COMPASS_MAX_INSTANCES; i++) {
+    for (uint8_t i=0; i<Compass::max_backends; i++) {
         interference_pct[i] = 0.0f;
     }
 
@@ -88,9 +88,9 @@ uint8_t Copter::mavlink_compassmot(mavlink_channel_t chan)
 
     // default compensation type to use current if possible
     if (battery.has_current()) {
-        comp_type = AP_COMPASS_MOT_COMP_CURRENT;
+        comp_type = Compass::Motor_compensation_type::Current;
     }else{
-        comp_type = AP_COMPASS_MOT_COMP_THROTTLE;
+        comp_type = Compass::Motor_compensation_type::Throttle;
     }
 
     // send back initial ACK
@@ -103,7 +103,7 @@ uint8_t Copter::mavlink_compassmot(mavlink_channel_t chan)
     gcs[chan-MAVLINK_COMM_0].send_text(MAV_SEVERITY_INFO, "Starting calibration");
 
     // inform what type of compensation we are attempting
-    if (comp_type == AP_COMPASS_MOT_COMP_CURRENT) {
+    if (comp_type == Compass::Motor_compensation_type::Current) {
         gcs[chan-MAVLINK_COMM_0].send_text(MAV_SEVERITY_INFO, "Current");
     } else{
         gcs[chan-MAVLINK_COMM_0].send_text(MAV_SEVERITY_INFO, "Throttle");
@@ -114,7 +114,7 @@ uint8_t Copter::mavlink_compassmot(mavlink_channel_t chan)
     g.failsafe_battery_enabled = FS_BATT_DISABLED;
 
     // disable motor compensation
-    compass.motor_compensation_type(AP_COMPASS_MOT_COMP_DISABLED);
+    compass.motor_compensation_type(Compass::Motor_compensation_type::Disabled);
     for (uint8_t i=0; i<compass.get_count(); i++) {
         compass.set_motor_compensation(i, Vector3f(0,0,0));
     }
@@ -184,7 +184,7 @@ uint8_t Copter::mavlink_compassmot(mavlink_channel_t chan)
             }
 
             // throttle based compensation
-            if (comp_type == AP_COMPASS_MOT_COMP_THROTTLE) {
+            if (comp_type == Compass::Motor_compensation_type::Throttle) {
                 // for each compass
                 for (uint8_t i=0; i<compass.get_count(); i++) {
                     // scale by throttle
@@ -209,7 +209,7 @@ uint8_t Copter::mavlink_compassmot(mavlink_channel_t chan)
             }
 
             // calculate interference percentage at full throttle as % of total mag field
-            if (comp_type == AP_COMPASS_MOT_COMP_THROTTLE) {
+            if (comp_type == Compass::Motor_compensation_type::Throttle) {
                 for (uint8_t i=0; i<compass.get_count(); i++) {
                     // interference is impact@fullthrottle / mag field * 100
                     interference_pct[i] = motor_compensation[i].length() / (float)COMPASS_MAGFIELD_EXPECTED * 100.0f;
@@ -254,7 +254,7 @@ uint8_t Copter::mavlink_compassmot(mavlink_channel_t chan)
     } else {
         // compensation vector never updated, report failure
         gcs[chan-MAVLINK_COMM_0].send_text(MAV_SEVERITY_NOTICE, "Failed");
-        compass.motor_compensation_type(AP_COMPASS_MOT_COMP_DISABLED);
+        compass.motor_compensation_type(Compass::Motor_compensation_type::Disabled);
     }
 
     // display new motor offsets and save

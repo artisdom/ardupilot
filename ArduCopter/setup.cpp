@@ -453,15 +453,21 @@ void Copter::report_compass()
 
     // motor compensation
     cliSerial->print("Motor Comp: ");
-    if( compass.get_motor_compensation_type() == AP_COMPASS_MOT_COMP_DISABLED ) {
+    auto const motor_comp_type = compass.get_motor_compensation_type();
+    switch(motor_comp_type ){
+      case Compass::Motor_compensation_type::Disabled:
         cliSerial->print("Off\n");
-    }else{
-        if( compass.get_motor_compensation_type() == AP_COMPASS_MOT_COMP_THROTTLE ) {
-            cliSerial->print("Throttle");
-        }
-        if( compass.get_motor_compensation_type() == AP_COMPASS_MOT_COMP_CURRENT ) {
-            cliSerial->print("Current");
-        }
+        break;
+      case Compass::Motor_compensation_type::Throttle:
+        cliSerial->print("Throttle");
+        break;
+      case Compass::Motor_compensation_type::Current:
+        cliSerial->print("Current");
+        break;
+      default:
+        break;
+    }
+    if (motor_comp_type != Compass::Motor_compensation_type::Disabled){
         Vector3f motor_compensation;
         for (uint8_t i=0; i<compass.get_count(); i++) {
             motor_compensation = compass.get_motor_compensation(i);
