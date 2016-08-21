@@ -122,6 +122,9 @@
 /* DEFINITIONS FOR BOARDS */
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+namespace HALSITL{
+   struct Tag_BoardType;
+}
 #define HAL_BOARD_NAME "SITL"
 #define HAL_CPU_CLASS HAL_CPU_CLASS_1000
 #define HAL_OS_POSIX_IO 1
@@ -139,8 +142,14 @@
 #define HAL_GPIO_C_LED_PIN        117
 #define HAL_GPIO_LED_ON           LOW
 #define HAL_GPIO_LED_OFF          HIGH
+namespace AP_HAL{
+  typedef ::HALSITL::Tag_BoardType Tag_BoardType;
+}
 
 #elif CONFIG_HAL_BOARD == HAL_BOARD_PX4
+namespace PX4{
+     struct Tag_BoardType;
+}
 #define HAL_BOARD_NAME "PX4"
 #define HAL_CPU_CLASS HAL_CPU_CLASS_150
 #define HAL_OS_POSIX_IO 1
@@ -165,7 +174,9 @@
 #define HAL_GPIO_C_LED_PIN        25
 #define HAL_GPIO_LED_ON           LOW
 #define HAL_GPIO_LED_OFF          HIGH
-
+namespace AP_HAL{
+  typedef ::PX4::Tag_BoardType Tag_BoardType;
+}
 #elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX
 #define HAL_BOARD_NAME "Linux"
 #define HAL_CPU_CLASS HAL_CPU_CLASS_1000

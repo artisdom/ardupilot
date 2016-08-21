@@ -13,9 +13,7 @@ class AP_Compass_LSM303D : public AP_Compass_Backend
 {
 public:
     static AP_Compass_Backend *probe(Compass &compass,
-                                     AP_HAL::OwnPtr<AP_HAL::Device> dev);
-
-    static constexpr const char *name = "LSM303D";
+                                     AP_HAL::OwnPtr<AP_HAL::Device> dev, uint8_t id, bool external_compass);
 
     bool init() override;
     void read() override;
@@ -23,7 +21,7 @@ public:
     virtual ~AP_Compass_LSM303D() { }
 
 private:
-    AP_Compass_LSM303D(Compass &compass, AP_HAL::OwnPtr<AP_HAL::Device> dev);
+    AP_Compass_LSM303D(Compass &compass, AP_HAL::OwnPtr<AP_HAL::Device> dev, uint8_t index, bool external_compass);
 
     uint8_t _register_read(uint8_t reg);
     void _register_write(uint8_t reg, uint8_t val);
@@ -52,7 +50,7 @@ private:
     int16_t _mag_z;
     uint8_t _accum_count;
 
-    uint8_t _compass_instance;
+   // uint8_t _compass_instance;
     bool _initialised;
 
     uint8_t _mag_range_ga;

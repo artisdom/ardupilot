@@ -26,23 +26,22 @@
 extern const AP_HAL::HAL& hal;
 
 // constructor
-AP_Compass_HIL::AP_Compass_HIL(Compass &compass):
-    AP_Compass_Backend(compass)
+AP_Compass_HIL::AP_Compass_HIL(Compass &compass, uint8_t idx):
+    AP_Compass_Backend(compass,"HIL::Compass", idx, false)
 {
-    memset(_compass_instance, 0, sizeof(_compass_instance));
+    //memset(_compass_instance, 0, sizeof(_compass_instance));
     _compass._setup_earth_field();
 }
 
 // detect the sensor
-AP_Compass_Backend *AP_Compass_HIL::detect(Compass &compass)
+AP_Compass_Backend *AP_Compass_HIL::detect(Compass &compass, uint8_t idx)
 {
-    AP_Compass_HIL *sensor = new AP_Compass_HIL(compass);
-    if (sensor == NULL) {
-        return NULL;
-    }
-    if (!sensor->init()) {
-        delete sensor;
-        return NULL;
+    AP_Compass_HIL *sensor = new AP_Compass_HIL(compass, idx);
+    if (sensor){
+       if (!sensor->init()) {
+           delete sensor;
+           sensor = nullptr;
+       }
     }
     return sensor;
 }
@@ -50,25 +49,28 @@ AP_Compass_Backend *AP_Compass_HIL::detect(Compass &compass)
 bool
 AP_Compass_HIL::init(void)
 {
-    // register two compass instances
-    for (uint8_t i=0; i<HIL_NUM_COMPASSES; i++) {
-        _compass_instance[i] = register_compass();
-    }
-    return true;
+   return install();
+}
+
+bool install_compass_backend_hil(Compass & c)
+{
+   bool result = true;
+   for ( uint8_t i = 0; i < HIL_NUM_COMPASSES; ++i){
+      result &= (AP_Compass_HIL::detect(c, i) != nullptr);
+   }
+   return result;
 }
 
 void AP_Compass_HIL::read()
 {
-    for (uint8_t i=0; i < ARRAY_SIZE(_compass_instance); i++) {
-        if (_compass._hil.healthy[i]) {
-            uint8_t compass_instance = _compass_instance[i];
-            Vector3f field = _compass._hil.field[compass_instance];
-            rotate_field(field, compass_instance);
-            publish_raw_field(field, AP_HAL::micros(), compass_instance);
-            correct_field(field, compass_instance);
-            uint32_t saved_last_update = _compass.last_update_usec(compass_instance);
-            publish_filtered_field(field, compass_instance);
-            set_last_update_usec(saved_last_update, compass_instance);
-        }
-    }
+   uint8_t const index = get_index();
+   if (_compass._hil.healthy[index]) {
+      Vector3f field = _compass._hil.field[index];
+      rotate_field(field);
+      publish_raw_field(field, AP_HAL::micros());
+      correct_field(field);
+      uint32_t saved_last_update = _compass.last_update_usec(index);
+      publish_filtered_field(field);
+      set_last_update_usec(saved_last_update);
+   }
 }

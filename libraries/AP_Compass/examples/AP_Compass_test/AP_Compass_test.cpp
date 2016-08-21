@@ -35,9 +35,9 @@ void setup() {
 void loop()
 {
     static const uint8_t compass_count = compass.get_count();
-    static float min[COMPASS_MAX_INSTANCES][3];
-    static float max[COMPASS_MAX_INSTANCES][3];
-    static float offset[COMPASS_MAX_INSTANCES][3];
+    static float min[compass.max_backends][3];
+    static float max[compass.max_backends][3];
+    static float offset[compass.max_backends][3];
 
     compass.accumulate();
 

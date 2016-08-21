@@ -6,6 +6,7 @@
 #include <AP_HAL/AP_HAL.h>
 
 #include "AP_Compass_LSM9DS1.h"
+#include "AP_Compass_device_ids.h"
 
 
 #define LSM9DS1M_OFFSET_X_REG_L_M   0x05
@@ -58,14 +59,15 @@ struct PACKED sample_regs {
 extern const AP_HAL::HAL &hal;
 
 AP_Compass_Backend *AP_Compass_LSM9DS1::probe(Compass &compass,
-                                              AP_HAL::OwnPtr<AP_HAL::Device> dev)
+                                              AP_HAL::OwnPtr<AP_HAL::Device> dev, uint8_t index, bool external_compass)
 {
-    AP_Compass_LSM9DS1 *sensor = new AP_Compass_LSM9DS1(compass, std::move(dev), AP_COMPASS_TYPE_LSM9DS1);
-    if (!sensor || !sensor->init()) {
-        delete sensor;
-        return nullptr;
+    AP_Compass_LSM9DS1 *sensor = new AP_Compass_LSM9DS1(compass, std::move(dev), AP_COMPASS_TYPE_LSM9DS1, index, external_compass);
+    if ( sensor){
+        if(!sensor->init()) {
+           delete sensor;
+           sensor = nullptr;
+        }
     }
-
     return sensor;
 }
 
@@ -96,8 +98,10 @@ bool AP_Compass_LSM9DS1::init()
         goto errout;
     }
 
-    _compass_instance = register_compass();
-    set_dev_id(_compass_instance, _dev_id);
+    if (!install()){
+         return false;
+    }
+    set_dev_id( _dev_id);
 
     hal.scheduler->register_timer_process(FUNCTOR_BIND_MEMBER(&AP_Compass_LSM9DS1::_update, void));
 
@@ -159,13 +163,13 @@ void AP_Compass_LSM9DS1::_update(void)
     raw_field *= _scaling;
 
     // rotate raw_field from sensor frame to body frame
-    rotate_field(raw_field, _compass_instance);
+    rotate_field(raw_field);
 
     // publish raw_field (uncorrected point sample) for calibration use
-    publish_raw_field(raw_field, time_us, _compass_instance);
+    publish_raw_field(raw_field, time_us);
 
     // correct raw_field for known errors
-    correct_field(raw_field, _compass_instance);
+    correct_field(raw_field);
 
     _mag_x_accum += raw_field.x;
     _mag_y_accum += raw_field.y;
@@ -204,8 +208,7 @@ void AP_Compass_LSM9DS1::read()
     field.rotate(ROTATION_ROLL_180);
 #endif
 
-    publish_filtered_field(field, _compass_instance);
-
+    publish_filtered_field(field);
 }
 
 void AP_Compass_LSM9DS1::_reset_filter()
@@ -259,8 +262,8 @@ bool AP_Compass_LSM9DS1::_set_scale(void)
     return true;
 }
 
-AP_Compass_LSM9DS1::AP_Compass_LSM9DS1(Compass &compass, AP_HAL::OwnPtr<AP_HAL::Device> dev, uint32_t dev_id)
-    : AP_Compass_Backend(compass)
+AP_Compass_LSM9DS1::AP_Compass_LSM9DS1(Compass &compass, AP_HAL::OwnPtr<AP_HAL::Device> dev, uint32_t dev_id, uint8_t idx, bool external_compass)
+    : AP_Compass_Backend(compass,"LSM9DS1", idx, external_compass)
     , _dev(std::move(dev))
     , _dev_id(dev_id)
 {
