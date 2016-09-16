@@ -67,8 +67,8 @@ template <> void install_compass_backends<AP_HAL::Tag_BoardType>(Compass& c)
 {
    AP_Compass_PX4 *sensors [3] = {nullptr,nullptr,nullptr};
    // construct sensors
-   for ( uint8_t i = 0; i < 3; ++i){
-       sensors[i] = new AP_Compass_PX4(c,i);
+   for ( int i = 0; i < 3; ++i){
+       sensors[i] = new AP_Compass_PX4(c,static_cast<uint8_t>(i));
        if (sensors[i]== nullptr){
          while (i){
             delete sensors [i-1];
@@ -88,6 +88,7 @@ bool AP_Compass_PX4::init(void)
 {
    _mag_fd = open(px4_device_paths[get_index()], O_RDONLY);
    if (_mag_fd >= 0) {
+      hal.console->printf("opened %s\n",px4_device_paths[get_index()]);
       ++_num_sensors;
    }else{
       hal.console->printf("Unable to open %s\n",px4_device_paths[get_index()]);
