@@ -97,7 +97,7 @@ public:
     void save_offsets(void);
 
     // return the number of compass instances
-    uint8_t get_count(void) const { return _compass_count; }
+    uint8_t get_count(void) const { return _backend_count; }
 
     /// Return the current field as a Vector3f in milligauss
     const Vector3f &get_field(uint8_t i) const { return _state[i].field; }
@@ -303,9 +303,6 @@ private:
     // backend objects
     AP_Compass_Backend *_backends[max_backends];
     uint8_t     _backend_count;
-
-    // number of registered compasses.
-    uint8_t     _compass_count;
 
     // settable parameters
     AP_Int8 _learn;
