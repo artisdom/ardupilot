@@ -363,7 +363,6 @@ Compass::Compass(void) :
     _cal_complete_requires_reboot(false),
     _cal_has_run(false),
     _backend_count(0),
-    _compass_count(0),
     _board_orientation(ROTATION_NONE),
     _null_init_done(false),
     _thr_or_curr(0.0f),
@@ -387,11 +386,11 @@ Compass::Compass(void) :
 bool
 Compass::init()
 {
-    if (_compass_count == 0) {
+    if (_backend_count == 0) {
         // detect available backends. Only called once
         _detect_backends();
     }
-    if (_compass_count != 0) {
+    if (_backend_count != 0) {
         // get initial health status
         hal.scheduler->delay(100);
         read();
@@ -409,6 +408,7 @@ bool Compass::_add_backend(AP_Compass_Backend& backend)
     if ( _backends[index] == nullptr){
        _backends[index] = &backend;
        ++_backend_count;
+       
     }else{
        AP_HAL::panic("compass backend already installed at index");
     }
@@ -427,8 +427,7 @@ void Compass::_detect_backends(void)
 
     install_compass_backends<AP_HAL::Tag_BoardType>(*this);
 
-    if (_backend_count == 0 ||
-        _compass_count == 0) {
+    if (_backend_count == 0 ) {
         hal.console->println("No Compass backends available");
     }
 }
