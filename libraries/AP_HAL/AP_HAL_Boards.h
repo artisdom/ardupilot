@@ -32,6 +32,8 @@
 /* GigaHz class: SITL, BeagleBone etc. Assumes megabytes of memory available. */
 #define HAL_CPU_CLASS_1000 4
 
+//----------------------specific boards --------------------
+
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 
    #include <AP_HAL/boards/HALSITL.h>
@@ -61,6 +63,8 @@
   #error "Unknown CONFIG_HAL_BOARD type"
 
 #endif
+
+//--------------------------- ~ specific boards ---------------
 
 #ifndef CONFIG_HAL_BOARD_SUBTYPE
 
