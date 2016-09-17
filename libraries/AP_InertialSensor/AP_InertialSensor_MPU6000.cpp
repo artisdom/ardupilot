@@ -4,8 +4,10 @@
 #include <utility>
 
 #include <AP_HAL/AP_HAL.h>
+#include <AP_HAL/sensors/InertialSensor.h>
 
 #include "AP_InertialSensor_MPU6000.h"
+
 
 extern const AP_HAL::HAL& hal;
 
@@ -208,7 +210,8 @@ extern const AP_HAL::HAL& hal;
 
 #define MPU6000_SAMPLE_SIZE 14
 
-#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BH
+
+#if (CONFIG_HAL_BOARD == HAL_BOARD_LINUX) && (CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BH)
 #define MPU6000_MAX_FIFO_SAMPLES 6
 #else
 #define MPU6000_MAX_FIFO_SAMPLES 3
@@ -478,7 +481,7 @@ void AP_InertialSensor_MPU6000::_accumulate(uint8_t *samples, uint8_t n_samples)
         temp = int16_val(data, 3);
         /* scaling/offset values from the datasheet */
         temp = temp/340 + 36.53;
-
+#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
 #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXF
         accel.rotate(ROTATION_PITCH_180_YAW_90);
         gyro.rotate(ROTATION_PITCH_180_YAW_90);
@@ -491,6 +494,7 @@ void AP_InertialSensor_MPU6000::_accumulate(uint8_t *samples, uint8_t n_samples)
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_MINLURE
         accel.rotate(ROTATION_YAW_90);
         gyro.rotate(ROTATION_YAW_90);
+#endif
 #endif
 
         _rotate_and_correct_accel(_accel_instance, accel);

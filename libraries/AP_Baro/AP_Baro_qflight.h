@@ -1,9 +1,11 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 #pragma once
 
-#include "AP_Baro_Backend.h"
-#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_QFLIGHT
+#include <AP_HAL/AP_HAL_Boards.h>
 
+#if (CONFIG_HAL_BOARD == HAL_BOARD_LINUX) && (CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_QFLIGHT)
+
+#include "AP_Baro_Backend.h"
 #include <AP_HAL_Linux/qflight/qflight_buffer.h>
 
 class AP_Baro_QFLIGHT : public AP_Baro_Backend
