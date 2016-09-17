@@ -33,7 +33,7 @@
 #define HAL_CPU_CLASS_1000 4
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-#include <AP_HAL/Boards/HALSITL.h>
+#include <AP_HAL/boards/HALSITL.h>
 
 #elif CONFIG_HAL_BOARD == HAL_BOARD_PX4
 #include <AP_HAL/boards/PX4.h>
