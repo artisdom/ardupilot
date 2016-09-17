@@ -3,7 +3,7 @@
 
 #include <AP_HAL/sensors/Barometer.h>
 #include <AP_HAL/sensors/Compass.h>
-#include <AP_HAL/sensors/InertialSensor.h
+#include <AP_HAL/sensors/InertialSensor.h>
 
 #define HAL_BOARD_SUBTYPE_LINUX_NONE       1000
 #define HAL_BOARD_SUBTYPE_LINUX_ERLEBOARD  1001
