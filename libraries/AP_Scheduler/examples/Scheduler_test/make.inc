@@ -10,5 +10,3 @@ LIBRARIES += Filter
 LIBRARIES += GCS_MAVLink
 LIBRARIES += StorageManager
 LIBRARIES += AP_BoardConfig
-
-
