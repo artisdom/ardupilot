@@ -2,6 +2,8 @@
 #pragma once
 
 #include <AP_HAL/AP_HAL.h>
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
 #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_QFLIGHT
 
 #include <AP_HAL_Linux/qflight/qflight_buffer.h>
@@ -30,3 +32,4 @@ private:
 };
 
 #endif
+#endif // CONFIG_HAL_BOARD == HAL_BOARD_LINUX

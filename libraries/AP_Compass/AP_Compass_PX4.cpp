@@ -78,8 +78,11 @@ template <> void install_compass_backends<AP_HAL::Tag_BoardType>(Compass& c)
        }
    }
    for ( uint8_t i = 0; i < 3; ++i){
+     // failure to init is not an error
+     // since some devices may be on external bus
      if (! sensors[i]->init() ){
            hal.console->printf("Warning: Compass init failed %s\n",px4_device_paths[sensors[i]->get_index()]);
+           
      }
    }
 }

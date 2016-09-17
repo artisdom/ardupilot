@@ -15,6 +15,8 @@
 #include <AP_HAL/AP_HAL.h>
 #include <utility>
 
+#if (CONFIG_HAL_BOARD == HAL_BOARD_LINUX)
+
 #if (CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP || \
      CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_DISCO) &&      \
     defined(HAVE_LIBIIO)
@@ -465,3 +467,4 @@ int AP_RangeFinder_Bebop::_update_mode(float altitude)
     return _mode;
 }
 #endif
+#endif // (CONFIG_HAL_BOARD == HALBOARD_LINUX)

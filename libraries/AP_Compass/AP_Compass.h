@@ -333,10 +333,10 @@ private:
     float       _thr_or_curr;
 
     struct mag_state {
-        AP_Int8     external;
-        bool        healthy;  // could go to backend
+        AP_Int8     external;  // could go to backend?
+        bool        healthy;   // could go to backend
         AP_Int8     orientation;
-        AP_Vector3f offset;
+        AP_Vector3f offset;   
         AP_Vector3f diagonals;
         AP_Vector3f offdiagonals;
 

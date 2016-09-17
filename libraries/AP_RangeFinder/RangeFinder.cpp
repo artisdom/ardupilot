@@ -521,6 +521,8 @@ void RangeFinder::detect_instance(uint8_t instance)
         }
     }
 #endif
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
 #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BBBMINI
     if (type == RangeFinder_TYPE_BBB_PRU) {
         if (AP_RangeFinder_BBB_PRU::detect(*this, instance)) {
@@ -530,6 +532,8 @@ void RangeFinder::detect_instance(uint8_t instance)
         }
     }
 #endif
+#endif // CONFIG_HAL_BOARD == HAL_BOARD_LINUX
+
     if (type == RangeFinder_TYPE_LWSER) {
         if (AP_RangeFinder_LightWareSerial::detect(*this, instance, serial_manager)) {
             state[instance].instance = instance;
@@ -537,6 +541,8 @@ void RangeFinder::detect_instance(uint8_t instance)
             return;
         }
     }
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
 #if (CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP || \
      CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_DISCO) && defined(HAVE_LIBIIO)
     if (type == RangeFinder_TYPE_BEBOP) {
@@ -547,6 +553,8 @@ void RangeFinder::detect_instance(uint8_t instance)
         }
     }
 #endif
+#endif // CONFIG_HAL_BOARD == HAL_BOARD_LINUX
+
     if (type == RangeFinder_TYPE_MAVLink) {
         if (AP_RangeFinder_MAVLink::detect(*this, instance)) {
             state[instance].instance = instance;

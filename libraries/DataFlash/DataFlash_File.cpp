@@ -1101,7 +1101,15 @@ void DataFlash_File::_io_timer(void)
           write.
          */
         BUF_ADVANCEHEAD(_writebuf, nwritten);
-#if CONFIG_HAL_BOARD != HAL_BOARD_SITL && CONFIG_HAL_BOARD_SUBTYPE != HAL_BOARD_SUBTYPE_LINUX_NONE && CONFIG_HAL_BOARD != HAL_BOARD_QURT
+
+
+#if !( (CONFIG_HAL_BOARD == HAL_BOARD_SITL) || \
+       ( (CONFIG_HAL_BOARD == HAL_BOARD_LINUX) && \
+         ( (CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NONE) || \
+           (CONFIG_HAL_BOARD == HAL_BOARD_QURT) \
+         ) \
+       ) \
+     )
         ::fsync(_write_fd);
 #endif
     }

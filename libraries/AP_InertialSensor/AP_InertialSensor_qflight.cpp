@@ -2,6 +2,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
 #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_QFLIGHT
 
 #include "AP_InertialSensor_qflight.h"
@@ -72,3 +73,4 @@ bool AP_InertialSensor_QFLIGHT::update(void)
 }
 
 #endif // HAL_BOARD_QFLIGHT
+#endif //#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX

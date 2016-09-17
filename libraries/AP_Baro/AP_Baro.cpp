@@ -19,6 +19,7 @@
  *
  */
 #include "AP_Baro.h"
+#include <AP_HAL/sensors/Barometer.h>
 
 #include <utility>
 
