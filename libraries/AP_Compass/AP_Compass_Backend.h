@@ -22,12 +22,13 @@
 
 #include "AP_Compass.h"
 
-class Compass;  // forward declaration
+class Compass; 
+
 class AP_Compass_Backend
 {
+protected:
+    AP_Compass_Backend(Compass &compass, const char* name_in, uint8_t idx, bool is_external);
 public:
-    AP_Compass_Backend(Compass &compass);
-
     // we declare a virtual destructor so that drivers can
     // override with a custom destructor if need be.
     virtual ~AP_Compass_Backend(void) {}
@@ -41,7 +42,13 @@ public:
     // accumulate a reading from the magnetometer. Optional in
     // backends
     virtual void accumulate(void) {};
-
+    uint8_t get_index() const {return _index;}
+    // tell if instance is an external compass
+    void set_external ( bool val){_is_external = val;}
+    bool install();
+    bool is_installed() const ;
+    bool is_external()const { return _is_external;}
+    const char* get_name() const { return _name;}
 protected:
 
     /*
@@ -57,27 +64,27 @@ protected:
      * All those functions expect the mag field to be in milligauss.
      */
 
-    void rotate_field(Vector3f &mag, uint8_t instance);
-    void publish_raw_field(const Vector3f &mag, uint32_t time_us, uint8_t instance);
-    void correct_field(Vector3f &mag, uint8_t i);
-    void publish_filtered_field(const Vector3f &mag, uint8_t instance);
-    void set_last_update_usec(uint32_t last_update, uint8_t instance);
+    void rotate_field(Vector3f &mag);
+    void publish_raw_field(const Vector3f &mag, uint32_t time_us);
+    void correct_field(Vector3f &mag);
+    void publish_filtered_field(const Vector3f &mag);
+    void set_last_update_usec(uint32_t last_update);
 
-    // register a new compass instance with the frontend
-    uint8_t register_compass(void) const;
+   // register a new compass instance with the frontend
+   // done in ctor
+   // uint8_t register_compass(void) const;
 
     // set dev_id for an instance
-    void set_dev_id(uint8_t instance, uint32_t dev_id);
-
-    // set external state for an instance
-    void set_external(uint8_t instance, bool external);
-
-    // tell if instance is an external compass
-    bool is_external(uint8_t instance);
+    // only if it is installed in the front end
+    void set_dev_id(uint32_t dev_id);
 
     // access to frontend
     Compass &_compass;
-
+    
 private:
-    void apply_corrections(Vector3f &mag, uint8_t i);
+    void apply_corrections(Vector3f &mag);
+    const char* _name;
+    uint8_t _index; 
+    bool _is_external;
+
 };

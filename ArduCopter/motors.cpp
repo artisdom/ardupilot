@@ -226,7 +226,7 @@ void Copter::init_disarm_motors()
 
     // save compass offsets learned by the EKF if enabled
     if (ahrs.use_compass() && compass.get_learn_type() == Compass::LEARN_EKF) {
-        for(uint8_t i=0; i<COMPASS_MAX_INSTANCES; i++) {
+        for(uint8_t i=0; i<Compass::max_backends; i++) {
             Vector3f magOffsets;
             if (ahrs.getMagOffsets(i, magOffsets)) {
                 compass.set_and_save_offsets(i, magOffsets);

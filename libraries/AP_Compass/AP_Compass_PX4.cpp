@@ -41,120 +41,102 @@ extern const AP_HAL::HAL& hal;
 
 // Public Methods //////////////////////////////////////////////////////////////
 
-// constructor
-AP_Compass_PX4::AP_Compass_PX4(Compass &compass):
-    AP_Compass_Backend(compass),
-    _num_sensors(0)
+uint8_t AP_Compass_PX4::_num_sensors = 0U;
+
+namespace {
+
+   constexpr const char* px4_device_paths [] ={
+      MAG_BASE_DEVICE_PATH"0",
+      MAG_BASE_DEVICE_PATH"1",
+      MAG_BASE_DEVICE_PATH"2"
+   };
+}
+
+AP_Compass_PX4::AP_Compass_PX4(Compass &compass, uint8_t index):
+    AP_Compass_Backend(compass,px4_device_paths[index],index,false)
+  , _mag_fd{-1},_sum{0.f,0.f,0.f},_count{0},_last_timestamp{0ULL}
 {
 }
 
-// detect the sensor
-AP_Compass_Backend *AP_Compass_PX4::detect(Compass &compass)
+template <> enum Rotation get_compass_orientation<AP_HAL::Tag_BoardType>()
 {
-    AP_Compass_PX4 *sensor = new AP_Compass_PX4(compass);
-    if (sensor == NULL) {
-        return NULL;
-    }
-    if (!sensor->init()) {
-        delete sensor;
-        return NULL;
-    }
-    return sensor;
+   return  ROTATION_NONE;
+}
+
+template <> void install_compass_backends<AP_HAL::Tag_BoardType>(Compass& c)
+{
+   AP_Compass_PX4 *sensors [3] = {nullptr,nullptr,nullptr};
+   // construct sensors
+   for ( int i = 0; i < 3; ++i){
+       sensors[i] = new AP_Compass_PX4(c,static_cast<uint8_t>(i));
+       if (sensors[i]== nullptr){
+         while (i){
+            delete sensors [i-1];
+            --i;
+         }
+         return;
+       }
+   }
+   for ( uint8_t i = 0; i < 3; ++i){
+     // failure to init is not an error
+     // since some devices may be on external bus
+     if (! sensors[i]->init() ){
+           hal.console->printf("Warning: Compass init failed %s\n",px4_device_paths[sensors[i]->get_index()]);
+           
+     }
+   }
 }
 
 bool AP_Compass_PX4::init(void)
 {
-	_mag_fd[0] = open(MAG_BASE_DEVICE_PATH"0", O_RDONLY);
-	_mag_fd[1] = open(MAG_BASE_DEVICE_PATH"1", O_RDONLY);
-	_mag_fd[2] = open(MAG_BASE_DEVICE_PATH"2", O_RDONLY);
+   _mag_fd = open(px4_device_paths[get_index()], O_RDONLY);
+   if (_mag_fd >= 0) {
+      hal.console->printf("opened %s\n",px4_device_paths[get_index()]);
+      ++_num_sensors;
+   }else{
+      hal.console->printf("Unable to open %s\n",px4_device_paths[get_index()]);
+      return false;
+   }
 
-    _num_sensors = 0;
-    for (uint8_t i=0; i<COMPASS_MAX_INSTANCES; i++) {
-        if (_mag_fd[i] >= 0) {
-            _num_sensors = i+1;
-        }
-    }    
-	if (_num_sensors == 0) {
-        hal.console->printf("Unable to open " MAG_BASE_DEVICE_PATH"0" "\n");
-        return false;
-	}
+   // average over up to 20 samples
+   if (ioctl(_mag_fd, SENSORIOCSQUEUEDEPTH, 20) != 0) {
+      hal.console->printf("Failed to setup compass queue\n");
+      return false;                
+   }
+   set_external( ioctl(_mag_fd, MAGIOCGEXTERNAL, 0) > 0);
+   set_dev_id(ioctl(_mag_fd, DEVIOCGDEVICEID, 0));
+   return install();
 
-    for (uint8_t i=0; i<_num_sensors; i++) {
-        _instance[i] = register_compass();
-
-        // get device id
-        set_dev_id(_instance[i], ioctl(_mag_fd[i], DEVIOCGDEVICEID, 0));
-
-        // average over up to 20 samples
-        if (ioctl(_mag_fd[i], SENSORIOCSQUEUEDEPTH, 20) != 0) {
-            hal.console->printf("Failed to setup compass queue\n");
-            return false;                
-        }
-
-        // remember if the compass is external
-        set_external(_instance[i], ioctl(_mag_fd[i], MAGIOCGEXTERNAL, 0) > 0);
-        _count[i] = 0;
-        _sum[i].zero();
-
-    }
-
-    // give the driver a chance to run, and gather one sample
-    hal.scheduler->delay(40);
-    accumulate();
-    if (_count[0] == 0) {
-        hal.console->printf("Failed initial compass accumulate\n");        
-    }
-
-    return true;
 }
 
 void AP_Compass_PX4::read(void)
 {
     // try to accumulate one more sample, so we have the latest data
-    accumulate();
-
-    for (uint8_t i=0; i<_num_sensors; i++) {
-        uint8_t frontend_instance = _instance[i];
-        // avoid division by zero if we haven't received any mag reports
-        if (_count[i] == 0) continue;
-
-        _sum[i] /= _count[i];
-
-        publish_filtered_field(_sum[i], frontend_instance);
-    
-        _sum[i].zero();
-        _count[i] = 0;
-    }
+   accumulate();
+   if (_count > 0){
+      _sum /= _count;
+      publish_filtered_field(_sum);
+      _sum.zero();
+      _count = 0;
+   }
 }
 
 void AP_Compass_PX4::accumulate(void)
 {
-    struct mag_report mag_report;
-    for (uint8_t i=0; i<_num_sensors; i++) {
-        uint8_t frontend_instance = _instance[i];
-        while (::read(_mag_fd[i], &mag_report, sizeof(mag_report)) == sizeof(mag_report) &&
-               mag_report.timestamp != _last_timestamp[i]) {
+   struct mag_report mag_report;
 
-            uint32_t time_us = (uint32_t)mag_report.timestamp;
-            // get raw_field - sensor frame, uncorrected
-            Vector3f raw_field = Vector3f(mag_report.x, mag_report.y, mag_report.z)*1.0e3f;
+   while (::read(_mag_fd, &mag_report, sizeof(mag_report)) == sizeof(mag_report) &&
+         mag_report.timestamp != _last_timestamp) {
+      uint32_t time_us = (uint32_t)mag_report.timestamp;
 
-            // rotate raw_field from sensor frame to body frame
-            rotate_field(raw_field, frontend_instance);
-
-            // publish raw_field (uncorrected point sample) for calibration use
-            publish_raw_field(raw_field, time_us, frontend_instance);
-
-            // correct raw_field for known errors
-            correct_field(raw_field, frontend_instance);
-
-            // accumulate into averaging filter
-            _sum[i] += raw_field;
-            _count[i]++;
-
-            _last_timestamp[i] = mag_report.timestamp;
-        }
-    }
+      Vector3f raw_field = Vector3f(mag_report.x, mag_report.y, mag_report.z)*1.0e3f;
+      rotate_field(raw_field);
+      publish_raw_field(raw_field, time_us);
+      correct_field(raw_field);
+      _sum += raw_field;
+      _count++;
+      _last_timestamp = mag_report.timestamp;
+   }
 }
 
 #endif // CONFIG_HAL_BOARD

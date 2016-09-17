@@ -12,9 +12,9 @@ class AP_Compass_LSM9DS1 : public AP_Compass_Backend
 {
 public:
     static AP_Compass_Backend *probe(Compass &compass,
-                                     AP_HAL::OwnPtr<AP_HAL::Device> dev);
+                                     AP_HAL::OwnPtr<AP_HAL::Device> dev, uint8_t index, bool external_compass);
 
-    static constexpr const char *name = "LSM9DS1";
+   // static constexpr const char *name = "LSM9DS1";
 
     bool init() override;
     void read() override;
@@ -22,7 +22,7 @@ public:
     virtual ~AP_Compass_LSM9DS1() {}
 
 private:
-    AP_Compass_LSM9DS1(Compass &compass, AP_HAL::OwnPtr<AP_HAL::Device> dev, uint32_t dev_id);
+    AP_Compass_LSM9DS1(Compass &compass, AP_HAL::OwnPtr<AP_HAL::Device> dev, uint32_t dev_id, uint8_t index, bool external_compass);
     bool _check_id(void);
     bool _configure(void);
     bool _set_scale(void);

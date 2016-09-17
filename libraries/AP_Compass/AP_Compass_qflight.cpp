@@ -15,7 +15,7 @@
  */
 #include <AP_HAL/AP_HAL.h>
 
-#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_QFLIGHT
+#if (CONFIG_HAL_BOARD == HAL_BOARD_LINUX) && (CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_QFLIGHT)
 
 #include "AP_Compass_qflight.h"
 #include <AP_HAL_Linux/qflight/qflight_util.h>

@@ -6,7 +6,7 @@ addons:
     project:
       name: "diydrones/ardupilot"
       description: "Build submitted via Travis CI"
-    notification_email: andrew-scan@tridgell.net
+  # notification_email: andrew-scan@tridgell.net
     build_command_prepend: "make clean"
     build_command:   "make"
     branch_pattern: coverity_scan
@@ -49,12 +49,12 @@ before_cache:
   - ccache -z
 
 notifications:
-  webhooks:
-    urls:
-      - https://webhooks.gitter.im/e/e5e0b55e353e53945b4b
-    on_success: change  # options: [always|never|change] default: always
-    on_failure: always  # options: [always|never|change] default: always
-    on_start: false     # default: false
+#  webhooks:
+#    urls:
+#      - https://webhooks.gitter.im/e/e5e0b55e353e53945b4b
+#    on_success: change  # options: [always|never|change] default: always
+#    on_failure: always  # options: [always|never|change] default: always
+#    on_start: false     # default: false
 
 compiler:
   - gcc

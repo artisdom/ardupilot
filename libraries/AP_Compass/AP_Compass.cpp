@@ -1,20 +1,6 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 #include <AP_HAL/AP_HAL.h>
-#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX
-#include <AP_HAL_Linux/I2CDevice.h>
-#endif
 #include <AP_Vehicle/AP_Vehicle.h>
-
-#include "AP_Compass_AK8963.h"
-#include "AP_Compass_Backend.h"
-#include "AP_Compass_BMM150.h"
-#include "AP_Compass_HIL.h"
-#include "AP_Compass_HMC5843.h"
-#include "AP_Compass_LSM303D.h"
-#include "AP_Compass_LSM9DS1.h"
-#include "AP_Compass_PX4.h"
-#include "AP_Compass_QURT.h"
-#include "AP_Compass_qflight.h"
 #include "AP_Compass.h"
 
 extern AP_HAL::HAL& hal;
@@ -24,6 +10,10 @@ extern AP_HAL::HAL& hal;
 #else
 #define COMPASS_LEARN_DEFAULT Compass::LEARN_INTERNAL
 #endif
+
+#define AP_COMPASS_MAX_XYZ_ANG_DIFF radians(50.0f)
+#define AP_COMPASS_MAX_XY_ANG_DIFF radians(30.0f)
+#define AP_COMPASS_MAX_XY_LENGTH_DIFF 100.0f
 
 const AP_Param::GroupInfo Compass::var_info[] = {
     // index 0 was used for the old orientation matrix
@@ -85,7 +75,7 @@ const AP_Param::GroupInfo Compass::var_info[] = {
     // @Description: Set motor interference compensation type to disabled, throttle or current.  Do not change manually.
     // @Values: 0:Disabled,1:Use Throttle,2:Use Current
     // @User: Advanced
-    AP_GROUPINFO("MOTCT",    6, Compass, _motor_comp_type, AP_COMPASS_MOT_COMP_DISABLED),
+    AP_GROUPINFO("MOTCT",    6, Compass, _motor_comp_type, static_cast<int8_t>(static_cast<uint8_t>(Compass::Motor_compensation_type::Disabled))),
 
     // @Param: MOT_X
     // @DisplayName: Motor interference compensation for body frame X axis
@@ -368,27 +358,25 @@ const AP_Param::GroupInfo Compass::var_info[] = {
 // Default constructor.
 // Note that the Vector/Matrix constructors already implicitly zero
 // their values.
-//
 Compass::Compass(void) :
     _compass_cal_autoreboot(false),
     _cal_complete_requires_reboot(false),
     _cal_has_run(false),
     _backend_count(0),
-    _compass_count(0),
     _board_orientation(ROTATION_NONE),
     _null_init_done(false),
     _thr_or_curr(0.0f),
     _hil_mode(false)
 {
     AP_Param::setup_object_defaults(this, var_info);
-    for (uint8_t i=0; i<COMPASS_MAX_BACKEND; i++) {
+    for (uint8_t i=0; i<max_backends; i++) {
         _backends[i] = NULL;
         _state[i].last_update_usec = 0;
         _reports_sent[i] = 0;
     }
 
     // default device ids to zero.  init() method will overwrite with the actual device ids
-    for (uint8_t i=0; i<COMPASS_MAX_INSTANCES; i++) {
+    for (uint8_t i=0; i<max_backends; i++) {
         _state[i].dev_id = 0;
     }
 }
@@ -398,11 +386,11 @@ Compass::Compass(void) :
 bool
 Compass::init()
 {
-    if (_compass_count == 0) {
+    if (_backend_count == 0) {
         // detect available backends. Only called once
         _detect_backends();
     }
-    if (_compass_count != 0) {
+    if (_backend_count != 0) {
         // get initial health status
         hal.scheduler->delay(100);
         read();
@@ -410,34 +398,20 @@ Compass::init()
     return true;
 }
 
-//  Register a new compass instance
-//
-uint8_t Compass::register_compass(void)
+bool Compass::_add_backend(AP_Compass_Backend& backend)
 {
-    if (_compass_count == COMPASS_MAX_INSTANCES) {
-        AP_HAL::panic("Too many compass instances");
+
+    uint8_t index = backend.get_index();
+    if ( index >= max_backends){
+       AP_HAL::panic("Too many compass backends");
     }
-    return _compass_count++;
-}
-
-bool Compass::_add_backend(AP_Compass_Backend *backend, const char *name, bool external)
-{
-    if (name != nullptr) {
-        hal.console->printf("%s: %s compass %sdetected\n", name,
-                            external ? "External" : "Onboard",
-                            backend == nullptr ? "not " : "");
+    if ( _backends[index] == nullptr){
+       _backends[index] = &backend;
+       ++_backend_count;
+       
+    }else{
+       AP_HAL::panic("compass backend already installed at index");
     }
-
-    if (!backend) {
-        return false;
-    }
-
-    if (_backend_count == COMPASS_MAX_BACKEND) {
-        AP_HAL::panic("Too many compass backends");
-    }
-
-    _backends[_backend_count++] = backend;
-
     return true;
 }
 
@@ -447,100 +421,13 @@ bool Compass::_add_backend(AP_Compass_Backend *backend, const char *name, bool e
 void Compass::_detect_backends(void)
 {
     if (_hil_mode) {
-        _add_backend(AP_Compass_HIL::detect(*this), nullptr, false);
+        install_compass_backend_hil(*this);
         return;
     }
 
-#if HAL_COMPASS_DEFAULT == HAL_COMPASS_HIL
-    _add_backend(AP_Compass_HIL::detect(*this), nullptr, false);
-#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_PX4 || HAL_COMPASS_DEFAULT == HAL_COMPASS_VRBRAIN
-    _add_backend(AP_Compass_PX4::detect(*this), nullptr, false);
-#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_QURT
-    _add_backend(AP_Compass_QURT::detect(*this), nullptr, false);
-#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_RASPILOT
-    _add_backend(AP_Compass_HMC5843::probe(*this, hal.i2c_mgr->get_device(HAL_COMPASS_HMC5843_I2C_BUS, HAL_COMPASS_HMC5843_I2C_ADDR), true),
-                 AP_Compass_HMC5843::name, true);
-    _add_backend(AP_Compass_LSM303D::probe(*this, hal.spi->get_device("lsm9ds0_am")),
-                 AP_Compass_LSM303D::name, false);
-#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_BH
-    // In BH, only one compass should be detected
-    bool ret = _add_backend(AP_Compass_HMC5843::probe(*this, hal.i2c_mgr->get_device(HAL_COMPASS_HMC5843_I2C_BUS, HAL_COMPASS_HMC5843_I2C_ADDR)),
-                            AP_Compass_HMC5843::name, false);
-    if (!ret) {
-        _add_backend(AP_Compass_AK8963::probe_mpu9250(*this, 0),
-                     AP_Compass_AK8963::name, false);
-    }
-#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_QFLIGHT
-    _add_backend(AP_Compass_QFLIGHT::detect(*this));
-#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_BBBMINI
-    _add_backend(AP_Compass_HMC5843::probe(*this, hal.i2c_mgr->get_device(HAL_COMPASS_HMC5843_I2C_BUS, HAL_COMPASS_HMC5843_I2C_ADDR), true),
-                 AP_Compass_HMC5843::name, true);
-    _add_backend(AP_Compass_AK8963::probe_mpu9250(*this, 0),
-                 AP_Compass_AK8963::name, false);
-    _add_backend(AP_Compass_AK8963::probe_mpu9250(*this, 1),
-                 AP_Compass_AK8963::name, true);
-#elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_MINLURE
-    _add_backend(AP_Compass_HMC5843::probe_mpu6000(*this),
-                 AP_Compass_HMC5843::name, false);
-    _add_backend(AP_Compass_HMC5843::probe(*this,
-                     Linux::I2CDeviceManager::from(hal.i2c_mgr)->get_device(
-                         { /* UEFI with lpss set to ACPI */
-                           "platform/80860F41:05",
-                           /* UEFI with lpss set to PCI */
-                           "pci0000:00/0000:00:18.6" },
-                         HAL_COMPASS_HMC5843_I2C_ADDR),
-                     true),
-                 AP_Compass_HMC5843::name, true);
-#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_NAVIO2
-    _add_backend(AP_Compass_AK8963::probe_mpu9250(*this, 0),
-                 AP_Compass_AK8963::name, false);
-    _add_backend(AP_Compass_LSM9DS1::probe(*this, hal.spi->get_device("lsm9ds1_m")),
-                 AP_Compass_LSM9DS1::name, false);
-    _add_backend(AP_Compass_HMC5843::probe(*this, hal.i2c_mgr->get_device(HAL_COMPASS_HMC5843_I2C_BUS, HAL_COMPASS_HMC5843_I2C_ADDR), true),
-                 AP_Compass_HMC5843::name, true);
-#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_NAVIO
-    _add_backend(AP_Compass_AK8963::probe_mpu9250(*this, 0),
-                 AP_Compass_AK8963::name, false);
-    _add_backend(AP_Compass_HMC5843::probe(*this, hal.i2c_mgr->get_device(HAL_COMPASS_HMC5843_I2C_BUS, HAL_COMPASS_HMC5843_I2C_ADDR), true),
-                 AP_Compass_HMC5843::name, true);
-#elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXF || \
-      CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_ERLEBRAIN2 || \
-      CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXFMINI
-    _add_backend(AP_Compass_AK8963::probe_mpu9250(*this, 0),
-                 AP_Compass_AK8963::name, false);
-    _add_backend(AP_Compass_HMC5843::probe(*this, hal.i2c_mgr->get_device(HAL_COMPASS_HMC5843_I2C_BUS, HAL_COMPASS_HMC5843_I2C_ADDR), true),
-                 AP_Compass_HMC5843::name, true);
-#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_AK8963_MPU9250
-    _add_backend(AP_Compass_AK8963::probe_mpu9250(*this, 0),
-                 AP_Compass_AK8963::name, false);
-#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_HMC5843
-    _add_backend(AP_Compass_HMC5843::probe(*this, hal.i2c_mgr->get_device(HAL_COMPASS_HMC5843_I2C_BUS, HAL_COMPASS_HMC5843_I2C_ADDR)),
-                 AP_Compass_HMC5843::name, false);
-#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_HMC5843_MPU6000
-    _add_backend(AP_Compass_HMC5843::probe_mpu6000(*this),
-                 AP_Compass_HMC5843::name, false);
-#elif  HAL_COMPASS_DEFAULT == HAL_COMPASS_AK8963_I2C
-    _add_backend(AP_Compass_AK8963::probe(*this, hal.i2c_mgr->get_device(HAL_COMPASS_AK8963_I2C_BUS, HAL_COMPASS_AK8963_I2C_ADDR)),
-                 AP_Compass_AK8963::name, false);
-#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_AK8963_MPU9250_I2C
-    _add_backend(AP_Compass_AK8963::probe_mpu9250(*this, hal.i2c_mgr->get_device(HAL_COMPASS_AK8963_I2C_BUS, HAL_COMPASS_AK8963_I2C_ADDR)),
-                 AP_Compass_AK8963::name, false);
-#elif HAL_COMPASS_DEFAULT == HAL_COMPASS_AERO
-    _add_backend(AP_Compass_BMM150::probe(*this, hal.i2c_mgr->get_device(HAL_COMPASS_BMM150_I2C_BUS, HAL_COMPASS_BMM150_I2C_ADDR)),
-                 AP_Compass_BMM150::name, false);
-#elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX && CONFIG_HAL_BOARD_SUBTYPE != HAL_BOARD_SUBTYPE_LINUX_NONE
-    _add_backend(AP_Compass_HMC5843::probe(*this, hal.i2c_mgr->get_device(HAL_COMPASS_HMC5843_I2C_BUS, HAL_COMPASS_HMC5843_I2C_ADDR)),
-                 AP_Compass_HMC5843::name, false);
-    _add_backend(AP_Compass_AK8963::probe_mpu9250(*this, 0),
-                 AP_Compass_AK8963::name, false);
-    _add_backend(AP_Compass_LSM9DS1::probe(*this, hal.spi->get_device("lsm9ds1_m")),
-                 AP_Compass_LSM9DS1::name, false);
-#else
-    #error Unrecognised HAL_COMPASS_TYPE setting
-#endif
+    install_compass_backends<AP_HAL::Tag_BoardType>(*this);
 
-    if (_backend_count == 0 ||
-        _compass_count == 0) {
+    if (_backend_count == 0 ) {
         hal.console->println("No Compass backends available");
     }
 }
@@ -561,7 +448,7 @@ Compass::read(void)
         // call read on each of the backend. This call updates field[i]
         _backends[i]->read();
     }
-    for (uint8_t i=0; i < COMPASS_MAX_INSTANCES; i++) {
+    for (uint8_t i=0; i < max_backends; i++) {
         _state[i].healthy = (AP_HAL::millis() - _state[i].last_update_ms < 500);
     }
     return healthy();
@@ -571,7 +458,7 @@ uint8_t
 Compass::get_healthy_mask() const
 {
     uint8_t healthy_mask = 0;
-    for(uint8_t i=0; i<COMPASS_MAX_INSTANCES; i++) {
+    for(uint8_t i=0; i<max_backends; i++) {
         if(healthy(i)) {
             healthy_mask |= 1 << i;
         }
@@ -583,7 +470,7 @@ void
 Compass::set_offsets(uint8_t i, const Vector3f &offsets)
 {
     // sanity check compass instance provided
-    if (i < COMPASS_MAX_INSTANCES) {
+    if (i < max_backends) {
         _state[i].offset.set(offsets);
     }
 }
@@ -592,7 +479,7 @@ void
 Compass::set_and_save_offsets(uint8_t i, const Vector3f &offsets)
 {
     // sanity check compass instance provided
-    if (i < COMPASS_MAX_INSTANCES) {
+    if (i < max_backends) {
         _state[i].offset.set(offsets);
         save_offsets(i);
     }
@@ -602,7 +489,7 @@ void
 Compass::set_and_save_diagonals(uint8_t i, const Vector3f &diagonals)
 {
     // sanity check compass instance provided
-    if (i < COMPASS_MAX_INSTANCES) {
+    if (i < max_backends) {
         _state[i].diagonals.set_and_save(diagonals);
     }
 }
@@ -611,7 +498,7 @@ void
 Compass::set_and_save_offdiagonals(uint8_t i, const Vector3f &offdiagonals)
 {
     // sanity check compass instance provided
-    if (i < COMPASS_MAX_INSTANCES) {
+    if (i < max_backends) {
         _state[i].offdiagonals.set_and_save(offdiagonals);
     }
 }
@@ -626,7 +513,7 @@ Compass::save_offsets(uint8_t i)
 void
 Compass::save_offsets(void)
 {
-    for (uint8_t i=0; i<COMPASS_MAX_INSTANCES; i++) {
+    for (uint8_t i=0; i<max_backends; i++) {
         save_offsets(i);
     }
 }
@@ -641,7 +528,7 @@ void
 Compass::save_motor_compensation()
 {
     _motor_comp_type.save();
-    for (uint8_t k=0; k<COMPASS_MAX_INSTANCES; k++) {
+    for (uint8_t k=0; k<max_backends; k++) {
         _state[k].motor_compensation.save();
     }
 }
@@ -787,7 +674,7 @@ void Compass::setHIL(uint8_t instance, float roll, float pitch, float yaw)
 
     // apply default board orientation for this compass type. This is
     // a noop on most boards
-    _hil.field[instance].rotate(MAG_BOARD_ORIENTATION);
+    _hil.field[instance].rotate(get_compass_orientation<AP_HAL::Tag_BoardType>());
 
     // add user selectable orientation
     _hil.field[instance].rotate((enum Rotation)_state[0].orientation.get());
@@ -829,12 +716,14 @@ void Compass::_setup_earth_field(void)
 /*
   set the type of motor compensation to use
  */
-void Compass::motor_compensation_type(const uint8_t comp_type)
+void Compass::motor_compensation_type(Motor_compensation_type comp_type)
 {
-    if (_motor_comp_type <= AP_COMPASS_MOT_COMP_CURRENT && _motor_comp_type != (int8_t)comp_type) {
-        _motor_comp_type = (int8_t)comp_type;
+    int8_t comp_type_raw = static_cast<int8_t>(static_cast<uint8_t>(comp_type));
+    int8_t constexpr raw_current = static_cast<int8_t>(static_cast<uint8_t>( Motor_compensation_type::Current));
+    if (_motor_comp_type.get() <= raw_current && _motor_comp_type.get() != comp_type_raw) {
+        _motor_comp_type.set(comp_type_raw);
         _thr_or_curr = 0;                               // set current current or throttle to zero
-        for (uint8_t i=0; i<COMPASS_MAX_INSTANCES; i++) {
+        for (uint8_t i=0; i<max_backends; i++) {
             set_motor_compensation(i, Vector3f(0,0,0)); // clear out invalid compensation vectors
         }
     }
