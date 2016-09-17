@@ -50,7 +50,7 @@ void setup()
 
     set_object_value(&airspeed, airspeed.var_info, "PIN", 65);
     set_object_value(&airspeed, airspeed.var_info, "ENABLE", 1);
-    set_object_value(&airspeed, airspeed.var_info, "_USE", 1);
+    set_object_value(&airspeed, airspeed.var_info, "USE", 1);
 
     AP_BoardConfig{}.init();
 
