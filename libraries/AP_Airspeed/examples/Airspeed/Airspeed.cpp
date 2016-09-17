@@ -38,7 +38,7 @@ namespace {
                                  const char *name, float value)
    {
       if(!AP_Param::set_object_value(object_pointer, group_info, name, value)){
-         hal.console->printf("WARNING: AP_Param::set object value \"%s\" Failed.\n",name);
+         hal.console->printf("WARNING: AP_Param::set object value \"%s::%s\" Failed.\n",group_info->name,name);
       }
    }
 
