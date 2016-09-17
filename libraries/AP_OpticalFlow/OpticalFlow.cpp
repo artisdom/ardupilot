@@ -3,6 +3,14 @@
 #include "OpticalFlow.h"
 #include "AP_OpticalFlow_Onboard.h"
 
+#ifndef HAL_OPTFLOW_PX4FLOW_I2C_ADDRESS
+#define HAL_OPTFLOW_PX4FLOW_I2C_ADDRESS 0x42
+#endif
+
+#ifndef HAL_OPTFLOW_PX4FLOW_I2C_BUS
+#define HAL_OPTFLOW_PX4FLOW_I2C_BUS 1
+#endif
+
 extern const AP_HAL::HAL& hal;
 
 const AP_Param::GroupInfo OpticalFlow::var_info[] = {
