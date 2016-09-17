@@ -26,6 +26,10 @@
 #include "AP_RangeFinder_Bebop.h"
 #include "AP_RangeFinder_MAVLink.h"
 
+#ifndef HAL_RANGEFINDER_LIGHTWARE_I2C_BUS
+#define HAL_RANGEFINDER_LIGHTWARE_I2C_BUS 1
+#endif
+
 extern const AP_HAL::HAL &hal;
 
 // table of user settable parameters

@@ -22,6 +22,8 @@
 #include <AP_Common/AP_Common.h>
 #include "AP_BoardConfig.h"
 
+
+
 #if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -60,6 +62,10 @@
 # elif defined(CONFIG_ARCH_BOARD_VRBRAIN_V54)
 #  define BOARD_TYPE_DEFAULT VRX_BOARD_BRAIN54
 # endif
+#endif
+
+#ifndef HAL_HAVE_IMU_HEATER
+#define HAL_HAVE_IMU_HEATER 0
 #endif
 
 extern const AP_HAL::HAL& hal;

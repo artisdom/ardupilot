@@ -33,22 +33,47 @@
 #define HAL_CPU_CLASS_1000 4
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-#include <AP_HAL/boards/HALSITL.h>
+
+   #include <AP_HAL/boards/HALSITL.h>
 
 #elif CONFIG_HAL_BOARD == HAL_BOARD_PX4
-#include <AP_HAL/boards/PX4.h>
+
+   #include <AP_HAL/boards/PX4.h>
 
 #elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX
-#include <AP_HAL/boards/Linux.h>
+
+   #include <AP_HAL/boards/Linux.h>
+
+#elif CONFIG_HAL_BOARD == HAL_BOARD_EMPTY
+
+   #include <AP_HAL/boards/EMPTY.h>
+
+#elif CONFIG_HAL_BOARD == HAL_BOARD_QURT
+
+   #include <AP_HAL/boards/Qurt.h>
+
+#elif CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
+
+  #include <AP_HAL/boards/VRBRAIN.h>
 
 #else
-#error "Unknown CONFIG_HAL_BOARD type"
+
+  #error "Unknown CONFIG_HAL_BOARD type"
+
 #endif
 
 #ifndef CONFIG_HAL_BOARD_SUBTYPE
-#error "No CONFIG_HAL_BOARD_SUBTYPE set"
+
+   #error "No CONFIG_HAL_BOARD_SUBTYPE set"
+
 #endif
 
+// seems unused
+//#ifndef HAL_COMPASS_DEFAULT
+//#define HAL_COMPASS_DEFAULT -1
+//#endif
+
+// operating system
 #ifndef HAL_OS_POSIX_IO
 #define HAL_OS_POSIX_IO 0
 #endif
@@ -57,14 +82,7 @@
 #define HAL_OS_SOCKETS 0
 #endif
 
+// if there is a file sytem
 #ifndef HAL_PARAM_DEFAULTS_PATH
 #define HAL_PARAM_DEFAULTS_PATH NULL
-#endif
-
-#ifndef HAL_HAVE_IMU_HEATER
-#define HAL_HAVE_IMU_HEATER 0
-#endif
-
-#ifndef HAL_RANGEFINDER_LIGHTWARE_I2C_BUS
-#define HAL_RANGEFINDER_LIGHTWARE_I2C_BUS 1
 #endif

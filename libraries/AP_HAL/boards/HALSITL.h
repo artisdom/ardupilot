@@ -1,9 +1,14 @@
 #ifndef ARDUPILOT_LIBRARIES_AP_HAL_BOARDS_HALSITL_H_INCLUDED
 #define ARDUPILOT_LIBRARIES_AP_HAL_BOARDS_HALSITL_H_INCLUDED
 
+#include <AP_HAL/sensors/Barometer.h>
+#include <AP_HAL/sensors/Compass.h>
+#include <AP_HAL/sensors/InertialSensor.h>
+
 namespace HALSITL{
    struct Tag_BoardType;
 }
+
 #define HAL_BOARD_NAME "SITL"
 #define HAL_CPU_CLASS HAL_CPU_CLASS_1000
 #define HAL_OS_POSIX_IO 1
@@ -21,6 +26,7 @@ namespace HALSITL{
 #define HAL_GPIO_C_LED_PIN        117
 #define HAL_GPIO_LED_ON           LOW
 #define HAL_GPIO_LED_OFF          HIGH
+
 namespace AP_HAL{
   typedef ::HALSITL::Tag_BoardType Tag_BoardType;
 }

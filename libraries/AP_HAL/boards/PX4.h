@@ -4,6 +4,8 @@
 #define HAL_BOARD_SUBTYPE_PX4_V1           2000
 #define HAL_BOARD_SUBTYPE_PX4_V2           2001
 
+// my hunch is that these can be removed for PX4 eventually
+// since all peripherals are PX4
 #include <AP_HAL/sensors/Barometer.h>
 #include <AP_HAL/sensors/Compass.h>
 #include <AP_HAL/sensors/InertialSensor.h>
@@ -11,6 +13,11 @@
 namespace PX4{
      struct Tag_BoardType;
 }
+
+namespace AP_HAL{
+  typedef ::PX4::Tag_BoardType Tag_BoardType;
+}
+
 #define HAL_BOARD_NAME "PX4"
 #define HAL_CPU_CLASS HAL_CPU_CLASS_150
 #define HAL_OS_POSIX_IO 1
@@ -35,9 +42,8 @@ namespace PX4{
 #define HAL_GPIO_C_LED_PIN        25
 #define HAL_GPIO_LED_ON           LOW
 #define HAL_GPIO_LED_OFF          HIGH
-namespace AP_HAL{
-  typedef ::PX4::Tag_BoardType Tag_BoardType;
-}
+
+
 
 
 #endif // ARDUPILOT_LIBRARIES_AP_HAL_BOARDS_PX4_H_INCLUDED
