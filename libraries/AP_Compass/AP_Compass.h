@@ -263,8 +263,21 @@ public:
     void        set_hil_mode(void) { _hil_mode = true; }
 
     // return last update time in microseconds
-    uint32_t last_update_usec(void) const { return _state[get_primary()].last_update_usec; }
-    uint32_t last_update_usec(uint8_t i) const { return _state[i].last_update_usec; }
+    uint32_t last_update_usec(void) const 
+    {
+        return last_update_usec(get_primary());
+    }
+         
+    uint32_t last_update_usec(uint8_t i) const 
+    { 
+      if ( i < max_backends){
+         auto * backend = _backends[i];
+         if (backend != nullptr){
+            return backend->get_last_update_usec();
+         }
+      }
+      return 0U;
+    }
 
     static const struct AP_Param::GroupInfo var_info[];
 
@@ -272,7 +285,7 @@ public:
     struct {
         Vector3f Bearth;
         float last_declination;
-        bool healthy[max_backends];
+        bool healthy[max_backends];  //
         Vector3f field[max_backends];
     } _hil;
 
@@ -333,12 +346,12 @@ private:
     float       _thr_or_curr;
 
     struct mag_state {
-        AP_Int8     external;  // could go to backend?
-        bool        healthy;   // could go to backend
-        AP_Int8     orientation;
-        AP_Vector3f offset;   
-        AP_Vector3f diagonals;
-        AP_Vector3f offdiagonals;
+        AP_Int8     external;  // move to backend
+        bool        healthy;   // move to backend
+        AP_Int8     orientation; // OK
+        AP_Vector3f offset;      // OK
+        AP_Vector3f diagonals;   // OK
+        AP_Vector3f offdiagonals;  //OK
 
         // device id detected at init.
         // saved to eeprom when offsets are saved allowing ram &
@@ -347,7 +360,7 @@ private:
 
         AP_Int8     use_for_yaw;
 
-        uint8_t     mag_history_index;
+        uint8_t     mag_history_index; // ?
         Vector3i    mag_history[_mag_history_size];
 
         // factors multiplied by throttle and added to compass outputs
@@ -360,8 +373,8 @@ private:
         Vector3f    field;            // could go to backend
 
         // when we last got data
-        uint32_t    last_update_ms;  //  // could go to backend
-        uint32_t    last_update_usec;  // could go to backend
+        uint32_t    last_update_ms;  //  move to backend
+       // uint32_t    last_update_usec;  // move to backend
     } _state[max_backends];
 
     CompassCalibrator _calibrator[max_backends];

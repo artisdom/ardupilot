@@ -371,7 +371,7 @@ Compass::Compass(void) :
     AP_Param::setup_object_defaults(this, var_info);
     for (uint8_t i=0; i<max_backends; i++) {
         _backends[i] = NULL;
-        _state[i].last_update_usec = 0;
+      //  _state[i].last_update_usec = 0;
         _reports_sent[i] = 0;
     }
 
@@ -690,9 +690,17 @@ void Compass::setHIL(uint8_t instance, float roll, float pitch, float yaw)
 //
 void Compass::setHIL(uint8_t instance, const Vector3f &mag, uint32_t update_usec)
 {
-    _hil.field[instance] = mag;
-    _hil.healthy[instance] = true;
-    _state[instance].last_update_usec = update_usec;
+   
+   if ( instance < max_backends){
+      _hil.field[instance] = mag;
+      _hil.healthy[instance] = true;
+      auto * backend = _backends[instance];
+      if ( backend != nullptr){
+         backend->set_last_update_usec(update_usec);
+      }
+    //_state[instance].last_update_usec = update_usec;
+   }
+   // do a diagnostic here 
 }
 
 const Vector3f& Compass::getHIL(uint8_t instance) const

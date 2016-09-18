@@ -26,6 +26,7 @@ class Compass;
 
 class AP_Compass_Backend
 {
+    friend class Compass;
 protected:
     AP_Compass_Backend(Compass &compass, const char* name_in, uint8_t idx, bool is_external);
 public:
@@ -49,6 +50,7 @@ public:
     bool is_installed() const ;
     bool is_external()const { return _is_external;}
     const char* get_name() const { return _name;}
+    uint32_t get_last_update_usec() const { return _last_update_usec;}
 protected:
 
     /*
@@ -68,7 +70,7 @@ protected:
     void publish_raw_field(const Vector3f &mag, uint32_t time_us);
     void correct_field(Vector3f &mag);
     void publish_filtered_field(const Vector3f &mag);
-    void set_last_update_usec(uint32_t last_update);
+    void set_last_update_usec(uint32_t last_update) { _last_update_usec = last_update;}
 
    // register a new compass instance with the frontend
    // done in ctor
@@ -83,8 +85,9 @@ protected:
     
 private:
     void apply_corrections(Vector3f &mag);
-    const char* _name;
-    uint8_t _index; 
-    bool _is_external;
+    const char*      _name;
+    uint8_t          _index;  // the index
+    bool             _is_external;
+    uint32_t         _last_update_usec;
 
 };

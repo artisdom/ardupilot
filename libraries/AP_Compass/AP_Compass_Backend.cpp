@@ -8,7 +8,7 @@
 extern const AP_HAL::HAL& hal;
 
 AP_Compass_Backend::AP_Compass_Backend(Compass &compass, const char* name, uint8_t index, bool external) :
-    _compass{compass}, _name{name},_index{index},_is_external{external}
+    _compass{compass}, _name{name},_index{index},_is_external{external},_last_update_usec{0U}
 {
   if (index >= compass.max_backends){
      AP_HAL::panic("array index out of range in AP_Compass_Backend");
@@ -90,14 +90,16 @@ void AP_Compass_Backend::publish_filtered_field(const Vector3f &mag)
     state.field = mag;
 
     state.last_update_ms = AP_HAL::millis();
-    state.last_update_usec = AP_HAL::micros();
+   // state.last_update_usec = AP_HAL::micros();
+    set_last_update_usec(AP_HAL::micros());
 }
 
-void AP_Compass_Backend::set_last_update_usec(uint32_t last_update)
-{
-    Compass::mag_state &state = _compass._state[_index];
-    state.last_update_usec = last_update;
-}
+//void AP_Compass_Backend::set_last_update_usec(uint32_t last_update)
+//{
+//   // Compass::mag_state &state = _compass._state[_index];
+//   // state.last_update_usec = last_update;
+//   
+//}
 
 
 /*
