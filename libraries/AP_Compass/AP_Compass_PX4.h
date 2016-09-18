@@ -12,6 +12,7 @@ public:
     void        accumulate(void);
 
     AP_Compass_PX4(Compass &compass, uint8_t idx);
+    ~AP_Compass_PX4();
 
 private:
     static uint8_t  _num_sensors;
