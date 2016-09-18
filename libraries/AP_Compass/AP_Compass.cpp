@@ -365,60 +365,49 @@ Compass::Compass(void) :
     _backend_count(0),
     _board_orientation(ROTATION_NONE),
     _null_init_done(false),
-    _thr_or_curr(0.0f),
+    _compensate_for{0.0f},
     _hil_mode(false)
 {
     AP_Param::setup_object_defaults(this, var_info);
-    for (uint8_t i=0; i<max_backends; i++) {
+    for (uint8_t i=0; i< max_backends; ++i) {
         _backends[i] = NULL;
-      //  _state[i].last_update_usec = 0;
         _reports_sent[i] = 0;
     }
 
-    // default device ids to zero.  init() method will overwrite with the actual device ids
-    for (uint8_t i=0; i<max_backends; i++) {
+    for (uint8_t i=0; i<max_backends; ++i) {
         _state[i].dev_id = 0;
     }
 }
 
-// Default init method
-//
 bool
 Compass::init()
 {
     if (_backend_count == 0) {
-        // detect available backends. Only called once
-        _detect_backends();
+        _install_backends(); 
     }
     if (_backend_count != 0) {
-        // get initial health status
         hal.scheduler->delay(100);
-        read();
+        read(); // read to get initial health status
     }
     return true;
 }
 
-bool Compass::_add_backend(AP_Compass_Backend& backend)
+bool Compass::_install(AP_Compass_Backend& backend)
 {
-
-    uint8_t index = backend.get_index();
+    uint8_t const index = backend.get_index();
     if ( index >= max_backends){
        AP_HAL::panic("Too many compass backends");
     }
-    if ( _backends[index] == nullptr){
+    if ( _backends[index] == nullptr ){
        _backends[index] = &backend;
        ++_backend_count;
-       
     }else{
        AP_HAL::panic("compass backend already installed at index");
     }
     return true;
 }
 
-/*
-  detect available backends for this board
- */
-void Compass::_detect_backends(void)
+void Compass::_install_backends(void)
 {
     if (_hil_mode) {
         install_compass_backend_hil(*this);
@@ -435,23 +424,25 @@ void Compass::_detect_backends(void)
 void
 Compass::accumulate(void)
 {
-    for (uint8_t i=0; i< _backend_count; i++) {
-        // call accumulate on each of the backend
-        _backends[i]->accumulate();
-    }
+   for (uint8_t i=0; i< _backend_count; i++) {
+      auto backend = _backends[i];
+      if ( backend != nullptr){
+         backend->accumulate();
+      }
+   }
 }
 
 bool
 Compass::read(void)
 {
-    for (uint8_t i=0; i< _backend_count; i++) {
-        // call read on each of the backend. This call updates field[i]
-        _backends[i]->read();
-    }
-    for (uint8_t i=0; i < max_backends; i++) {
-        _state[i].healthy = (AP_HAL::millis() - _state[i].last_update_ms < 500);
-    }
-    return healthy();
+   for (uint8_t i=0; i< _backend_count; ++i) {
+   // call read on each of the backend. This call updates field[i]
+   auto backend = _backends[i];
+      if ( backend != nullptr){
+         backend->do_read();
+      }
+   }
+   return healthy();
 }
 
 uint8_t
@@ -698,7 +689,6 @@ void Compass::setHIL(uint8_t instance, const Vector3f &mag, uint32_t update_usec
       if ( backend != nullptr){
          backend->set_last_update_usec(update_usec);
       }
-    //_state[instance].last_update_usec = update_usec;
    }
    // do a diagnostic here 
 }
@@ -730,8 +720,9 @@ void Compass::motor_compensation_type(Motor_compensation_type comp_type)
     int8_t constexpr raw_current = static_cast<int8_t>(static_cast<uint8_t>( Motor_compensation_type::Current));
     if (_motor_comp_type.get() <= raw_current && _motor_comp_type.get() != comp_type_raw) {
         _motor_comp_type.set(comp_type_raw);
-        _thr_or_curr = 0;                               // set current current or throttle to zero
-        for (uint8_t i=0; i<max_backends; i++) {
+       // _thr_or_curr = 0;                               
+        _compensate_for.value = 0.f; 
+        for (uint8_t i=0; i< max_backends; ++i) {
             set_motor_compensation(i, Vector3f(0,0,0)); // clear out invalid compensation vectors
         }
     }

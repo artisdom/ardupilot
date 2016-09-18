@@ -135,7 +135,11 @@ public:
     bool consistent() const;
 
     /// Return the health of a compass
-    bool healthy(uint8_t i) const { return _state[i].healthy; }
+    bool healthy(uint8_t i) const 
+    { 
+      auto backend = _backends[i];
+      return (backend != nullptr) && backend->is_healthy();
+    }
     bool healthy(void) const { return healthy(get_primary()); }
     uint8_t get_healthy_mask() const;
 
@@ -228,7 +232,7 @@ public:
     /// @param thr_pct              throttle expressed as a percentage from 0 to 1.0
     void set_throttle(float thr_pct) {
         if (get_motor_compensation_type() == Motor_compensation_type::Throttle) {
-            _thr_or_curr = thr_pct;
+           _compensate_for.throttle_percent = thr_pct;
         }
     }
 
@@ -236,7 +240,7 @@ public:
     /// @param amps                 current flowing to the motors expressed in amps
     void set_current(float amps) {
         if (get_motor_compensation_type() == Motor_compensation_type::Current) {
-            _thr_or_curr = amps;
+           _compensate_for.current_A = amps;
         }
     }
 
@@ -260,7 +264,7 @@ public:
     void        _setup_earth_field();
 
     // enable HIL mode
-    void        set_hil_mode(void) { _hil_mode = true; }
+    void     set_hil_mode(void) { _hil_mode = true; }
 
     // return last update time in microseconds
     uint32_t last_update_usec(void) const 
@@ -302,8 +306,8 @@ public:
     
 private:
 
-    bool _add_backend(AP_Compass_Backend& backend);
-    void _detect_backends(void);
+    bool _install(AP_Compass_Backend& backend);
+    void _install_backends(void);
 
     //keep track of number of calibration reports sent
     uint8_t _reports_sent[max_backends];
@@ -343,38 +347,32 @@ private:
     AP_Int8     _motor_comp_type;
 
     // throttle expressed as a percentage from 0 ~ 1.0 or current expressed in amps
-    float       _thr_or_curr;
+    union{   // union for legibility only
+      float  throttle_percent;   
+      float  current_A;
+      float  value;
+    } _compensate_for;
+   // float       _thr_or_curr;
 
     struct mag_state {
-        AP_Int8     external;  // move to backend
-        bool        healthy;   // move to backend
+        AP_Int8     external;  
         AP_Int8     orientation; // OK
         AP_Vector3f offset;      // OK
         AP_Vector3f diagonals;   // OK
         AP_Vector3f offdiagonals;  //OK
-
         // device id detected at init.
         // saved to eeprom when offsets are saved allowing ram &
         // eeprom values to be compared as consistency check
         AP_Int32    dev_id;
-
         AP_Int8     use_for_yaw;
-
-        uint8_t     mag_history_index; // ?
-        Vector3i    mag_history[_mag_history_size];
-
+        uint8_t     mag_history_index; // to backend ?
+        Vector3i    mag_history[_mag_history_size]; // to backend
         // factors multiplied by throttle and added to compass outputs
         AP_Vector3f motor_compensation;    
-
         // latest compensation added to compass
         Vector3f    motor_offset;    // could go to backend
-
         // corrected magnetic field strength
         Vector3f    field;            // could go to backend
-
-        // when we last got data
-        uint32_t    last_update_ms;  //  move to backend
-       // uint32_t    last_update_usec;  // move to backend
     } _state[max_backends];
 
     CompassCalibrator _calibrator[max_backends];

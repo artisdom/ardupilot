@@ -8,15 +8,20 @@
 extern const AP_HAL::HAL& hal;
 
 AP_Compass_Backend::AP_Compass_Backend(Compass &compass, const char* name, uint8_t index, bool external) :
-    _compass{compass}, _name{name},_index{index},_is_external{external},_last_update_usec{0U}
+   _compass{compass}, 
+   _name{name},
+   _last_update_usec{0U},
+   _last_update_ms{0U},
+   _index{index},
+   _healthy{false},
+  _is_external{external}
 {
   if (index >= compass.max_backends){
      AP_HAL::panic("array index out of range in AP_Compass_Backend");
   }
 }
 
-
-bool AP_Compass_Backend::install(){ return _compass._add_backend(*this);}
+bool AP_Compass_Backend::install(){ return _compass._install(*this);}
 
 bool AP_Compass_Backend::is_installed() const { return _compass._backends[_index] == this;}
 
@@ -36,12 +41,10 @@ void AP_Compass_Backend::rotate_field(Vector3f &mag)
 
 void AP_Compass_Backend::publish_raw_field(const Vector3f &mag, uint32_t time_us)
 {
-    Compass::mag_state &state = _compass._state[_index];
-
     // note that we do not set last_update_usec here as otherwise the
     // EKF and DCM would end up consuming compass data at the full
     // sensor rate. We want them to consume only the filtered fields
-    state.last_update_ms = AP_HAL::millis();
+    _last_update_ms = AP_HAL::millis();
 
     _compass._calibrator[_index].new_sample(mag);
 }
@@ -64,8 +67,8 @@ void AP_Compass_Backend::correct_field(Vector3f &mag)
      * being applied so it can be logged correctly
      */
     mag += offsets;
-    if(_compass.get_motor_compensation_type() != Compass::Motor_compensation_type::Disabled && !is_zero(_compass._thr_or_curr)) {
-        state.motor_offset = mot * _compass._thr_or_curr;
+    if(_compass.get_motor_compensation_type() != Compass::Motor_compensation_type::Disabled && !is_zero(_compass._compensate_for.value)) {
+        state.motor_offset = mot * _compass._compensate_for.value;
         mag += state.motor_offset;
     } else {
         state.motor_offset.zero();
@@ -89,18 +92,9 @@ void AP_Compass_Backend::publish_filtered_field(const Vector3f &mag)
 
     state.field = mag;
 
-    state.last_update_ms = AP_HAL::millis();
-   // state.last_update_usec = AP_HAL::micros();
+    _last_update_ms = AP_HAL::millis();
     set_last_update_usec(AP_HAL::micros());
 }
-
-//void AP_Compass_Backend::set_last_update_usec(uint32_t last_update)
-//{
-//   // Compass::mag_state &state = _compass._state[_index];
-//   // state.last_update_usec = last_update;
-//   
-//}
-
 
 /*
   set dev_id for an instance

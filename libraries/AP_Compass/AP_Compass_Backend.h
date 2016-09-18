@@ -37,13 +37,19 @@ public:
     // initialize the magnetometers
     virtual bool init(void) = 0;
 
-    // read sensor data
-    virtual void read(void) = 0;
+
 
     // accumulate a reading from the magnetometer. Optional in
     // backends
     virtual void accumulate(void) {};
     uint8_t get_index() const {return _index;}
+
+    void do_read()
+    {
+      read();
+      _healthy = (AP_HAL::millis() - get_last_update_ms()) < 500;
+    }
+    
     // tell if instance is an external compass
     void set_external ( bool val){_is_external = val;}
     bool install();
@@ -51,8 +57,12 @@ public:
     bool is_external()const { return _is_external;}
     const char* get_name() const { return _name;}
     uint32_t get_last_update_usec() const { return _last_update_usec;}
+    uint32_t get_last_update_ms() const { return _last_update_ms;}
+    bool is_healthy() const { return _healthy;}
 protected:
 
+        // read sensor data
+    virtual void read(void) = 0;
     /*
      * A compass measurement is expected to pass through the following functions:
      * 1. rotate_field - this rotates the measurement in-place from sensor frame
@@ -70,8 +80,8 @@ protected:
     void publish_raw_field(const Vector3f &mag, uint32_t time_us);
     void correct_field(Vector3f &mag);
     void publish_filtered_field(const Vector3f &mag);
-    void set_last_update_usec(uint32_t last_update) { _last_update_usec = last_update;}
-
+    void set_last_update_usec(uint32_t last_update_usec) { _last_update_usec = last_update_usec;}
+    void set_last_update_ms(uint32_t last_update_ms) { _last_update_ms = last_update_ms;}
    // register a new compass instance with the frontend
    // done in ctor
    // uint8_t register_compass(void) const;
@@ -86,8 +96,10 @@ protected:
 private:
     void apply_corrections(Vector3f &mag);
     const char*      _name;
-    uint8_t          _index;  // the index
-    bool             _is_external;
     uint32_t         _last_update_usec;
+    uint32_t         _last_update_ms;
+    uint8_t          _index;  // the index
+    bool             _healthy;
+    bool             _is_external;
 
 };
