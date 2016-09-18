@@ -58,6 +58,16 @@ AP_Compass_PX4::AP_Compass_PX4(Compass &compass, uint8_t index):
 {
 }
 
+AP_Compass_PX4::~AP_Compass_PX4()
+{
+   if (_mag_fd >=0){
+      close(_mag_fd);
+   }
+}
+
+// needs to be per backend
+// is this board relative etc
+
 template <> enum Rotation get_compass_orientation<AP_HAL::Tag_BoardType>()
 {
    return  ROTATION_NONE;
@@ -68,22 +78,19 @@ template <> void install_compass_backends<AP_HAL::Tag_BoardType>(Compass& c)
    AP_Compass_PX4 *sensors [3] = {nullptr,nullptr,nullptr};
    // construct sensors
    for ( int i = 0; i < 3; ++i){
-       sensors[i] = new AP_Compass_PX4(c,static_cast<uint8_t>(i));
-       if (sensors[i]== nullptr){
-         while (i){
-            delete sensors [i-1];
-            --i;
-         }
-         return;
-       }
+      sensors[i] = new AP_Compass_PX4(c,static_cast<uint8_t>(i));
+      // check for failure
+      if (sensors[i]== nullptr){
+         AP_HAL::panic("Failed to allocate new AP_Compass_PX4 in install_compass_backends");
+      }
    }
    for ( uint8_t i = 0; i < 3; ++i){
-     // failure to init is not an error
-     // since some devices may be on external bus
-     if (! sensors[i]->init() ){
-           hal.console->printf("Warning: Compass init failed %s\n",px4_device_paths[sensors[i]->get_index()]);
-           
-     }
+   // failure to init is not an error
+   // since some devices may or ma not be on external bus
+      if (! sensors[i]->init() ){
+         hal.console->printf("Warning: Compass init failed %s\n",px4_device_paths[sensors[i]->get_index()]);
+         delete sensors[i];
+      }
    }
 }
 
