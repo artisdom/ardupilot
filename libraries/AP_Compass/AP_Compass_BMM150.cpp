@@ -15,6 +15,8 @@
  * You should have received a copy of the GNU General Public License along
  * with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+// This backend is not currently used
+#if 0
 #include "AP_Compass_BMM150.h"
 
 #include <AP_HAL/AP_HAL.h>
@@ -314,3 +316,4 @@ void AP_Compass_BMM150::read()
 }
 
 #endif
+#endif // if 0
