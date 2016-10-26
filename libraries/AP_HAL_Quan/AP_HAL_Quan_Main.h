@@ -5,6 +5,8 @@
 #include <AP_HAL/AP_HAL.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 
+#if ! defined QUAN_AERFLITE_BOARD
+#error wtf
 
 #define AP_HAL_MAIN() \
 \
@@ -25,8 +27,29 @@ extern "C" {\
    \
       vTaskStartScheduler(); \
    }\
-}\
+}
 
+#else
+
+#define AP_HAL_MAIN() \
+\
+void osd_setup();\
+void create_draw_task();\
+void create_apm_task();\
+extern "C" void vTaskStartScheduler();\
+\
+extern "C" {\
+   int main (void) \
+   {\
+      osd_setup(); \
+   \
+      create_draw_task(); \
+      create_apm_task(); \
+   \
+      vTaskStartScheduler(); \
+   }\
+}
+#endif
 
 #endif // HAL_BOARD_QUAN
 

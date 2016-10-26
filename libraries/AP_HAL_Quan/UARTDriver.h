@@ -8,8 +8,10 @@ namespace Quan{
    template <uint32_t I>
    AP_HAL::UARTDriver * get_serial_port();
 
+#if ! defined QUAN_AERFLITE_BOARD
    // val true for inverting false for non-inverting
    void set_usart3_tx_inverting( bool val);
+#endif
 }
 
 #endif

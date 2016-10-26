@@ -28,10 +28,12 @@ using namespace Quan;
 /*
 At startup this is set to non inverting
 */
+#if ! defined QUAN_AERFLITE_BOARD
 void Quan::set_usart3_tx_inverting( bool val)
 {
     quan::stm32::put<frsky_txo_sign_pin>(val);
 }
+#endif
 
 /*
 TODO add thread safe version for console

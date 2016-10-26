@@ -108,6 +108,9 @@ endif
 # specific flags for stm32f4
 QUAN_DEFINES = QUAN_STM32F4 QUAN_FREERTOS $(TELEMETRY_DIRECTION) STM32F40_41xxx \
 QUAN_OSD_SOFTWARE_SYNCSEP HSE_VALUE=8000000 QUAN_OSD_BOARD_TYPE=4 QUAN_CUSTOM_AP_PARAMS
+ifeq ($(AERFLITE),True)
+QUAN_DEFINES += QUAN_AERFLITE_BOARD
+endif
 
 QUAN_INCLUDES = $(STM32_INCLUDES) $(QUAN_INCLUDE_PATH) $(QUANTRACKER_ROOT_DIR)include \
 $(RTOS_INCLUDES)
@@ -195,6 +198,7 @@ INIT_LIBS = $(INIT_LIB_PREFIX)crti.o $(INIT_LIB_PREFIX)crtn.o
 
 LIBS = -Wl,--undefined=_sbrk  
 
+ifneq ($(AERFLITE),True)
 ifeq ($(QUAN_TARGET_VEHICLE),QUAN_APM_ANTENNATRACKER)
 LIBS += $(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_osd_rx.a 
 endif
@@ -205,6 +209,13 @@ endif
 
 LIBS += $(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_system.a  \
 $(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_graphics_api.a
+
+else
+LIBS += $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_osd.a \
+         $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_system.a  \
+          $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_graphics_api.a
+
+endif
 
 
 ifeq ($(VERBOSE),)
