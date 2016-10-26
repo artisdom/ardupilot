@@ -38,26 +38,43 @@ function pins
 board_voltage
 servo_rail_voltage
 
-PC0   ADC123_IN10
+PC0   ADC123_IN10 ( there but not currently used in aerflite)
 PC1   ADC123_IN11
+PC2   ADC123_IN12 (aerflite)
 PC3   ADC123_IN13
-PC4   ADC123_IN13
+PC4   ADC12_IN14
+PC5   ADC12_IN15 (aerflite)
 
 */
 
 namespace {
    
+   // n.b could use one of the rc out timers if timers get short
+   // would be restricted to their update rate e.g 50 Hz
    typedef quan::stm32::tim8 adc_timer;
 
-   // raw A2D values updated by DMA
-   // N.B. last index is a dummy to trap out of range
-   volatile uint16_t adc_results [4 +1] __attribute__((section(".telem_buffer")))  
-   = {0,0,0,0,0};
+#if defined QUAN_AERFLITE_BOARD
+   constexpr uint32_t num_adc_channels = 5;
+
+   //  typedef quan::mcu::pin<quan::stm32::gpioc,0> analog_video_sample - ignore
+   typedef quan::mcu::pin<quan::stm32::gpioc,1> analog_pin1;  // analog in
+   typedef quan::mcu::pin<quan::stm32::gpioc,2> analog_pin2;  // rssi in
+   typedef quan::mcu::pin<quan::stm32::gpioc,3> analog_pin3;  // battery current
+   typedef quan::mcu::pin<quan::stm32::gpioc,4> analog_pin4;  // battery voltage
+   typedef quan::mcu::pin<quan::stm32::gpioc,5> analog_pin5;  // airspeed
+
+#else
+   constexpr uint32_t num_adc_channels = 4;
 
    typedef quan::mcu::pin<quan::stm32::gpioc,0> analog_pin1;  // battery voltage
    typedef quan::mcu::pin<quan::stm32::gpioc,1> analog_pin2;  // battery current
    typedef quan::mcu::pin<quan::stm32::gpioc,3> analog_pin3;  // airspeed
    typedef quan::mcu::pin<quan::stm32::gpioc,4> analog_pin4;  // rssi
+
+#endif
+   // raw A2D values updated by DMA
+   // N.B. last index is a dummy to trap out of range
+   volatile uint16_t adc_results [num_adc_channels + 1 ] __attribute__((section(".telem_buffer"))) = {0};
 
    template <typename Pin>
    void setup_adc_pin()
@@ -78,6 +95,9 @@ namespace {
       setup_adc_pin<analog_pin2>();
       setup_adc_pin<analog_pin3>();
       setup_adc_pin<analog_pin4>();
+#if defined QUAN_AERFLITE_BOARD
+      setup_adc_pin<analog_pin5>();
+#endif
 
       quan::stm32::module_enable<adc_timer>();
 
@@ -117,15 +137,27 @@ namespace {
       ADC1->CR1 &= ~(0b11 << 24); // 12 bit conversion
       ADC1->CR1 |= (1 << 8);     // (SCAN)
 
-      constexpr uint32_t num_channels = 4;
       constexpr uint32_t sati_bits = 0b011; // reg sampling time bits
+// if quantracker
        // sequence  ADC123_IN10,ADC123_IN11,ADC123_IN1,ADC12_IN14
        // == ch10, ch11, ch13, ch14  
+// if aerflite
+      // ch11, ch12, ch13, ch14,ch15
 
       ADC1->CR2  |= (1 << 9); //  (DDS) dma request continue sfter all done in sequence
+#if defined QUAN_AERFLITE_BOARD
+       // sampling time
+       // SMPR1 for ch10 [0:2)]to 18 [24:26]
+      // setup channels 11 to 15
+      ADC1->SMPR1 =  ( sati_bits << (1*3) ) | ( sati_bits << (2*3)) | ( sati_bits << (3*3)) | ( sati_bits << (4*3)) | ( sati_bits << 5*3);
+      // conversion sequence just setup in order of ports
+      ADC1->SQR3 = (11 << (0 *5)) | ( 12 << (1*5)) | ( 13 << (2*5)) | ( 14 << (3*5)) | (15 << (4*5));
+#else
       ADC1->SMPR1 = ( sati_bits << 0) | ( sati_bits << 3) | ( sati_bits << 9) | ( sati_bits << 12);
       ADC1->SQR3 = (10 << 0) | ( 11 << 5) | ( 13 << 10) | ( 14 << 15);
-      ADC1->SQR1 |= ((num_channels-1) << 20);
+#endif
+     // setup number of channels to convert
+      ADC1->SQR1 |= ((num_adc_channels-1) << 20);
 
       // ADC1 DMA ------------------------------------------------------------------------
       // USE DMA2.Stream4.Channel0  
@@ -153,7 +185,7 @@ namespace {
 
       dma_stream->PAR = (uint32_t)&ADC1->DR;  // periph addr
       dma_stream->M0AR = (uint32_t)adc_results; 
-      dma_stream->NDTR = 4;
+      dma_stream->NDTR = num_adc_channels;
 
       NVIC_SetPriority(DMA2_Stream4_IRQn,15);  // low prio
       NVIC_EnableIRQ(DMA2_Stream4_IRQn);
@@ -186,7 +218,7 @@ extern "C" void DMA2_Stream4_IRQHandler()
    DMA2->HIFCR |= (0b111101 << 0) ; // clear flags for Dma2 Stream 4
    //DMA2->HIFCR &= ~(0b111101 << 0) ; 
    DMA2_Stream4->M0AR = (uint32_t)adc_results;
-   DMA2_Stream4->NDTR = 4;
+   DMA2_Stream4->NDTR = num_adc_channels;
    DMA2_Stream4->CR |= (1 << 0); // (EN)
 
    xSemaphoreGiveFromISR(adc_semaphore,&higherPriorityTaskWoken );
@@ -227,8 +259,22 @@ namespace {
    average_filter_t   batt_current_adc{0.f, 0.03f};
    average_filter_t   airspeed_adc{2.5f , 0.2f};
    average_filter_t   rssi_adc{0.f, 0.01f};
+#if defined QUAN_AERFLITE_BOARD
+   average_filter_t   analog_in_adc{2.5f , 0.2f};
+#endif
    dummy_filter_t     dummy_filter;
    
+
+#if defined QUAN_AERFLITE_BOARD
+  filter* filters[6] = { 
+      &analog_in_adc,
+      &rssi_adc,
+      &batt_current_adc,
+      &batt_voltage_adc,
+      &airspeed_adc,
+      &dummy_filter
+   };
+#else
    filter* filters[5] = { 
       &batt_voltage_adc,
       &batt_current_adc,
@@ -236,16 +282,17 @@ namespace {
       &rssi_adc,
       &dummy_filter
    };
+#endif
 
-   float raw_adc_voltages[5] {0.f,0.f,0.f,0.f,0.f};
-   float filtered_adc_values[5] = {0.f,0.f,0.f,0.f,0.f};
+   float raw_adc_voltages[num_adc_channels +1 ] = {0.f};
+   float filtered_adc_values[5] = {0.f};
 
    // n.b though the actual voltage is 0 to 3.3V
    // Ardupilot expects everything in a 0 to 5 v range
    // so we scale it as if 5V here
    void process_adc()
    {
-      for (uint8_t i = 0; i < 4 ; ++i)
+      for (uint8_t i = 0; i < num_adc_channels ; ++i)
       {
          float const voltage = (adc_results[i] * 5.f) / 4096;
          raw_adc_voltages[i] = voltage;
@@ -256,7 +303,6 @@ namespace {
    void adc_task( void * params){
 
       adc_semaphore = xSemaphoreCreateBinary();
-
       for (;;){
          xSemaphoreTake(adc_semaphore, portMAX_DELAY);
          process_adc();
@@ -295,13 +341,32 @@ namespace {
       void set_settle_time(uint16_t settle_time_ms){}
    };
 
+#if defined QUAN_AERFLITE_BOARD
+
+   analog_source<0> undedicated_analog_in;
+   analog_source<1> rc_rssi;
+   analog_source<2> battery_current;
+   analog_source<3> battery_voltage;
+   analog_source<4> airspeed;
+   analog_source<5> dummy;
+   AP_HAL::AnalogSource* analog_sources[num_adc_channels +1] =
+   {
+      & undedicated_analog_in
+     ,& rc_rssi
+     ,& battery_current
+     ,& battery_voltage
+     ,& airspeed
+     ,& dummy
+   };
+
+#else
+
    analog_source<0> battery_voltage;
    analog_source<1> battery_current;
    analog_source<2> airspeed;
    analog_source<3> rssi;
    analog_source<4> dummy;
-
-   AP_HAL::AnalogSource* analog_sources[5] =
+   AP_HAL::AnalogSource* analog_sources[num_adc_channels +1] =
    {
      & battery_voltage
      ,& battery_current
@@ -309,6 +374,8 @@ namespace {
      ,& rssi
      ,& dummy
    };
+
+#endif
 
    struct analog_in_t final : public AP_HAL::AnalogIn{
       analog_in_t(){}
@@ -322,7 +389,7 @@ namespace {
       AP_HAL::AnalogSource* channel(int16_t n) 
       {
          // set out of range chennels to channels[4] (dummy channel)
-         return analog_sources[(((n >= 0 ) && ( n < 4 ))?n:4)];
+         return analog_sources[(((n >= 0 ) && ( n < static_cast<int16_t>(num_adc_channels) ))?n:num_adc_channels)];
       }
 
       // should be reading the actual board voltage

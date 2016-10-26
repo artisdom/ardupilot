@@ -33,9 +33,13 @@ static QuanUtil utilInstance;
 HAL_Quan::HAL_Quan() 
 :AP_HAL::HAL(
    Quan::get_serial_port<0>(),//   console ( hal.uartA)
-   Quan::get_serial_port<2>(),//   1st GPS ( on hack board)
+   Quan::get_serial_port<2>(),//   1st GPS ( quantracker on hack board)
    Quan::get_serial_port<1>(),//   telemetry
+#if defined QUAN_AERFLITE_BOARD
+   Quan::get_serial_port<3>(),//   
+#else
    NULL,            /* no uartD */
+#endif
    NULL,            /* no uartE */
    Quan::get_i2c_driver(), // dummy
    NULL, /* only one i2c */
@@ -111,7 +115,5 @@ void create_apm_task()
       &task_handle 
   ); 
 }
-
-
 
 #endif  // CONFIG_HAL_BOARD == HAL_BOARD_QUAN

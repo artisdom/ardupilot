@@ -41,7 +41,7 @@ TODO add thread safe version for console
 
 namespace {
 
-   // on isolated port
+   // on isolated port ( quantracker)
    // Pin 4 RXI Pin 5 TXO
    struct sp1{
       typedef quan::stm32::usart1                    usart;
@@ -50,7 +50,7 @@ namespace {
       typedef quan::stm32::freertos::apm::usart_tx_rx_task<usart,txo_pin,rxi_pin> serial_port;
    };
 
-   // on isolated port
+   // on isolated port ( quantracker)
    // Pin 2 TXO , Pin 6 RXI
    struct sp2{
       typedef quan::stm32::usart3                     usart;
@@ -59,13 +59,23 @@ namespace {
       typedef quan::stm32::freertos::apm::usart_tx_rx_task<usart,txo_pin,rxi_pin> serial_port;
    };
    
-   // on header
+   // on header ( quantracker)
    struct sp3{
       typedef quan::stm32::uart4                     usart;
       typedef quan::mcu::pin<quan::stm32::gpioa,0>   txo_pin; 
       typedef quan::mcu::pin<quan::stm32::gpioa,1>   rxi_pin; 
       typedef quan::stm32::freertos::apm::usart_tx_rx_task<usart,txo_pin,rxi_pin> serial_port;
    };
+
+   #if defined QUAN_AERFLITE_BOARD
+   struct sp4{
+      typedef quan::stm32::usart6                     usart;
+      typedef quan::mcu::pin<quan::stm32::gpioc,6>   txo_pin; 
+      typedef quan::mcu::pin<quan::stm32::gpioc,7>   rxi_pin; 
+      typedef quan::stm32::freertos::apm::usart_tx_rx_task<usart,txo_pin,rxi_pin> serial_port;
+   };
+
+  #endif
 
    template <typename SerialPort>
    class QuanUARTDriver final : public AP_HAL::UARTDriver {
@@ -134,11 +144,17 @@ namespace {
    QuanUARTDriver<sp1::serial_port> serial_port1;
    QuanUARTDriver<sp2::serial_port> serial_port2;
    QuanUARTDriver<sp3::serial_port> serial_port3;
+#if defined QUAN_AERFLITE_BOARD
+   QuanUARTDriver<sp4::serial_port> serial_port4;
+#endif
 
    AP_HAL::UARTDriver * serial_ports [] ={
       &serial_port1
       ,&serial_port2
       ,&serial_port3
+#if defined QUAN_AERFLITE_BOARD
+      ,&serial_port4
+#endif
    };
 
 }// namespace
@@ -152,16 +168,21 @@ AP_HAL::UARTDriver * Quan::get_serial_port()
 template AP_HAL::UARTDriver * Quan::get_serial_port<0>();
 template AP_HAL::UARTDriver * Quan::get_serial_port<1>();
 template AP_HAL::UARTDriver * Quan::get_serial_port<2>();
+#if defined QUAN_AERFLITE_BOARD
+template AP_HAL::UARTDriver * Quan::get_serial_port<3>();
+#endif
 
 // interrupts
 
 extern "C" void USART1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void USART3_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void UART4_IRQHandler() __attribute__ ((interrupt ("IRQ")));
+#if defined QUAN_AERFLITE_BOARD
+extern "C" void UsART6_IRQHandler() __attribute__ ((interrupt ("IRQ")));
+#endif
 
 extern "C" void USART1_IRQHandler()
 {
-
    static_assert(
    std::is_same<
       sp1::usart,quan::stm32::usart1
@@ -189,9 +210,15 @@ extern "C" void UART4_IRQHandler()
    ,"invalid usart for serial_port irq");
    sp3::serial_port::irq_handler();
 }
-   
-
-
-  
-
-
+#if defined QUAN_AERFLITE_BOARD
+extern "C" void USART6_IRQHandler()
+{
+   static_assert(
+   std::is_same<
+      sp4::usart,quan::stm32::usart6
+   >::value
+   ,"invalid usart for serial_port irq");
+   sp4::serial_port::irq_handler();
+}
+#endif
+ 
