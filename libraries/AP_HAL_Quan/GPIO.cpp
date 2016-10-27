@@ -13,6 +13,10 @@ using namespace Quan;
 QuanGPIO::QuanGPIO()
 {}
 
+/*
+ In fact the only gpios are LEDs
+*/
+
 
 namespace {
 

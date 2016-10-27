@@ -12,7 +12,7 @@
 #include "RCOutput.h"
 /*
  Problem with the simple option is that all outputs go high
-at same time, so may try 
+at same time
 */
 
 namespace {

@@ -20,11 +20,17 @@ Though I guess the main code is doing that
 */
 
 namespace {
-   // resources
-   // tim1 : 16 bit 168 MHz clk
+
+#if defined QUAN_AERFLITE_BOARD
+   typedef quan::stm32::tim14 rc_in_timer;
+   // TIM14_CH1
+   typedef quan::mcu::pin<quan::stm32::gpioa,7> rc_input_pin;
+#else
+   // TIM1_CH4
    typedef quan::stm32::tim1 rc_in_timer;
    typedef quan::mcu::pin<quan::stm32::gpioa,11> rc_input_pin;
-
+#endif
+   
    constexpr uint32_t timer_freq = quan::stm32::get_raw_timer_frequency<rc_in_timer>();
    constexpr uint16_t min_sync_pulse = 3000U ;
    constexpr uint16_t min_pulsewidth = 900U ;
@@ -37,12 +43,42 @@ namespace {
       quan::stm32::module_enable<rc_input_pin::port_type>();
       quan::stm32::module_enable<rc_in_timer>();
 
-      // TI4 input --> IC3 capture on falling edge
+      // capture on falling edge
       quan::stm32::apply<
          rc_input_pin,
+#if defined QUAN_AERFLITE_BOARD
+         quan::stm32::gpio::mode::af9,  
+#else
          quan::stm32::gpio::mode::af1,  
+#endif
          quan::stm32::gpio::pupd::pull_up
       >();
+
+#if defined QUAN_AERFLITE_BOARD
+     // configure TIM14_CH1 as input
+      {
+         quan::stm32::tim::ccmr1_t ccmr1 = 0;
+         ccmr1.cc1s   = 0b01;// CC1 channel is configured as input, IC1 is mapped on TI1
+         ccmr1.ic1f   = 0b00 ;// no filter 
+         ccmr1.ic1psc = 0b00; // no prescaler
+         rc_in_timer::get()->ccmr1.set(ccmr1.value);
+      }
+      {
+         quan::stm32::tim::ccer_t ccer = 0;
+         ccer.cc1p = true; // capture falling edges
+         ccer.cc1np = false; // capture falling edges
+         ccer.cc1ne = false; // applies to output only
+         ccer.cc1e = true;  // enable capture
+         rc_in_timer::get()->ccer.set(ccer.value);
+      }
+
+      {
+         quan::stm32::tim::dier_t dier= 0;
+         dier.cc1ie = true;
+         rc_in_timer::get()->dier.set(dier.value);
+      }
+#else
+     // configure TIM1_CH4 as input
       {
          quan::stm32::tim::ccmr2_t ccmr2 = 0;
          ccmr2.cc3s = 0b10;// CC3 channel is configured as input, IC3 is mapped on TI4
@@ -63,14 +99,19 @@ namespace {
          dier.cc3ie = true;
          rc_in_timer::get()->dier.set(dier.value);
       }
-
+#endif
       rc_in_timer::get()->psc = (timer_freq / 1000000 )-1;
       rc_in_timer::get()->arr = 0xFFFF;
       rc_in_timer::get()->cnt = 0x0;
       rc_in_timer::get()->sr = 0;
 
+#if defined QUAN_AERFLITE_BOARD
+      NVIC_SetPriority(TIM8_TRG_COM_TIM14_IRQn,15); // low priority
+      NVIC_EnableIRQ(TIM8_TRG_COM_TIM14_IRQn);
+#else
       NVIC_SetPriority(TIM1_CC_IRQn,15); // low priority
       NVIC_EnableIRQ(TIM1_CC_IRQn);
+#endif
    }
 
    void start_timer()
@@ -93,7 +134,11 @@ namespace {
 
    void on_edge()
    {
+#if defined QUAN_AERFLITE_BOARD
+      uint16_t const edge = rc_in_timer::get()->ccr1;
+#else
       uint16_t const edge = rc_in_timer::get()->ccr3;
+#endif
       uint16_t const pulse = edge - last_edge;
       last_edge = edge;
       if (pulse < min_sync_pulse ) {
@@ -118,13 +163,16 @@ namespace {
 
 } // namespace
 
+#if defined QUAN_AERFLITE_BOARD
+extern "C" void TIM8_TRG_COM_TIM14_IRQHandler() __attribute__ ( (interrupt ("IRQ")));
+extern "C" void TIM8_TRG_COM_TIM14_IRQHandler()
+#else
 extern "C" void TIM1_CC_IRQHandler() __attribute__ ( (interrupt ("IRQ")));
-
 extern "C" void TIM1_CC_IRQHandler()
+#endif
 {
    rc_in_timer::get()->sr.set(0);
    on_edge();
-
    // TODO overflow on no input
 }
 
@@ -132,8 +180,10 @@ namespace {
    struct rc_inputs_t final : public AP_HAL::RCInput{
       void init(void* )
       {
+         // TODO set throttle to min pulsewidth
          for ( auto & pulse : m_input_rc_channels)
          { pulse = (min_pulsewidth + max_pulsewidth)/2;}
+     
          rc_input_timer_setup();
          start_timer();
       }

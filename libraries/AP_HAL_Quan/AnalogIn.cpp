@@ -195,6 +195,7 @@ namespace {
       DMA2_Stream4->CR |= (1 << 0); // (EN)  enable DMA
       ADC1->CR2 |= (1 << 0); // (ADON)
    }
+
    void start_adc_timer()
    {
       adc_timer::get()->cr1.bb_setbit<0>(); //(CEN)
