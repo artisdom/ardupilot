@@ -10,7 +10,8 @@ endif
 
 TARGET_PROCESSOR = STM32F4
 
-LINKER_SCRIPT = $(QUANTRACKER_ROOT_DIR)air/osd/stm32f4.ld
+# dont need the extra flash
+LINKER_SCRIPT = $(QUANTRACKER_ROOT_DIR)air/osd/stm32f4_aerflite.ld
 
 HAVE_DEPENDENCIES_FILE := $(shell if test -f $(QUANTRACKER_ROOT_DIR)Dependencies.mk; then echo "True"; fi)
 
