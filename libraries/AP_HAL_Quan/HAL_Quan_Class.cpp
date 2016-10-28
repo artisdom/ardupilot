@@ -68,7 +68,7 @@ void HAL_Quan::run(int argc, char * const argv[], Callbacks* callbacks) const
 void HAL_Quan::init(int argc,char* const argv[]) const 
 {
    uartA->begin(115200);
-   gpio->init();
+   gpio->init();  //leds
    Quan::init_spi();
    rcin->init(NULL);
    rcout->init(NULL);
@@ -97,9 +97,9 @@ namespace {
    { 
       hal_quan.run(0, NULL,NULL);
       setup();
-      hal_quan.scheduler->system_initialized(); 
+      hal_quan.scheduler->system_initialized();  // just sets a flag to say that initialisation is complete
       for(;;){ 
-         loop(); 
+         loop();   // this is defined by the app e.g ArduPlane
       } 
 
    } 
