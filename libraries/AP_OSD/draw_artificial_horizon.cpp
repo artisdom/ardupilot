@@ -110,7 +110,7 @@ void AP_OSD::draw_artificial_horizon(
    auto pitch = info.attitude.pitch + osd.artifical_horizon_pitch_adjustment;
    constexpr int32_t centre_rad = 5;
    if ( abs(pitch) < angle_type{30}) {
-      rotation rotate {pitch,info.attitude.roll, osd.viewing_distance_px};
+      rotation rotate {pitch,info.attitude.roll, static_cast<float>(osd.viewing_distance_px)};
       constexpr int32_t width = 127;
       constexpr int32_t outer_h_bar_len = 16;
       constexpr int32_t outer_stop_height = 8;

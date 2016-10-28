@@ -579,7 +579,7 @@ void NavEKF2_core::selectHeightForFusion()
     if (rangeDataToFuse && usingRangeForHgt) {
         // using range finder data
         // correct for tilt using a flat earth model
-        if (prevTnb.c.z >= 0.7) {
+        if (prevTnb.c.z >= 0.7f) {
             hgtMea  = max(rangeDataDelayed.rng * prevTnb.c.z, rngOnGnd);
             // enable fusion
             fuseHgtData = true;

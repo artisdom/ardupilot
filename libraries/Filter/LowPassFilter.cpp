@@ -11,6 +11,24 @@
 // DigitalLPF
 ////////////////////////////////////////////////////////////////////////////////////////////
 
+namespace {
+
+   template <typename T>
+   struct get_value_type{
+      typedef T type;
+   };
+   template <typename T>
+   struct get_value_type<Vector2<T> >{
+      typedef T type;
+   };
+
+   template <typename T>
+   struct get_value_type<Vector3<T> >{
+      typedef T type;
+   };
+
+}
+
 template <class T>
 DigitalLPF<T>::DigitalLPF() {
   // built in initialization
@@ -20,13 +38,16 @@ DigitalLPF<T>::DigitalLPF() {
 // add a new raw value to the filter, retrieve the filtered result
 template <class T>
 T DigitalLPF<T>::apply(const T &sample, float cutoff_freq, float dt) {
+
+    typedef typename get_value_type<T>::type value_type;
+
     if (cutoff_freq <= 0.0f || dt <= 0.0f) {
         _output = sample;
         return _output;
     }
 
     float rc = 1.0f/(M_2PI_F*cutoff_freq);
-    float alpha = constrain_float(dt/(dt+rc), 0.0f, 1.0f);
+    value_type alpha = static_cast<value_type>(constrain_float(dt/(dt+rc), 0.0f, 1.0f));
     _output += (sample - _output) * alpha;
     return _output;
 }

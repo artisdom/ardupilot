@@ -286,7 +286,7 @@ namespace {
 #endif
 
    float raw_adc_voltages[num_adc_channels +1 ] = {0.f};
-   float filtered_adc_values[5] = {0.f};
+   float filtered_adc_values[num_adc_channels] = {0.f};
 
    // n.b though the actual voltage is 0 to 3.3V
    // Ardupilot expects everything in a 0 to 5 v range

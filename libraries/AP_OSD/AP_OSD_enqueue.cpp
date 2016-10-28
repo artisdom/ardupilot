@@ -36,6 +36,8 @@ namespace {
       }
    }
 
+#if 0
+// not used atm
    bool put_message( AP_OSD::msgID id, quan::three_d::vect<uint32_t> const & v)
    {
       if ( queue_ready_for_msg()){
@@ -48,7 +50,7 @@ namespace {
          return false;
       }
    }
-
+#endif
    bool put_message( AP_OSD::msgID id, quan::three_d::vect<int32_t> const & v)
    {
       if ( queue_ready_for_msg()){

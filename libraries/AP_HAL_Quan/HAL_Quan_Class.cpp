@@ -65,6 +65,7 @@ void HAL_Quan::run(int argc, char * const argv[], Callbacks* callbacks) const
 }
 
 // called as first item at the startup of apm_task before the main forever loop
+// maybe add some args as to what to init
 void HAL_Quan::init(int argc,char* const argv[]) const 
 {
    uartA->begin(115200);
@@ -95,11 +96,11 @@ namespace {
    TaskHandle_t task_handle = NULL; 
    void apm_task(void * params) 
    { 
-      hal_quan.run(0, NULL,NULL);
-      setup();
+      hal_quan.run(0, NULL,NULL); // just calls init
+      setup();      // this is defined by the app e.g ArduPlane, examples etc
       hal_quan.scheduler->system_initialized();  // just sets a flag to say that initialisation is complete
       for(;;){ 
-         loop();   // this is defined by the app e.g ArduPlane
+         loop();   // this is defined by the app e.g ArduPlane, examples etc
       } 
 
    } 

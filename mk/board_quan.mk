@@ -119,7 +119,7 @@ $(RTOS_INCLUDES)
 QUAN_PROCESSOR_FLAGS = -march=armv7e-m -mtune=cortex-m4 -mhard-float -mthumb \
 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mthumb -mfloat-abi=hard
 
-QUAN_CFLAGS  = -Wall -Wdouble-promotion -std=gnu++11 -fno-rtti -fno-exceptions -c -g \
+QUAN_CFLAGS  = -Wall -Werror -Wdouble-promotion -std=gnu++11 -fno-rtti -fno-exceptions -c -g \
 -$(OPTIMISATION_LEVEL) $(QUAN_PROCESSOR_FLAGS) \
  $(CFLAG_EXTRAS) -fno-math-errno -Wl,-u,vsprintf -lm -fdata-sections -ffunction-sections\
 -Wno-unused-local-typedefs

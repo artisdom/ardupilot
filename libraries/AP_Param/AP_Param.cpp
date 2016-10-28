@@ -1253,7 +1253,7 @@ void AP_Param::show_all(AP_HAL::BetterStream *port, bool showKeyValues)
  #endif 
 
         if (showKeyValues) {
-            port->printf("Key %i: Index %i: GroupElement %i  :  ", token.key, token.idx, token.group_element);
+            port->printf("Key %lu: Index %lu: GroupElement %lu  :  ", token.key, token.idx, token.group_element);
         }
         show(ap, token, type, port);
     }
@@ -1503,11 +1503,12 @@ void AP_Param::send_parameter(char *name, enum ap_var_type param_header_type) co
     }
 
     // for vectors we need to send 3 messages
-    Vector3f *v = (Vector3f *)this;
+   // Vector3f *v = (Vector3f *)this;
+    const Vector3f &v = ((AP_Vector3f *)this)->get();
     char &name_axis = name[strlen(name)-1];
-    GCS_MAVLINK::send_parameter_value_all(name, AP_PARAM_FLOAT, v->x);
+    GCS_MAVLINK::send_parameter_value_all(name, AP_PARAM_FLOAT, v.x);
     name_axis = 'Y';
-    GCS_MAVLINK::send_parameter_value_all(name, AP_PARAM_FLOAT, v->y);
+    GCS_MAVLINK::send_parameter_value_all(name, AP_PARAM_FLOAT, v.y);
     name_axis = 'Z';
-    GCS_MAVLINK::send_parameter_value_all(name, AP_PARAM_FLOAT, v->z);
+    GCS_MAVLINK::send_parameter_value_all(name, AP_PARAM_FLOAT, v.z);
 }

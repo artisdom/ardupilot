@@ -60,7 +60,9 @@ namespace {
    }
 
   void inertial_sensor_init();
-#if ! defined QUAN_AERFLITE_BOARD
+#if  defined QUAN_AERFLITE_BOARD
+  void inertial_sensor_watch_dog_init();
+#else
   void create_fram_task();
 #endif
 
@@ -81,7 +83,9 @@ namespace {
          setup_spi_regs(); 
          start_spi();
          inertial_sensor_init();
-#if ! defined QUAN_AERFLITE_BOARD
+#if  defined QUAN_AERFLITE_BOARD
+         inertial_sensor_watch_dog_init();
+#else
          create_fram_task();
 #endif
       }
