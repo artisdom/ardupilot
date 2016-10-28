@@ -9,6 +9,7 @@
 
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
 #include <AP_HAL_Quan/AP_HAL_Quan_Private.h>
+#include <AP_HAL_Quan/i2c_task.hpp>
 
 using namespace Quan;
 
@@ -32,16 +33,16 @@ static QuanUtil utilInstance;
 
 HAL_Quan::HAL_Quan() 
 :AP_HAL::HAL(
-   Quan::get_serial_port<0>(),//   console ( hal.uartA)
-   Quan::get_serial_port<2>(),//   1st GPS ( quantracker on hack board)
-   Quan::get_serial_port<1>(),//   telemetry
+   Quan::get_serial_port<0>(),//   uartA console  usart1
+   Quan::get_serial_port<2>(),//   uartB 1st GPS  uart4
+   Quan::get_serial_port<1>(),//   uartC telemetry usart3
 #if defined QUAN_AERFLITE_BOARD
-   Quan::get_serial_port<3>(),//   
+   Quan::get_serial_port<3>(),//   uartD  usart6
 #else
    NULL,            /* no uartD */
 #endif
    NULL,            /* no uartE */
-   Quan::get_i2c_driver(), // dummy
+   Quan::get_i2c_driver(), 
    NULL, /* only one i2c */
    NULL, /* only one i2c */
    &spiDeviceManager, // dummy
@@ -58,26 +59,46 @@ HAL_Quan::HAL_Quan()
 
 void AP_HAL::init() {}
 
+// called at start of the apm_task
 // ignore callbacks for now
-void HAL_Quan::run(int argc, char * const argv[], Callbacks* callbacks) const
-{
-   this->init(argc,argv);
-}
+void HAL_Quan::run(void * params) const
+{   
+   start_flags flags{ (uint32_t) params};
 
-// called as first item at the startup of apm_task before the main forever loop
-// maybe add some args as to what to init
-// flags
-void HAL_Quan::init(int argc,char* const argv[]) const 
-{
-   uartA->begin(115200);
-   gpio->init();  //leds
-  // Quan::init_spi();
- //  rcin->init(NULL);
- //  rcout->init(NULL);
- //  analogin->init(NULL);
- //  i2c->begin();
-  // spi->init(NULL);  // this is a dummy
-   scheduler->init(NULL); // start i2c_task
+   if ( gpio && flags.init_gpio ){
+      gpio->init();  //leds
+   }
+   if ( uartA && flags.init_uartA ){
+      uartA->begin(115200);  
+   } 
+   if ( uartB && flags.init_uartB ){
+      uartB->begin(115200);
+   }
+   if ( uartC && flags.init_uartC ){
+      uartC->begin(115200);  
+   } 
+   if ( uartD &&  flags.init_uartD ){
+      uartD->begin(115200);
+   }
+//   if ( flags.init_spi ){
+//      Quan::init_spi(); 
+//      if ( spi){spi->init(NULL);} // dummy
+//   } 
+//   if (rcin && flags.init_rc_in ){
+//      rcin->init(NULL);
+//   }
+//   if ( rcout &&  flags.init_rc_out ){
+//      rcout->init(NULL);
+//   }
+   if ( analogin &&  flags.init_analog_in ){
+      analogin->init(NULL);
+   }
+//   if ( i2c && flags.init_i2c ){
+//      Quan::create_i2c_task();
+//   }
+  if ( scheduler && flags.init_scheduler ){
+      scheduler->init(NULL);
+  }
 }
 
 namespace {
@@ -93,26 +114,25 @@ void setup();
 void loop();
 
 namespace { 
-   char dummy_param = 0; 
+  // char dummy_param = 0; 
    TaskHandle_t task_handle = NULL; 
    void apm_task(void * params) 
    { 
-      hal_quan.run(0, NULL,NULL); // just calls init
+      hal_quan.run(params); 
       setup();      // this is defined by the app e.g ArduPlane, examples etc
       hal_quan.scheduler->system_initialized();  // just sets a flag to say that initialisation is complete
       for(;;){ 
          loop();   // this is defined by the app e.g ArduPlane, examples etc
       } 
-
    } 
 } 
 
-void create_apm_task() 
+void create_apm_task( uint32_t params) 
 { 
   xTaskCreate( 
       apm_task,"apm task", 
       4000, 
-      &dummy_param, 
+      (void*)params, 
       tskIDLE_PRIORITY + 1, 
       &task_handle 
   ); 

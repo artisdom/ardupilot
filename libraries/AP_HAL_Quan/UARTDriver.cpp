@@ -141,11 +141,11 @@ namespace {
       }
    };
 
-   QuanUARTDriver<sp1::serial_port> serial_port1;
-   QuanUARTDriver<sp2::serial_port> serial_port2;
-   QuanUARTDriver<sp3::serial_port> serial_port3;
+   QuanUARTDriver<sp1::serial_port> serial_port1;  // usart1
+   QuanUARTDriver<sp2::serial_port> serial_port2;  // usart3
+   QuanUARTDriver<sp3::serial_port> serial_port3;  // uart4
 #if defined QUAN_AERFLITE_BOARD
-   QuanUARTDriver<sp4::serial_port> serial_port4;
+   QuanUARTDriver<sp4::serial_port> serial_port4;  // usart6
 #endif
 
    AP_HAL::UARTDriver * serial_ports [] ={
@@ -165,11 +165,11 @@ AP_HAL::UARTDriver * Quan::get_serial_port()
   return serial_ports[I];
 }
 
-template AP_HAL::UARTDriver * Quan::get_serial_port<0>();
-template AP_HAL::UARTDriver * Quan::get_serial_port<1>();
-template AP_HAL::UARTDriver * Quan::get_serial_port<2>();
+template AP_HAL::UARTDriver * Quan::get_serial_port<0>();  // usart1
+template AP_HAL::UARTDriver * Quan::get_serial_port<1>();  // usart3
+template AP_HAL::UARTDriver * Quan::get_serial_port<2>();  //uart4
 #if defined QUAN_AERFLITE_BOARD
-template AP_HAL::UARTDriver * Quan::get_serial_port<3>();
+template AP_HAL::UARTDriver * Quan::get_serial_port<3>();  //usart6
 #endif
 
 // interrupts
@@ -178,7 +178,7 @@ extern "C" void USART1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void USART3_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void UART4_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 #if defined QUAN_AERFLITE_BOARD
-extern "C" void UsART6_IRQHandler() __attribute__ ((interrupt ("IRQ")));
+extern "C" void USART6_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 #endif
 
 extern "C" void USART1_IRQHandler()

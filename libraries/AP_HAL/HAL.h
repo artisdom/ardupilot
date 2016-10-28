@@ -70,7 +70,7 @@ public:
         void (*_loop)(void);
     };
 
-    virtual void run(int argc, char * const argv[], Callbacks* callbacks) const = 0;
+    virtual void run(void* params) const = 0;
 
     AP_HAL::UARTDriver* uartA;
     AP_HAL::UARTDriver* uartB;

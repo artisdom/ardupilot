@@ -8,7 +8,7 @@
 class HAL_Empty : public AP_HAL::HAL {
 public:
     HAL_Empty();
-    void run(int argc, char* const* argv, Callbacks* callbacks) const override;
+    void run(void*) const override;
 private:
     Empty::EmptyPrivateMember *_member;
 };

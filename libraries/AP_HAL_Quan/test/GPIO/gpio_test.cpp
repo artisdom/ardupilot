@@ -9,6 +9,7 @@
 #include <StorageManager/StorageManager.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
+#include <AP_HAL_Quan/AP_HAL_Quan_Test_Main.h>
 
 #include <quantracker/osd/osd.hpp>
 #include <task.h>
@@ -36,7 +37,9 @@ void setup()
       hal.gpio->write(i,led_off);
    }
 
-	hal.console->write((uint8_t const*)text,strlen(text));
+   hal.scheduler->delay(1000);
+	hal.uartB->write((uint8_t const*)text,strlen(text));
+   
 }
 
 void on_telemetry_transmitted()
@@ -75,7 +78,18 @@ void loop()
    }
 }
 
-AP_HAL_MAIN();
+namespace {
+   uint32_t get_flags()
+   {
+      HAL_Quan::start_flags flags{0};
+      flags.init_gpio = true;
+      flags.init_scheduler = true;
+      flags.init_uartB = true;
+      return flags.value;
+   }
+}
+
+AP_HAL_TEST_MAIN( get_flags() )
 
 #endif
 

@@ -8,6 +8,7 @@
 #include <StorageManager/StorageManager.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
+#include <AP_HAL_Quan/AP_HAL_Quan_Test_Main.h>
 #include <AP_HAL/utility/functor.h>
 
 #include <quantracker/osd/osd.hpp>
@@ -24,6 +25,8 @@ namespace {
 
    constexpr uint8_t pin_off = 0U;
    constexpr uint8_t pin_on = 1U;
+
+   constexpr uint8_t num_adc_channels = 5U;
 
    struct test_task_t{
 
@@ -50,8 +53,8 @@ namespace {
               if (flags & (1<<4)){
                   hal.console->printf("transfer complete interrupt\n");
               }
-              uint32_t ndtr = DMA2_Stream4->NDTR;
-                   hal.console->printf("ndtr = %d\n", static_cast<int>(ndtr));
+//              uint32_t ndtr = DMA2_Stream4->NDTR;
+//                   hal.console->printf("ndtr = %d\n", static_cast<int>(ndtr));
            
               uint32_t adc_flags = ADC1->SR;
               if (adc_flags & (1<<5)){
@@ -66,9 +69,14 @@ namespace {
 
              // uint32_t voltage = ADC1->DR;
              // hal.console->printf("adc result =%d\n",static_cast<int>(voltage));
-               for ( int i = 0; i < 4; ++i){
+               for ( int i = 0; i < num_adc_channels; ++i){
                 float voltage = hal.analogin->channel(i)->voltage_average();
-                hal.console->printf("voltage[%d] = %f V\n",i,static_cast<double>(voltage));
+                if ( i == 3){ // battery
+                   constexpr float scale = 4.29541951026795;
+                   hal.console->printf("battery voltage = %f V\n",static_cast<double>(voltage * scale));
+                }else{
+                  hal.console->printf("voltage[%d] = %f V\n",i,static_cast<double>(voltage));
+                }
                }
             //hal.gpio->toggle(red_led_pin);
           }
@@ -78,7 +86,6 @@ namespace {
       {
           hal.gpio->pinMode(red_led_pin,HAL_GPIO_OUTPUT);
           hal.gpio->write(red_led_pin,pin_off);
-          
       }
    private:
       uint32_t m_count ;
@@ -118,7 +125,18 @@ void loop()
       hal.gpio->toggle(test_pin);
    }
 }
+namespace {
+   uint32_t get_flags()
+   {
+      HAL_Quan::start_flags flags{0};
+      flags.init_uartA = true;
+      flags.init_analog_in = true;
+      flags.init_gpio = true;
+      flags.init_scheduler = true;
+      return flags.value;
+   }
+}
 
-AP_HAL_MAIN();
+AP_HAL_TEST_MAIN( get_flags() )
 
 #endif
