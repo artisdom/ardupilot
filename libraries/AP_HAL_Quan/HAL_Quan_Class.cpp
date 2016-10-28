@@ -66,16 +66,17 @@ void HAL_Quan::run(int argc, char * const argv[], Callbacks* callbacks) const
 
 // called as first item at the startup of apm_task before the main forever loop
 // maybe add some args as to what to init
+// flags
 void HAL_Quan::init(int argc,char* const argv[]) const 
 {
    uartA->begin(115200);
    gpio->init();  //leds
-   Quan::init_spi();
-   rcin->init(NULL);
-   rcout->init(NULL);
-   analogin->init(NULL);
-   i2c->begin();
-   spi->init(NULL);  // this is a dummy
+  // Quan::init_spi();
+ //  rcin->init(NULL);
+ //  rcout->init(NULL);
+ //  analogin->init(NULL);
+ //  i2c->begin();
+  // spi->init(NULL);  // this is a dummy
    scheduler->init(NULL); // start i2c_task
 }
 

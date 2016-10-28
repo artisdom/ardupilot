@@ -67,7 +67,7 @@ void QuanScheduler::init(void* )
    setup_usec_timer();
   // create_scheduler_timer_task();
 #if ! (defined (QUAN_APM_DONT_START_I2C_TASK))
-   Quan::create_i2c_task();
+  // Quan::create_i2c_task();
 #else 
 #warning "I2C task wont be run due to defined QUAN_APM_DONT_START_I2C_TASK"
 #endif

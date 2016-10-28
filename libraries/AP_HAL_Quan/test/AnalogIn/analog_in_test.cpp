@@ -99,7 +99,7 @@ void on_telemetry_transmitted()
 
 void quan::uav::osd::on_draw() 
 { 
-   draw_text("Quan APM Sched Timer test",{-140,50});
+   draw_text("Quan APM AnalogIn test",{-140,50});
 }
 
 namespace {

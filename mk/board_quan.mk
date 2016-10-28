@@ -93,9 +93,9 @@ LIBRARY_PATH=
 
 include $(MK_DIR)/find_tools.mk
 
-ifeq ($(QUAN_TARGET_VEHICLE),)
-$(error "QUAN_TARGET_VEHICLE not defined")
-endif
+#ifeq ($(QUAN_TARGET_VEHICLE),)
+#$(error "QUAN_TARGET_VEHICLE not defined")
+#endif
 
 ifeq ($(QUAN_TARGET_VEHICLE),QUAN_APM_ARDUPLANE)
 TELEMETRY_DIRECTION = QUAN_OSD_TELEM_TRANSMITTER
@@ -132,7 +132,7 @@ QUAN_LINKER_FLAGS  = -T$(LINKER_SCRIPT) -$(OPTIMISATION_LEVEL) -nostartfiles -no
 
 #------------------------------------------- ardupilot stuff --------
 
-VERBOSE = True
+#VERBOSE = True
 #
 # Tool options
 #
