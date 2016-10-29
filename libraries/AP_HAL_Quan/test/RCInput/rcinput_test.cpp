@@ -6,6 +6,7 @@
 #include <StorageManager/StorageManager.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
+#include <AP_HAL_Quan/AP_HAL_Quan_Test_Main.h>
 
 #include <quantracker/osd/osd.hpp>
 #include <task.h>
@@ -16,7 +17,7 @@
    Test of the RC Input
    shows positions of all inputs in microseconds
 
-   also blinks heartbeat LED at 0.5 Hz
+   also blinks heartbeat LED at 2 Hz
 */
 
 //const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
@@ -89,4 +90,16 @@ void loop()
    test_task.fun();
 }
 
-AP_HAL_MAIN();
+namespace {
+   uint32_t get_flags()
+   {
+      HAL_Quan::start_flags flags{0};
+      flags.init_uartA = true;
+      flags.init_gpio = true;
+      flags.init_scheduler = true;
+      flags.init_rcin = true;
+      return flags.value;
+   }
+}
+
+AP_HAL_TEST_MAIN( get_flags() )

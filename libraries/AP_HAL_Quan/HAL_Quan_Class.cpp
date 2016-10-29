@@ -60,7 +60,6 @@ HAL_Quan::HAL_Quan()
 void AP_HAL::init() {}
 
 // called at start of the apm_task
-// ignore callbacks for now
 void HAL_Quan::run(void * params) const
 {   
    start_flags flags{ (uint32_t) params};
@@ -68,15 +67,19 @@ void HAL_Quan::run(void * params) const
    if ( gpio && flags.init_gpio ){
       gpio->init();  //leds
    }
+
    if ( uartA && flags.init_uartA ){
       uartA->begin(115200);  
-   } 
+   }
+
    if ( uartB && flags.init_uartB ){
       uartB->begin(115200);
    }
+
    if ( uartC && flags.init_uartC ){
       uartC->begin(115200);  
-   } 
+   }
+
    if ( uartD &&  flags.init_uartD ){
       uartD->begin(115200);
    }
@@ -84,9 +87,10 @@ void HAL_Quan::run(void * params) const
 //      Quan::init_spi(); 
 //      if ( spi){spi->init(NULL);} // dummy
 //   } 
-//   if (rcin && flags.init_rcin ){
-//      rcin->init(NULL);
-//   }
+   if (rcin && flags.init_rcin ){
+      rcin->init(NULL);
+   }
+
    if ( rcout && flags.init_rcout ){
       rcout->init(NULL);
    }
