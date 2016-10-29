@@ -21,13 +21,13 @@ public:
          bool  init_uartC     : 1;
          bool  init_uartD     : 1;
          bool  init_spi       : 1;
-         bool  init_rc_in     : 1;
-         bool  init_rc_out    : 1;
+         bool  init_rcin      : 1;
+         bool  init_rcout     : 1;
          bool  init_i2c       : 1;
-         bool  init_analog_in : 1;
+         bool  init_analogin  : 1;
          bool  init_scheduler : 1;
          bool  init_util      : 1;
-         uint32_t             : 22; 
+         uint32_t             : 20; 
       };
       uint32_t value;
       start_flags(uint32_t value_in): value{value_in}{}

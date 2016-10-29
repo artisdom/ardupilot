@@ -84,13 +84,14 @@ void HAL_Quan::run(void * params) const
 //      Quan::init_spi(); 
 //      if ( spi){spi->init(NULL);} // dummy
 //   } 
-//   if (rcin && flags.init_rc_in ){
+//   if (rcin && flags.init_rcin ){
 //      rcin->init(NULL);
 //   }
-//   if ( rcout &&  flags.init_rc_out ){
-//      rcout->init(NULL);
-//   }
-   if ( analogin &&  flags.init_analog_in ){
+   if ( rcout && flags.init_rcout ){
+      rcout->init(NULL);
+   }
+
+   if ( analogin && flags.init_analogin ){
       analogin->init(NULL);
    }
 //   if ( i2c && flags.init_i2c ){

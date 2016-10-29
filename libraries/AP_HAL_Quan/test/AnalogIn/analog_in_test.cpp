@@ -125,12 +125,13 @@ void loop()
       hal.gpio->toggle(test_pin);
    }
 }
+
 namespace {
    uint32_t get_flags()
    {
       HAL_Quan::start_flags flags{0};
       flags.init_uartA = true;
-      flags.init_analog_in = true;
+      flags.init_analogin = true;
       flags.init_gpio = true;
       flags.init_scheduler = true;
       return flags.value;
