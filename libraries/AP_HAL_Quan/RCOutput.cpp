@@ -361,10 +361,12 @@ namespace {
            volatile uint32_t const * ccrs = &rcout_1to4_timer::get()->ccr1;
            return ccrs[ch] ;
         }
+#if defined QUAN_AERFLITE_BOARD
         if ( ch < 6){
             volatile uint32_t * ccrs = &rcout_5_6_timer::get()->ccr2;
             return ccrs[ch - 4];
         }
+#endif
         return 0;
       }
 
