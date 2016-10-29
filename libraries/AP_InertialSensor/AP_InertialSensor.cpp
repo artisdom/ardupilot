@@ -1378,7 +1378,7 @@ void AP_InertialSensor::wait_for_sample(void)
     // so should prob be a panic
 
     
-    bool s = Quan::wait_for_imu_sample( 22000);
+    Quan::wait_for_imu_sample( 22000);
  
     uint32_t now = AP_HAL::micros();
 // not very useful unless  turn off gcs messages
