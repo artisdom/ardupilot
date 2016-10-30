@@ -3,7 +3,8 @@
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 
-#if !defined QUAN_AERFLITE_BOARD
+#if defined QUAN_AERFLITE_BOARD
+
 
 #include <stm32f4xx.h>
 #include <quan/stm32/spi.hpp>
@@ -1241,4 +1242,5 @@ return false;
 } // Quan
 
 #endif  // !defined QUAN_AERFLITE_BOARD
+
 #endif // CONFIG_HAL_BOARD == HAL_BOARD_QUAN
