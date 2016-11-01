@@ -13,15 +13,17 @@
 
 using namespace Quan;
 
-
 namespace Quan{
+
   void init_spi();
+
   template <uint32_t I>
   AP_HAL::UARTDriver*  get_serial_port();
   AP_HAL::AnalogIn*    get_analog_in();
   AP_HAL::I2CDriver*   get_i2c_driver();
   AP_HAL::RCInput*     get_rc_inputs();
   AP_HAL::RCOutput*    get_rc_outputs();
+
 }
 
 static Empty::EmptySPIDeviceManager spiDeviceManager;
@@ -83,10 +85,18 @@ void HAL_Quan::run(void * params) const
    if ( uartD &&  flags.init_uartD ){
       uartD->begin(115200);
    }
-//   if ( flags.init_spi ){
-//      Quan::init_spi(); 
-//      if ( spi){spi->init(NULL);} // dummy
-//   } 
+
+   if ( scheduler && flags.init_scheduler ){
+      scheduler->init(NULL);
+   }
+
+   //inits the spi task
+   // TODO verify that sched is running for spi
+   if ( flags.init_spi ){
+      Quan::init_spi(); 
+      if ( spi){spi->init(NULL);} // dummy
+   }
+
    if (rcin && flags.init_rcin ){
       rcin->init(NULL);
    }
@@ -101,9 +111,7 @@ void HAL_Quan::run(void * params) const
 //   if ( i2c && flags.init_i2c ){
 //      Quan::create_i2c_task();
 //   }
-  if ( scheduler && flags.init_scheduler ){
-      scheduler->init(NULL);
-  }
+
 }
 
 namespace {

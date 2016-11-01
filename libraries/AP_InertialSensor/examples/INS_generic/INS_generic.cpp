@@ -8,6 +8,12 @@
 #include <AP_ADC_AnalogSource/AP_ADC_AnalogSource.h>
 #include <AP_HAL/AP_HAL.h>
 #include <AP_InertialSensor/AP_InertialSensor.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <quantracker/osd/osd.hpp>
+#include <task.h>
+#include <stm32f4xx.h>
+#include <AP_HAL_Quan/AP_HAL_Quan_Test_Main.h>
+#endif
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
@@ -20,12 +26,12 @@ static void run_calibration();
 void setup(void)
 {
     hal.console->println("AP_InertialSensor startup...");
-
     ins.init(AP_InertialSensor::RATE_100HZ);
 
+    hal.console->println("Complete. Reading:");
     // display initial values
     display_offsets_and_scaling();
-    hal.console->println("Complete. Reading:");
+
 }
 
 void loop(void)
@@ -91,19 +97,22 @@ static void display_offsets_and_scaling()
     // display results
     hal.console->printf(
             "\nAccel Offsets X:%10.8f \t Y:%10.8f \t Z:%10.8f\n",
-                    accel_offsets.x,
-                    accel_offsets.y,
-                    accel_offsets.z);
+                    static_cast<double>(accel_offsets.x),
+                    static_cast<double>(accel_offsets.y),
+                    static_cast<double>(accel_offsets.z)
+    );
     hal.console->printf(
             "Accel Scale X:%10.8f \t Y:%10.8f \t Z:%10.8f\n",
-                    accel_scale.x,
-                    accel_scale.y,
-                    accel_scale.z);
+                    static_cast<double>(accel_scale.x),
+                    static_cast<double>(accel_scale.y),
+                    static_cast<double>(accel_scale.z)
+    );
     hal.console->printf(
             "Gyro Offsets X:%10.8f \t Y:%10.8f \t Z:%10.8f\n",
-                    gyro_offsets.x,
-                    gyro_offsets.y,
-                    gyro_offsets.z);
+                    static_cast<double>(gyro_offsets.x),
+                    static_cast<double>(gyro_offsets.y),
+                    static_cast<double>(gyro_offsets.z)
+    );
 }
 
 static void run_test()
@@ -137,7 +146,14 @@ static void run_test()
 		if (counter++ % 50 == 0) {
 			// display results
 			hal.console->printf("Accel X:%4.2f \t Y:%4.2f \t Z:%4.2f \t len:%4.2f \t Gyro X:%4.2f \t Y:%4.2f \t Z:%4.2f\n", 
-								  accel.x, accel.y, accel.z, length, gyro.x, gyro.y, gyro.z);
+								  static_cast<double>(accel.x),
+                          static_cast<double>(accel.y), 
+                           static_cast<double>(accel.z), 
+                           static_cast<double>(length), 
+                           static_cast<double>(gyro.x), 
+                           static_cast<double>(gyro.y), 
+                           static_cast<double>(gyro.z)
+         );
 		}
     }
 
@@ -147,4 +163,31 @@ static void run_test()
     }
 }
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+void on_telemetry_transmitted()
+{
+}
+
+void quan::uav::osd::on_draw() 
+{ 
+   draw_text("Quan APM INS test",{-140,50});
+}
+
+namespace {
+   uint32_t get_flags()
+   {
+      HAL_Quan::start_flags flags{0};
+      flags.init_uartA = true;
+    //  flags.init_analogin = true;
+      flags.init_gpio = true;
+      flags.init_scheduler = true;
+      flags.init_spi = true;
+
+      return flags.value;
+   }
+}
+
+AP_HAL_TEST_MAIN( get_flags() )
+#else
 AP_HAL_MAIN();
+#endif

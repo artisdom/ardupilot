@@ -19,8 +19,6 @@ AP_InertialSensor_Quan::AP_InertialSensor_Quan(AP_InertialSensor &imu)
 
 AP_InertialSensor_Backend * AP_InertialSensor_Quan::detect(AP_InertialSensor &imu)
 {
-
-#if !defined QUAN_APM_DONT_START_START_IMU_TASK
 // get some warning this has started !
    hal.console->printf("starting quan imu\n");
    Quan::detail::inertial_sensor_setup(
@@ -31,11 +29,6 @@ AP_InertialSensor_Backend * AP_InertialSensor_Quan::detect(AP_InertialSensor &im
    hal.scheduler->delay(50);
    
    return new AP_InertialSensor_Quan(imu);
-#else
-   return nullptr;
-#warning "IMU task wont be started due to defined QUAN_APM_DONT_START_START_IMU_TASK"
-#endif
-    
 }
 
 bool AP_InertialSensor_Quan::gyro_sample_available(void)

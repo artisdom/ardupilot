@@ -34,13 +34,7 @@ public:
      
    };
 
-private:
-
 };
-
-//extern const HAL_Quan AP_HAL_Quan;
-
-//extern const AP_HAL::HAL& hal;
 
 #endif // __AP_HAL_QUAN_CLASS_H__
 

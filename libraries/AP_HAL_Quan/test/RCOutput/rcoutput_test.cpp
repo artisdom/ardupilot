@@ -46,12 +46,12 @@ namespace {
    };
 
    pwm_params_t pwm_params[num_rc_out_channels] = {
-       {increasing, 0, 1500,  10,9}
-      ,{decreasing, 0,1500,  11,10}
-      ,{increasing, 0,1500,  26,20}
-      ,{increasing, 0, 1500, 43,50}
-      ,{decreasing, 0,1500,  90,5}
-      ,{increasing, 0,1500,  74,20}
+       {increasing, 0, 1500, 10,  9}
+      ,{decreasing, 0, 1500, 11, 10}
+      ,{increasing, 0, 1500, 26, 20}
+      ,{increasing, 0, 1500, 43, 50}
+      ,{decreasing, 0, 1500, 90,  5}
+      ,{increasing, 0, 1500,  4, 20}
    };
 
    struct test_task_t{

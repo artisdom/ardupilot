@@ -225,15 +225,16 @@ void QuanScheduler::system_initialized()
 
 void AP_HAL::panic(const char *errormsg,...) 
 {
-// TODO
+    vTaskSuspendAll();
     va_list args;
     va_start(args, errormsg);
     char buf[256];
     int n = vsprintf(buf, errormsg, args);
     va_end(args);
+    while (hal.console->tx_pending()) {asm volatile ("nop":::);}
     hal.console->write((uint8_t const *)buf,n);
     hal.console->printf("\n");
-    for(;;){ hal.scheduler->delay(10);}
+    for(;;){ ;;}
 }
 
 // TODO wdt
