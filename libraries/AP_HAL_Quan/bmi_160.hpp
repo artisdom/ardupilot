@@ -8,6 +8,7 @@
 #include <task.h>
 #include <semphr.h>
 #include "spi.h"
+#include <quan/three_d/vect.hpp>
 
 namespace Quan {
 
@@ -333,7 +334,8 @@ namespace Quan {
       static void enable_interrupt_from_device()
       {
          //clear pending
-         read(reg::data_0, (uint8_t*)&dma_rx_buffer[0],dma_buffer_size);
+         uint8_t buf[20];
+         read(reg::data_0, buf,20);
          int_en_1_bits int_en_1;
          int_en_1.drdy = true;
          reg_write(reg::int_en_1,int_en_1.value);
@@ -361,8 +363,22 @@ namespace Quan {
       static uint32_t get_output_data_rate_Hz() { return output_data_rate_Hz;}
       static uint32_t get_num_irqs_for_update_msg() { return output_data_rate_Hz / main_loop_rate_Hz;}
       static uint32_t get_main_loop_rate_Hz(){ return main_loop_rate_Hz;}
-      static constexpr uint32_t dma_buffer_size = 20;
-      static volatile uint8_t dma_rx_buffer[dma_buffer_size];
+      static constexpr uint32_t dma_buffer_size = 13;
+
+      union receive_t{
+         struct {
+            const volatile int16_t filler;
+            const volatile int16_t gyr_x;
+            const volatile int16_t gyr_y;
+            const volatile int16_t gyr_z;
+            const volatile int16_t acc_x;
+            const volatile int16_t acc_y;
+            const volatile int16_t acc_z;
+         };
+         volatile uint8_t arr[14];
+         receive_t(){}
+      } __attribute__ ((packed));
+      static receive_t dma_rx_buffer;
       static uint8_t dma_tx_buffer[dma_buffer_size];
    };
 }//Quan

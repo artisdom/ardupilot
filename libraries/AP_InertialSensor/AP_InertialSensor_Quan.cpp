@@ -21,13 +21,14 @@ AP_InertialSensor_Backend * AP_InertialSensor_Quan::detect(AP_InertialSensor &im
 {
 // get some warning this has started !
    hal.console->printf("starting quan imu\n");
+
    Quan::detail::inertial_sensor_setup(
       imu.get_sample_rate(), 
       imu.get_accel_filter_hz(), 
       imu.get_gyro_filter_hz()   
    );
    hal.scheduler->delay(50);
-   
+   hal.console->printf("creating quan imu backend\n");
    return new AP_InertialSensor_Quan(imu);
 }
 

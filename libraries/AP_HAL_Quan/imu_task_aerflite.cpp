@@ -27,6 +27,7 @@
 #include "bmi_160.hpp"
 
 extern const AP_HAL::HAL& hal;
+
 float Quan::bmi160::accel_constant;
 float Quan::bmi160::gyro_constant;
 
@@ -58,33 +59,7 @@ namespace {
 
 } // ~namespace
 
-
 namespace Quan{ 
-   namespace detail{
-      // sample rate is fro frontend, either 50 Hz, 10 Hz, 200 Hz, 400 Hz
-      // Default gyro filter  is 20 Hz
-      // Default Accel Filter is 20 Hz
-      void inertial_sensor_setup(uint16_t main_loop_rate_Hz, uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
-      {
-         if (! Quan::bmi160::is_initialised()){
-            AP_HAL::panic("IMU has not been setup");
-         }
-         // sample rate  the main loop rate
-         if (! Quan::bmi160::set_main_loop_rate_Hz(main_loop_rate_Hz)){
-            AP_HAL::panic("Cannot set IMU main loop rate");
-         }
-         uint32_t const irq_freq_Hz = Quan::bmi160::get_output_data_rate_Hz();
-         accel_filter.set_cutoff_frequency(irq_freq_Hz,acc_cutoff_Hz);
-         gyro_filter.set_cutoff_frequency(irq_freq_Hz,gyro_cutoff_Hz); 
-
-         vTaskSuspendAll();
-         {
-            Quan::bmi160::enable_interrupt_from_device();
-            inertial_sensor_watchdog_enable();
-         }
-         xTaskResumeAll();
-      }
-   }
    // called in the hal.run loop just before the main loop
    // to init the peripherals
    // could pass the main loop rate
@@ -99,20 +74,64 @@ namespace Quan{
       // num irqs depends on bmi setup
       num_irqs_for_update_message = Quan::bmi160::get_num_irqs_for_update_msg();
       // watchdog depends on bmi setup
-      // not started yet
+      // initialise but not start yet
       inertial_sensor_watchdog_init();
    }
 
-} // Quan::detail
+   namespace detail{
+
+      // Called from AP_InertialSensor::detect
+      // before this point the spi and bmi160 have been setup by calling Quan::init_spi()
+      // to init the Quan inertial sensor ( bmi160)
+      // sample rate is from frontend, either 50 Hz, 100 Hz, 200 Hz, 400 Hz
+      // Default gyro filter  is 20 Hz
+      // Default Accel Filter is 20 Hz
+      void inertial_sensor_setup(uint16_t main_loop_rate_Hz, uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
+      {
+         hal.console->printf("inertial sensor startup mainloop = %u, acc cutoff = %u, gyr cutoff = %u\n"
+         ,main_loop_rate_Hz, acc_cutoff_Hz, gyro_cutoff_Hz);
+         if (! Quan::bmi160::is_initialised()){
+            AP_HAL::panic("IMU has not been setup");
+         }
+         // sample rate  the main loop rate
+         if (! Quan::bmi160::set_main_loop_rate_Hz(main_loop_rate_Hz)){
+            AP_HAL::panic("Cannot set IMU main loop rate");
+         }
+         uint32_t const irq_freq_Hz = Quan::bmi160::get_output_data_rate_Hz();
+         accel_filter.set_cutoff_frequency(irq_freq_Hz,acc_cutoff_Hz);
+         gyro_filter.set_cutoff_frequency(irq_freq_Hz,gyro_cutoff_Hz); 
+
+         
+         vTaskSuspendAll();
+         {
+            Quan::spi::enable_dma();
+            Quan::bmi160::enable_interrupt_from_device();
+            quan::stm32::enable_exti_interrupt<Quan::bmi160::not_DR>();
+            inertial_sensor_watchdog_enable();
+         }
+         xTaskResumeAll();
+         hal.console->println("inertial sensor started");
+      }
+   } // Quan::detail
+
+
+} // Quan
 
 namespace {
    typedef quan::stm32::tim7 mpu_watchdog;
+
+   uint32_t irq_count_led = 0;
 }
 // data ready nterrupt from IMU
 extern "C" void EXTI15_10_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void EXTI15_10_IRQHandler()
 {      
    if (quan::stm32::is_event_pending<Quan::bmi160::not_DR>()){
+
+//      if (! messaged){
+//         hal.console->println("Interrupt!");
+//         messaged = true;
+//      }
 
       // reset the watchdog
       mpu_watchdog::get()->cnt = 0; 
@@ -188,68 +207,29 @@ extern "C" void DMA2_Stream0_IRQHandler()
    DMA2_Stream5->CR &= ~(1 << 0); // (EN) disable DMA
    DMA2_Stream0->CR &= ~(1 << 0); // (EN) disable DMA
 
-   // get the dma buffer
-   volatile uint8_t * arr = Quan::bmi160::dma_rx_buffer;
+   if (++irq_count_led == 800){
+      irq_count_led = 0;
+      hal.gpio->toggle(1);  
+   }
 
-   // device to convert the buffer values
-   // TODO use CMSIS intrinsics
-   union{
-      uint8_t arr[2];
-      int16_t val;
-   }u; 
-
-   Vector3f  accel;
-   Vector3f  gyro;
-
-   /*
-      according to MPU6000 backend::_accumulate()
-
-      accel_out.x  <-- accel_in.y
-      accel_out.y  <-- accel_in.x
-      accel_out.z  <-- -accel_in.z
-
-      gyro_out.x   <-- gyro_in.y
-      gyro_out.y   <-- gyro_in.x
-      gyro_out.z   <-- -gyro_in.z
-   */
+ // todo solve rotation
+   float const gyro_k = Quan::bmi160::get_gyro_constant();
+   Vector3f const gyro { 
+       Quan::bmi160::dma_rx_buffer.gyr_x * gyro_k
+      ,Quan::bmi160::dma_rx_buffer.gyr_y * gyro_k
+      ,Quan::bmi160::dma_rx_buffer.gyr_z * gyro_k
+   };
 
    float const accel_k = Quan::bmi160::get_accel_constant();
-  
-   u.arr[1] = arr[2];
-   u.arr[0] = arr[3];
-   accel.y = u.val * accel_k;
-
-   u.arr[1] = arr[4];
-   u.arr[0] = arr[5];
-   accel.x = u.val * accel_k;
-
-   u.arr[1] = arr[6];
-   u.arr[0] = arr[7];
-   accel.z = -u.val * accel_k ;
-
-   float const gyro_k = Quan::bmi160::get_gyro_constant();
-
-   u.arr[1] = arr[10];
-   u.arr[0] = arr[11];
-   gyro.y = u.val * gyro_k;
-
-   u.arr[1] = arr[12];
-   u.arr[0] = arr[13];
-   gyro.x = u.val * gyro_k;
-
-   u.arr[1] = arr[14];
-   u.arr[0] = arr[15];
-   gyro.z = -u.val * gyro_k;
-
-   while( (DMA2_Stream5->CR | DMA2_Stream0->CR ) & (1 << 0) ){;}
- 
-   DMA2->HIFCR |= ( 0b111101 << 6) ; // Stream 5 clear flags
-   DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
-
-   Quan::spi::cs_release<Quan::bmi160::not_CS>();
+   Vector3f const accel { 
+       Quan::bmi160::dma_rx_buffer.acc_x * accel_k
+      ,Quan::bmi160::dma_rx_buffer.acc_y * accel_k
+      ,Quan::bmi160::dma_rx_buffer.acc_z * accel_k
+   };
 
    BaseType_t HigherPriorityTaskWoken_imu = pdFALSE;
 
+   bool applied = false;
    if ( ++irq_count == num_irqs_for_update_message){
        irq_count = 0;
        if ( xQueueIsQueueEmptyFromISR(h_imu_args_queue)){
@@ -257,19 +237,22 @@ extern "C" void DMA2_Stream0_IRQHandler()
           imu_args.gyro = gyro_filter.apply(gyro);
           auto*  p_imu_args = &imu_args;
           xQueueSendToBackFromISR(h_imu_args_queue,&p_imu_args,&HigherPriorityTaskWoken_imu);
-      }else{
-         // message that apm task missed it
-         // this may be ok at startup though
-         // update the filter but leave the args
-         accel_filter.apply(accel);
-         gyro_filter.apply(gyro);
+          applied = true;
       }
-   }else{
+   }
+   if (!applied){  // need to apply to filter
       // we dont need to go through the whole rigmarole
       // just update the filter
        accel_filter.apply(accel);
        gyro_filter.apply(gyro);
    }
+ 
+   while( (DMA2_Stream5->CR | DMA2_Stream0->CR ) & (1 << 0) ){;}
+ 
+   DMA2->HIFCR |= ( 0b111101 << 6) ; // Stream 5 clear flags
+   DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
+
+   Quan::spi::cs_release<Quan::bmi160::not_CS>();
    quan::stm32::pop_FPregs();
 
    portEND_SWITCHING_ISR(HigherPriorityTaskWoken_imu);
@@ -277,11 +260,14 @@ extern "C" void DMA2_Stream0_IRQHandler()
 
 namespace {
 
+   // start watchdog 
    void inertial_sensor_watchdog_enable()
    {
       mpu_watchdog::get()->cr1.bb_setbit<0>(); // (CEN)
    }
 
+   // n.b requires to be enabled to start running
+   // just setup here
    void inertial_sensor_watchdog_init()
    {
       quan::stm32::module_enable<mpu_watchdog>();
@@ -301,7 +287,6 @@ namespace {
 
       NVIC_SetPriority(TIM7_IRQn,13);
       NVIC_EnableIRQ(TIM7_IRQn);
-
       // n.b watchdog not started here
    }
 }
@@ -310,6 +295,11 @@ namespace {
 extern "C" void TIM7_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void TIM7_IRQHandler()
 {
+//
+//   if (++irq_count_led == 800){
+//         irq_count_led = 0;
+//         hal.gpio->toggle(1);  
+//      }
    mpu_watchdog::get()->sr = 0;
    mpu_watchdog::get()->cnt = 0;
 

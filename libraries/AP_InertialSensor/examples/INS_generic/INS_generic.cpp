@@ -25,12 +25,14 @@ static void run_calibration();
 
 void setup(void)
 {
+    hal.gpio->pinMode(1,1); // pin1 output led
+    hal.gpio->write(1,0);  // low
     hal.console->println("AP_InertialSensor startup...");
     ins.init(AP_InertialSensor::RATE_100HZ);
-
-    hal.console->println("Complete. Reading:");
     // display initial values
     display_offsets_and_scaling();
+
+    hal.console->println("Complete. Reading:");
 
 }
 

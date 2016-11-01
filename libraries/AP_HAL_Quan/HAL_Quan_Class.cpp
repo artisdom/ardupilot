@@ -91,10 +91,14 @@ void HAL_Quan::run(void * params) const
    }
 
    //inits the spi task
-   // TODO verify that sched is running for spi
+   // scheduler must be running for spi
    if ( flags.init_spi ){
-      Quan::init_spi(); 
-      if ( spi){spi->init(NULL);} // dummy
+      if ( scheduler && flags.init_scheduler ){
+         Quan::init_spi(); 
+         if ( spi){spi->init(NULL);} // dummy
+      }else{
+         AP_HAL::panic("must init scheduler before spi");
+      }
    }
 
    if (rcin && flags.init_rcin ){
