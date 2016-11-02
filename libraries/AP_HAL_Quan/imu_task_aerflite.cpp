@@ -49,6 +49,9 @@ namespace {
 
    QueueHandle_t h_imu_args_queue = nullptr;
 
+   uint32_t dma_lisr_flags = 0;
+   uint32_t dma_hisr_flags = 0;
+
        // the data to go to the ArduPilot loop
    struct inertial_sensor_args_t{
       vvect3  accel;
@@ -105,7 +108,7 @@ namespace Quan{
          vTaskSuspendAll();
          {
 //#####################################
-          //  Quan::spi::enable_dma();
+            Quan::spi::enable_dma();
 //#######################################
             quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
             Quan::bmi160::enable_interrupt_from_device();
@@ -119,7 +122,6 @@ namespace Quan{
       }
    } // Quan::detail
 
-
 } // Quan
 
 namespace {
@@ -130,17 +132,18 @@ namespace {
    inertial_sensor_args_t imu_args;
    volatile uint32_t irq_count = 0;
 }
+
+/*
+ 1) Bidi mode enable irq on rxne
+2) in rx ie disable rxie irq and make single dir
+   and start rx dma
+*/
 // data ready nterrupt from IMU
 extern "C" void EXTI15_10_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void EXTI15_10_IRQHandler()
-#if 0
+#if 1
 {      
    if (quan::stm32::is_event_pending<Quan::bmi160::not_DR>()){
-
-//      if (! messaged){
-//         hal.console->println("Interrupt!");
-//         messaged = true;
-//      }
 
       // reset the watchdog
       mpu_watchdog::get()->cnt = 0; 
@@ -151,14 +154,23 @@ extern "C" void EXTI15_10_IRQHandler()
       Quan::spi::disable();
       {
          quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
+
+       //  DMA2->HIFCR |= ( 0b111101 << 6) ; // Stream 5 clear flags
+         DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
           
-         DMA2_Stream5->NDTR = Quan::bmi160::dma_buffer_size; // TX
+      //   DMA2_Stream5->NDTR = Quan::bmi160::dma_buffer_size; // TX
          DMA2_Stream0->NDTR = Quan::bmi160::dma_buffer_size; // RX
 
+       //  DMA2_Stream5->FCR = 0;
+         DMA2_Stream0->FCR = 0;
+
          DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
-         DMA2_Stream5->CR |= (1 << 0); // (EN) enable DMA  tx
+        // DMA2_Stream5->CR |= (1 << 0); // (EN) enable DMA  tx
+
       }
       Quan::spi::enable();
+         while (!Quan::spi::txe()){;}
+         Quan::spi::ll_write(Quan::bmi160::reg::gyro_data_lsb | 0x80);
    }else{
       uint32_t const exti_pr_reg = quan::stm32::exti::get()->pr.get();
       // mask interrupts to prevent recur forever
@@ -227,8 +239,6 @@ extern "C" void EXTI15_10_IRQHandler()
 }
 #endif
 
-
-
 namespace Quan{
 
    // called by AP_InertailSensor::wait_for_sample
@@ -240,7 +250,6 @@ namespace Quan{
          TickType_t const ms_to_wait = usecs_to_wait / 1000  + (((usecs_to_wait % 1000) > 499 )?1:0);
         
          if (xQueuePeek(h_imu_args_queue,&p_dummy_result,ms_to_wait) == pdTRUE) {
-            
             return true;
          }
       }
@@ -258,17 +267,17 @@ namespace Quan{
             gyro = p_args->gyro;
             if (irq_count_led  < 10){
                if ( ++irq_count_led == 9){
-                     hal.gpio->write(1,1);  
-
-               			hal.console->printf("Accel X:%4.2f \t Y:%4.2f \t Z:%4.2f \t Gyro X:%4.2f \t Y:%4.2f \t Z:%4.2f\n", 
-								  static_cast<double>(accel.x),
-                          static_cast<double>(accel.y), 
-                           static_cast<double>(accel.z), 
-                           static_cast<double>(gyro.x), 
-                           static_cast<double>(gyro.y), 
-                           static_cast<double>(gyro.z)
-                     );
-               }
+//                     hal.gpio->write(1,1);  
+//
+              			hal.console->printf("HISR = %lx, LISR = %lx\n", dma_hisr_flags, dma_lisr_flags);
+//								  static_cast<double>(accel.x),
+//                          static_cast<double>(accel.y), 
+//                           static_cast<double>(accel.z), 
+//                           static_cast<double>(gyro.x), 
+//                           static_cast<double>(gyro.y), 
+//                           static_cast<double>(gyro.z)
+//                     );
+              }
             }
             return true;
          }
@@ -284,22 +293,42 @@ extern "C" void DMA2_Stream0_IRQHandler()
 {
    quan::stm32::push_FPregs();
 
+   dma_lisr_flags = DMA2->LISR;
+   dma_hisr_flags = DMA2->HISR;
+
    DMA2_Stream5->CR &= ~(1 << 0); // (EN) disable DMA
    DMA2_Stream0->CR &= ~(1 << 0); // (EN) disable DMA
 
+   union {
+         uint8_t arr[2];
+         int16_t val;
+   } u;
+
    float const gyro_k = Quan::bmi160::get_gyro_constant();
-   Vector3f const gyro { 
-       (Quan::bmi160::dma_rx_buffer[1]  +  (Quan::bmi160::dma_rx_buffer[2] << 8)) * gyro_k
-      ,(Quan::bmi160::dma_rx_buffer[3]  +  (Quan::bmi160::dma_rx_buffer[4] << 8)) * gyro_k
-      ,(Quan::bmi160::dma_rx_buffer[5]  +  (Quan::bmi160::dma_rx_buffer[6] << 8)) * gyro_k
-   };
+   Vector3f gyro ;
+
+   u.arr[0] = Quan::bmi160::dma_rx_buffer[1];
+   u.arr[1] = Quan::bmi160::dma_rx_buffer[2];
+   gyro.x = u.val * gyro_k;
+   u.arr[0] = Quan::bmi160::dma_rx_buffer[3];
+   u.arr[1] = Quan::bmi160::dma_rx_buffer[4];
+   gyro.y = u.val * gyro_k;
+   u.arr[0] = Quan::bmi160::dma_rx_buffer[5];
+   u.arr[1] = Quan::bmi160::dma_rx_buffer[6];
+   gyro.z = u.val * gyro_k;
+
 
    float const accel_k = Quan::bmi160::get_accel_constant();
-   Vector3f const accel { 
-       (Quan::bmi160::dma_rx_buffer[7]  +  (Quan::bmi160::dma_rx_buffer[8] << 8))   * accel_k
-      ,(Quan::bmi160::dma_rx_buffer[9]  +  (Quan::bmi160::dma_rx_buffer[10] << 8))  * accel_k
-      ,(Quan::bmi160::dma_rx_buffer[11]  +  (Quan::bmi160::dma_rx_buffer[12] << 8)) * accel_k
-   };
+   Vector3f  accel;
+   u.arr[0] = Quan::bmi160::dma_rx_buffer[7];
+   u.arr[1] = Quan::bmi160::dma_rx_buffer[8];
+   accel.x = u.val * accel_k;
+   u.arr[0] = Quan::bmi160::dma_rx_buffer[9];
+   u.arr[1] = Quan::bmi160::dma_rx_buffer[10];
+   accel.y = u.val * accel_k;
+   u.arr[0] = Quan::bmi160::dma_rx_buffer[11];
+   u.arr[1] = Quan::bmi160::dma_rx_buffer[12];
+   accel.z = u.val * accel_k;
 
    BaseType_t HigherPriorityTaskWoken_imu = pdFALSE;
 
@@ -328,7 +357,10 @@ extern "C" void DMA2_Stream0_IRQHandler()
    }
  
    while( (DMA2_Stream5->CR | DMA2_Stream0->CR ) & (1 << 0) ){;}
- 
+// 
+//   dma_lisr_flags = DMA2->LISR;
+//   dma_hisr_flags = DMA2->HISR;
+
    DMA2->HIFCR |= ( 0b111101 << 6) ; // Stream 5 clear flags
    DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
 

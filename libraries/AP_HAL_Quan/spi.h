@@ -67,7 +67,7 @@ namespace Quan {
          device::get()->cr2 &= ~(( 1 << 1 ) | ( 1 << 0)) ;// (TXDMAEN ) | ( RXDMAEN)
       }
 
-    private:
+ //   private:
       static uint8_t transfer(uint8_t data)
       {
          while (!txe()){;}

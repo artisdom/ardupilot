@@ -240,11 +240,11 @@ namespace {
 
    void setup_exti()
    {
-      quan::stm32::apply<
-         Quan::bmi160::not_DR
-         , quan::stm32::gpio::mode::input
-         , quan::stm32::gpio::pupd::pull_up // make this pullup ok as inertial_sensor is on 3v
-      >();
+//      quan::stm32::apply<
+//         Quan::bmi160::not_DR
+//         , quan::stm32::gpio::mode::input
+//         , quan::stm32::gpio::pupd::pull_up // make this pullup ok as inertial_sensor is on 3v
+//      >();
       quan::stm32::module_enable<quan::stm32::syscfg>(); 
       quan::stm32::set_exti_syscfg<Quan::bmi160::not_DR>();
       quan::stm32::set_exti_falling_edge<Quan::bmi160::not_DR>();
@@ -269,13 +269,15 @@ namespace {
       DMA_Stream_TypeDef * dma_stream = DMA2_Stream0;
       constexpr uint32_t  dma_channel = 3;
       constexpr uint32_t  dma_priority = 0b01; // medium
-      dma_stream->CR = (dma_stream->CR & ~(0b111 << 25)) | ( dma_channel << 25); //(CHSEL) select channel
-      dma_stream->CR = (dma_stream->CR & ~(0b11 << 16)) | (dma_priority << 16U); // (PL) priority
+      dma_stream->CR = (dma_stream->CR & ~(0b111 << 25U)) | ( dma_channel << 25U); //(CHSEL) select channel
+      dma_stream->CR = (dma_stream->CR & ~(0b11 << 16U)) | (dma_priority << 16U); // (PL) priority
       dma_stream->CR = (dma_stream->CR & ~(0b11 << 13)) ; // (MSIZE) 8 bit memory transfer
       dma_stream->CR = (dma_stream->CR & ~(0b11 << 11)) ; // (PSIZE) 8 bit transfer
       dma_stream->CR |= (1 << 10);// (MINC)
       dma_stream->CR &= ~(0b11 << 6) ; // (DIR ) peripheral to memory
       dma_stream->CR |= ( 1 << 4) ; // (TCIE)
+      dma_stream->CR &=  ~(0b11 << 23); // ( MBURST)
+      dma_stream->CR &=  ~(0b11 << 21); // ( PBURST)
 
       dma_stream->PAR = (uint32_t)&SPI1->DR;  // periph addr
       dma_stream->M0AR = (uint32_t) Quan::bmi160::dma_rx_buffer ; 
@@ -287,20 +289,23 @@ namespace {
       // TX
       dma_stream = DMA2_Stream5;
       constexpr uint32_t  dma_channel1 = 3;
-      dma_stream->CR = (dma_stream->CR & ~(0b111 << 25)) | ( dma_channel1 << 25); //(CHSEL) select channel
+      dma_stream->CR = (dma_stream->CR & ~(0b111 << 25)) | ( dma_channel1 << 25U); //(CHSEL) select channel
       dma_stream->CR = (dma_stream->CR & ~(0b11 << 16)) | (dma_priority << 16U); // (PL) priority
       dma_stream->CR = (dma_stream->CR & ~(0b11 << 13)) ; // (MSIZE) 8 bit memory transfer
       dma_stream->CR = (dma_stream->CR & ~(0b11 << 11)) ; // (PSIZE) 8 bit transfer
       dma_stream->CR |= (1 << 10);// (MINC)
       dma_stream->CR = (dma_stream->CR & ~(0b11 << 6)) | (0b01 << 6) ; // (DIR )  memory to peripheral
+      dma_stream->CR &=  ~(0b11 << 23); // ( MBURST)
+      dma_stream->CR &=  ~(0b11 << 21); // ( PBURST)
      // dma_stream->CR |= ( 1 << 4) ; // (TCIE)
       dma_stream->PAR = (uint32_t)&SPI1->DR;  // periph addr
       dma_stream->M0AR = (uint32_t)Quan::bmi160::dma_tx_buffer; 
-      dma_stream->NDTR = Quan::bmi160::dma_buffer_size;
+      dma_stream->NDTR = 1;
       
       DMA2->HIFCR |= ( 0b111101 << 6) ; // Stream 5 clear flags
       DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
    }
+
 
    bool bmi_160_interrupt_setup()
    { 

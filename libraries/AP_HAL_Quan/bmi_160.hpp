@@ -363,7 +363,7 @@ namespace Quan {
       static uint32_t get_output_data_rate_Hz() { return output_data_rate_Hz;}
       static uint32_t get_num_irqs_for_update_msg() { return output_data_rate_Hz / main_loop_rate_Hz;}
       static uint32_t get_main_loop_rate_Hz(){ return main_loop_rate_Hz;}
-      static constexpr uint32_t dma_buffer_size = 13;
+      static constexpr uint32_t dma_buffer_size = 16;
 
       static volatile uint8_t dma_rx_buffer[dma_buffer_size];
       static uint8_t dma_tx_buffer[dma_buffer_size];
