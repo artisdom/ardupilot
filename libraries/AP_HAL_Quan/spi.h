@@ -57,6 +57,16 @@ namespace Quan {
          device::get()->cr1.bb_clearbit<6>(); //( SPE)
       }
 
+      static void enable_rx_dma()
+      { 
+         device::get()->cr2.bb_setbit<0>() ;//( RXDMAEN)
+      }
+
+      static void disable_rx_dma()
+      { 
+         device::get()->cr2.bb_clearbit<0>() ; // ( RXDMAEN)
+      }
+
       static void enable_dma()
       { 
          device::get()->cr2 |= (( 1 << 1 ) | ( 1 << 0)) ;// (TXDMAEN ) | ( RXDMAEN)
@@ -65,6 +75,16 @@ namespace Quan {
       static void disable_dma()
       { 
          device::get()->cr2 &= ~(( 1 << 1 ) | ( 1 << 0)) ;// (TXDMAEN ) | ( RXDMAEN)
+      }
+
+      static void enable_txeie()
+      {
+         device::get()->cr2.bb_setbit<7>() ; // ( TXEIE)
+      }
+      static void disable_txeie()
+      {
+         device::get()->cr2.bb_clearbit<7>() ; // ( TXEIE)
+         
       }
 
  //   private:

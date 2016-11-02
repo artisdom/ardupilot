@@ -108,7 +108,7 @@ namespace Quan{
          vTaskSuspendAll();
          {
 //#####################################
-            Quan::spi::enable_dma();
+            Quan::spi::enable_rx_dma();
 //#######################################
             quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
             Quan::bmi160::enable_interrupt_from_device();
@@ -131,6 +131,8 @@ namespace {
 
    inertial_sensor_args_t imu_args;
    volatile uint32_t irq_count = 0;
+
+   volatile uint32_t rx_buffer_idx = 0;
 }
 
 /*
@@ -145,32 +147,27 @@ extern "C" void EXTI15_10_IRQHandler()
 {      
    if (quan::stm32::is_event_pending<Quan::bmi160::not_DR>()){
 
+      Quan::spi::disable();
       // reset the watchdog
       mpu_watchdog::get()->cnt = 0; 
       mpu_watchdog::get()->sr = 0;
 
       Quan::spi::cs_assert<Quan::bmi160::not_CS>(); // start transaction
 
-      Quan::spi::disable();
-      {
-         quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
+      quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
 
-       //  DMA2->HIFCR |= ( 0b111101 << 6) ; // Stream 5 clear flags
-         DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
-          
-      //   DMA2_Stream5->NDTR = Quan::bmi160::dma_buffer_size; // TX
-         DMA2_Stream0->NDTR = Quan::bmi160::dma_buffer_size; // RX
+      DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
+       
+      DMA2_Stream0->NDTR = Quan::bmi160::dma_buffer_size; // RX
 
-       //  DMA2_Stream5->FCR = 0;
-         DMA2_Stream0->FCR = 0;
+      DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
 
-         DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
-        // DMA2_Stream5->CR |= (1 << 0); // (EN) enable DMA  tx
-
-      }
       Quan::spi::enable();
-         while (!Quan::spi::txe()){;}
-         Quan::spi::ll_write(Quan::bmi160::reg::gyro_data_lsb | 0x80);
+      while (!Quan::spi::txe()){;}
+      rx_buffer_idx = 0;
+      Quan::spi::ll_read();
+      Quan::spi::ll_write(Quan::bmi160::reg::gyro_data_lsb | 0x80);
+      Quan::spi::enable_txeie();
    }else{
       uint32_t const exti_pr_reg = quan::stm32::exti::get()->pr.get();
       // mask interrupts to prevent recur forever
@@ -221,10 +218,6 @@ extern "C" void EXTI15_10_IRQHandler()
           auto*  p_imu_args = &imu_args;
           xQueueSendToBackFromISR(h_imu_args_queue,&p_imu_args,&HigherPriorityTaskWoken_imu);
           applied = true;
-//          if (irq_count_led == 0){
-//             irq_count_led = 1;
-//             hal.gpio->write(1,1);  
-//          }
       }
    }
    if (!applied){  // need to apply to filter
@@ -265,20 +258,6 @@ namespace Quan{
          if (xQueueReceive(h_imu_args_queue,&p_args,0) == pdTRUE ){
             accel = p_args->accel;
             gyro = p_args->gyro;
-            if (irq_count_led  < 10){
-               if ( ++irq_count_led == 9){
-//                     hal.gpio->write(1,1);  
-//
-              			hal.console->printf("HISR = %lx, LISR = %lx\n", dma_hisr_flags, dma_lisr_flags);
-//								  static_cast<double>(accel.x),
-//                          static_cast<double>(accel.y), 
-//                           static_cast<double>(accel.z), 
-//                           static_cast<double>(gyro.x), 
-//                           static_cast<double>(gyro.y), 
-//                           static_cast<double>(gyro.z)
-//                     );
-              }
-            }
             return true;
          }
       }
@@ -287,11 +266,26 @@ namespace Quan{
 
 } // Quan
 
+extern "C" void  SPI1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
+extern "C" void  SPI1_IRQHandler()
+{
+  if ( (++ rx_buffer_idx) < Quan::bmi160::dma_buffer_size){
+     Quan::spi::ll_write(0U);
+  }else{
+     Quan::spi::disable_txeie();
+  }
+}
+
 // RX DMA complete
 extern "C" void DMA2_Stream0_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void DMA2_Stream0_IRQHandler()
 {
    quan::stm32::push_FPregs();
+
+   if (++ irq_count_led == 400){
+      irq_count_led =0;
+      hal.gpio->toggle(1);
+   }
 
    dma_lisr_flags = DMA2->LISR;
    dma_hisr_flags = DMA2->HISR;

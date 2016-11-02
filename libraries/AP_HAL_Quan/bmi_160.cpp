@@ -115,6 +115,12 @@ namespace {
      toggle_bmi16_not_CS();
   
    }
+
+   void spi_setup_irqs()
+   {
+      NVIC_SetPriority(SPI1_IRQn,13); 
+      NVIC_EnableIRQ(SPI1_IRQn);
+   }
  } // ~namespace 
 
 void Quan::spi::setup()
@@ -122,6 +128,7 @@ void Quan::spi::setup()
    spi_setup_rcc();
    spi_setup_pins();
    spi_setup_regs();
+   spi_setup_irqs();
    enable();
 }
 
