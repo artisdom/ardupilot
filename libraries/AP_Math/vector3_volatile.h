@@ -71,6 +71,7 @@ public:
     Vector3& operator = (Vector3<T> const & in)
     {
        x = in.x; y= in.y; z = in.z;
+       return *this;
     }
 
     operator Vector3<T> () { return Vector3<T>{x,y,z};}

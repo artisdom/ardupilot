@@ -365,20 +365,7 @@ namespace Quan {
       static uint32_t get_main_loop_rate_Hz(){ return main_loop_rate_Hz;}
       static constexpr uint32_t dma_buffer_size = 13;
 
-      union receive_t{
-         struct {
-            const volatile int16_t filler;
-            const volatile int16_t gyr_x;
-            const volatile int16_t gyr_y;
-            const volatile int16_t gyr_z;
-            const volatile int16_t acc_x;
-            const volatile int16_t acc_y;
-            const volatile int16_t acc_z;
-         };
-         volatile uint8_t arr[14];
-         receive_t(){}
-      } __attribute__ ((packed));
-      static receive_t dma_rx_buffer;
+      static volatile uint8_t dma_rx_buffer[dma_buffer_size];
       static uint8_t dma_tx_buffer[dma_buffer_size];
    };
 }//Quan

@@ -104,10 +104,15 @@ namespace Quan{
          
          vTaskSuspendAll();
          {
-            Quan::spi::enable_dma();
+//#####################################
+          //  Quan::spi::enable_dma();
+//#######################################
+            quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
             Quan::bmi160::enable_interrupt_from_device();
             quan::stm32::enable_exti_interrupt<Quan::bmi160::not_DR>();
-            inertial_sensor_watchdog_enable();
+//##################### TODO Make sure to enable before flight  but off for tsesting #####################
+            //inertial_sensor_watchdog_enable();
+//#################################################################
          }
          xTaskResumeAll();
          hal.console->println("inertial sensor started");
@@ -121,10 +126,14 @@ namespace {
    typedef quan::stm32::tim7 mpu_watchdog;
 
    uint32_t irq_count_led = 0;
+
+   inertial_sensor_args_t imu_args;
+   volatile uint32_t irq_count = 0;
 }
 // data ready nterrupt from IMU
 extern "C" void EXTI15_10_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void EXTI15_10_IRQHandler()
+#if 0
 {      
    if (quan::stm32::is_event_pending<Quan::bmi160::not_DR>()){
 
@@ -159,12 +168,66 @@ extern "C" void EXTI15_10_IRQHandler()
       AP_HAL::panic("unknown EXTI15_10 event exti.pr = %lu\n", exti_pr_reg);
    }
 }
+#else
 
-namespace {
+{
+    quan::stm32::push_FPregs();
+    union u{
+      struct{
+         quan::three_d::vect<int16_t> gyr;
+         quan::three_d::vect<int16_t> acc;
+      }v;
+      uint8_t arr[12];
+      u(){ }
+   }u;
+   Quan::bmi160::read(Quan::bmi160::reg::gyro_data_lsb,u.arr,12);
 
-   inertial_sensor_args_t imu_args;
-   volatile uint32_t irq_count = 0;
+   float const gyro_k = Quan::bmi160::get_gyro_constant();
+   Vector3f const gyro { 
+       u.v.gyr.x * gyro_k
+      ,u.v.gyr.y * gyro_k
+      ,u.v.gyr.z * gyro_k
+   };
+
+   float const accel_k = Quan::bmi160::get_accel_constant();
+   Vector3f const accel { 
+       u.v.acc.x * accel_k
+      ,u.v.acc.y * accel_k
+      ,u.v.acc.z * accel_k
+   };
+
+   BaseType_t HigherPriorityTaskWoken_imu = pdFALSE;
+
+   bool applied = false;
+   if ( ++irq_count == num_irqs_for_update_message){
+       irq_count = 0;
+       if ( xQueueIsQueueEmptyFromISR(h_imu_args_queue)){
+          imu_args.accel = accel_filter.apply(accel);
+          imu_args.gyro = gyro_filter.apply(gyro);
+        //  imu_args.accel = accel;
+        //  imu_args.gyro = gyro;
+          auto*  p_imu_args = &imu_args;
+          xQueueSendToBackFromISR(h_imu_args_queue,&p_imu_args,&HigherPriorityTaskWoken_imu);
+          applied = true;
+//          if (irq_count_led == 0){
+//             irq_count_led = 1;
+//             hal.gpio->write(1,1);  
+//          }
+      }
+   }
+   if (!applied){  // need to apply to filter
+      // we dont need to go through the whole rigmarole
+      // just update the filter
+       accel_filter.apply(accel);
+       gyro_filter.apply(gyro);
+   }
+
+   quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
+   quan::stm32::pop_FPregs();
 }
+#endif
+
+
 
 namespace Quan{
 
@@ -175,10 +238,13 @@ namespace Quan{
       if (h_imu_args_queue != nullptr){
          inertial_sensor_args_t * p_dummy_result;
          TickType_t const ms_to_wait = usecs_to_wait / 1000  + (((usecs_to_wait % 1000) > 499 )?1:0);
-         return xQueuePeek(h_imu_args_queue,&p_dummy_result,ms_to_wait) == pdTRUE ;
-      }else{
-         return false;
+        
+         if (xQueuePeek(h_imu_args_queue,&p_dummy_result,ms_to_wait) == pdTRUE) {
+            
+            return true;
+         }
       }
+      return false;
    }
 
    // called by AP_inertialSensor_Backend::update ( quan version)
@@ -188,9 +254,23 @@ namespace Quan{
       if (h_imu_args_queue != nullptr){
          inertial_sensor_args_t * p_args;
          if (xQueueReceive(h_imu_args_queue,&p_args,0) == pdTRUE ){
-             accel = p_args->accel;
-             gyro = p_args->gyro;
-             return true;
+            accel = p_args->accel;
+            gyro = p_args->gyro;
+            if (irq_count_led  < 10){
+               if ( ++irq_count_led == 9){
+                     hal.gpio->write(1,1);  
+
+               			hal.console->printf("Accel X:%4.2f \t Y:%4.2f \t Z:%4.2f \t Gyro X:%4.2f \t Y:%4.2f \t Z:%4.2f\n", 
+								  static_cast<double>(accel.x),
+                          static_cast<double>(accel.y), 
+                           static_cast<double>(accel.z), 
+                           static_cast<double>(gyro.x), 
+                           static_cast<double>(gyro.y), 
+                           static_cast<double>(gyro.z)
+                     );
+               }
+            }
+            return true;
          }
       }
       return false;
@@ -207,24 +287,18 @@ extern "C" void DMA2_Stream0_IRQHandler()
    DMA2_Stream5->CR &= ~(1 << 0); // (EN) disable DMA
    DMA2_Stream0->CR &= ~(1 << 0); // (EN) disable DMA
 
-   if (++irq_count_led == 800){
-      irq_count_led = 0;
-      hal.gpio->toggle(1);  
-   }
-
- // todo solve rotation
    float const gyro_k = Quan::bmi160::get_gyro_constant();
    Vector3f const gyro { 
-       Quan::bmi160::dma_rx_buffer.gyr_x * gyro_k
-      ,Quan::bmi160::dma_rx_buffer.gyr_y * gyro_k
-      ,Quan::bmi160::dma_rx_buffer.gyr_z * gyro_k
+       (Quan::bmi160::dma_rx_buffer[1]  +  (Quan::bmi160::dma_rx_buffer[2] << 8)) * gyro_k
+      ,(Quan::bmi160::dma_rx_buffer[3]  +  (Quan::bmi160::dma_rx_buffer[4] << 8)) * gyro_k
+      ,(Quan::bmi160::dma_rx_buffer[5]  +  (Quan::bmi160::dma_rx_buffer[6] << 8)) * gyro_k
    };
 
    float const accel_k = Quan::bmi160::get_accel_constant();
    Vector3f const accel { 
-       Quan::bmi160::dma_rx_buffer.acc_x * accel_k
-      ,Quan::bmi160::dma_rx_buffer.acc_y * accel_k
-      ,Quan::bmi160::dma_rx_buffer.acc_z * accel_k
+       (Quan::bmi160::dma_rx_buffer[7]  +  (Quan::bmi160::dma_rx_buffer[8] << 8))   * accel_k
+      ,(Quan::bmi160::dma_rx_buffer[9]  +  (Quan::bmi160::dma_rx_buffer[10] << 8))  * accel_k
+      ,(Quan::bmi160::dma_rx_buffer[11]  +  (Quan::bmi160::dma_rx_buffer[12] << 8)) * accel_k
    };
 
    BaseType_t HigherPriorityTaskWoken_imu = pdFALSE;
@@ -233,11 +307,17 @@ extern "C" void DMA2_Stream0_IRQHandler()
    if ( ++irq_count == num_irqs_for_update_message){
        irq_count = 0;
        if ( xQueueIsQueueEmptyFromISR(h_imu_args_queue)){
-          imu_args.accel = accel_filter.apply(accel);
-          imu_args.gyro = gyro_filter.apply(gyro);
+         // imu_args.accel = accel_filter.apply(accel);
+        //  imu_args.gyro = gyro_filter.apply(gyro);
+          imu_args.accel = accel;
+          imu_args.gyro = gyro;
           auto*  p_imu_args = &imu_args;
           xQueueSendToBackFromISR(h_imu_args_queue,&p_imu_args,&HigherPriorityTaskWoken_imu);
           applied = true;
+//          if (irq_count_led == 0){
+//             irq_count_led = 1;
+//             hal.gpio->write(1,1);  
+//          }
       }
    }
    if (!applied){  // need to apply to filter
@@ -295,11 +375,6 @@ namespace {
 extern "C" void TIM7_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void TIM7_IRQHandler()
 {
-//
-//   if (++irq_count_led == 800){
-//         irq_count_led = 0;
-//         hal.gpio->toggle(1);  
-//      }
    mpu_watchdog::get()->sr = 0;
    mpu_watchdog::get()->cnt = 0;
 
