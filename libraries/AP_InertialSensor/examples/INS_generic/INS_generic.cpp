@@ -28,7 +28,7 @@ void setup(void)
     hal.gpio->pinMode(1,1); // pin1 output led
     hal.gpio->write(1,0);  // low
     hal.console->println("AP_InertialSensor startup...");
-    ins.init(AP_InertialSensor::RATE_100HZ);
+    ins.init(AP_InertialSensor::RATE_50HZ);
     // display initial values
     display_offsets_and_scaling();
 
@@ -119,50 +119,35 @@ static void display_offsets_and_scaling()
 
 static void run_test()
 {
-    Vector3f accel;
-    Vector3f gyro;
-    float length;
-	uint8_t counter = 0;
+   uint8_t counter = 0;
+   uint32_t last = AP_HAL::millis();
+   // flush any user input
+   while( hal.console->available() ) {
+      hal.console->read();
+   }
+   // loop as long as user does not press a key
+   while( !hal.console->available() ) {
+      ins.update();
+      uint32_t const now = AP_HAL::millis();
+      uint32_t const dt = now - last;
+      last = now;
+      if (++counter == 50) {
+         counter = 0;
+         Vector3f accel = ins.get_accel();
+         Vector3f gyro = ins.get_gyro();
 
-    // flush any user input
-    while( hal.console->available() ) {
-        hal.console->read();
-    }
-
-    // clear out any existing samples from ins
-    ins.update();
-
-    // loop as long as user does not press a key
-    while( !hal.console->available() ) {
-
-        // wait until we have a sample
-      //  ins.wait_for_sample();
-
-        // read samples from ins
-        ins.update();
-        accel = ins.get_accel();
-        gyro = ins.get_gyro();
-
-        length = accel.length();
-
-		if (counter++ % 50 == 0) {
-			// display results
-			hal.console->printf("Accel X:%4.2f \t Y:%4.2f \t Z:%4.2f \t len:%4.2f \t Gyro X:%4.2f \t Y:%4.2f \t Z:%4.2f\n", 
-								  static_cast<double>(accel.x),
-                          static_cast<double>(accel.y), 
-                           static_cast<double>(accel.z), 
-                           static_cast<double>(length), 
-                           static_cast<double>(gyro.x), 
-                           static_cast<double>(gyro.y), 
-                           static_cast<double>(gyro.z)
+         hal.console->printf("dt = %6lu ,acc[% 7.2f,% 7.2f,% 7.2f] , gyr[% 7.2f,% 7.2f,% 7.2f]\n", 
+            dt,
+            static_cast<double>(accel.x),static_cast<double>(accel.y), static_cast<double>(accel.z), 
+            static_cast<double>(gyro.x),  static_cast<double>(gyro.y), static_cast<double>(gyro.z)
          );
-		}
-    }
+      }
+   }
 
-    // clear user input
-    while( hal.console->available() ) {
-        hal.console->read();
-    }
+   // clear user input
+   while( hal.console->available() ) {
+      hal.console->read();
+   }
 }
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN

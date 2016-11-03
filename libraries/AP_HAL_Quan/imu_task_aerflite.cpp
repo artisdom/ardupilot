@@ -32,8 +32,8 @@ float Quan::bmi160::accel_constant;
 float Quan::bmi160::gyro_constant;
 
 // NB output data rate must be an integer multiple of main loop rate
-uint32_t Quan::bmi160::output_data_rate_Hz = 800;
-uint32_t Quan::bmi160::main_loop_rate_Hz = 50;
+uint32_t Quan::bmi160::output_data_rate_Hz = 1600;
+uint32_t Quan::bmi160::main_loop_rate_Hz = 100;
 
 namespace {
   
@@ -72,7 +72,7 @@ namespace Quan{
          AP_HAL::panic("bmi160 IMU setup failed\n");
       }
       // num irqs depends on bmi setup
-      num_irqs_for_update_message = Quan::bmi160::get_num_irqs_for_update_msg();
+      
       // watchdog depends on bmi setup
       // initialise but not start yet
       inertial_sensor_watchdog_init();
@@ -97,9 +97,17 @@ namespace Quan{
          if (! Quan::bmi160::set_main_loop_rate_Hz(main_loop_rate_Hz)){
             AP_HAL::panic("Cannot set IMU main loop rate");
          }
+
+         num_irqs_for_update_message = Quan::bmi160::get_num_irqs_for_update_msg();
          uint32_t const irq_freq_Hz = Quan::bmi160::get_output_data_rate_Hz();
          accel_filter.set_cutoff_frequency(irq_freq_Hz,acc_cutoff_Hz);
          gyro_filter.set_cutoff_frequency(irq_freq_Hz,gyro_cutoff_Hz); 
+
+         hal.console->printf("n irqs = %lu, imu irq rate = %lu mainloop rate = %lu\n", 
+             num_irqs_for_update_message
+            ,Quan::bmi160::get_output_data_rate_Hz()
+            ,Quan::bmi160::get_main_loop_rate_Hz()
+         );
 
          vTaskSuspendAll();
          {
@@ -141,9 +149,11 @@ extern "C" void EXTI15_10_IRQHandler()
       mpu_watchdog::get()->sr = 0;
 
       Quan::spi::cs_assert<Quan::bmi160::not_CS>(); // start transaction
-
+  //    quan::stm32::disable_exti_interrupt<Quan::bmi160::not_DR>();
       quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
+     
 
+      DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
       DMA2_Stream0->NDTR = Quan::bmi160::dma_buffer_size; // RX
 
       Quan::spi::enable();
@@ -201,14 +211,16 @@ namespace Quan{
 extern "C" void  SPI1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void  SPI1_IRQHandler()
 {
-  if ( (++ rx_buffer_idx) < Quan::bmi160::dma_buffer_size){
-     if ( rx_buffer_idx == 1){
+  if ( rx_buffer_idx < (Quan::bmi160::dma_buffer_size+2)){
+     if ( rx_buffer_idx == 0){
         Quan::spi::ll_read();
         Quan::spi::disable_rxneie();
         Quan::spi::enable_txeie();
         DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
+        while ( !  Quan::spi::txe()){;}
      }
      Quan::spi::ll_write(0U);
+     ++rx_buffer_idx;
   }else{
      Quan::spi::disable_txeie();
   }
@@ -220,9 +232,16 @@ extern "C" void DMA2_Stream0_IRQHandler()
 {
    quan::stm32::push_FPregs();
 
-   if (++ irq_count_led == 400){
-      irq_count_led =0;
-      hal.gpio->toggle(1);
+ // flashes when rx_bufer_idx == 2
+   if ( rx_buffer_idx  == 2 ) {
+       if (++irq_count_led ==100){
+        irq_count_led= 0;
+        uint32_t flags =  DMA2->LISR ;
+    //  if ( flags & 0b11101){
+        if ( flags & 0b100000){
+         hal.gpio->toggle(1);
+         }
+      }
    }
 
    DMA2_Stream0->CR &= ~(1 << 0); // (EN) disable DMA
@@ -264,9 +283,13 @@ extern "C" void DMA2_Stream0_IRQHandler()
    while( DMA2_Stream0->CR & (1 << 0) ){;}
 
    DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
-
+//   quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
+//   quan::stm32::enable_exti_interrupt<Quan::bmi160::not_DR>();
    Quan::spi::cs_release<Quan::bmi160::not_CS>();
+
    quan::stm32::pop_FPregs();
+
+
 
    portEND_SWITCHING_ISR(HigherPriorityTaskWoken_imu);
 }

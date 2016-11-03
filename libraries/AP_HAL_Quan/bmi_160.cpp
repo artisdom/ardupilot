@@ -27,10 +27,6 @@ Quan::bmi160::dma_rx_buffer_t Quan::bmi160::dma_rx_buffer
 __attribute__((section(".telem_buffer"))) 
 __attribute__ ((aligned (1024)));
 
-
-//uint8_t Quan::bmi160::dma_tx_buffer[Quan::bmi160::dma_buffer_size] __attribute__((section(".telem_buffer"))) 
-//= {Quan::bmi160::reg::gyro_data_lsb | 0x80,0,0,0,0,0,0,0,0,0,0,0,0};
-
 bool  Quan::bmi160::m_initialised = false;
 
 namespace {
@@ -167,10 +163,10 @@ namespace {
           the bwp reg value represents filtering
       */
    //      constexpr uint8_t bwp_OSR1 = 0b010; //  1x oversampling
-         constexpr uint8_t bwp_OSR2 = 0b001; //  2x oversampling
-   //      constexpr uint8_t bwp_OSR4 = 0b000; //  4x oversampling
+   //      constexpr uint8_t bwp_OSR2 = 0b001; //  2x oversampling
+         constexpr uint8_t bwp_OSR4 = 0b000; //  4x oversampling
 
-         acc_conf.bwp = bwp_OSR2;   // 2x oversampling actual odr == 800 Hz
+         acc_conf.bwp = bwp_OSR4;   // 2x oversampling actual odr == 800 Hz
          
          Quan::bmi160::reg_write(Quan::bmi160::reg::acc_conf,acc_conf.value);
         
@@ -207,8 +203,8 @@ namespace {
       {
          Quan::bmi160::gyr_conf_bits gyr_conf;
 
-         constexpr uint8_t odr_3200Hz = 13;
-   //      constexpr uint8_t odr_1600Hz = 12;
+    //     constexpr uint8_t odr_3200Hz = 13;
+           constexpr uint8_t odr_1600Hz = 12;
    //      constexpr uint8_t odr_800Hz  = 11;
    //      constexpr uint8_t odr_400Hz  = 10;
    //      constexpr uint8_t odr_200Hz  =  9;
@@ -216,7 +212,7 @@ namespace {
    //      constexpr uint8_t odr_50Hz   =  7;
    //      constexpr uint8_t odr_25Hz   =  6;
 
-         gyr_conf.odr = odr_3200Hz;   // n.b  divided by oversampling below
+         gyr_conf.odr = odr_1600Hz;   // n.b  divided by oversampling below
 
    //      constexpr uint8_t bwp_OSR1 = 0b010; //  1x oversampling
    //      constexpr uint8_t bwp_OSR2 = 0b001; //  2x oversampling
@@ -249,11 +245,6 @@ namespace {
 
    void setup_exti()
    {
-//      quan::stm32::apply<
-//         Quan::bmi160::not_DR
-//         , quan::stm32::gpio::mode::input
-//         , quan::stm32::gpio::pupd::pull_up // make this pullup ok as inertial_sensor is on 3v
-//      >();
       quan::stm32::module_enable<quan::stm32::syscfg>(); 
       quan::stm32::set_exti_syscfg<Quan::bmi160::not_DR>();
       quan::stm32::set_exti_falling_edge<Quan::bmi160::not_DR>();
@@ -262,7 +253,6 @@ namespace {
          quan::stm32::detail::get_exti_irq_num<Quan::bmi160::not_DR::pin_value>::value
          ,13
       );
-      //quan::stm32::enable_exti_interrupt<Quan::bmi160::not_DR>(); 
    }
 
    void setup_dma()
@@ -283,11 +273,12 @@ namespace {
       dma_stream->CR |= (1 << 10);// (MINC)
       dma_stream->CR &= ~(0b11 << 6) ; // (DIR ) peripheral to memory
       dma_stream->CR |= ( 1 << 4) ; // (TCIE)
-      dma_stream->CR = ( dma_stream->CR &  ~(0b11 << 23)) | (0b01 << 23); // ( MBURST)
+    //  dma_stream->CR = ( dma_stream->CR &  ~(0b11 << 23)) | (0b01 << 23); // ( MBURST)
+       dma_stream->CR &= ~(0b11 << 23);
       dma_stream->CR &=  ~(0b11 << 21); // ( PBURST)
 
-      dma_stream->FCR |= (1 << 2) ; // (DMDIS)
-      dma_stream->FCR |= (0b10 << 0) ; // 3/4 threshold
+    //  dma_stream->FCR |= (1 << 2) ; // (DMDIS)
+    //  dma_stream->FCR |= (0b10 << 0) ; // 3/4 threshold
       dma_stream->PAR = (uint32_t)&SPI1->DR;  // periph addr
       dma_stream->M0AR = (uint32_t) Quan::bmi160::dma_rx_buffer.arr ; 
       dma_stream->NDTR = Quan::bmi160::dma_buffer_size;
@@ -315,12 +306,6 @@ namespace {
 
          Quan::bmi160::reg_write(Quan::bmi160::reg::int_out_ctrl,int_out_ctrl.value);
       }
-//      {
-//         // enable the interrupt
-//         Quan::bmi160::int_en_1_bits int_en_1;
-//         int_en_1.drdy = true;
-//         Quan::bmi160::reg_write(Quan::bmi160::reg::int_en_1,int_en_1.value);
-//      }
       return Quan::bmi160::check_no_errors();
    }
 
@@ -348,7 +333,7 @@ bool Quan::bmi160::setup()
       bmi_160_gyro_setup()       &&
       bmi_160_interrupt_setup()  &&
       check_no_errors();
-
+   set_output_date_rate_Hz(1600);
    return m_initialised;
 }
 
