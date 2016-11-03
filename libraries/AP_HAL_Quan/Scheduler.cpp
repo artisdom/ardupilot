@@ -19,6 +19,10 @@ extern const AP_HAL::HAL& hal;
 
 namespace {
 
+   // TODO replace this with tim5 which is 32 bit
+   // 32 bit usec timer will overflow once every 71 mins
+   // can then use 4 channels for usec delays possibly on different threads
+   // e.g sleep the thread and then wake from interrupt
    typedef quan::stm32::tim13 usec_timer;
    void setup_usec_timer()
    {
