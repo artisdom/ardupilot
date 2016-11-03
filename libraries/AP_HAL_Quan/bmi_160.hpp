@@ -8,7 +8,6 @@
 #include <task.h>
 #include <semphr.h>
 #include "spi.h"
-#include <quan/three_d/vect.hpp>
 
 namespace Quan {
 
@@ -365,8 +364,19 @@ namespace Quan {
       static uint32_t get_main_loop_rate_Hz(){ return main_loop_rate_Hz;}
       static constexpr uint32_t dma_buffer_size = 12;
 
-      static volatile uint8_t dma_rx_buffer[dma_buffer_size];
-     // static uint8_t dma_tx_buffer[dma_buffer_size];
+      union dma_rx_buffer_t{
+         struct {
+            const volatile int16_t gyro_x;
+            const volatile int16_t gyro_y;
+            const volatile int16_t gyro_z;
+            const volatile int16_t accel_x;
+            const volatile int16_t accel_y;
+            const volatile int16_t accel_z;
+         };
+         volatile uint8_t arr[dma_buffer_size];
+         dma_rx_buffer_t(){}
+      };
+      static dma_rx_buffer_t dma_rx_buffer;
    };
 }//Quan
 

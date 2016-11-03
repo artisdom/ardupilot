@@ -23,8 +23,8 @@ see ArduPilot/libraries/AP_InertialSensor_BMI160.cpp
 
 extern const AP_HAL::HAL& hal;
 
-volatile uint8_t Quan::bmi160::dma_rx_buffer[Quan::bmi160::dma_buffer_size] __attribute__((section(".telem_buffer"))) 
-= {0,0,0,0,0,0,0,0,0,0,0,0};
+Quan::bmi160::dma_rx_buffer_t Quan::bmi160::dma_rx_buffer __attribute__((section(".telem_buffer"))) ;
+
 
 //uint8_t Quan::bmi160::dma_tx_buffer[Quan::bmi160::dma_buffer_size] __attribute__((section(".telem_buffer"))) 
 //= {Quan::bmi160::reg::gyro_data_lsb | 0x80,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -287,7 +287,7 @@ namespace {
       dma_stream->CR &=  ~(0b11 << 21); // ( PBURST)
 
       dma_stream->PAR = (uint32_t)&SPI1->DR;  // periph addr
-      dma_stream->M0AR = (uint32_t) Quan::bmi160::dma_rx_buffer ; 
+      dma_stream->M0AR = (uint32_t) Quan::bmi160::dma_rx_buffer.arr ; 
       dma_stream->NDTR = Quan::bmi160::dma_buffer_size;
 
       NVIC_SetPriority(DMA2_Stream0_IRQn,13); 

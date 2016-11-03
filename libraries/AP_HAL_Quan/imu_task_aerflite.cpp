@@ -230,36 +230,44 @@ extern "C" void DMA2_Stream0_IRQHandler()
 
    DMA2_Stream0->CR &= ~(1 << 0); // (EN) disable DMA
 
-   union {
-      uint8_t arr[2];
-      int16_t val;
-   } u;
+//   union {
+//      uint8_t arr[2];
+//      int16_t val;
+//   } u;
 
    float const gyro_k = Quan::bmi160::get_gyro_constant();
-   Vector3f gyro ;
+   Vector3f const gyro {
+      Quan::bmi160::dma_rx_buffer.gyro_x * gyro_k
+      ,Quan::bmi160::dma_rx_buffer.gyro_y * gyro_k
+      ,Quan::bmi160::dma_rx_buffer.gyro_z * gyro_k 
+   };        
 
-   u.arr[0] = Quan::bmi160::dma_rx_buffer[0];
-   u.arr[1] = Quan::bmi160::dma_rx_buffer[1];
-   gyro.x = u.val * gyro_k;
-   u.arr[0] = Quan::bmi160::dma_rx_buffer[2];
-   u.arr[1] = Quan::bmi160::dma_rx_buffer[3];
-   gyro.y = u.val * gyro_k;
-   u.arr[0] = Quan::bmi160::dma_rx_buffer[4];
-   u.arr[1] = Quan::bmi160::dma_rx_buffer[5];
-   gyro.z = u.val * gyro_k;
+//   u.arr[0] = Quan::bmi160::dma_rx_buffer[0];
+//   u.arr[1] = Quan::bmi160::dma_rx_buffer[1];
+//   gyro.x =  * gyro_k;
+//   u.arr[0] = Quan::bmi160::dma_rx_buffer[2];
+//   u.arr[1] = Quan::bmi160::dma_rx_buffer[3];
+//   gyro.y = u.val * gyro_k;
+//   u.arr[0] = Quan::bmi160::dma_rx_buffer[4];
+//   u.arr[1] = Quan::bmi160::dma_rx_buffer[5];
+//   gyro.z = u.val * gyro_k;
 
 
    float const accel_k = Quan::bmi160::get_accel_constant();
-   Vector3f  accel;
-   u.arr[0] = Quan::bmi160::dma_rx_buffer[6];
-   u.arr[1] = Quan::bmi160::dma_rx_buffer[7];
-   accel.x = u.val * accel_k;
-   u.arr[0] = Quan::bmi160::dma_rx_buffer[8];
-   u.arr[1] = Quan::bmi160::dma_rx_buffer[9];
-   accel.y = u.val * accel_k;
-   u.arr[0] = Quan::bmi160::dma_rx_buffer[10];
-   u.arr[1] = Quan::bmi160::dma_rx_buffer[11];
-   accel.z = u.val * accel_k;
+   Vector3f const accel{
+      Quan::bmi160::dma_rx_buffer.accel_x * accel_k
+      ,Quan::bmi160::dma_rx_buffer.accel_y * accel_k
+      ,Quan::bmi160::dma_rx_buffer.accel_z * accel_k 
+   }; 
+//   u.arr[0] = Quan::bmi160::dma_rx_buffer[6];
+//   u.arr[1] = Quan::bmi160::dma_rx_buffer[7];
+//   accel.x = u.val * accel_k;
+//   u.arr[0] = Quan::bmi160::dma_rx_buffer[8];
+//   u.arr[1] = Quan::bmi160::dma_rx_buffer[9];
+//   accel.y = u.val * accel_k;
+//   u.arr[0] = Quan::bmi160::dma_rx_buffer[10];
+//   u.arr[1] = Quan::bmi160::dma_rx_buffer[11];
+//   accel.z = u.val * accel_k;
 
    BaseType_t HigherPriorityTaskWoken_imu = pdFALSE;
 
