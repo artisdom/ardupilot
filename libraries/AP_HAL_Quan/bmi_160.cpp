@@ -23,7 +23,9 @@ see ArduPilot/libraries/AP_InertialSensor_BMI160.cpp
 
 extern const AP_HAL::HAL& hal;
 
-Quan::bmi160::dma_rx_buffer_t Quan::bmi160::dma_rx_buffer __attribute__((section(".telem_buffer"))) ;
+Quan::bmi160::dma_rx_buffer_t Quan::bmi160::dma_rx_buffer 
+__attribute__((section(".telem_buffer"))) 
+__attribute__ ((aligned (1024)));
 
 
 //uint8_t Quan::bmi160::dma_tx_buffer[Quan::bmi160::dma_buffer_size] __attribute__((section(".telem_buffer"))) 
@@ -271,8 +273,6 @@ namespace {
          asm volatile ("nop" : : :);
       }
 
-      // for now we use both tx and rx dma
-      // RX, but could prob just do rx
       DMA_Stream_TypeDef * dma_stream = DMA2_Stream0;
       constexpr uint32_t  dma_channel = 3;
       constexpr uint32_t  dma_priority = 0b01; // medium
@@ -283,33 +283,18 @@ namespace {
       dma_stream->CR |= (1 << 10);// (MINC)
       dma_stream->CR &= ~(0b11 << 6) ; // (DIR ) peripheral to memory
       dma_stream->CR |= ( 1 << 4) ; // (TCIE)
-      dma_stream->CR &=  ~(0b11 << 23); // ( MBURST)
+      dma_stream->CR = ( dma_stream->CR &  ~(0b11 << 23)) | (0b01 << 23); // ( MBURST)
       dma_stream->CR &=  ~(0b11 << 21); // ( PBURST)
 
+      dma_stream->FCR |= (1 << 2) ; // (DMDIS)
+      dma_stream->FCR |= (0b10 << 0) ; // 3/4 threshold
       dma_stream->PAR = (uint32_t)&SPI1->DR;  // periph addr
       dma_stream->M0AR = (uint32_t) Quan::bmi160::dma_rx_buffer.arr ; 
       dma_stream->NDTR = Quan::bmi160::dma_buffer_size;
 
       NVIC_SetPriority(DMA2_Stream0_IRQn,13); 
       NVIC_EnableIRQ(DMA2_Stream0_IRQn);
-//
-//      // TX
-//      dma_stream = DMA2_Stream5;
-//      constexpr uint32_t  dma_channel1 = 3;
-//      dma_stream->CR = (dma_stream->CR & ~(0b111 << 25)) | ( dma_channel1 << 25U); //(CHSEL) select channel
-//      dma_stream->CR = (dma_stream->CR & ~(0b11 << 16)) | (dma_priority << 16U); // (PL) priority
-//      dma_stream->CR = (dma_stream->CR & ~(0b11 << 13)) ; // (MSIZE) 8 bit memory transfer
-//      dma_stream->CR = (dma_stream->CR & ~(0b11 << 11)) ; // (PSIZE) 8 bit transfer
-//      dma_stream->CR |= (1 << 10);// (MINC)
-//      dma_stream->CR = (dma_stream->CR & ~(0b11 << 6)) | (0b01 << 6) ; // (DIR )  memory to peripheral
-//      dma_stream->CR &=  ~(0b11 << 23); // ( MBURST)
-//      dma_stream->CR &=  ~(0b11 << 21); // ( PBURST)
-//     // dma_stream->CR |= ( 1 << 4) ; // (TCIE)
-//      dma_stream->PAR = (uint32_t)&SPI1->DR;  // periph addr
-//      dma_stream->M0AR = (uint32_t)Quan::bmi160::dma_tx_buffer; 
-//      dma_stream->NDTR = 1;
-      
-     // DMA2->HIFCR |= ( 0b111101 << 6) ; // Stream 5 clear flags
+
       DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
    }
 
