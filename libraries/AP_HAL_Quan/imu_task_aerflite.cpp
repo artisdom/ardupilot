@@ -104,7 +104,6 @@ namespace Quan{
          accel_filter.set_cutoff_frequency(irq_freq_Hz,acc_cutoff_Hz);
          gyro_filter.set_cutoff_frequency(irq_freq_Hz,gyro_cutoff_Hz); 
 
-         
          vTaskSuspendAll();
          {
 //#####################################
@@ -135,15 +134,9 @@ namespace {
    volatile uint32_t rx_buffer_idx = 0;
 }
 
-/*
- 1) Bidi mode enable irq on rxne
-2) in rx ie disable rxie irq and make single dir
-   and start rx dma
-*/
 // data ready nterrupt from IMU
 extern "C" void EXTI15_10_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void EXTI15_10_IRQHandler()
-#if 1
 {      
    if (quan::stm32::is_event_pending<Quan::bmi160::not_DR>()){
 
@@ -177,60 +170,6 @@ extern "C" void EXTI15_10_IRQHandler()
       AP_HAL::panic("unknown EXTI15_10 event exti.pr = %lu\n", exti_pr_reg);
    }
 }
-#else
-
-{
-    quan::stm32::push_FPregs();
-    union u{
-      struct{
-         quan::three_d::vect<int16_t> gyr;
-         quan::three_d::vect<int16_t> acc;
-      }v;
-      uint8_t arr[12];
-      u(){ }
-   }u;
-   Quan::bmi160::read(Quan::bmi160::reg::gyro_data_lsb,u.arr,12);
-
-   float const gyro_k = Quan::bmi160::get_gyro_constant();
-   Vector3f const gyro { 
-       u.v.gyr.x * gyro_k
-      ,u.v.gyr.y * gyro_k
-      ,u.v.gyr.z * gyro_k
-   };
-
-   float const accel_k = Quan::bmi160::get_accel_constant();
-   Vector3f const accel { 
-       u.v.acc.x * accel_k
-      ,u.v.acc.y * accel_k
-      ,u.v.acc.z * accel_k
-   };
-
-   BaseType_t HigherPriorityTaskWoken_imu = pdFALSE;
-
-   bool applied = false;
-   if ( ++irq_count == num_irqs_for_update_message){
-       irq_count = 0;
-       if ( xQueueIsQueueEmptyFromISR(h_imu_args_queue)){
-          imu_args.accel = accel_filter.apply(accel);
-          imu_args.gyro = gyro_filter.apply(gyro);
-        //  imu_args.accel = accel;
-        //  imu_args.gyro = gyro;
-          auto*  p_imu_args = &imu_args;
-          xQueueSendToBackFromISR(h_imu_args_queue,&p_imu_args,&HigherPriorityTaskWoken_imu);
-          applied = true;
-      }
-   }
-   if (!applied){  // need to apply to filter
-      // we dont need to go through the whole rigmarole
-      // just update the filter
-       accel_filter.apply(accel);
-       gyro_filter.apply(gyro);
-   }
-
-   quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
-   quan::stm32::pop_FPregs();
-}
-#endif
 
 namespace Quan{
 
@@ -294,8 +233,8 @@ extern "C" void DMA2_Stream0_IRQHandler()
    DMA2_Stream0->CR &= ~(1 << 0); // (EN) disable DMA
 
    union {
-         uint8_t arr[2];
-         int16_t val;
+      uint8_t arr[2];
+      int16_t val;
    } u;
 
    float const gyro_k = Quan::bmi160::get_gyro_constant();
@@ -330,30 +269,21 @@ extern "C" void DMA2_Stream0_IRQHandler()
    if ( ++irq_count == num_irqs_for_update_message){
        irq_count = 0;
        if ( xQueueIsQueueEmptyFromISR(h_imu_args_queue)){
-         // imu_args.accel = accel_filter.apply(accel);
-        //  imu_args.gyro = gyro_filter.apply(gyro);
-          imu_args.accel = accel;
-          imu_args.gyro = gyro;
+          imu_args.accel = accel_filter.apply(accel);
+          imu_args.gyro = gyro_filter.apply(gyro);
+          //imu_args.accel = accel;
+          //imu_args.gyro = gyro;
           auto*  p_imu_args = &imu_args;
           xQueueSendToBackFromISR(h_imu_args_queue,&p_imu_args,&HigherPriorityTaskWoken_imu);
           applied = true;
-//          if (irq_count_led == 0){
-//             irq_count_led = 1;
-//             hal.gpio->write(1,1);  
-//          }
       }
    }
-   if (!applied){  // need to apply to filter
-      // we dont need to go through the whole rigmarole
-      // just update the filter
+   if (!applied){  // need to apply to filter for quiet irq's
        accel_filter.apply(accel);
        gyro_filter.apply(gyro);
    }
  
    while( (DMA2_Stream5->CR | DMA2_Stream0->CR ) & (1 << 0) ){;}
-// 
-//   dma_lisr_flags = DMA2->LISR;
-//   dma_hisr_flags = DMA2->HISR;
 
    DMA2->HIFCR |= ( 0b111101 << 6) ; // Stream 5 clear flags
    DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
