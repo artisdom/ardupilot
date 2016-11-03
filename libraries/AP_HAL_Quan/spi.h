@@ -81,13 +81,22 @@ namespace Quan {
       {
          device::get()->cr2.bb_setbit<7>() ; // ( TXEIE)
       }
+
       static void disable_txeie()
       {
          device::get()->cr2.bb_clearbit<7>() ; // ( TXEIE)
-         
       }
 
- //   private:
+      static void enable_rxneie()
+      {
+         device::get()->cr2.bb_setbit<6>() ; // ( RXNEIE)
+      }
+
+      static void disable_rxneie()
+      {
+         device::get()->cr2.bb_clearbit<6>() ; // ( RXNEIE)
+      }
+
       static uint8_t transfer(uint8_t data)
       {
          while (!txe()){;}

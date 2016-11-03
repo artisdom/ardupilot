@@ -49,9 +49,6 @@ namespace {
 
    QueueHandle_t h_imu_args_queue = nullptr;
 
-   uint32_t dma_lisr_flags = 0;
-   uint32_t dma_hisr_flags = 0;
-
        // the data to go to the ArduPilot loop
    struct inertial_sensor_args_t{
       vvect3  accel;
@@ -134,7 +131,7 @@ namespace {
    volatile uint32_t rx_buffer_idx = 0;
 }
 
-// data ready nterrupt from IMU
+// data ready interrupt from IMU
 extern "C" void EXTI15_10_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void EXTI15_10_IRQHandler()
 {      
@@ -149,18 +146,16 @@ extern "C" void EXTI15_10_IRQHandler()
 
       quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
 
-      DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
-       
       DMA2_Stream0->NDTR = Quan::bmi160::dma_buffer_size; // RX
 
-      DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
-
       Quan::spi::enable();
-      while (!Quan::spi::txe()){;}
+
       rx_buffer_idx = 0;
       Quan::spi::ll_read();
+      Quan::spi::enable_rxneie();
+      while (!Quan::spi::txe()){;}
       Quan::spi::ll_write(Quan::bmi160::reg::gyro_data_lsb | 0x80);
-      Quan::spi::enable_txeie();
+
    }else{
       uint32_t const exti_pr_reg = quan::stm32::exti::get()->pr.get();
       // mask interrupts to prevent recur forever
@@ -208,7 +203,14 @@ namespace Quan{
 extern "C" void  SPI1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void  SPI1_IRQHandler()
 {
+
   if ( (++ rx_buffer_idx) < Quan::bmi160::dma_buffer_size){
+     if ( rx_buffer_idx == 1){
+        Quan::spi::ll_read();
+        Quan::spi::disable_rxneie();
+        Quan::spi::enable_txeie();
+        DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
+     }
      Quan::spi::ll_write(0U);
   }else{
      Quan::spi::disable_txeie();
@@ -226,10 +228,6 @@ extern "C" void DMA2_Stream0_IRQHandler()
       hal.gpio->toggle(1);
    }
 
-   dma_lisr_flags = DMA2->LISR;
-   dma_hisr_flags = DMA2->HISR;
-
-   DMA2_Stream5->CR &= ~(1 << 0); // (EN) disable DMA
    DMA2_Stream0->CR &= ~(1 << 0); // (EN) disable DMA
 
    union {
@@ -240,27 +238,27 @@ extern "C" void DMA2_Stream0_IRQHandler()
    float const gyro_k = Quan::bmi160::get_gyro_constant();
    Vector3f gyro ;
 
-   u.arr[0] = Quan::bmi160::dma_rx_buffer[1];
-   u.arr[1] = Quan::bmi160::dma_rx_buffer[2];
+   u.arr[0] = Quan::bmi160::dma_rx_buffer[0];
+   u.arr[1] = Quan::bmi160::dma_rx_buffer[1];
    gyro.x = u.val * gyro_k;
-   u.arr[0] = Quan::bmi160::dma_rx_buffer[3];
-   u.arr[1] = Quan::bmi160::dma_rx_buffer[4];
+   u.arr[0] = Quan::bmi160::dma_rx_buffer[2];
+   u.arr[1] = Quan::bmi160::dma_rx_buffer[3];
    gyro.y = u.val * gyro_k;
-   u.arr[0] = Quan::bmi160::dma_rx_buffer[5];
-   u.arr[1] = Quan::bmi160::dma_rx_buffer[6];
+   u.arr[0] = Quan::bmi160::dma_rx_buffer[4];
+   u.arr[1] = Quan::bmi160::dma_rx_buffer[5];
    gyro.z = u.val * gyro_k;
 
 
    float const accel_k = Quan::bmi160::get_accel_constant();
    Vector3f  accel;
-   u.arr[0] = Quan::bmi160::dma_rx_buffer[7];
-   u.arr[1] = Quan::bmi160::dma_rx_buffer[8];
+   u.arr[0] = Quan::bmi160::dma_rx_buffer[6];
+   u.arr[1] = Quan::bmi160::dma_rx_buffer[7];
    accel.x = u.val * accel_k;
-   u.arr[0] = Quan::bmi160::dma_rx_buffer[9];
-   u.arr[1] = Quan::bmi160::dma_rx_buffer[10];
+   u.arr[0] = Quan::bmi160::dma_rx_buffer[8];
+   u.arr[1] = Quan::bmi160::dma_rx_buffer[9];
    accel.y = u.val * accel_k;
-   u.arr[0] = Quan::bmi160::dma_rx_buffer[11];
-   u.arr[1] = Quan::bmi160::dma_rx_buffer[12];
+   u.arr[0] = Quan::bmi160::dma_rx_buffer[10];
+   u.arr[1] = Quan::bmi160::dma_rx_buffer[11];
    accel.z = u.val * accel_k;
 
    BaseType_t HigherPriorityTaskWoken_imu = pdFALSE;
@@ -283,9 +281,8 @@ extern "C" void DMA2_Stream0_IRQHandler()
        gyro_filter.apply(gyro);
    }
  
-   while( (DMA2_Stream5->CR | DMA2_Stream0->CR ) & (1 << 0) ){;}
+   while( DMA2_Stream0->CR & (1 << 0) ){;}
 
-   DMA2->HIFCR |= ( 0b111101 << 6) ; // Stream 5 clear flags
    DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
 
    Quan::spi::cs_release<Quan::bmi160::not_CS>();
