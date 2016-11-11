@@ -232,18 +232,6 @@ extern "C" void DMA2_Stream0_IRQHandler()
 {
    quan::stm32::push_FPregs();
 
- // flashes when rx_bufer_idx == 2
-   if ( rx_buffer_idx  == 2 ) {
-       if (++irq_count_led ==100){
-        irq_count_led= 0;
-        uint32_t flags =  DMA2->LISR ;
-    //  if ( flags & 0b11101){
-        if ( flags & 0b100000){
-         hal.gpio->toggle(1);
-         }
-      }
-   }
-
    DMA2_Stream0->CR &= ~(1 << 0); // (EN) disable DMA
 
    float const gyro_k = Quan::bmi160::get_gyro_constant();
@@ -268,8 +256,6 @@ extern "C" void DMA2_Stream0_IRQHandler()
        if ( xQueueIsQueueEmptyFromISR(h_imu_args_queue)){
           imu_args.accel = accel_filter.apply(accel);
           imu_args.gyro = gyro_filter.apply(gyro);
-          //imu_args.accel = accel;
-          //imu_args.gyro = gyro;
           auto*  p_imu_args = &imu_args;
           xQueueSendToBackFromISR(h_imu_args_queue,&p_imu_args,&HigherPriorityTaskWoken_imu);
           applied = true;
@@ -283,13 +269,10 @@ extern "C" void DMA2_Stream0_IRQHandler()
    while( DMA2_Stream0->CR & (1 << 0) ){;}
 
    DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
-//   quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
-//   quan::stm32::enable_exti_interrupt<Quan::bmi160::not_DR>();
+
    Quan::spi::cs_release<Quan::bmi160::not_CS>();
 
    quan::stm32::pop_FPregs();
-
-
 
    portEND_SWITCHING_ISR(HigherPriorityTaskWoken_imu);
 }
