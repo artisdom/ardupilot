@@ -20,7 +20,9 @@ namespace Quan{
   template <uint32_t I>
   AP_HAL::UARTDriver*  get_serial_port();
   AP_HAL::AnalogIn*    get_analog_in();
+#if !defined QUAN_AERFLITE_BOARD
   AP_HAL::I2CDriver*   get_i2c_driver();
+#endif
   AP_HAL::RCInput*     get_rc_inputs();
   AP_HAL::RCOutput*    get_rc_outputs();
 
@@ -44,7 +46,11 @@ HAL_Quan::HAL_Quan()
    NULL,            /* no uartD */
 #endif
    NULL,            /* no uartE */
+#if defined QUAN_AERFLITE_BOARD  /* no exposed i2c for AERFLITE */
+   NULL,
+ #else
    Quan::get_i2c_driver(), 
+#endif
    NULL, /* only one i2c */
    NULL, /* only one i2c */
    &spiDeviceManager, // dummy
@@ -112,9 +118,10 @@ void HAL_Quan::run(void * params) const
    if ( analogin && flags.init_analogin ){
       analogin->init(NULL);
    }
-//   if ( i2c && flags.init_i2c ){
-//      Quan::create_i2c_task();
-//   }
+
+   if ( i2c && flags.init_i2c ){
+      Quan::create_i2c_task();
+   }
 
 }
 

@@ -1,5 +1,11 @@
 
+
 #include <AP_HAL/AP_HAL.h>
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
+#if !defined QUAN_AERFLITE_BOARD
+
 #include <AP_HAL_Empty/I2CDriver.h>
 #include <AP_HAL_Empty/Semaphores.h>
 #include "I2CDriver.h"
@@ -274,3 +280,5 @@ namespace Quan{
     { return new Empty::EmptyI2CDriver{new Empty::EmptySemaphore} ;}
 }
 
+#endif  // !defined QUAN_AERFLITE_BOARD
+#endif  // CONFIG_HAL_BOARD == HAL_BOARD_QUAN

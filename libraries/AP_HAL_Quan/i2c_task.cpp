@@ -21,6 +21,9 @@
   by Andy Little ( www.github.com/kwikius)
 */
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#if ! defined QUAN_AERFLITE_BOARD
+
 #include <stm32f4xx.h>
 #include "i2c_task.hpp"
 #include <quan/max.hpp>
@@ -41,10 +44,11 @@ and puts the lastest value on the queues when there is free space
 
 Needs usart and i2c and scheduler objects to be ready
   
-
 */
 
 extern const AP_HAL::HAL& hal;
+
+
 
 namespace Quan{
    AP_HAL::I2CDriver * get_quan_i2c_driver();
@@ -704,4 +708,5 @@ namespace {
    }
 }
 
-
+#endif // #if !defined QUAN_AERFLITE_BOARD
+#endif // AP_HAL_QUAN

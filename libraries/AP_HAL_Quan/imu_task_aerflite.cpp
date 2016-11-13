@@ -129,7 +129,7 @@ namespace Quan{
 namespace {
    typedef quan::stm32::tim7 mpu_watchdog;
 
-   uint32_t irq_count_led = 0;
+//   uint32_t irq_count_led = 0;
 
    inertial_sensor_args_t imu_args;
    volatile uint32_t irq_count = 0;

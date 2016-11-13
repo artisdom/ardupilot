@@ -36,6 +36,14 @@ namespace Quan{
          uint32_t time_us;
       };
    }
+
+   #if defined QUAN_AERFLITE_BOARD
+   bool setup_baro();
+   bool baro_request_conversion();
+   // for measurement time see section 3.8.1 of the BMP280 datasheet
+   bool baro_start_read();
+   void baro_calculate(Quan::detail::baro_args & result);
+   #endif
 }
 
 #endif //CONFIG_HAL_BOARD == HAL_BOARD_QUAN
