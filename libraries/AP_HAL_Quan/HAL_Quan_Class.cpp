@@ -65,6 +65,7 @@ HAL_Quan::HAL_Quan()
 )
 {}
 
+
 void AP_HAL::init() {}
 
 // called at start of the apm_task
@@ -119,7 +120,9 @@ void HAL_Quan::run(void * params) const
       analogin->init(NULL);
    }
 
-   if ( i2c && flags.init_i2c ){
+   //note that the APM i2c driver is null not used
+   if ( flags.init_i2c ){
+      console->write("starting i2c\n");
       Quan::create_i2c_task();
    }
 
