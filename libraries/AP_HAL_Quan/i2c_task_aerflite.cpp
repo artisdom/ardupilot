@@ -50,6 +50,50 @@ namespace {
          bool (* const m_pfn)();
    };
 
+   void show_flags( uint32_t flags){
+      if (flags & (1<<0)){
+          hal.console->printf("sb |");
+      }
+
+      if(flags & (1<<1) ){
+          hal.console->printf("addr |");
+      }
+      
+      if(flags & (1<<2) ){
+          hal.console->printf("btf |");
+      }
+
+      if(flags & (1<<4) ){
+          hal.console->printf("stopf |");
+      }
+
+      if(flags & (1<<6) ){
+          hal.console->printf("rxne |");
+      }
+
+      if(flags & (1<<7) ){
+          hal.console->printf("txe |");
+      }
+
+      if(flags & (1<<8) ){
+          hal.console->printf("berr |");
+      }
+
+      if(flags & (1<<9) ){
+          hal.console->printf("arlo |");
+      }
+
+      if(flags & (1 << 10) ){
+          hal.console->printf("af |");
+      }
+      if(flags & (1 << 10) ){
+          hal.console->printf("ovr |");
+      }
+
+      hal.console->printf("\n");
+
+   }
+
    void i2c_task(void* params)
    {
       // need to wait for 5V on the external sensor voltage regs
@@ -70,14 +114,14 @@ namespace {
       task tasks [] = {
           {"baro : request conversion",  1 , 1, Quan::baro_request_conversion}
          ,{"baro : start read"       , 45 , 2, Quan::baro_start_read}
-         ,{"baro : calculate"        , 47 , 1, Quan::baro_calculate}
+       //  ,{"baro : calculate"        , 47 , 1, Quan::baro_calculate}
       };
       constexpr uint32_t num_tasks = sizeof(tasks)/ sizeof(task);
       constexpr uint32_t loop_time_ms = 49;  // 1/20th second loop for baro measurement
 
       TickType_t previous_waketime = xTaskGetTickCount();
       
-      for (;;){
+    //  for (;;){
 
          auto loop_start_ms = millis();
          for ( uint32_t i = 0; i < num_tasks ; ++i){
@@ -90,9 +134,31 @@ namespace {
                hal.console->printf("i2c task %s failed\n",t.get_name());
            }
          }
-         vTaskDelayUntil(&previous_waketime,loop_time_ms);
+
+         if ( Quan::i2c_periph::has_errored()){
+            hal.console->printf("NOTE:--- i2c has errored ---\n");
+         }else{
+           hal.console->printf("--- i2c no errors ---\n");
+         }
+
+         for (uint32_t idx = 0; idx < flags_idx; ++idx){
+             hal.console->printf("flags[%s] = %lX\n",infos[idx].m_name,infos[idx].m_flags);
+             show_flags(infos[idx].m_flags);
+         }
+
+         hal.console->printf("----------------\n");
+       
+         uint32_t count = 0;
+         for(uint32_t i = 0; i < 120;++i){
+             vTaskDelayUntil(&previous_waketime,loop_time_ms);
+             hal.console->printf("*");
+              if (++count == 40){
+                  count = 0;
+                  hal.console->printf("\n");
+              }
+         }
          // reset
-      }
+     // }
    }
 
    void wait_for_power_up()

@@ -334,8 +334,8 @@ void Quan::i2c_periph::release_bus()
 
 void Quan::i2c_periph::default_error_handler()
 {
-   Quan::set_console_irq_mode(true);
-   hal.console->printf("i2c error handler called : ");
+ //  Quan::set_console_irq_mode(true);
+  // hal.console->printf("i2c error handler called : ");
 #if defined QUAN_I2C_TX_DMA
    NVIC_DisableIRQ(DMA1_Stream4_IRQn);
 #endif
@@ -353,25 +353,25 @@ void Quan::i2c_periph::default_error_handler()
 #if defined QUAN_I2C_RX_DMA
    enable_dma_rx_stream(false);
 #endif
-   uint32_t const flags = get_sr1();
-   bool flagged = false;
-   // sr1 bit 8 Bus error
-   if ( flags & ( 1 << 8)){ // (BERR)
-     flagged = true;
-     hal.console->printf("bus error");
-   }
-   if ( flags & ( 1 << 9)){  // (ARLO)
-     flagged = true; 
-     hal.console->printf("arbitration lost");
-   }
-   if ( flags & ( 1 << 10)){ // (AF)
-     flagged = true;
-     hal.console->printf("acknowledge failure");
-   }
-   if ( flagged == false){
-     hal.console->printf("unknown error");
-   }
-   hal.console->printf("\n");
+//   uint32_t const flags = get_sr1();
+//   bool flagged = false;
+//   // sr1 bit 8 Bus error
+//   if ( flags & ( 1 << 8)){ // (BERR)
+//     flagged = true;
+//     hal.console->printf("bus error");
+//   }
+//   if ( flags & ( 1 << 9)){  // (ARLO)
+//     flagged = true; 
+//     hal.console->printf("arbitration lost");
+//   }
+//   if ( flags & ( 1 << 10)){ // (AF)
+//     flagged = true;
+//     hal.console->printf("acknowledge failure");
+//   }
+//   if ( flagged == false){
+//     hal.console->printf("unknown error");
+//   }
+//   hal.console->printf("\n");
 
 #if defined QUAN_I2C_TX_DMA
    clear_dma_tx_stream_flags();
@@ -392,18 +392,18 @@ void Quan::i2c_periph::default_error_handler()
 #if defined QUAN_I2C_TX_DMA
 void Quan::i2c_periph::default_dma_tx_handler()
 {
-    Quan::set_console_irq_mode(true);
-    AP_HAL::panic("i2c dma tx def called");
-    Quan::set_console_irq_mode(false);
+//    Quan::set_console_irq_mode(true);
+//    AP_HAL::panic("i2c dma tx def called");
+//    Quan::set_console_irq_mode(false);
 }
 #endif
 
 #if defined QUAN_I2C_RX_DMA
 void Quan::i2c_periph::default_dma_rx_handler()
 {
-   Quan::set_console_irq_mode(true);
-    AP_HAL::panic("i2c dma rx def called");
-   Quan::set_console_irq_mode(false);
+//   Quan::set_console_irq_mode(true);
+//    AP_HAL::panic("i2c dma rx def called");
+//   Quan::set_console_irq_mode(false);
 }
 #endif
 
