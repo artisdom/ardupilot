@@ -41,9 +41,9 @@ extern "C" void vTaskStartScheduler();\
 extern "C" {\
    int main (void) \
    {\
-      osd_setup(); \
+   /* osd_setup(); */  \
    \
-      create_draw_task(); \
+     /* create_draw_task(); */  \
       /*create_telemetry_transmitter_task();*/ \
       create_apm_task(flags); \
    \
