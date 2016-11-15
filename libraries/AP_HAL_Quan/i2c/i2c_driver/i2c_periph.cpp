@@ -14,12 +14,9 @@
 #include <quan/stm32/f4/i2c/module_enable_disable.hpp>
 #include <quan/stm32/sys_freq.hpp>
 #include <quan/stm32/i2c/detail/get_irq_number.hpp>
-//#include <quan/stm32/millis.hpp>
-//#include "../system/led.hpp"
-//#include "../system/interrupt_priority.hpp"
-//#include "../system/serial_port.hpp"
 #include "i2c_periph.hpp"
 #include <AP_HAL/AP_HAL.h>
+#include <AP_HAL_Quan/UARTDriver.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -31,12 +28,16 @@ namespace {
 // token representing wthat i2c bus has been acquired
 volatile bool Quan::i2c_periph::m_bus_taken_token = false;
 volatile bool Quan::i2c_periph::m_errored = false;
+volatile bool Quan::i2c_periph::m_thread_mode = false;
 
 void (* volatile Quan::i2c_periph::pfn_event_handler)()  = Quan::i2c_periph::default_event_handler;
 void (* volatile Quan::i2c_periph::pfn_error_handler)()  = Quan::i2c_periph::default_error_handler;
-void (* volatile Quan::i2c_periph::pfn_dma_tx_handler)()    = Quan::i2c_periph::default_dma_tx_handler;
-void (* volatile Quan::i2c_periph::pfn_dma_rx_handler)()    = Quan::i2c_periph::default_dma_rx_handler;
-
+#if defined QUAN_I2C_TX_DMA
+void (* volatile Quan::i2c_periph::pfn_dma_tx_handler)() = Quan::i2c_periph::default_dma_tx_handler;
+#endif
+#if defined QUAN_I2C_RX_DMA
+void (* volatile Quan::i2c_periph::pfn_dma_rx_handler)() = Quan::i2c_periph::default_dma_rx_handler;
+#endif
 namespace {
 
    typedef quan::stm32::tim5 usec_timer; // 32 bit timer 4 channels
@@ -88,6 +89,7 @@ namespace {
 
 using AP_HAL::millis;
 
+// rename to block_waiting for_bus_free
 bool Quan::wait_for_i2c_bus_free(uint32_t t_ms)
 {
    auto now = millis();
@@ -166,10 +168,12 @@ void Quan::i2c_periph::init()
 #if defined QUAN_I2C_TX_DMA
    setup_tx_dma();
 #endif
+#if defined QUAN_I2C_RX_DMA
    setup_rx_dma();
+#endif
 
    m_errored = false;
-   release_bus(); 
+  // release_bus(); 
    peripheral_enable(true);
 }
 
@@ -202,6 +206,8 @@ void Quan::i2c_periph::setup_tx_dma()
    NVIC_EnableIRQ(DMA1_Stream4_IRQn);
 }
 #endif
+
+#if defined QUAN_I2C_RX_DMA
 // Set up receive dma
 void Quan::i2c_periph::setup_rx_dma()
 {
@@ -221,11 +227,17 @@ void Quan::i2c_periph::setup_rx_dma()
    dma_stream->CR |= (1 << 10);// (MINC)
    dma_stream->CR &= ~(1 << 9);// (PINC)
    dma_stream->CR = (dma_stream->CR & ~(0b11 << 6U))  ; // (DIR ) peripheral to memory
+   dma_stream->CR |= (0b11 << 23) ;// MBURST x16
    dma_stream->CR |= ( 1 << 4) ; // (TCIE)
+   dma_stream->FCR |= (1 << 2) ;// (DMDIS)
+   // set threshold full
+   dma_stream->FCR |= (0b11 << 0);
    dma_stream->PAR = (uint32_t)&I2C3->DR;  // periph addr
    NVIC_SetPriority(DMA1_Stream2_IRQn,15);  // low prio
    NVIC_EnableIRQ(DMA1_Stream2_IRQn);
 }
+
+#endif
 
 const char* Quan::i2c_periph::get_error_string()
 {
@@ -236,7 +248,6 @@ void Quan::i2c_periph::default_event_handler()
 {
     AP_HAL::panic("i2c event default handler called");
 }
-
 
 // TODO. However for now I solved this by initing the pins before the module
 /*
@@ -323,10 +334,14 @@ void Quan::i2c_periph::release_bus()
 
 void Quan::i2c_periph::default_error_handler()
 {
+   Quan::set_console_irq_mode(true);
    hal.console->printf("i2c error handler called : ");
-
+#if defined QUAN_I2C_TX_DMA
    NVIC_DisableIRQ(DMA1_Stream4_IRQn);
+#endif
+#if defined QUAN_I2C_RX_DMA
    NVIC_DisableIRQ(DMA1_Stream2_IRQn);
+#endif
    enable_error_interrupts(false);
    enable_event_interrupts(false);
    enable_buffer_interrupts(false);
@@ -335,8 +350,9 @@ void Quan::i2c_periph::default_error_handler()
 #if defined QUAN_I2C_TX_DMA
    enable_dma_tx_stream(false);
 #endif
+#if defined QUAN_I2C_RX_DMA
    enable_dma_rx_stream(false);
-
+#endif
    uint32_t const flags = get_sr1();
    bool flagged = false;
    // sr1 bit 8 Bus error
@@ -356,30 +372,40 @@ void Quan::i2c_periph::default_error_handler()
      hal.console->printf("unknown error");
    }
    hal.console->printf("\n");
+
 #if defined QUAN_I2C_TX_DMA
    clear_dma_tx_stream_flags();
 #endif
+#if defined QUAN_I2C_RX_DMA
    clear_dma_rx_stream_flags();
-
+#endif
    quan::stm32::module_reset<i2c_type>();
    quan::stm32::module_disable<i2c_type>();
 
    clear_i2c_bus();
-  
+
+   Quan::set_console_irq_mode(false);
    m_errored = true;
+   
 }
 
 #if defined QUAN_I2C_TX_DMA
 void Quan::i2c_periph::default_dma_tx_handler()
 {
+    Quan::set_console_irq_mode(true);
     AP_HAL::panic("i2c dma tx def called");
+    Quan::set_console_irq_mode(false);
 }
 #endif
 
+#if defined QUAN_I2C_RX_DMA
 void Quan::i2c_periph::default_dma_rx_handler()
 {
+   Quan::set_console_irq_mode(true);
     AP_HAL::panic("i2c dma rx def called");
+   Quan::set_console_irq_mode(false);
 }
+#endif
 
 #if defined QUAN_I2C_TX_DMA
 // These irq handlers are aliased to the std stm32 irq handlers
@@ -388,18 +414,21 @@ template <> __attribute__ ((interrupt ("IRQ"))) void DMA_IRQ_Handler<1,4>()
      Quan::i2c_periph::pfn_dma_tx_handler();
 }
 #endif
-
+#if defined QUAN_I2C_RX_DMA
 template <> __attribute__ ((interrupt ("IRQ"))) void DMA_IRQ_Handler<1,2>()
 {
      Quan::i2c_periph::pfn_dma_rx_handler();
 }
+#endif
 
 #if defined QUAN_I2C_TX_DMA
 // alias unmangled: void ::DMA_IRQ_Handler<1,4>() ;
 extern "C" void DMA1_Stream4_IRQHandler() __attribute__ ((alias ("_Z15DMA_IRQ_HandlerILi1ELi4EEvv")));
 #endif
+#if defined QUAN_I2C_RX_DMA
 // alias unmangled: void ::DMA_IRQ_Handler<1,2>() ;
 extern "C" void DMA1_Stream2_IRQHandler() __attribute__ ((alias ("_Z15DMA_IRQ_HandlerILi1ELi2EEvv")));
+#endif
 
 extern "C" void I2C3_EV_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void I2C3_EV_IRQHandler()
@@ -419,13 +448,17 @@ extern "C" void TIM5_IRQHandler()
     uint32_t const irq_en_flags = usec_timer::get()->dier.get();
     uint32_t const irq_flags = usec_timer::get()->sr.get(); 
     uint32_t const active_irqs = irq_flags & irq_en_flags;
-     
+    BaseType_t higher_priority_task_has_woken = pdFALSE;
     // ch 1 compare
     if ( active_irqs & ( 1 << 1 ) ) {
        usec_timer::get()->dier.bb_clearbit<1>(); // disable the irq
        usec_timer::get()->sr.bb_clearbit<1>(); // clear the irq
        Quan::i2c_periph::m_bus_taken_token = false;
+
+       if(Quan::i2c_periph::get_thread_mode()){
+            vTaskNotifyGiveFromISR(Quan::get_i2c_task_handle(),&higher_priority_task_has_woken);
+       }
     }
-   //  usec_timer::get()->sr = 0;
+    portEND_SWITCHING_ISR(higher_priority_task_has_woken);
 }
 

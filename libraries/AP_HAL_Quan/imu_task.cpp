@@ -503,8 +503,8 @@ public:
          dma_stream->M0AR = (uint32_t)dma_tx_buffer; 
          dma_stream->NDTR = dma_buffer_size;
          
-         DMA2->HIFCR |= ( 0b111101 << 6) ; // Stream 5 clear flags
-         DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
+         DMA2->HIFCR = ( 0b111101 << 6) ; // Stream 5 clear flags
+         DMA2->LIFCR = ( 0b111101 << 0) ; // Stream 0 clear flags
       }
 
       static void reg_write( uint8_t r, uint8_t v)

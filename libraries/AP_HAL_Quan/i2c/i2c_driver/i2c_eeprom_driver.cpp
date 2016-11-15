@@ -176,7 +176,7 @@ bool Quan::i2c_eeprom_driver_base::ll_read(uint32_t start_address_in, uint8_t * 
    Quan::i2c_periph::enable_event_interrupts(true);
    Quan::i2c_periph::enable_buffer_interrupts(false);
    Quan::i2c_periph::enable_ack_bit(true);
-
+#if defined QUAN_I2C_RX_DMA
    if (len > 1 ){
       Quan::i2c_periph::enable_dma_bit(true);
       Quan::i2c_periph::enable_dma_last_bit(true);
@@ -185,7 +185,7 @@ bool Quan::i2c_eeprom_driver_base::ll_read(uint32_t start_address_in, uint8_t * 
       Quan::i2c_periph::set_dma_rx_handler(on_read_dma_transfer_complete);
       Quan::i2c_periph::enable_dma_rx_stream(true);
    }
-
+#endif
    Quan::i2c_periph::request_start_condition();
 
    return true;
@@ -201,9 +201,11 @@ void Quan::i2c_eeprom_driver_base::on_read_start_sent()
 void Quan::i2c_eeprom_driver_base::on_read_device_address_sent()
 {
    Quan::i2c_periph::get_sr1();
+   Quan::i2c_periph::enable_event_interrupts(false);
    Quan::i2c_periph::get_sr2();
    Quan::i2c_periph::send_data(m_data_address[0]);
    Quan::i2c_periph::set_event_handler(on_read_data_address_hi_sent);
+   Quan::i2c_periph::enable_event_interrupts(true);
 }
 
 void Quan::i2c_eeprom_driver_base::on_read_data_address_hi_sent()
@@ -231,13 +233,18 @@ void Quan::i2c_eeprom_driver_base::on_read_device_read_address_sent()
 {
    // flags sr2.[busy:msl] sr1.addr
    Quan::i2c_periph::get_sr1();
+   Quan::i2c_periph::enable_event_interrupts(false);
    Quan::i2c_periph::get_sr2();
-   if ( m_data_length > 1){ // into dma
-      Quan::i2c_periph::enable_event_interrupts(false);
+   if ( m_data_length > 1){ 
+#if defined QUAN_I2C_RX_DMA
+    // into dma
+     // Quan::i2c_periph::enable_event_interrupts(false);
       Quan::i2c_periph::set_event_handler(Quan::i2c_periph::default_event_handler);
+#endif
    }else{ // dma doesnt work for single byte read
       Quan::i2c_periph::enable_ack_bit(false);
       Quan::i2c_periph::request_stop_condition();
+      Quan::i2c_periph::enable_event_interrupts(true);
       Quan::i2c_periph::enable_buffer_interrupts(true); // enable rxne
       Quan::i2c_periph::set_event_handler(single_byte_receive_handler);
    }
@@ -252,6 +259,7 @@ void Quan::i2c_eeprom_driver_base::single_byte_receive_handler()
    Quan::i2c_periph::release_bus();
 }
 
+#if defined QUAN_I2C_RX_DMA
 void Quan::i2c_eeprom_driver_base::on_read_dma_transfer_complete()
 {
          //led::on();
@@ -263,10 +271,13 @@ void Quan::i2c_eeprom_driver_base::on_read_dma_transfer_complete()
    Quan::i2c_periph::set_default_handlers();
    Quan::i2c_periph::release_bus();
 }
+#endif
 
 void Quan::i2c_eeprom_driver_base::on_read_error()
 {
+   Quan::set_console_irq_mode(true);
    hal.console->printf("%s : i2c read error : ",get_device_name());
+   Quan::set_console_irq_mode(false);
    Quan::i2c_periph::default_error_handler();
 }
 
@@ -445,6 +456,8 @@ void Quan::i2c_eeprom_driver_base::on_write_last_byte_transfer_complete()
 
 void Quan::i2c_eeprom_driver_base::on_write_error()
 {
+   Quan::set_console_irq_mode(true);
    hal.console->printf("%s : i2c write error : ",get_device_name());
+   Quan::set_console_irq_mode(false);
    Quan::i2c_periph::default_error_handler();
 }

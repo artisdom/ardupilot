@@ -5,46 +5,66 @@
 #include "i2c_task.hpp"
 #include "bmp_280.hpp"
 
-Quan::bmp280::calib_param_t Quan::bmp280::calib_param;
+Quan::bmp280::calib_param_t __attribute__ ((section (".dma_memory"))) Quan::bmp280::calib_param;
 
 extern const AP_HAL::HAL& hal;
 
 namespace {
 
-   bool bmp_280_write_reg_blocking(uint8_t reg, uint8_t val)
+   bool bmp_280_write_reg(uint8_t reg, uint8_t val)
    {
-      if (!Quan::wait_for_i2c_bus_free(quan::time::ms{1000})) { return false;}
+      if (!Quan::wait_for_i2c_bus_free(100U)) { 
+          hal.console->printf("bmp_280 write reg bus not free\n");
+          return false;
+      }
+      Quan::i2c_periph::set_thread_mode(true);
       if ( Quan::bmp280::write(reg, val)){
-         if (!Quan::wait_for_i2c_bus_free(quan::time::ms{1000})) { return false;}
-         return true;
+         // max time should be around 330 usec
+         constexpr uint32_t max_wait_ms = 2;
+         if (ulTaskNotifyTake(pdTRUE,max_wait_ms)!= 0){
+          //  hal.console->printf("bmp_280 write notify succceeded\n");
+            return true;
+         }else{
+            hal.console->printf("bmp_280 write notify failed\n");
+         }
       }else{
          hal.console->printf("bmp 280 write reg failed\n");
-         if(Quan::i2c_periph::has_errored()){
-            Quan::i2c_periph::init();
-         }
-         return false;
       }
+      if(Quan::i2c_periph::has_errored()){
+         Quan::i2c_periph::init();
+      }
+      return false;
    }
 
-   bool bmp_280_read_regs_blocking(uint8_t reg,uint8_t * result, uint32_t len)
+   bool bmp_280_read_regs(uint8_t reg,uint8_t * result, uint32_t len)
    {
-      if (!Quan::wait_for_i2c_bus_free(quan::time::ms{1000})) { return false;}
+      if (!Quan::wait_for_i2c_bus_free(100U)) { 
+            hal.console->printf("bmp_280 read regs bus not free\n");
+            return false;
+      }
+      Quan::i2c_periph::set_thread_mode(true);
       if ( Quan::bmp280::read(reg, result, len)){
-         if (!Quan::wait_for_i2c_bus_free(quan::time::ms{1000})) { return false;}
-         return true;
+         // each byte takes around 0.1 msec
+         uint32_t const max_wait_ms = 1U + len / 10U + ((len % 10)?1:0);
+         if (ulTaskNotifyTake(pdTRUE,max_wait_ms)!= 0){
+            return true;
+         }else{
+            hal.console->printf("bmp_280 read notify failed\n");
+         }
       }else{
          hal.console->printf("bmp 280 read reg failed\n");
-         if(Quan::i2c_periph::has_errored()){
-            Quan::i2c_periph::init();
-         }
-         return false;
       }
+
+      if(Quan::i2c_periph::has_errored()){
+         Quan::i2c_periph::init();
+      }
+      return false;
    }
 
    // blocking
    bool bmp_280_read_cal_params()
    {  
-      bool result = bmp_280_read_regs_blocking(Quan::bmp280::reg::dig_T1,Quan::bmp280::calib_param.arr,24);
+      bool result = bmp_280_read_regs(Quan::bmp280::reg::dig_T1,Quan::bmp280::calib_param.arr,24);
       if (result){
    #if 0
          hal.console->printf("--------- call_ params ----------\n");
@@ -82,13 +102,13 @@ namespace {
       config.t_sb     = 0b000;  // 0.5 ms standby
 
       Quan::bmp280::ctrl_meas_bits ctrl_meas;
-      ctrl_meas.mode   = 0b000;     // forced
+      ctrl_meas.mode   = 0b000;    // forced
       ctrl_meas.osrs_p = 0b101;   // pressure oversampling  x16
       ctrl_meas.osrs_t = 0b010;   // temperature oversampling x2
 
       // N.B with these settings max update == 20 Hz
-      return bmp_280_write_reg_blocking(Quan::bmp280::reg::config,config.value) &&
-            bmp_280_write_reg_blocking(Quan::bmp280::reg::ctrl_meas,ctrl_meas.value) &&
+      return bmp_280_write_reg(Quan::bmp280::reg::config,config.value) &&
+            bmp_280_write_reg(Quan::bmp280::reg::ctrl_meas,ctrl_meas.value) &&
             bmp_280_read_cal_params();
    }
 
@@ -132,6 +152,8 @@ namespace {
 
    // --------------------------------------------------------
 
+   uint8_t __attribute__ ((section (".dma_memory"))) result_values[6] ;
+
    void bmp280_calculate(Quan::detail::baro_args & result)
    {
       uint32_t const adc_T = (((uint32_t)result_values[3]) << 12U )    // msb
@@ -154,43 +176,86 @@ namespace {
       //serial_port::printf<100>("T = %f, P = %f\n",temperature/ 100.0, pressure/ 255.0);
    }
 
-
-   bool bmp_280_start_conv()
+  //See BMP280 ref_man 3.8.1 Measurement time
+   /*
+      pressure over sample    Temp over sample     Measurement time ms (rounded up)  
+               1                     1                      7                       
+               2                     1                      9                          10
+               4                     1                     14                          20
+               8                     1                     23
+              16                     2                     44
+   
+   */
+   bool bmp280_request_conversion()
    {
+
+/*
+   ctrl_meas settings ref man 4.3.4
+   mode 
+
+   osrs_p[2:0]    oversampling
+      000              skipped
+      001              x1
+      010              x2
+      011              x4
+      100              x8
+      
+   osrs_t[2:0]
+      000         skipped
+      001            x1
+      010            x2
+      011            x4
+      100            x8
+      101           x16
+      110           x16
+      111           x16
+*/
+
       Quan::bmp280::ctrl_meas_bits ctrl_meas;
       ctrl_meas.mode   = 0b001;   // forced
       ctrl_meas.osrs_p = 0b001;   // pressure oversampling  x1
       ctrl_meas.osrs_t = 0b001;   // temperature oversampling x1
-
-      if ( bmp_280_write_reg(Quan::bmp280::reg::ctrl_meas,ctrl_meas.value)){
+      // todo incorporate into write
+      Quan::i2c_periph::set_thread_mode(true);
+      if( Quan::bmp280::write(Quan::bmp280::reg::ctrl_meas,ctrl_meas.value)){
          // 3 regs, 330 usec
-         vTaskDelay(1);
-         return true;
-      }else{
-         hal.console->printf("bmp_280 start conv failed trying reset\n");
-         if(Quan::i2c_periph::has_errored()){
-            Quan::i2c_periph::init();
+         constexpr TickType_t max_wait = 1;
+         if (ulTaskNotifyTake(pdTRUE,max_wait) != 0){
+           return true;
+         }else{
+            hal.console->printf("bmp_280 conv notify failed\n");
          }
-         return false;
+      }else{
+         hal.console->printf("bmp_280 start conv failed\n");
       }
+      if(Quan::i2c_periph::has_errored()){
+         hal.console->printf("i2c error : trying reset\n");
+         Quan::i2c_periph::init();
+      }
+      return false;
    }
 
-   bool bmp_280_start_read()
+   bool bmp280_start_read()
    {
-      if ( bmp_280_read_regs(Quan::bmp280::reg::press_msb,result_values,6)){
+      Quan::i2c_periph::set_thread_mode(true);
+      if ( Quan::bmp280::read(Quan::bmp280::reg::press_msb,result_values,6)){
          // 930 usec
-         vTaskDelay(2);
-         return true;
+         constexpr TickType_t max_wait = 2;
+         if (ulTaskNotifyTake(pdTRUE,max_wait)!=0){
+           return true;
+         }else{
+            hal.console->printf("bmp_280 read notify failed\n");
+         }
       }else{
          hal.console->printf("bmp_280 read failed trying reset\n");
-         if(Quan::i2c_periph::has_errored()){
-            Quan::i2c_periph::init();
-         }
-         return false;
       }
+      if(Quan::i2c_periph::has_errored()){
+         Quan::i2c_periph::init();
+      }
+      return false;
    }
 
-}
+} // ~namespace
 
 namespace Quan{
 
@@ -199,26 +264,37 @@ namespace Quan{
       return bmp_280_setup();     
    }
    
+   // takes 330 usec
    bool baro_request_conversion()
    {
-      if (! i2c_periph::bus_released() ){
-         return false;
-      }
+//      if (! i2c_periph::bus_released() ){
+//         return false;
+//      }
       return bmp280_request_conversion();
    }
 
-   // must be > 5 ms after request_conversion finishes
+   // must be some time after request_conversion finishes
+   // to allow for conversion to take place
+   // exact delay dependent on the filter settings
+   // takes  930 usec
    bool baro_start_read()
    {
-      if (! i2c_periph::bus_released() ){
-         return false;
-      }
+//      if (! i2c_periph::bus_released() ){
+//         return false;
+//      }
       return bmp280_start_read();
    }
-
-   void baro_calculate(Quan::detail::baro_args & result)
+   // must be > 930 usec after  baro_start_read
+   bool baro_calculate()
    {
-      bmp280_calculate(result);
+      auto baro_queue = get_baro_queue_handle();
+      detail::baro_args args;
+      bmp280_calculate(args);
+      if ( uxQueueSpacesAvailable(baro_queue) != 0){
+       //  hal.console->printf("Sending baro data to queue\n");
+         xQueueSendToBack(baro_queue,&args,0);
+      }
+      return true;
    }
    
 }

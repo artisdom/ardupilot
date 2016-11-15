@@ -38,11 +38,14 @@ namespace Quan{
    }
 
    #if defined QUAN_AERFLITE_BOARD
+   uint32_t * get_i2c_task_notify();
+   TaskHandle_t   get_i2c_task_handle();
+
    bool setup_baro();
    bool baro_request_conversion();
    // for measurement time see section 3.8.1 of the BMP280 datasheet
    bool baro_start_read();
-   void baro_calculate(Quan::detail::baro_args & result);
+   bool baro_calculate();
    #endif
 }
 

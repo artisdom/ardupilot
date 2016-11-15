@@ -12,15 +12,7 @@ namespace Quan{
    private:
      static bool get_bus();
    protected :
-     static bool install_device(const char* name, uint8_t address)
-     {
-         if (! get_bus()){
-            return false;
-         }
-         set_device_name(name);
-         set_device_address(address);
-         return true;
-     }
+     static bool install_device(const char* name, uint8_t address);
 
    /*
    sets up and starts i2c register based read.

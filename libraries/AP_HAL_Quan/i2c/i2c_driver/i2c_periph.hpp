@@ -4,6 +4,10 @@
 #include <stm32f4xx.h>
 #include <quan/stm32/i2c/typedefs.hpp>
 
+// dont use tx dma with osd
+//#define QUAN_I2C_TX_DMA
+#define QUAN_I2C_RX_DMA
+
 // required for friend declarations
 // dma and event handlers dependent on I2C bus number
 // Here i2c3
@@ -79,6 +83,8 @@ namespace Quan{
    set after reading I2C_SR1. Consequently, I2C_SR2 must be read only when ADDR is found
    set in I2C_SR1 or when the STOPF bit is cleared
    */
+      static bool get_thread_mode() { return m_thread_mode;}
+      static void set_thread_mode(bool b) { m_thread_mode = b;}
       static bool is_busy()
       {
           constexpr uint8_t i2c_sr2_busy_bit = 1;
@@ -111,17 +117,15 @@ namespace Quan{
         //  led::on();
           return true;
       }
-
       static void release_bus();
-
-
       static void default_event_handler();
       static void default_error_handler();
 #if defined QUAN_I2C_TX_DMA
       static void default_dma_tx_handler();
 #endif
+#if defined QUAN_I2C_RX_DMA
       static void default_dma_rx_handler();
-
+#endif
       static void set_default_handlers()
       {
          pfn_event_handler = default_event_handler;
@@ -129,7 +133,9 @@ namespace Quan{
 #if defined QUAN_I2C_TX_DMA
          pfn_dma_tx_handler  = default_dma_tx_handler;
 #endif
+#if defined QUAN_I2C_RX_DMA
          pfn_dma_rx_handler = default_dma_rx_handler;
+#endif
       }
 
       static void set_event_handler( void(*pfn_event)()){pfn_event_handler = pfn_event;}
@@ -137,13 +143,16 @@ namespace Quan{
 #if defined QUAN_I2C_TX_DMA
       static void set_dma_tx_handler( void(*pfn_event)()){pfn_dma_tx_handler = pfn_event;}
 #endif
+#if defined QUAN_I2C_RX_DMA
       static void set_dma_rx_handler( void(*pfn_event)()){pfn_dma_rx_handler = pfn_event;}
-
+#endif
       static void request_start_condition(){constexpr uint8_t cr1_start_bit = 8; i2c_type::get()->cr1.bb_setbit<cr1_start_bit>();}
       static void request_stop_condition(){constexpr uint8_t cr1_stop_bit =9;i2c_type::get()->cr1.bb_setbit<cr1_stop_bit>();}
 
       static void enable_dma_bit(bool b){constexpr uint8_t cr2_dmaen = 11; i2c_type::get()->cr2.bb_putbit<cr2_dmaen>(b);}
+
       static void enable_ack_bit(bool b){ uint8_t constexpr  i2c_cr1_ack_bit = 10;i2c_type::get()->cr1.bb_putbit<i2c_cr1_ack_bit>(b);}
+
       static void enable_dma_last_bit(bool b){constexpr uint8_t cr2_last = 12; i2c_type::get()->cr2.bb_putbit<cr2_last>(b);}
 
       static void enable_error_interrupts(bool b){constexpr uint8_t cr2_error_bit = 8;i2c_type::get()->cr2.bb_putbit<cr2_error_bit>(b);}
@@ -161,6 +170,7 @@ namespace Quan{
          }
       }
 #endif
+#if defined QUAN_I2C_RX_DMA
       static void enable_dma_rx_stream(bool b)
       {
         if (b){
@@ -170,6 +180,7 @@ namespace Quan{
           while (DMA1_Stream2->CR & (1U << 0U)) { asm volatile("nop":::);}
          }
       }
+#endif
 #if defined QUAN_I2C_TX_DMA
       static void set_dma_tx_buffer(uint8_t const* data, uint16_t numbytes)
       {
@@ -177,11 +188,13 @@ namespace Quan{
           DMA1_Stream4->NDTR = numbytes;       // num data
       }
 #endif
+#if defined QUAN_I2C_RX_DMA
       static void set_dma_rx_buffer(uint8_t * data, uint16_t numbytes)
       {
           DMA1_Stream2->M0AR = (uint32_t)data; // buffer address
           DMA1_Stream2->NDTR = numbytes;       // num data
       }
+#endif
 
       static void peripheral_enable(bool b)
       {
@@ -190,14 +203,16 @@ namespace Quan{
       }
    // todo add clear interrupt flags
 #if defined QUAN_I2C_TX_DMA
-      static void clear_dma_tx_stream_flags(){ DMA1->HIFCR |= (0b111101 << 0U) ;} // clear flags for Dma1 Stream 4
-      static void clear_dma_tx_stream_tcif(){DMA1->HIFCR |= (1 << 5) ;  } // DMA1.Stream4 (TCIF)
+      static void clear_dma_tx_stream_flags(){ DMA1->HIFCR = (0b111101 << 0U) ;} // clear flags for Dma1 Stream 4
+      static void clear_dma_tx_stream_tcif(){DMA1->HIFCR = (1 << 5) ;  } // DMA1.Stream4 (TCIF)
 #endif
-      static void clear_dma_rx_stream_flags(){DMA1->LIFCR |= (0b111101 << 16U) ;} // clear flags for Dma1 Stream 2
+#if defined QUAN_I2C_RX_DMA
+      static void clear_dma_rx_stream_flags(){DMA1->LIFCR = (0b111101 << 16U) ;} // clear flags for Dma1 Stream 2
       static void clear_dma_rx_stream_tcif()
       {
-         DMA1->LIFCR |= (1 << 21) ; // DMA1.Stream2 (TCIF)
+         DMA1->LIFCR = (1 << 21) ; // DMA1.Stream2 (TCIF)
       }
+#endif
 
       static uint16_t get_sr1(){return i2c_type::get()->sr1.get();}
       static uint16_t get_sr2(){return i2c_type::get()->sr2.get(); }
@@ -220,20 +235,29 @@ namespace Quan{
 #if defined QUAN_I2C_TX_DMA
       friend void ::DMA_IRQ_Handler<1,4>() ;
 #endif
+#if defined QUAN_I2C_RX_DMA
       friend void ::DMA_IRQ_Handler<1,2>() ;
+#endif
       friend void ::I2C3_EV_IRQHandler() ;
       friend void ::I2C3_ER_IRQHandler();
       friend void ::TIM5_IRQHandler();
+#if defined QUAN_I2C_TX_DMA
       static void setup_tx_dma();
+#endif
       static void setup_rx_dma();
 
       static volatile bool m_bus_taken_token;
       static volatile bool m_errored;
+      static volatile bool m_thread_mode;
+      // add a is_running_threaded
       static void (* volatile pfn_event_handler)();
       static void (* volatile pfn_error_handler)();
+#if defined QUAN_I2C_TX_DMA
       static void (* volatile pfn_dma_tx_handler)();
+#endif
+#if defined QUAN_I2C_RX_DMA
       static void (* volatile pfn_dma_rx_handler)();
-
+#endif
       i2c_periph() = delete;
       i2c_periph(i2c_periph const & ) = delete;
       i2c_periph& operator = (i2c_periph&) = delete;

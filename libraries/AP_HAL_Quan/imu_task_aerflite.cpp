@@ -153,7 +153,7 @@ extern "C" void EXTI15_10_IRQHandler()
       quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
      
 
-      DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
+      DMA2->LIFCR = ( 0b111101 << 0) ; // Stream 0 clear flags
       DMA2_Stream0->NDTR = Quan::bmi160::dma_buffer_size; // RX
 
       Quan::spi::enable();
