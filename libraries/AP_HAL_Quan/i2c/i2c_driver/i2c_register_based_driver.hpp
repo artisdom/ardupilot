@@ -44,6 +44,7 @@ namespace Quan{
       static void on_read_repeated_start_sent();
       static void on_read_device_read_address_sent();
       static void on_read_single_byte_handler();
+      static void on_read_multi_byte_handler();
       static void on_read_dma_transfer_complete();
       static void on_read_error();
       // write handlers
@@ -63,6 +64,10 @@ namespace Quan{
 
       static data_ptr_type m_data;
       static uint32_t m_data_length;
+#if !defined QUAN_I2C_RX_DMA
+      static uint32_t m_data_idx;
+      static uint32_t m_bytes_left;
+#endif
       static uint8_t  m_register_index; 
    };
 

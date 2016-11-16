@@ -17,7 +17,6 @@ namespace {
           hal.console->printf("bmp_280 write reg bus not free\n");
           return false;
       }
-      Quan::i2c_periph::set_thread_mode(true);
       if ( Quan::bmp280::write(reg, val)){
          // max time should be around 330 usec
          constexpr uint32_t max_wait_ms = 2;
@@ -42,7 +41,6 @@ namespace {
             hal.console->printf("bmp_280 read regs bus not free\n");
             return false;
       }
-      Quan::i2c_periph::set_thread_mode(true);
       if ( Quan::bmp280::read(reg, result, len)){
          // each byte takes around 0.1 msec
          uint32_t const max_wait_ms = 1U + len / 10U + ((len % 10)?1:0);
@@ -230,7 +228,7 @@ namespace {
       ctrl_meas.osrs_p = 0b001;   // pressure oversampling  x1
       ctrl_meas.osrs_t = 0b001;   // temperature oversampling x1
       // todo incorporate into write
-      Quan::i2c_periph::set_thread_mode(true);
+  
       if( Quan::bmp280::write(Quan::bmp280::reg::ctrl_meas,ctrl_meas.value)){
          // 3 regs, 330 usec
          constexpr TickType_t max_wait = 1;
@@ -251,7 +249,6 @@ namespace {
 
    bool bmp280_start_read()
    {
-      Quan::i2c_periph::set_thread_mode(true);
       if ( Quan::bmp280::read(Quan::bmp280::reg::press_msb,result_values,6)){
          // 930 usec
          constexpr TickType_t max_wait = 2;

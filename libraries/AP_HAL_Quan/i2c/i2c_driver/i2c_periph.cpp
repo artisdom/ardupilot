@@ -28,7 +28,7 @@ namespace {
 // token representing wthat i2c bus has been acquired
 volatile bool Quan::i2c_periph::m_bus_taken_token = false;
 volatile bool Quan::i2c_periph::m_errored = false;
-volatile bool Quan::i2c_periph::m_thread_mode = false;
+//volatile bool Quan::i2c_periph::m_thread_mode = false;
 
 void (* volatile Quan::i2c_periph::pfn_event_handler)()  = Quan::i2c_periph::default_event_handler;
 void (* volatile Quan::i2c_periph::pfn_error_handler)()  = Quan::i2c_periph::default_error_handler;
@@ -437,9 +437,7 @@ extern "C" void TIM5_IRQHandler()
        usec_timer::get()->sr.bb_clearbit<1>(); // clear the irq
        Quan::i2c_periph::m_bus_taken_token = false;
 
-       if(Quan::i2c_periph::get_thread_mode()){
-            vTaskNotifyGiveFromISR(Quan::get_i2c_task_handle(),&higher_priority_task_has_woken);
-       }
+       vTaskNotifyGiveFromISR(Quan::get_i2c_task_handle(),&higher_priority_task_has_woken);
     }
     portEND_SWITCHING_ISR(higher_priority_task_has_woken);
 }

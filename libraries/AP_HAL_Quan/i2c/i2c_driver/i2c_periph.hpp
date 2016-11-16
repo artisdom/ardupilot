@@ -6,7 +6,7 @@
 
 // dont use tx dma with osd
 //#define QUAN_I2C_TX_DMA
-#define QUAN_I2C_RX_DMA
+//#define QUAN_I2C_RX_DMA
 
 // required for friend declarations
 // dma and event handlers dependent on I2C bus number
@@ -83,8 +83,8 @@ namespace Quan{
    set after reading I2C_SR1. Consequently, I2C_SR2 must be read only when ADDR is found
    set in I2C_SR1 or when the STOPF bit is cleared
    */
-      static bool get_thread_mode() { return m_thread_mode;}
-      static void set_thread_mode(bool b) { m_thread_mode = b;}
+     // static bool get_thread_mode() { return m_thread_mode;}
+    //  static void set_thread_mode(bool b) { m_thread_mode = b;}
       static bool is_busy()
       {
           constexpr uint8_t i2c_sr2_busy_bit = 1;
@@ -148,13 +148,10 @@ namespace Quan{
 #endif
       static void request_start_condition(){constexpr uint8_t cr1_start_bit = 8; i2c_type::get()->cr1.bb_setbit<cr1_start_bit>();}
       static void request_stop_condition(){constexpr uint8_t cr1_stop_bit =9;i2c_type::get()->cr1.bb_setbit<cr1_stop_bit>();}
-
       static void enable_dma_bit(bool b){constexpr uint8_t cr2_dmaen = 11; i2c_type::get()->cr2.bb_putbit<cr2_dmaen>(b);}
-
       static void enable_ack_bit(bool b){ uint8_t constexpr  i2c_cr1_ack_bit = 10;i2c_type::get()->cr1.bb_putbit<i2c_cr1_ack_bit>(b);}
-
       static void enable_dma_last_bit(bool b){constexpr uint8_t cr2_last = 12; i2c_type::get()->cr2.bb_putbit<cr2_last>(b);}
-
+      static void enable_pos_bit(bool b){constexpr uint8_t cr1_pos_bit = 11; i2c_type::get()->cr1.bb_putbit<cr1_pos_bit>(b);}
       static void enable_error_interrupts(bool b){constexpr uint8_t cr2_error_bit = 8;i2c_type::get()->cr2.bb_putbit<cr2_error_bit>(b);}
       static void enable_event_interrupts(bool b){ constexpr uint8_t cr2_itevten_bit = 9;i2c_type::get()->cr2.bb_putbit<cr2_itevten_bit>(b);}
       static void enable_buffer_interrupts(bool b){ constexpr uint8_t cr2_itbufen_bit = 10;i2c_type::get()->cr2.bb_putbit<cr2_itbufen_bit>(b);}
@@ -248,7 +245,7 @@ namespace Quan{
 
       static volatile bool m_bus_taken_token;
       static volatile bool m_errored;
-      static volatile bool m_thread_mode;
+    //  static volatile bool m_thread_mode;
       // add a is_running_threaded
       static void (* volatile pfn_event_handler)();
       static void (* volatile pfn_error_handler)();

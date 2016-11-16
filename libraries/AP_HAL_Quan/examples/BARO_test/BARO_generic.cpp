@@ -16,8 +16,10 @@ static AP_Baro barometer;
 
 void setup()
 {
-    hal.gpio->pinMode(1,HAL_GPIO_OUTPUT);
-    hal.gpio->write(1,0);
+    for ( uint8_t i = 1 ; i < 4; ++i){
+       hal.gpio->pinMode(i,HAL_GPIO_OUTPUT);
+       hal.gpio->write(i,0);
+    }
     hal.console->printf("Barometer library test %lu\n", AP_HAL::millis());
 //
 //    hal.scheduler->delay(1000);

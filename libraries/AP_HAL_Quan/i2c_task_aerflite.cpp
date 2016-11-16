@@ -111,28 +111,33 @@ namespace {
       uint32_t loop_time_ms = 50U;
       if (Quan::setup_baro()) {
         
-      vTaskDelay(10);
-      task tasks [] = {
-          {"baro : request conversion",  1 , 1, Quan::baro_request_conversion}
-         ,{"baro : start read"       , 45 , 2, Quan::baro_start_read}
-       //  ,{"baro : calculate"        , 47 , 1, Quan::baro_calculate}
-      };
-      constexpr uint32_t num_tasks = sizeof(tasks)/ sizeof(task);
+         vTaskDelay(10);
+         task tasks [] = {
+             {"baro : request conversion",  1 , 1, Quan::baro_request_conversion}
+            ,{"baro : start read"       , 45 , 2, Quan::baro_start_read}
+            ,{"baro : calculate"        , 47 , 1, Quan::baro_calculate}
+         };
+         constexpr uint32_t num_tasks = sizeof(tasks)/ sizeof(task);
+         bool failed = false;
+         for (uint32_t j = 0; j < 100; ++j){
 
-     
-      
-    //  for (;;){
-
-         auto loop_start_ms = millis();
-         for ( uint32_t i = 0; i < num_tasks ; ++i){
-           task & t = tasks[i];
-          // hal.console->printf("running %s\n",t.get_name());
-           if ( t.get_begin_ms() > (millis() - loop_start_ms) ){
-               vTaskDelay( t.get_begin_ms() - (millis() - loop_start_ms));
-           }
-           if ( !t.run()){
-               hal.console->printf("i2c task %s failed\n",t.get_name());
-           }
+            auto loop_start_ms = millis();
+            for ( uint32_t i = 0; i < num_tasks ; ++i){
+              task & t = tasks[i];
+             // hal.console->printf("running %s\n",t.get_name());
+              if ( t.get_begin_ms() > (millis() - loop_start_ms) ){
+                  vTaskDelay( t.get_begin_ms() - (millis() - loop_start_ms));
+              }
+              if ( !t.run()){
+                  hal.console->printf("i2c task[%lu] %s failed\n",j,t.get_name());
+                  failed = true;
+                  break;
+              }
+              else{
+                hal.console->printf("i2c task[%lu] %s succeeded\n",j,t.get_name());
+              }
+            }
+            if (failed ) { break;}
          }
 
       }else{
