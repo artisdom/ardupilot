@@ -22,7 +22,6 @@ namespace {
          // max time should be around 330 usec
          constexpr uint32_t max_wait_ms = 2;
          if (ulTaskNotifyTake(pdTRUE,max_wait_ms)!= 0){
-          //  hal.console->printf("bmp_280 write notify succceeded\n");
             return true;
          }else{
             hal.console->printf("bmp_280 write notify failed\n");
@@ -31,6 +30,7 @@ namespace {
          hal.console->printf("bmp 280 write reg failed\n");
       }
       if(Quan::i2c_periph::has_errored()){
+         hal.console->printf("re init i2c\n");
          Quan::i2c_periph::init();
       }
       return false;
@@ -56,6 +56,7 @@ namespace {
       }
 
       if(Quan::i2c_periph::has_errored()){
+         hal.console->printf("re init i2c\n");
          Quan::i2c_periph::init();
       }
       return false;
@@ -87,6 +88,7 @@ namespace {
       }else{
          hal.console->printf("failed to read cal params\n");
          if(Quan::i2c_periph::has_errored()){
+            hal.console->printf("re init i2c\n");
             Quan::i2c_periph::init();
          }
       }
@@ -101,37 +103,27 @@ namespace {
       config.filter   = 0b100;  // filter coefficient x16
       config.t_sb     = 0b000;  // 0.5 ms standby
 
+      // N.B with these settings max update == 20 Hz
+      if (! bmp_280_write_reg(Quan::bmp280::reg::config,config.value)){
+          hal.console->printf("bmp_280 write config failed\n");
+          return false;
+      }
+
       Quan::bmp280::ctrl_meas_bits ctrl_meas;
       ctrl_meas.mode   = 0b000;    // forced
       ctrl_meas.osrs_p = 0b101;   // pressure oversampling  x16
       ctrl_meas.osrs_t = 0b010;   // temperature oversampling x2
 
-      // N.B with these settings max update == 20 Hz
-      bool result = bmp_280_write_reg(Quan::bmp280::reg::config,config.value);
-      hal.console->printf("bmp_280 write config ");
-      if ( result) {
-           hal.console->printf("succeeded\n");
-      }else{
-          hal.console->printf("failed\n");
+      if (! bmp_280_write_reg(Quan::bmp280::reg::ctrl_meas,ctrl_meas.value) ){
+          hal.console->printf("bmp_280 write ctrl meas failed\n");
+          return false;
+      }
+
+      if (! bmp_280_read_cal_params()){
+         hal.console->printf("bmp_280 read cal params failed\n");
          return false;
       }
-      result = bmp_280_write_reg(Quan::bmp280::reg::ctrl_meas,ctrl_meas.value);
-      hal.console->printf("bmp_280 write ctrl meas ");
-      if ( result) {
-           hal.console->printf("succeeded\n");
-      }else{
-          hal.console->printf("failed\n");
-          return false;
-      }
-      result = bmp_280_read_cal_params();
-      hal.console->printf("bmp_280 read cal params ");
-      if ( result) {
-           hal.console->printf("succeeded\n");
-           return true;
-      }else{
-          hal.console->printf("failed\n");
-          return false;
-      }
+      return true;
    }
 
    int32_t t_fine;
@@ -223,7 +215,7 @@ namespace {
       100              x8
       
    osrs_t[2:0]
-      000         skipped
+      000            skipped
       001            x1
       010            x2
       011            x4
