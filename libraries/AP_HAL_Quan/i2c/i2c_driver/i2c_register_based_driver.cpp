@@ -103,15 +103,20 @@ bool Quan::i2c_register_based_driver_base::ll_read(uint8_t register_index, uint8
 }
 
 // read handlers
+// EV5 master mode select  BUSY, MSL and SB flag set
 void Quan::i2c_register_based_driver_base::on_read_start_sent()
 {   // sb (bit 0)  set
+    // cleared by readingg sr1 and then writing dr with address
+    // should also have TRA set in sr2
    if ( Quan::i2c_periph::get_sr1() & 1){
       infos[flags_idx++]= {"on start sent", Quan::i2c_periph::get_sr1()};
       Quan::i2c_periph::send_data(get_device_address()); //
       Quan::i2c_periph::set_event_handler(on_read_device_address_sent);
    }
+   // next event is addr
 }
 
+// EV6 master transmitter mode selected BUSY, MSL, ADDR, TXE and TRA flags 
 void Quan::i2c_register_based_driver_base::on_read_device_address_sent()
 {   // txe (bit 7) , addr (bit 1)
    if ( Quan::i2c_periph::get_sr1() & 2U){
@@ -119,21 +124,25 @@ void Quan::i2c_register_based_driver_base::on_read_device_address_sent()
       Quan::i2c_periph::enable_event_interrupts(false);
       Quan::i2c_periph::get_sr2();  // clear addr bit
       Quan::i2c_periph::send_data(m_register_index);
-      Quan::i2c_periph::request_start_condition();
+    //  Quan::i2c_periph::request_start_condition();
       Quan::i2c_periph::set_event_handler(on_read_reg_index_sent);
       Quan::i2c_periph::enable_event_interrupts(true);
    }
 }
-#if 1
+
+// 
+// useful bit in sr2 is TRA which says if in transmit or receive mode
+// set because data is sent so txdr is empty
 void Quan::i2c_register_based_driver_base::on_read_reg_index_sent()
 {  // txe (bit 7) btf ( bit2)
    if ( Quan::i2c_periph::get_sr1() & 4U){
       infos[flags_idx++]= {"on read reg index sent", Quan::i2c_periph::get_sr1()};
       Quan::i2c_periph::receive_data(); //clear the txe and btf flags
+      Quan::i2c_periph::request_start_condition();
       Quan::i2c_periph::set_event_handler(on_read_repeated_start_sent);
    }
 }
-#endif
+
 void Quan::i2c_register_based_driver_base::on_read_repeated_start_sent()
 {   // sb (bit 0)
    
@@ -150,7 +159,7 @@ void Quan::i2c_register_based_driver_base::on_read_repeated_start_sent()
 void Quan::i2c_register_based_driver_base::on_read_device_read_address_sent()
 {   // addr
    if ( Quan::i2c_periph::get_sr1() & 2U){
-  hal.gpio->write(1,1);
+  //hal.gpio->write(1,1);
       infos[flags_idx++]= {"on_read_device_read_address_sent", Quan::i2c_periph::get_sr1()};
       Quan::i2c_periph::get_sr1();
       Quan::i2c_periph::enable_event_interrupts(false);
@@ -180,7 +189,7 @@ void Quan::i2c_register_based_driver_base::on_read_multi_byte_handler()
 {
    // btf
    if ( Quan::i2c_periph::get_sr1() & 4U){
-  hal.gpio->write(1,1);
+  //hal.gpio->write(1,1);
    if (m_data_length == 2){
       Quan::i2c_periph::enable_event_interrupts(false);
       Quan::i2c_periph::request_stop_condition();
@@ -230,7 +239,7 @@ void Quan::i2c_register_based_driver_base::on_read_multi_byte_handler()
 void Quan::i2c_register_based_driver_base::on_read_single_byte_handler()
 {  
    if ( Quan::i2c_periph::get_sr1() & 64U){
-      hal.gpio->write(1,1);
+    //  hal.gpio->write(1,1);
    infos[flags_idx++]= {"on_read_single_byte_handler", Quan::i2c_periph::get_sr1()};
    m_data.read_ptr[m_data_idx] = Quan::i2c_periph::receive_data();
    Quan::i2c_periph::enable_buffer_interrupts(false);
