@@ -107,9 +107,31 @@ namespace {
       ctrl_meas.osrs_t = 0b010;   // temperature oversampling x2
 
       // N.B with these settings max update == 20 Hz
-      return bmp_280_write_reg(Quan::bmp280::reg::config,config.value) &&
-            bmp_280_write_reg(Quan::bmp280::reg::ctrl_meas,ctrl_meas.value) &&
-            bmp_280_read_cal_params();
+      bool result = bmp_280_write_reg(Quan::bmp280::reg::config,config.value);
+      hal.console->printf("bmp_280 write config ");
+      if ( result) {
+           hal.console->printf("succeeded\n");
+      }else{
+          hal.console->printf("failed\n");
+         return false;
+      }
+      result = bmp_280_write_reg(Quan::bmp280::reg::ctrl_meas,ctrl_meas.value);
+      hal.console->printf("bmp_280 write ctrl meas ");
+      if ( result) {
+           hal.console->printf("succeeded\n");
+      }else{
+          hal.console->printf("failed\n");
+          return false;
+      }
+      result = bmp_280_read_cal_params();
+      hal.console->printf("bmp_280 read cal params ");
+      if ( result) {
+           hal.console->printf("succeeded\n");
+           return true;
+      }else{
+          hal.console->printf("failed\n");
+          return false;
+      }
    }
 
    int32_t t_fine;

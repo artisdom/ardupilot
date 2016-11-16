@@ -106,10 +106,11 @@ namespace {
       }
       
       Quan::i2c_periph::init();
-
-      if (! Quan::setup_baro()) {
-         AP_HAL::panic("baro setup failed");
-      }
+   
+      TickType_t previous_waketime = xTaskGetTickCount();
+      uint32_t loop_time_ms = 50U;
+      if (Quan::setup_baro()) {
+        
       vTaskDelay(10);
       task tasks [] = {
           {"baro : request conversion",  1 , 1, Quan::baro_request_conversion}
@@ -117,9 +118,8 @@ namespace {
        //  ,{"baro : calculate"        , 47 , 1, Quan::baro_calculate}
       };
       constexpr uint32_t num_tasks = sizeof(tasks)/ sizeof(task);
-      constexpr uint32_t loop_time_ms = 49;  // 1/20th second loop for baro measurement
 
-      TickType_t previous_waketime = xTaskGetTickCount();
+     
       
     //  for (;;){
 
@@ -135,6 +135,9 @@ namespace {
            }
          }
 
+      }else{
+         hal.console->printf("baro setup failed");
+      }
          if ( Quan::i2c_periph::has_errored()){
             hal.console->printf("NOTE:--- i2c has errored ---\n");
          }else{
@@ -157,6 +160,9 @@ namespace {
                   hal.console->printf("\n");
               }
          }
+          for(;;){
+             vTaskDelayUntil(&previous_waketime,loop_time_ms);
+          }
          // reset
      // }
    }
