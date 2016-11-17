@@ -16,55 +16,56 @@ static AP_Baro barometer;
 
 void setup()
 {
-    for ( uint8_t i = 1 ; i < 4; ++i){
+   for ( uint8_t i = 1 ; i < 4; ++i){
        hal.gpio->pinMode(i,HAL_GPIO_OUTPUT);
        hal.gpio->write(i,0);
-    }
-    hal.console->printf("Barometer library test %lu\n", AP_HAL::millis());
-//
-//    hal.scheduler->delay(1000);
-//
-//    barometer.init();
-//    hal.console->printf("Calibrating baro\n");
-//    barometer.calibrate();
-//    hal.console->printf("Done setup\n");
+   }
+   hal.console->printf("Barometer library test %lu\n", AP_HAL::millis());
+
+   hal.scheduler->delay(1000);
+
+   barometer.init();
+   hal.console->printf("Calibrating baro\n");
+   barometer.calibrate();
+   hal.console->printf("Done setup\n");
 }
 
-// do something on osd to check its running ok
+namespace {
+
+   float altitude  = 0.f;
+};
+
 void quan::uav::osd::on_draw() 
 { 
-    pxp_type pos{-140,50};
+    pxp_type pos{-160,50};
     char buf[100];
-    sprintf(buf,"Quan APM Baro Test : %lu", AP_HAL::millis());
+    sprintf(buf,"alt = % 6.2f", static_cast<double>(altitude));
     draw_text(buf,pos);
 }
 
 namespace {
    TickType_t prev_wake_time= 0; 
+
+   uint32_t lp_count = 0;
 }
 
 void loop()
 {
-   vTaskDelayUntil(&prev_wake_time,100); 
+   vTaskDelayUntil(&prev_wake_time,50); 
 
-//   uint32_t timer = AP_HAL::micros();
-//
-//   barometer.update();
-//   uint32_t read_time = AP_HAL::micros() - timer;
-//   float alt = barometer.get_altitude();
-//   if (!barometer.healthy()) {
-//      hal.console->println("baro not healthy");
-//      return;
-//   }
-//   hal.console->print("Pressure:");
-//   hal.console->print(barometer.get_pressure());
-//   hal.console->print(" Temperature:");
-//   hal.console->print(barometer.get_temperature());
-//   hal.console->print(" Altitude:");
-//   hal.console->print(alt);
-//   hal.console->printf(" climb=%.2f t=%u\n",
-//                   static_cast<double>(barometer.get_climb_rate()),
-//                   (unsigned)read_time);
+   barometer.update();
+   altitude = barometer.get_altitude();
+   if (!barometer.healthy()) {
+      hal.console->println("baro not healthy");
+      return;
+   }
+   if (++lp_count == 2 ){
+      lp_count = 0;
+      hal.console->printf("Pressure: % 10.3f ",static_cast<double>(barometer.get_pressure()));
+      hal.console->printf(" Temperature: % 6.3f",static_cast<double>(barometer.get_temperature()));
+      hal.console->printf(" Altitude: % 6.2f", static_cast<double>(altitude));
+      hal.console->printf(" climb= % 5.2f\n",static_cast<double>(barometer.get_climb_rate()));
+   }
 
 }
 
