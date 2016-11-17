@@ -45,6 +45,8 @@ namespace {
    void setup_usec_timer()
    {
       quan::stm32::module_enable<usec_timer>();
+      quan::stm32::module_reset<usec_timer>();
+      usec_timer::get()->cr1.bb_clearbit<0>(); // (CEN)
 
       constexpr uint32_t timer_freq = quan::stm32::get_raw_timer_frequency<usec_timer>();
       constexpr uint32_t psc = (timer_freq / static_cast<uint32_t>(1000000U)) - 1U;
@@ -94,6 +96,7 @@ bool Quan::wait_for_i2c_bus_free(uint32_t t_ms)
 {
    auto now = millis();
    while ( ! Quan::i2c_periph::bus_free() ){
+      vTaskDelay(1);
       if ( (millis() - now) > t_ms){
          hal.console->printf("bus didnt free in %lu ms\n",t_ms);
          return false;
@@ -323,13 +326,12 @@ namespace {
 */
 void Quan::i2c_periph::release_bus()
 {
+   uint32_t old_primask = __get_PRIMASK();
     __disable_irq();
-   uint32_t const now = usec_timer::get()->cnt;
-   uint32_t const done = (now + 30U) | 1;
-   usec_timer::get()->ccr1 = done ;
+   usec_timer::get()->ccr1 = (usec_timer::get()->cnt + 30U) | 1;
    usec_timer::get()->sr.bb_clearbit<1>(); // (CC1IF)
    usec_timer::get()->dier.bb_setbit<1>(); // (CC1IE) 
-   __enable_irq();
+  __set_PRIMASK( old_primask );
 }
 
 void Quan::i2c_periph::default_error_handler()
