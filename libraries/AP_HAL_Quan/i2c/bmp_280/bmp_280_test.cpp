@@ -8,7 +8,7 @@ Quan::bmp280::calib_param_t Quan::bmp280::calib_param;
 
 bool bmp_280_write_reg(uint8_t reg, uint8_t val)
 {
-   if (!Quan::wait_for_i2c_bus_free(quan::time::ms{100})) { return false;}
+   if (!Quan::wait_for_i2c_bus_free(quan::time::ms{5})) { return false;}
    if ( Quan::bmp280::write(reg, val)){
       return true;
    }else{
@@ -22,7 +22,7 @@ bool bmp_280_write_reg(uint8_t reg, uint8_t val)
 
 bool bmp_280_read_regs(uint8_t reg,uint8_t * result, uint32_t len)
 {
-   if (!Quan::wait_for_i2c_bus_free(quan::time::ms{100})) { return false;}
+   if (!Quan::wait_for_i2c_bus_free(quan::time::ms{5})) { return false;}
    if ( Quan::bmp280::read(reg, result, len)){
       return true;
    }else{
