@@ -119,8 +119,8 @@ namespace {
          };
          constexpr uint32_t num_tasks = sizeof(tasks)/ sizeof(task);
          bool failed = false;
-         for (uint32_t j = 0; j < 100; ++j){
-
+         for (uint32_t j = 0; j < 1000U; ++j){
+            flags_idx = 0;
             auto loop_start_ms = millis();
             for ( uint32_t i = 0; i < num_tasks ; ++i){
               task & t = tasks[i];
@@ -150,6 +150,7 @@ namespace {
          }
 
          for (uint32_t idx = 0; idx < flags_idx; ++idx){
+             while (hal.console->tx_pending() ){asm volatile ("nop":::);}
              hal.console->printf("flags[%s] = %lX\n",infos[idx].m_name,infos[idx].m_flags);
              show_flags(infos[idx].m_flags);
          }
@@ -207,7 +208,7 @@ namespace Quan {
          i2c_task,"I2C_task",
          1000,
          &dummy_params,
-         tskIDLE_PRIORITY + 4, // want slightly higher than apm task priority
+         tskIDLE_PRIORITY + 2, // want slightly higher than apm task priority
          & task_handle
       ) ;
    }

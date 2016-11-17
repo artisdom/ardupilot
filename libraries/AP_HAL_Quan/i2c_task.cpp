@@ -605,7 +605,7 @@ namespace Quan {
          i2c_task,"I2C_task",
          1000,
          &dummy_params,
-         tskIDLE_PRIORITY + 3, // want slightly higher than apm task priority
+         tskIDLE_PRIORITY + 2, // want slightly higher than apm task priority
          & task_handle
       ) ;
    }

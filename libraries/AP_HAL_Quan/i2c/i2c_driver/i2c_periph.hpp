@@ -196,7 +196,7 @@ namespace Quan{
       static void peripheral_enable(bool b)
       {
         uint8_t constexpr i2c_cr1_pe_bit = 0;
-        i2c_type::get()->cr1.putbit<i2c_cr1_pe_bit>(b);
+        i2c_type::get()->cr1.bb_putbit<i2c_cr1_pe_bit>(b);
       }
    // todo add clear interrupt flags
 #if defined QUAN_I2C_TX_DMA

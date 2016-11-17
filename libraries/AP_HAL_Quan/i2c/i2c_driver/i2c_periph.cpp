@@ -164,7 +164,7 @@ void Quan::i2c_periph::init()
    NVIC_EnableIRQ(quan::stm32::i2c::detail::get_event_irq_number<i2c_type>::value);
    NVIC_EnableIRQ(quan::stm32::i2c::detail::get_error_irq_number<i2c_type>::value);
 
-   NVIC_SetPriority(quan::stm32::i2c::detail::get_event_irq_number<i2c_type>::value,tskIDLE_PRIORITY + 3);
+   NVIC_SetPriority(quan::stm32::i2c::detail::get_event_irq_number<i2c_type>::value,13);
 #if defined QUAN_I2C_TX_DMA
    setup_tx_dma();
 #endif
