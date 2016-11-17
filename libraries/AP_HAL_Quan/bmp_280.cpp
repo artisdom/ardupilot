@@ -13,18 +13,8 @@ namespace {
 
    bool bmp_280_write_reg(uint8_t reg, uint8_t val)
    {
-      if (!Quan::wait_for_i2c_bus_free(100U)) { 
-          hal.console->printf("bmp_280 write reg bus not free\n");
-          return false;
-      }
       if ( Quan::bmp280::write(reg, val)){
-         // max time should be around 330 usec
-         constexpr uint32_t max_wait_ms = 2;
-         if (ulTaskNotifyTake(pdTRUE,max_wait_ms)!= 0){
-            return true;
-         }else{
-            hal.console->printf("bmp_280 write notify failed\n");
-         }
+        return true;
       }else{
          hal.console->printf("bmp 280 write reg failed\n");
       }
@@ -37,18 +27,8 @@ namespace {
 
    bool bmp_280_read_regs(uint8_t reg,uint8_t * result, uint32_t len)
    {
-      if (!Quan::wait_for_i2c_bus_free(100U)) { 
-            hal.console->printf("bmp_280 read regs bus not free\n");
-            return false;
-      }
       if ( Quan::bmp280::read(reg, result, len)){
-         // each byte takes around 0.1 msec
-         uint32_t const max_wait_ms = 1U + len / 10U + ((len % 10)?1:0);
-         if (ulTaskNotifyTake(pdTRUE,max_wait_ms)!= 0){
-            return true;
-         }else{
-            hal.console->printf("bmp_280 read notify failed\n");
-         }
+        return true;
       }else{
          hal.console->printf("bmp 280 read reg failed\n");
       }
@@ -230,13 +210,7 @@ namespace {
       // todo incorporate into write
   
       if( Quan::bmp280::write(Quan::bmp280::reg::ctrl_meas,ctrl_meas.value)){
-         // 3 regs, 330 usec
-         constexpr TickType_t max_wait = 1;
-         if (ulTaskNotifyTake(pdTRUE,max_wait) != 0){
-           return true;
-         }else{
-            hal.console->printf("bmp_280 conv notify failed\n");
-         }
+        return true;
       }else{
          hal.console->printf("bmp_280 start conv failed\n");
       }
@@ -250,13 +224,7 @@ namespace {
    bool bmp280_start_read()
    {
       if ( Quan::bmp280::read(Quan::bmp280::reg::press_msb,result_values,6)){
-         // 930 usec
-         constexpr TickType_t max_wait = 2;
-         if (ulTaskNotifyTake(pdTRUE,max_wait)!=0){
-           return true;
-         }else{
-            hal.console->printf("bmp_280 read notify failed\n");
-         }
+         return true;
       }else{
          hal.console->printf("bmp_280 read failed trying reset\n");
       }
@@ -278,9 +246,6 @@ namespace Quan{
    // takes 330 usec
    bool baro_request_conversion()
    {
-//      if (! i2c_periph::bus_released() ){
-//         return false;
-//      }
       return bmp280_request_conversion();
    }
 
@@ -290,9 +255,6 @@ namespace Quan{
    // takes  930 usec
    bool baro_start_read()
    {
-//      if (! i2c_periph::bus_released() ){
-//         return false;
-//      }
       return bmp280_start_read();
    }
    // must be > 930 usec after  baro_start_read

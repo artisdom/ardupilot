@@ -104,7 +104,14 @@ bool Quan::i2c_register_based_driver_base::ll_read(uint8_t register_index, uint8
 
    Quan::i2c_periph::request_start_condition();
 
-   return true;
+   uint32_t const max_wait_ms = 1U + len / 10U + ((len % 10)?1:0);
+   if (ulTaskNotifyTake(pdTRUE,max_wait_ms)!= 0){
+      return true;
+   }else{
+      hal.console->printf("bmp_280 read notify failed\n");
+      return false;
+   }
+   
 }
 
 // read handlers
@@ -281,7 +288,14 @@ bool Quan::i2c_register_based_driver_base::ll_write(uint8_t register_index, uint
    Quan::i2c_periph::enable_buffer_interrupts(false);
 
    Quan::i2c_periph::request_start_condition();
-   return true;
+
+   constexpr uint32_t max_wait_ms = 2;
+   if (ulTaskNotifyTake(pdTRUE,max_wait_ms)!= 0){
+      return true;
+   }else{
+      hal.console->printf("bmp_280 write notify failed\n");
+      return false;
+   }
 }
 
 // write handlers
