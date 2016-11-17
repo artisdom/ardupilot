@@ -73,7 +73,6 @@ namespace {
       return result;
    }
 
-    // blocking
    bool bmp_280_setup()
    {
       Quan::bmp280::config_bits config;
@@ -170,12 +169,12 @@ namespace {
 
   //See BMP280 ref_man 3.8.1 Measurement time
    /*
-      pressure over sample    Temp over sample     Measurement time ms (rounded up)  
+      pressure over sample    Temp over sample     Measurement time ms (rounded up)   Nearest useful         F Hz
                1                     1                      7                       
-               2                     1                      9                          10
-               4                     1                     14                          20
-               8                     1                     23
-              16                     2                     44
+               2                     1                      9                               10                100
+               4                     1                     14                               20                50
+               8                     1                     23                               25                40
+              16                     2                     44                               50                20
    
    */
    bool bmp280_request_conversion()
@@ -185,14 +184,17 @@ namespace {
    ctrl_meas settings ref man 4.3.4
    mode 
 
-   osrs_p[2:0]    oversampling
-      000              skipped
-      001              x1
-      010              x2
-      011              x4
-      100              x8
+   osrs_t[2:0]    oversampling
+      000           skipped
+      001            x1
+      010            x2
+      011            x4
+      100            x8
+      101           x16
+      110           x16
+      111           x16
       
-   osrs_t[2:0]
+   osrs_p[2:0]
       000            skipped
       001            x1
       010            x2
@@ -205,8 +207,8 @@ namespace {
 
       Quan::bmp280::ctrl_meas_bits ctrl_meas;
       ctrl_meas.mode   = 0b001;   // forced
-      ctrl_meas.osrs_p = 0b001;   // pressure oversampling  x1
-      ctrl_meas.osrs_t = 0b001;   // temperature oversampling x1
+      ctrl_meas.osrs_p = 0b101;   // pressure oversampling  x16
+      ctrl_meas.osrs_t = 0b010;   // temperature oversampling x2
       // todo incorporate into write
   
       if( Quan::bmp280::write(Quan::bmp280::reg::ctrl_meas,ctrl_meas.value)){
@@ -226,9 +228,10 @@ namespace {
       if ( Quan::bmp280::read(Quan::bmp280::reg::press_msb,result_values,6)){
          return true;
       }else{
-         hal.console->printf("bmp_280 read failed trying reset\n");
+         hal.console->printf("bmp_280 read failed\n");
       }
       if(Quan::i2c_periph::has_errored()){
+         hal.console->printf("i2c error : trying reset\n");
          Quan::i2c_periph::init();
       }
       return false;
