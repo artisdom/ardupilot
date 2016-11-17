@@ -108,7 +108,7 @@ bool Quan::i2c_register_based_driver_base::ll_read(uint8_t register_index, uint8
    if (ulTaskNotifyTake(pdTRUE,max_wait_ms)!= 0){
       return true;
    }else{
-      hal.console->printf("bmp_280 read notify failed\n");
+      hal.console->printf("i2c_register_based_driver : read notify failed\n");
       return false;
    }
    
@@ -293,7 +293,7 @@ bool Quan::i2c_register_based_driver_base::ll_write(uint8_t register_index, uint
    if (ulTaskNotifyTake(pdTRUE,max_wait_ms)!= 0){
       return true;
    }else{
-      hal.console->printf("bmp_280 write notify failed\n");
+      hal.console->printf("i2c_register_based_driver : write notify failed\n");
       return false;
    }
 }
