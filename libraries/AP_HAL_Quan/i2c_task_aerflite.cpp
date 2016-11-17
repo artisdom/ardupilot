@@ -114,27 +114,24 @@ namespace {
          vTaskDelay(10);
          task tasks [] = {
              {"baro : request conversion",  1 , 1, Quan::baro_request_conversion}
+             // TODO compass
             ,{"baro : start read"       , 45 , 2, Quan::baro_start_read}
             ,{"baro : calculate"        , 47 , 1, Quan::baro_calculate}
          };
          constexpr uint32_t num_tasks = sizeof(tasks)/ sizeof(task);
          bool failed = false;
-         for (uint32_t j = 0; j < 100000U; ++j){
+         for (;;){
             flags_idx = 0;
             auto loop_start_ms = millis();
             for ( uint32_t i = 0; i < num_tasks ; ++i){
               task & t = tasks[i];
-             // hal.console->printf("running %s\n",t.get_name());
               if ( t.get_begin_ms() > (millis() - loop_start_ms) ){
                   vTaskDelay( t.get_begin_ms() - (millis() - loop_start_ms));
               }
               if ( !t.run()){
-                  hal.console->printf("i2c task[%lu] %s failed\n",j,t.get_name());
+                  hal.console->printf("i2c task %s failed\n",t.get_name());
                   failed = true;
                   break;
-              }
-              else{
-                hal.console->printf("i2c task[%lu] %s succeeded\n",j,t.get_name());
               }
             }
             if (failed ) { break;}
@@ -143,34 +140,37 @@ namespace {
       }else{
          hal.console->printf("baro setup failed");
       }
-         if ( Quan::i2c_periph::has_errored()){
-            hal.console->printf("NOTE:--- i2c has errored ---\n");
-         }else{
-           hal.console->printf("--- i2c no errors ---\n");
-         }
 
-         for (uint32_t idx = 0; idx < flags_idx; ++idx){
-             while (hal.console->tx_pending() ){asm volatile ("nop":::);}
-             hal.console->printf("flags[%s] = %lX\n",infos[idx].m_name,infos[idx].m_flags);
-             show_flags(infos[idx].m_flags);
-         }
+      // get here on fail
 
-         hal.console->printf("----------------\n");
-       
-         uint32_t count = 0;
-         for(uint32_t i = 0; i < 120;++i){
-             vTaskDelayUntil(&previous_waketime,loop_time_ms);
-             hal.console->printf("*");
-              if (++count == 40){
-                  count = 0;
-                  hal.console->printf("\n");
-              }
+      if ( Quan::i2c_periph::has_errored()){
+         hal.console->printf("NOTE:--- i2c has errored ---\n");
+      }else{
+         hal.console->printf("--- i2c no errors ---\n");
+      }
+      // show flags to here
+      for (uint32_t idx = 0; idx < flags_idx; ++idx){
+         while (hal.console->tx_pending() ){asm volatile ("nop":::);}
+         hal.console->printf("flags[%s] = %lX\n",infos[idx].m_name,infos[idx].m_flags);
+         show_flags(infos[idx].m_flags);
+      }
+
+      hal.console->printf("----------------\n");
+
+      // sho we are still running
+      uint32_t count = 0;
+      for(uint32_t i = 0; i < 120;++i){
+         vTaskDelayUntil(&previous_waketime,loop_time_ms);
+         hal.console->printf("*");
+         if (++count == 40){
+            count = 0;
+            hal.console->printf("\n");
          }
-          for(;;){
-             vTaskDelayUntil(&previous_waketime,loop_time_ms);
-          }
-         // reset
-     // }
+      }
+      // do nothing
+      for(;;){
+         vTaskDelayUntil(&previous_waketime,loop_time_ms);
+      }
    }
 
    void wait_for_power_up()
