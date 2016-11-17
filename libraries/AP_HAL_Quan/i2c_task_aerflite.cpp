@@ -119,7 +119,7 @@ namespace {
          };
          constexpr uint32_t num_tasks = sizeof(tasks)/ sizeof(task);
          bool failed = false;
-         for (uint32_t j = 0; j < 1000U; ++j){
+         for (uint32_t j = 0; j < 100000U; ++j){
             flags_idx = 0;
             auto loop_start_ms = millis();
             for ( uint32_t i = 0; i < num_tasks ; ++i){
