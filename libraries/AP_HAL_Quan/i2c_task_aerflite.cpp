@@ -25,20 +25,13 @@ namespace {
 
    struct task{
       task(const char* name_in, uint32_t begin_ms, uint32_t len_ms, bool (*pfn)())
-      :m_name{name_in}, m_begin_ms{begin_ms}, m_task_length_ms{len_ms}, m_is_run{false}, m_pfn{pfn}{}
+      :m_name{name_in}, m_begin_ms{begin_ms}, m_task_length_ms{len_ms}, m_pfn{pfn}{}
 
       bool run()
       {
-        m_is_run = true;
         return m_pfn();
       }
 
-      void reset()
-      {
-         m_is_run = false;
-      }
-
-      bool is_run()const{ return m_is_run;}
       uint32_t get_begin_ms() const {return m_begin_ms;}
       uint32_t get_length_ms() const { return m_task_length_ms;}
       const char* get_name() const {return m_name;}
@@ -46,7 +39,6 @@ namespace {
          const char* const m_name;
          uint32_t const m_begin_ms;
          uint32_t const m_task_length_ms;
-         bool m_is_run;
          bool (* const m_pfn)();
    };
 
@@ -107,44 +99,51 @@ namespace {
       
       Quan::i2c_periph::init();
 
-      
+      if (!Quan::setup_baro()) {
+         AP_HAL::panic("baro setup failed");
+      }
+
+      if (!Quan::setup_compass()) {
+         AP_HAL::panic("compass setup failed");
+      }
 
       TickType_t previous_waketime = xTaskGetTickCount();
       uint32_t loop_time_ms = 50U;
-      if (Quan::setup_baro()) {
-        
-         vTaskDelay(10);
-         task tasks [] = {
-             {"baro : request conversion",  1 , 1, Quan::baro_request_conversion}
-             // TODO compass
-            ,{"baro : start read"       , 45 , 2, Quan::baro_start_read}
-            ,{"baro : calculate"        , 47 , 1, Quan::baro_calculate}
-         };
-         constexpr uint32_t num_tasks = sizeof(tasks)/ sizeof(task);
+     
+     
+      vTaskDelay(10);
+      task tasks [] = {
+          {"baro : request conversion"    ,  1 , 1, Quan::baro_request_conversion}
+         ,{"compass : request conversion" ,  2 , 1, Quan::compass_request_conversion}
+         ,{"compass : start_read"         ,  10, 2, Quan::compass_start_read}
+         ,{"compass_calculate"            ,  13 ,1, Quan::compass_calculate}  
+       // leaves abaout 30 ms for eeprom
 
-         bool failed = false;
-         for (;;){
-            flags_idx = 0;
-            auto loop_start_ms = millis();
-            for ( uint32_t i = 0; i < num_tasks ; ++i){
-              task & t = tasks[i];
-              if ( t.get_begin_ms() > (millis() - loop_start_ms) ){
-                  vTaskDelay( t.get_begin_ms() - (millis() - loop_start_ms));
-              }
-              if ( !t.run()){
-                  hal.console->printf("i2c task %s failed\n",t.get_name());
-                  failed = true;
-                  break;
-              }
-            }
-            if (failed ) { break;}
+         
+         ,{"baro : start read"            , 45 , 2, Quan::baro_start_read}
+         ,{"baro : calculate"             , 47 , 1, Quan::baro_calculate}
+      };
+      constexpr uint32_t num_tasks = sizeof(tasks)/ sizeof(task);
+
+      bool failed = false;
+      for (;;){
+         flags_idx = 0;
+         auto loop_start_ms = millis();
+         for ( uint32_t i = 0; i < num_tasks ; ++i){
+           task & t = tasks[i];
+           if ( t.get_begin_ms() > (millis() - loop_start_ms) ){
+               vTaskDelay( t.get_begin_ms() - (millis() - loop_start_ms));
+           }
+           if ( !t.run()){
+               hal.console->printf("i2c task %s failed\n",t.get_name());
+               failed = true;
+               break;
+           }
          }
-
-      }else{
-         hal.console->printf("baro setup failed");
+         if (failed ) { break;}
       }
 
-      // get here on fail
+      // ----------------- get here on fail
 
       if ( Quan::i2c_periph::has_errored()){
          hal.console->printf("NOTE:--- i2c has errored ---\n");
