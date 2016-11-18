@@ -1,7 +1,7 @@
 #ifndef LIS3_MDL_HPP_INCLUDED
 #define LIS3_MDL_HPP_INCLUDED
 
-#include "../i2c_driver/i2c_register_based_driver.hpp"
+#include "i2c/i2c_driver/i2c_register_based_driver.hpp"
 
 namespace Quan {
 
