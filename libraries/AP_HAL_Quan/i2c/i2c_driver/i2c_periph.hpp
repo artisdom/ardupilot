@@ -4,9 +4,10 @@
 #include <stm32f4xx.h>
 #include <quan/stm32/i2c/typedefs.hpp>
 
-// dont use tx dma with osd
+// dont use tx dma with ArduPilot with OSD since this DMA channel is used by the OSD
 //#define QUAN_I2C_TX_DMA
 //#define QUAN_I2C_RX_DMA
+//#define QUAN_I2C_DEBUG
 
 // required for friend declarations
 // dma and event handlers dependent on I2C bus number

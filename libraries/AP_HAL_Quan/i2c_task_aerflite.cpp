@@ -41,7 +41,7 @@ namespace {
          uint32_t const m_task_length_ms;
          bool (* const m_pfn)();
    };
-
+#if defined QUAN_I2C_DEBUG
    void show_flags( uint32_t flags){
       if (flags & (1<<0)){
           hal.console->printf("sb |");
@@ -85,7 +85,7 @@ namespace {
       hal.console->printf("\n");
 
    }
-
+#endif
    void i2c_task(void* params)
    {
       // need to wait for 5V on the external sensor voltage regs
@@ -110,7 +110,6 @@ namespace {
       TickType_t previous_waketime = xTaskGetTickCount();
       uint32_t loop_time_ms = 50U;
      
-     
       vTaskDelay(10);
       task tasks [] = {
           {"baro : request conversion"    ,  1 , 1, Quan::baro_request_conversion}
@@ -127,7 +126,9 @@ namespace {
 
       bool failed = false;
       for (;;){
+#if defined QUAN_I2C_DEBUG
          flags_idx = 0;
+#endif
          auto loop_start_ms = millis();
          for ( uint32_t i = 0; i < num_tasks ; ++i){
            task & t = tasks[i];
@@ -146,10 +147,11 @@ namespace {
       // ----------------- get here on fail
 
       if ( Quan::i2c_periph::has_errored()){
-         hal.console->printf("NOTE:--- i2c has errored ---\n");
+         hal.console->printf("NOTE:--- i2c has flagged errored ---\n");
       }else{
-         hal.console->printf("--- i2c no errors ---\n");
+         hal.console->printf("--- i2c has failed but no errors flagged ---\n");
       }
+#if defined QUAN_I2C_DEBUG
       // show flags to here
       for (uint32_t idx = 0; idx < flags_idx; ++idx){
          while (hal.console->tx_pending() ){asm volatile ("nop":::);}
@@ -169,6 +171,7 @@ namespace {
             hal.console->printf("\n");
          }
       }
+#endif
       // do nothing
       for(;;){
          vTaskDelayUntil(&previous_waketime,loop_time_ms);

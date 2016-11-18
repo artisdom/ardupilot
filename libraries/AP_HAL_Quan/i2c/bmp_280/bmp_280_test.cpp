@@ -39,7 +39,7 @@ bool bmp_280_read_cal_params()
    bool result = bmp_280_read_regs(Quan::bmp280::reg::dig_T1,Quan::bmp280::calib_param.arr,24);
    if (result){
 #if 0
-      if (!Quan::wait_for_i2c_bus_free(quan::time::ms{100})) { return false;}
+      if (!Quan::wait_for_i2c_bus_free(quan::time::ms{5})) { return false;}
       serial_port::write("--------- call_ params ----------\n");
       
       serial_port::printf<100>("dig_T1 = %u\n",Quan::bmp280::calib_param.dig_T1);

@@ -9,10 +9,9 @@ extern "C" bool is_valid_heap_memory(void * p);
 namespace Quan{
 
    struct i2c_register_based_driver_base : i2c_driver{
-   private:
-     static bool get_bus();
+ 
    protected :
-     static bool install_device(const char* name, uint8_t address);
+    
 
    /*
    sets up and starts i2c register based read.

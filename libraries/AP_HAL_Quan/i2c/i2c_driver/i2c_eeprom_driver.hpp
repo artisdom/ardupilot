@@ -85,7 +85,7 @@ namespace Quan{
       // since we are running all the clients in one thread
       // The result of bus_free should be reliable. If bus_free() is true
       // then get_bus() shouldnt fail
-      static bool get_bus();
+     // static bool get_bus();
 
    private:
 
@@ -140,10 +140,11 @@ namespace Quan{
         requires start address and start address + len must both be in the same page
         Since this is a private function this is not checked
      */
-
      static bool read_page(uint32_t start_address_in, uint8_t * data_out, uint32_t len)
      {
-
+         if (! Quan::wait_for_i2c_bus_free(5U)){
+            return false;
+         }
          return install_device(
                ID::get_device_name(),
                ID::get_device_address(),
@@ -164,6 +165,9 @@ namespace Quan{
    private:
      static bool write_page(uint32_t start_address_in, uint8_t const * data_in, uint32_t len)
      {
+         if (! Quan::wait_for_i2c_bus_free(5U)){
+            return false;
+         }
 
          return install_device(
             ID::get_device_name(), 

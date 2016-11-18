@@ -32,23 +32,6 @@ void Quan::i2c_eeprom_driver_base::set_new_write_end_time()
     m_write_end_time_ms = millis() + m_write_cycle_time_ms + 1U;
 }
 
-bool Quan::i2c_eeprom_driver_base::get_bus()
-{
-   if (!Quan::i2c_periph::bus_free()) {
-      return false;
-   }
-
-   if ( write_in_progress()){
-       return false;
-   }
-   
-   if(!Quan::i2c_periph::get_bus()){
-      return false;
-   }
-
-   return true;
-}
-
 bool Quan::i2c_eeprom_driver_base::install_device(
       const char* name, 
       uint8_t address,
@@ -56,43 +39,14 @@ bool Quan::i2c_eeprom_driver_base::install_device(
       uint32_t page_size,
       i2c_driver::millis_type write_cycle_time
 ){
-   if ( ! get_bus() ){
-      return false; // has reported
+
+   if ( ! i2c_driver::install_device(name,address)){
+      return false;
    }
-   set_device_name(name);
-   set_device_address(address);
    set_memory_size_bytes(memory_size);
    set_page_size_bytes(page_size);
    set_write_cycle_time(write_cycle_time);
    return true;  
-}
-
-namespace  {
-
-
-   bool wait_for_bus_free()
-   {
-      auto const wait_ms = millis() + 1000U;
-      bool bus_free = false;
-      while (millis() < wait_ms){
-         if ( Quan::i2c_periph::bus_free()){
-            bus_free = true;
-            break;
-         }
-      }
-      if(! bus_free){
-        // serial_port::write("failed to get free bus\n");
-         return false;
-      }
-      while ( millis() < wait_ms){
-         if ( ! Quan::i2c_eeprom_driver_base::write_in_progress()){
-            return true;
-         }
-      }
-     // serial_port::write("write to eeprom didnt end\n");
-      return false;
-   }
-
 }
 
 /*
@@ -121,9 +75,6 @@ bool Quan::i2c_eeprom_driver<ID>::read(uint32_t start_address_in,uint8_t* data_o
    uint32_t const start_page = start_address_in / ID::get_page_size_bytes();
    uint32_t const end_page =  (end_address -1) / ID::get_page_size_bytes();
    if ( start_page == end_page){
-      if (! wait_for_bus_free()){
-         return false;
-      }
       return read_page(start_address_in,data_out, len);
    }else{
 
@@ -134,10 +85,6 @@ bool Quan::i2c_eeprom_driver<ID>::read(uint32_t start_address_in,uint8_t* data_o
       uint32_t  bytes_to_read  = ID::get_page_size_bytes() - (start_address_in % ID::get_page_size_bytes());
 
       while (data < data_end){
-
-         if (! wait_for_bus_free()){
-            return false;
-         }
          if (!read_page(start_address,data,bytes_to_read)){
             return false;
          }
@@ -309,12 +256,7 @@ bool Quan::i2c_eeprom_driver<ID>::write(uint32_t start_address_in, uint8_t const
    uint32_t const end_page =  (end_address -1) / page_size;
   
    if ( start_page == end_page){
-
-      if (! wait_for_bus_free()){
-         return false;
-      }
       return write_page(start_address_in,data_in, len);
-
    }else{
 
       uint32_t             start_address  = start_address_in;
@@ -325,9 +267,6 @@ bool Quan::i2c_eeprom_driver<ID>::write(uint32_t start_address_in, uint8_t const
 
       while (data < data_end){
 
-         if (!wait_for_bus_free() ){
-            return false;
-         }
          if (! write_page(start_address,data, bytes_to_write)){
            AP_HAL::panic("eewr failed2\n");
            return false;
