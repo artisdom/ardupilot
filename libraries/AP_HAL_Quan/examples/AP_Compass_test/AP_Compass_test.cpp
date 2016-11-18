@@ -3,8 +3,12 @@
  *       Code by Jordi MuÒoz and Jose Julio. DIYDrones.com
  */
 
-#include <AP_Compass/AP_Compass.h>
 #include <AP_HAL/AP_HAL.h>
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <AP_Compass/AP_Compass.h>
+
+#include <AP_HAL_Quan/AP_HAL_Quan_Test_Main.h>
 #include <quantracker/osd/osd.hpp>
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
@@ -30,7 +34,7 @@ void setup() {
     timer = AP_HAL::micros();
 }
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
 void quan::uav::osd::on_draw() 
 { 
 /*
@@ -39,20 +43,14 @@ void quan::uav::osd::on_draw()
     pxp_type pos{-140,50};
     draw_text("Quan APM Compass Test",pos);
 }
-#endif
 
 void loop()
 {
    // static float min[3], max[3], offset[3];
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
      hal.scheduler->delay(100);
      // no need to accumulate
-#else
-    compass.accumulate();
-    if((AP_HAL::micros()- timer) > 100000L)
-    {
-#endif
+
         timer = AP_HAL::micros();
         compass.read();
        // unsigned long read_time = AP_HAL::micros() - timer;
@@ -118,11 +116,24 @@ void loop()
 
         hal.console->println();
 #endif
-#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
-    } else {
-	    hal.scheduler->delay(1);
-    }
-#endif
+
+
 }
 
-AP_HAL_MAIN();
+
+namespace {
+   uint32_t get_flags()
+   {
+      HAL_Quan::start_flags flags{0};
+      flags.init_gpio = true;
+      flags.init_scheduler = true;
+      flags.init_uartA = true;
+      flags.init_i2c = true;
+      return flags.value;
+   }
+}
+
+AP_HAL_TEST_MAIN( get_flags() )
+
+#endif // CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
