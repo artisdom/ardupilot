@@ -8,7 +8,7 @@ namespace Quan{
    template <uint32_t I>
    AP_HAL::UARTDriver * get_serial_port();
 
-   void set_console_irq_mode(bool b);
+  // void set_console_irq_mode(bool b);
 
 #if ! defined QUAN_AERFLITE_BOARD
    // val true for inverting false for non-inverting

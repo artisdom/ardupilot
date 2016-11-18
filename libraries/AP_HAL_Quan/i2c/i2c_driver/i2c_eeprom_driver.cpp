@@ -275,9 +275,9 @@ void Quan::i2c_eeprom_driver_base::on_read_dma_transfer_complete()
 
 void Quan::i2c_eeprom_driver_base::on_read_error()
 {
-   Quan::set_console_irq_mode(true);
-   hal.console->printf("%s : i2c read error : ",get_device_name());
-   Quan::set_console_irq_mode(false);
+//   Quan::set_console_irq_mode(true);
+//   hal.console->printf("%s : i2c read error : ",get_device_name());
+//   Quan::set_console_irq_mode(false);
    Quan::i2c_periph::default_error_handler();
 }
 
@@ -456,8 +456,8 @@ void Quan::i2c_eeprom_driver_base::on_write_last_byte_transfer_complete()
 
 void Quan::i2c_eeprom_driver_base::on_write_error()
 {
-   Quan::set_console_irq_mode(true);
-   hal.console->printf("%s : i2c write error : ",get_device_name());
-   Quan::set_console_irq_mode(false);
+//   Quan::set_console_irq_mode(true);
+//   hal.console->printf("%s : i2c write error : ",get_device_name());
+//   Quan::set_console_irq_mode(false);
    Quan::i2c_periph::default_error_handler();
 }

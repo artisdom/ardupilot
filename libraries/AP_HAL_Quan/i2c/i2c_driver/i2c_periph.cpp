@@ -368,7 +368,7 @@ void Quan::i2c_periph::default_error_handler()
 
    clear_i2c_bus();
 
-   Quan::set_console_irq_mode(false);
+ //  Quan::set_console_irq_mode(false);
    m_errored = true;
    
 }
