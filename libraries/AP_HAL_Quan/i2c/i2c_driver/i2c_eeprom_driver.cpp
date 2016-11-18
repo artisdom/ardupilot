@@ -69,11 +69,7 @@ bool Quan::i2c_eeprom_driver_base::install_device(
 
 namespace  {
 
-   // n.b must do
-   // ! Quan::i2c_periph::bus_free() || eeprom::write_in_progress()
-   // since write in progress is taken from bus_free
-   // any other way wont work
-   // N.B specific to eeprom
+
    bool wait_for_bus_free()
    {
       auto const wait_ms = millis() + 1000U;
