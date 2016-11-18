@@ -67,9 +67,9 @@ namespace {
 
    uint32_t incr_flags()
    { 
-     uint32_t const result = flags_idx ;
-     flags_idx = (flags_idx + 1) % 100;
-     return result;
+      uint32_t const result = flags_idx ;
+      flags_idx = (flags_idx + 1) % 100;
+      return result;
    }
 
 }
