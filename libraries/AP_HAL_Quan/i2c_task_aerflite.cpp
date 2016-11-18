@@ -106,7 +106,9 @@ namespace {
       }
       
       Quan::i2c_periph::init();
-   
+
+      
+
       TickType_t previous_waketime = xTaskGetTickCount();
       uint32_t loop_time_ms = 50U;
       if (Quan::setup_baro()) {
@@ -119,6 +121,7 @@ namespace {
             ,{"baro : calculate"        , 47 , 1, Quan::baro_calculate}
          };
          constexpr uint32_t num_tasks = sizeof(tasks)/ sizeof(task);
+
          bool failed = false;
          for (;;){
             flags_idx = 0;
