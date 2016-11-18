@@ -14,37 +14,27 @@ namespace {
    bool bmp_280_write_reg(uint8_t reg, uint8_t val)
    {
       if ( Quan::bmp280::write(reg, val)){
-        return true;
+         return true;
       }else{
          hal.console->printf("bmp 280 write reg failed\n");
+         return false;
       }
-      if(Quan::i2c_periph::has_errored()){
-         hal.console->printf("re init i2c\n");
-         Quan::i2c_periph::init();
-      }
-      return false;
    }
 
    bool bmp_280_read_regs(uint8_t reg,uint8_t * result, uint32_t len)
    {
       if ( Quan::bmp280::read(reg, result, len)){
-        return true;
+         return true;
       }else{
          hal.console->printf("bmp 280 read reg failed\n");
+         return false;
       }
-
-      if(Quan::i2c_periph::has_errored()){
-         hal.console->printf("re init i2c\n");
-         Quan::i2c_periph::init();
-      }
-      return false;
    }
 
    // blocking
    bool bmp_280_read_cal_params()
    {  
-      bool result = bmp_280_read_regs(Quan::bmp280::reg::dig_T1,Quan::bmp280::calib_param.arr,24);
-      if (result){
+      if (bmp_280_read_regs(Quan::bmp280::reg::dig_T1,Quan::bmp280::calib_param.arr,24)){
    #if 0
          hal.console->printf("--------- call_ params ----------\n");
          
@@ -63,14 +53,12 @@ namespace {
 
          hal.console->printf("-------- ~call_ params ----------\n");
    #endif
+         return true;
       }else{
          hal.console->printf("failed to read cal params\n");
-         if(Quan::i2c_periph::has_errored()){
-            hal.console->printf("re init i2c\n");
-            Quan::i2c_periph::init();
-         }
+         return false;
       }
-      return result;
+
    }
 
    bool bmp_280_setup()
@@ -100,6 +88,7 @@ namespace {
          hal.console->printf("bmp_280 read cal params failed\n");
          return false;
       }
+      // if we got here, success!
       return true;
    }
 
@@ -215,12 +204,9 @@ namespace {
         return true;
       }else{
          hal.console->printf("bmp_280 start conv failed\n");
+         return false;
       }
-      if(Quan::i2c_periph::has_errored()){
-         hal.console->printf("i2c error : trying reset\n");
-         Quan::i2c_periph::init();
-      }
-      return false;
+      
    }
 
    bool bmp280_start_read()
@@ -229,12 +215,9 @@ namespace {
          return true;
       }else{
          hal.console->printf("bmp_280 read failed\n");
+         return false;
       }
-      if(Quan::i2c_periph::has_errored()){
-         hal.console->printf("i2c error : trying reset\n");
-         Quan::i2c_periph::init();
-      }
-      return false;
+  
    }
 
 } // ~namespace

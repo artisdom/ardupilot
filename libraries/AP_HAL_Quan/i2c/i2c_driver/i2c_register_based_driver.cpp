@@ -74,7 +74,6 @@ namespace {
 
 }
 
-
 bool Quan::i2c_register_based_driver_base::ll_read(uint8_t register_index, uint8_t * data, uint32_t len)
 {
    m_data.read_ptr = data;
@@ -109,6 +108,10 @@ bool Quan::i2c_register_based_driver_base::ll_read(uint8_t register_index, uint8
       return true;
    }else{
       hal.console->printf("i2c_register_based_driver : read notify failed\n");
+      if(Quan::i2c_periph::has_errored()){
+         hal.console->printf("i2c error : trying reset\n");
+         Quan::i2c_periph::init();
+      }
       return false;
    }
    
@@ -294,6 +297,10 @@ bool Quan::i2c_register_based_driver_base::ll_write(uint8_t register_index, uint
       return true;
    }else{
       hal.console->printf("i2c_register_based_driver : write notify failed\n");
+      if(Quan::i2c_periph::has_errored()){
+         hal.console->printf("i2c error : trying reset\n");
+         Quan::i2c_periph::init();
+      }
       return false;
    }
 }
