@@ -11,6 +11,7 @@ extern const AP_HAL::HAL& hal;
 
 namespace {
 
+#if 0
    bool bmp_280_write_reg(uint8_t reg, uint8_t val)
    {
       if ( Quan::bmp280::write(reg, val)){
@@ -60,6 +61,7 @@ namespace {
       }
 
    }
+#endif
 
    bool bmp_280_setup()
    {
@@ -69,7 +71,7 @@ namespace {
       config.t_sb     = 0b000;  // 0.5 ms standby
 
       // N.B with these settings max update == 20 Hz
-      if (! bmp_280_write_reg(Quan::bmp280::reg::config,config.value)){
+      if (! Quan::bmp280::write(Quan::bmp280::reg::config,config.value)){
           hal.console->printf("bmp_280 write config failed\n");
           return false;
       }
@@ -79,12 +81,12 @@ namespace {
       ctrl_meas.osrs_p = 0b101;   // pressure oversampling  x16
       ctrl_meas.osrs_t = 0b010;   // temperature oversampling x2
 
-      if (! bmp_280_write_reg(Quan::bmp280::reg::ctrl_meas,ctrl_meas.value) ){
+      if (! Quan::bmp280::write(Quan::bmp280::reg::ctrl_meas,ctrl_meas.value) ){
           hal.console->printf("bmp_280 write ctrl meas failed\n");
           return false;
       }
 
-      if (! bmp_280_read_cal_params()){
+      if (! Quan::bmp280::read(Quan::bmp280::reg::dig_T1,Quan::bmp280::calib_param.arr,24)){
          hal.console->printf("bmp_280 read cal params failed\n");
          return false;
       }
