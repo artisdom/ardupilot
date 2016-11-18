@@ -21,14 +21,11 @@ AP_Compass_Quan::AP_Compass_Quan(Compass &compass)
 bool  AP_Compass_Quan::init(void)
 {return true;}
 
-
-// todo add device id etc 
-
 void  AP_Compass_Quan::read(void)
 {
    Quan::detail::compass_args args;
-   // receive should be available in 1/5th sec!
-   if ( xQueueReceive(m_hQueue, &args,5000) == pdTRUE) {
+   // receive should be available 
+   if ( xQueueReceive(m_hQueue, &args,0) == pdTRUE) {
 
       Vector3f raw_field{
          args.field.x.numeric_value()
@@ -40,8 +37,6 @@ void  AP_Compass_Quan::read(void)
       correct_field(raw_field, m_instance);
       publish_unfiltered_field(raw_field, args.time_us, m_instance);
       publish_filtered_field(raw_field, m_instance);
-   }else{
-      hal.console->printf("failed to receive Compass update after 5 sec\n");
    }
 }
 
