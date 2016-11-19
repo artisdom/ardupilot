@@ -12,7 +12,6 @@ namespace Quan{
  
    protected :
     
-
    /*
    sets up and starts i2c register based read.
    return true if the read was setup and started correctly
