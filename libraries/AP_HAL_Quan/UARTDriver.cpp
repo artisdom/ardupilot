@@ -41,8 +41,11 @@ TODO add thread safe version for console
 
 namespace {
 
+   // USART1 
    // on isolated port ( quantracker)
    // Pin 4 RXI Pin 5 TXO
+   // Board connector P10
+   // 3.3 v usart
    struct sp1{
       typedef quan::stm32::usart1                    usart;
       typedef quan::mcu::pin<quan::stm32::gpioa,9>   txo_pin;
@@ -50,8 +53,11 @@ namespace {
       typedef quan::stm32::freertos::apm::usart_tx_rx_task<usart,txo_pin,rxi_pin> serial_port;
    };
 
-   // on isolated port ( quantracker)
+   // USART3
+   // (on isolated port on quantracker)
    // Pin 2 TXO , Pin 6 RXI
+   // Board Connector P7
+   // 5V usart with hadware invert
    struct sp2{
       typedef quan::stm32::usart3                     usart;
       typedef quan::mcu::pin<quan::stm32::gpiob,10>   txo_pin; 
@@ -59,7 +65,10 @@ namespace {
       typedef quan::stm32::freertos::apm::usart_tx_rx_task<usart,txo_pin,rxi_pin> serial_port;
    };
    
+   // UART4
    // on header ( quantracker)
+   // Board Connector P8
+   // 5V usart with invert
    struct sp3{
       typedef quan::stm32::uart4                     usart;
       typedef quan::mcu::pin<quan::stm32::gpioa,0>   txo_pin; 
@@ -68,6 +77,10 @@ namespace {
    };
 
    #if defined QUAN_AERFLITE_BOARD
+
+   // USART6
+   // 3.3V usart
+   // Board Connector P9
    struct sp4{
       typedef quan::stm32::usart6                     usart;
       typedef quan::mcu::pin<quan::stm32::gpioc,6>   txo_pin; 

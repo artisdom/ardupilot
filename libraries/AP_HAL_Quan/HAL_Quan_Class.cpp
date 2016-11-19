@@ -37,11 +37,11 @@ static QuanUtil utilInstance;
 
 HAL_Quan::HAL_Quan() 
 :AP_HAL::HAL(
-   Quan::get_serial_port<0>(),//   uartA console  usart1
-   Quan::get_serial_port<2>(),//   uartB 1st GPS  uart4
-   Quan::get_serial_port<1>(),//   uartC telemetry usart3
+   Quan::get_serial_port<0>(),//   uartA console  usart1   3.3V
+   Quan::get_serial_port<2>(),//   uartB 1st GPS  uart4    5V  with invert
+   Quan::get_serial_port<1>(),//   uartC telemetry usart3  5V  with invert
 #if defined QUAN_AERFLITE_BOARD
-   Quan::get_serial_port<3>(),//   uartD  usart6
+   Quan::get_serial_port<3>(),//   uartD  usart6           3.3V 
 #else
    NULL,            /* no uartD */
 #endif
