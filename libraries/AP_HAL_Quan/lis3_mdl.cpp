@@ -75,15 +75,19 @@ bool Quan::compass_calculate()
    }
 
    typedef quan::magnetic_flux_density_<float>::milli_gauss mgauss;
+
    // AN4602 2.1 Full scale for milli gauss at +-4G full scale
    // data sheet table 3
-   constexpr float scale_mult = 1.f/6.842f;
+   constexpr float scale_mult = static_cast<float>(1.0/6.842);
+
    quan::three_d::vect<mgauss> field {
-       mgauss{vect.x * scale_mult}
-      ,mgauss{vect.y * scale_mult}
-      ,mgauss{vect.z * scale_mult}
+      // provide a 90 degree rotation since the compass is orientated that way
+       mgauss{vect.y * -scale_mult}   // y to -x
+      ,mgauss{vect.x * -scale_mult}  // x to y
+      ,mgauss{vect.z * -scale_mult}
    };
    QueueHandle_t hCompassQueue = get_compass_queue_handle();
+
    if ( uxQueueSpacesAvailable(hCompassQueue) != 0 ){
       Quan::detail::compass_args args;
       args.field = field;
