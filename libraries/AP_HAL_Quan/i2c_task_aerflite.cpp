@@ -107,16 +107,16 @@ namespace {
          AP_HAL::panic("compass setup failed");
       }
 
-      TickType_t previous_waketime = xTaskGetTickCount();
-      uint32_t loop_time_ms = 50U;
-     
-      vTaskDelay(10);
+      uint32_t looptime_ms = 50U;
+      TickType_t previous_waketime_ms = xTaskGetTickCount();
+
       task tasks [] = {
           {"baro : request conversion"    ,  1 , 1, Quan::baro_request_conversion}
          ,{"compass : request conversion" ,  2 , 1, Quan::compass_request_conversion}
+          // 7 ms spare
          ,{"compass : start_read"         ,  10, 2, Quan::compass_start_read}
          ,{"compass_calculate"            ,  13 ,1, Quan::compass_calculate}  
-       // leaves abaout 30 ms for eeprom
+       // leaves about 30 ms for eeprom
 
          
          ,{"baro : start read"            , 45 , 2, Quan::baro_start_read}
@@ -124,7 +124,7 @@ namespace {
       };
       constexpr uint32_t num_tasks = sizeof(tasks)/ sizeof(task);
 
-      bool failed = false;
+      bool succeeded = true;
       for (;;){
 #if defined QUAN_I2C_DEBUG
          flags_idx = 0;
@@ -137,11 +137,15 @@ namespace {
            }
            if ( !t.run()){
                hal.console->printf("i2c task %s failed\n",t.get_name());
-               failed = true;
+               succeeded = false;
                break;
            }
          }
-         if (failed ) { break;}
+         if (succeeded) { 
+            vTaskDelayUntil(&previous_waketime_ms, looptime_ms);
+         }else{
+            break;
+         }
       }
 
       // ----------------- get here on fail
@@ -161,10 +165,10 @@ namespace {
 
       hal.console->printf("----------------\n");
 
-      // sho we are still running
+      // show we are still running
       uint32_t count = 0;
       for(uint32_t i = 0; i < 120;++i){
-         vTaskDelayUntil(&previous_waketime,loop_time_ms);
+         vTaskDelayUntil(&previous_waketime_ms,looptime_ms);
          hal.console->printf("*");
          if (++count == 40){
             count = 0;
@@ -174,7 +178,7 @@ namespace {
 #endif
       // do nothing
       for(;;){
-         vTaskDelayUntil(&previous_waketime,loop_time_ms);
+         vTaskDelayUntil(&previous_waketime_ms,looptime_ms);
       }
    }
 

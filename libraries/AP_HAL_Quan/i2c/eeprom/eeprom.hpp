@@ -12,7 +12,7 @@ namespace Quan{
          static constexpr const char * get_device_name()      { return "M24M01 eeprom";}
          static constexpr uint32_t     get_memory_size_bytes(){ return 128U * 1024U;}
          static constexpr uint32_t     get_page_size_bytes()   { return 256U;}
-         static constexpr Quan::i2c_driver::millis_type get_write_cycle_time() { return Quan::i2c_driver::millis_type{5U};}
+         static constexpr Quan::i2c_driver::millis_type get_write_cycle_time_ms() { return Quan::i2c_driver::millis_type{5U};}
       };
 
       struct eeprom_24lc128{
@@ -20,7 +20,7 @@ namespace Quan{
          static constexpr const char * get_device_name()      { return "24LC128 eeprom";}
          static constexpr uint32_t     get_memory_size_bytes(){ return 16U * 1024U;}
          static constexpr uint32_t     get_page_size_bytes()   { return 64U;}
-         static constexpr Quan::i2c_driver::millis_type get_write_cycle_time() { return Quan::i2c_driver::millis_type{5U};}
+         static constexpr Quan::i2c_driver::millis_type get_write_cycle_time_ms() { return Quan::i2c_driver::millis_type{5U};}
       };
 
    };

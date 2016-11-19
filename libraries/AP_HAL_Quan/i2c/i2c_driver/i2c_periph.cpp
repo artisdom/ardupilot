@@ -92,7 +92,7 @@ namespace {
 using AP_HAL::millis;
 
 // rename to block_waiting for_bus_free
-bool Quan::wait_for_i2c_bus_free(uint32_t t_ms)
+bool Quan::wait_for_bus_free_ms(uint32_t t_ms)
 {
    auto now = millis();
    while ( ! Quan::i2c_periph::bus_free() ){

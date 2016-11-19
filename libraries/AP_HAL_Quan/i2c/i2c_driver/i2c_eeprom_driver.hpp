@@ -11,13 +11,17 @@ namespace Quan{
       // return the absolute system time when write will complete
       // note that i2c bus is available to other devices during this time
       // as long as the bus is free
-      static millis_type get_write_end_time() { return millis_type{m_write_end_time_ms};}
+      static millis_type get_write_end_time_ms() { return millis_type{m_write_end_time_ms};}
 
       // true if a write to this eeprom is in progress
       static bool write_in_progress();
 
+      static bool wait_for_write_complete();
+
+      static uint32_t get_write_time_left_ms();
+
       // return how long the write takes from end of the actual i2c write communication  
-      static millis_type get_write_cycle_time() { return millis_type{m_write_cycle_time_ms};}
+      static millis_type get_write_cycle_time_ms() { return millis_type{m_write_cycle_time_ms};}
       
       // return the size of a memory page
       // only one page can be read or written at at time
@@ -41,7 +45,7 @@ namespace Quan{
             uint8_t address,
             uint32_t memory_size,
             uint32_t page_size,
-            millis_type write_cycle_time
+            millis_type write_cycle_time_ms
       );
 
    /*
@@ -66,7 +70,7 @@ namespace Quan{
 
    private:
       static void set_new_write_end_time();
-      static void set_write_cycle_time(millis_type t) { m_write_cycle_time_ms = t;}
+      static void set_write_cycle_time_ms(millis_type t) { m_write_cycle_time_ms = t;}
       static void set_memory_size_bytes( uint32_t bytes){ m_memory_size_bytes = bytes;}
       static void set_page_size_bytes( uint32_t bytes) { m_page_size_bytes = bytes;}
       
@@ -106,22 +110,27 @@ namespace Quan{
       static void on_read_device_address_sent();
       static void on_read_data_address_hi_sent();
       static void on_read_data_address_lo_sent();
-      static void on_read_start2_sent();
+      static void on_read_repeated_start_sent();
       static void on_read_device_read_address_sent();
       static void on_read_dma_transfer_complete();
-      static void single_byte_receive_handler();
+   #if !defined QUAN_I2C_RX_DMA
+      static void on_read_multi_byte_handler();
+   #endif
+      static void on_read_single_byte_handler();
       static void on_read_error();
-
    #if !defined QUAN_I2C_TX_DMA
       static uint32_t        m_data_length;
-
+   #endif
       union data_ptr_type{
          uint8_t *         read_ptr; 
          uint8_t  const *  write_ptr;
       };
       static data_ptr_type   m_data;
-      static uint32_t        m_index;
+   #if !defined QUAN_I2C_RX_DMA
+         static uint32_t m_data_idx;
+         static uint32_t m_bytes_left;
    #endif
+   
       static uint8_t         m_data_address[2]; 
       static uint8_t         m_data_address_hi;
      
@@ -142,15 +151,12 @@ namespace Quan{
      */
      static bool read_page(uint32_t start_address_in, uint8_t * data_out, uint32_t len)
      {
-         if (! Quan::wait_for_i2c_bus_free(5U)){
-            return false;
-         }
          return install_device(
                ID::get_device_name(),
                ID::get_device_address(),
                ID::get_memory_size_bytes(),
                ID::get_page_size_bytes(),
-               ID::get_write_cycle_time()
+               ID::get_write_cycle_time_ms()
          ) && 
          ll_read(start_address_in,data_out,len);
      }
@@ -165,22 +171,16 @@ namespace Quan{
    private:
      static bool write_page(uint32_t start_address_in, uint8_t const * data_in, uint32_t len)
      {
-         if (! Quan::wait_for_i2c_bus_free(5U)){
-            return false;
-         }
-
          return install_device(
             ID::get_device_name(), 
             ID::get_device_address(),
             ID::get_memory_size_bytes(),
             ID::get_page_size_bytes(),
-            ID::get_write_cycle_time()
+            ID::get_write_cycle_time_ms()
          ) && 
           ll_write(start_address_in,data_in,len);
      }
-         
    };
-
 
 } //Quan
 

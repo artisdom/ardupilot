@@ -262,7 +262,7 @@ namespace Quan{
 
    };
 
-   bool wait_for_i2c_bus_free(uint32_t t_ms);
+   bool wait_for_bus_free_ms(uint32_t t_ms);
 
 } // Quan
 #endif // QUAN_STM32_EEPROM_TEST_I2C_HPP_INCLUDED

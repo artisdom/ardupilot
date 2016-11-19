@@ -13,7 +13,7 @@ bool Quan::i2c_driver::get_bus()
       return false;
    }
 
-   if (!Quan::wait_for_i2c_bus_free(100)){return false;}
+   if (!Quan::wait_for_bus_free_ms(100)){return false;}
    // i2c bus may still be busy after bus was released
    if(!Quan::i2c_periph::get_bus()){
       hal.console->write("i2c reg based driver : failed to acquire bus\n");
