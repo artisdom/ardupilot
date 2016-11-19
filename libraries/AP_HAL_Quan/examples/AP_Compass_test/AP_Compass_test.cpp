@@ -7,117 +7,170 @@
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <AP_Compass/AP_Compass.h>
-
 #include <AP_HAL_Quan/AP_HAL_Quan_Test_Main.h>
 #include <quantracker/osd/osd.hpp>
+#include <quan/min.hpp>
+#include <quan/max.hpp>
+#include <AP_OSD/fonts.hpp>
+#include <cstdio>
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
+namespace {
 
-static Compass compass;
+  Compass compass;
 
-uint32_t timer;
+  AP_HAL::UARTDriver * uart = nullptr;
+}
 
 void setup() {
-    hal.console->println("Compass library test");
+    
+    // we output data on telemetry uart
+    // which is connected to the RF modem.
+    uart = hal.uartC;
+    uart->begin(57600);
+
+    uart->println("Compass library test");
 
     if (!compass.init()) {
-        hal.console->println("compass initialisation failed!");
-        while (1) ;
+        AP_HAL::panic("compass initialisation failed!");
     }
-    hal.console->printf("init done - %u compasses detected\n", compass.get_count());
+    uart->printf("init done - %u compasses detected\n", compass.get_count());
 
-    compass.set_and_save_offsets(0,0,0,0); // set offsets to account for surrounding interference
+    // mod this to your own offsets
+
+    Vector3f offsets{310.31,-302.91,519.73};
+    compass.set_offsets(compass.get_primary(),offsets);
     compass.set_declination(ToRad(0.0f)); // set local difference between magnetic north and true north
 
     hal.scheduler->delay(1000);
-    timer = AP_HAL::micros();
+
 }
 
+namespace {
+
+   float heading = 0.f;
+
+   Vector3f raw_field;
+   Vector3f mag;
+   Vector3f field_min;
+   Vector3f field_max;
+   Vector3f field_offset;
+   bool start = true;
+}
 
 void quan::uav::osd::on_draw() 
 { 
-/*
-   could do something more exciting?
-*/
-    pxp_type pos{-140,50};
-    draw_text("Quan APM Compass Test",pos);
+
+    pxp_type pos{-140,100};
+    draw_text("Quan APM Compass Test",pos,Quan::FontID::MWOSD);
+
+    char buf [100];
+
+    sprintf(buf,"hdg = % 3.2f",static_cast<double>(ToDeg(heading)));
+    pos.y -= 30;
+    draw_text(buf,pos,Quan::FontID::OSD_Charset);
+
+    sprintf(buf,"raw[% 6.2f,% 6.2f,% 6.2f]",
+         static_cast<double>(raw_field.x),
+         static_cast<double>(raw_field.y),
+         static_cast<double>(raw_field.z));
+    pos.y -= 30;
+    draw_text(buf,pos,Quan::FontID::MWOSD);
+
+    sprintf(buf,"mag[% 6.2f,% 6.2f,% 6.2f]",
+         static_cast<double>(mag.x),
+         static_cast<double>(mag.y),
+         static_cast<double>(mag.z));
+
+    pos.y -= 30;
+    draw_text(buf,pos,Quan::FontID::MWOSD);
+
+    sprintf(buf,"ofs[% 6.2f,% 6.2f,% 6.2f]",
+      static_cast<double>(field_offset.x),
+      static_cast<double>(field_offset.y), 
+      static_cast<double>(field_offset.z));
+    pos.y -= 30;
+    draw_text(buf,pos,Quan::FontID::MWOSD);
+
+    sprintf(buf,"max[% 6.2f,% 6.2f,% 6.2f]",
+      static_cast<double>(field_max.x),
+      static_cast<double>(field_max.y),
+      static_cast<double>(field_max.z));
+    pos.y -= 30;
+    draw_text(buf,pos,Quan::FontID::MWOSD);
+
+    sprintf(buf,"min[% 6.2f,% 6.2f,% 6.2f]",
+      static_cast<double>(field_min.x),
+      static_cast<double>(field_min.y), 
+      static_cast<double>(field_min.z));
+    pos.y -= 30;
+    draw_text(buf,pos,Quan::FontID::MWOSD);
+
 }
 
 void loop()
 {
-   // static float min[3], max[3], offset[3];
+   hal.scheduler->delay(100);
 
-     hal.scheduler->delay(100);
-     // no need to accumulate
+   compass.read();
 
-        timer = AP_HAL::micros();
-        compass.read();
-       // unsigned long read_time = AP_HAL::micros() - timer;
-        Vector3f raw_field = compass.get_raw_field();
+   raw_field = compass.get_raw_field();
 
-        hal.console->printf(
-            "raw field [%.2f x, %.2f y, %.2f z]\n",
-             static_cast<double>(raw_field.x) 
-            ,static_cast<double>(raw_field.y)
-            ,static_cast<double>(raw_field.z)
-        );
-      
-#if 0
-        float heading;
+   uart->printf(
+      "raw field [% 6.2f x, % 6.2f y, % 6.2f z]\n",
+       static_cast<double>(raw_field.x) 
+      ,static_cast<double>(raw_field.y)
+      ,static_cast<double>(raw_field.z)
+   );
 
-        if (!compass.healthy()) {
-            hal.console->println("not healthy");
-            return;
-        }
-	Matrix3f dcm_matrix;
-	// use roll = 0, pitch = 0 for this example
-	dcm_matrix.from_euler(0, 0, 0);
-        heading = compass.calculate_heading(dcm_matrix);
-        compass.learn_offsets();
+   #if 1
 
-        // capture min
-        const Vector3f &mag = compass.get_field();
-        if( mag.x < min[0] )
-            min[0] = mag.x;
-        if( mag.y < min[1] )
-            min[1] = mag.y;
-        if( mag.z < min[2] )
-            min[2] = mag.z;
+   if (!compass.healthy()) {
+       AP_HAL::panic("compass not healthy");
+   }
 
-        // capture max
-        if( mag.x > max[0] )
-            max[0] = mag.x;
-        if( mag.y > max[1] )
-            max[1] = mag.y;
-        if( mag.z > max[2] )
-            max[2] = mag.z;
+   Matrix3f dcm_matrix;
+   // use roll = 0, pitch = 0 for this example
+   dcm_matrix.from_euler(0, 0, 0);
+   heading = compass.calculate_heading(dcm_matrix);
+   compass.learn_offsets();
 
-        // calculate offsets
-        offset[0] = -(max[0]+min[0])/2;
-        offset[1] = -(max[1]+min[1])/2;
-        offset[2] = -(max[2]+min[2])/2;
+   // capture field_min
+   mag = compass.get_field();
 
-        // display all to user
-        hal.console->printf("Heading: %.2f (%3d,%3d,%3d) i2c error: %u",
-			    static_cast<double>(ToDeg(heading)),
-			    (int)mag.x,
-			    (int)mag.y,
-			    (int)mag.z, 
-			    (unsigned)hal.i2c->lockup_count());
+   // we need to set something as min and max from the sensor, 
+   // since offsets may be such that values never get entirely
+   // positive or negative so starting at zero might always be 
+   // an incorrect minimum or a maximum
+   if (start){
+      for (uint32_t i = 0; i < 3; ++i){
+        field_min[i] = mag[i];
+        field_max[i] = mag[i];
+      }
+      start = false;
+   }else{
+      for (uint32_t i = 0; i < 3; ++i){
+        field_min[i] = quan::min(field_min[i],mag[i]);
+        field_max[i] = quan::max(field_max[i],mag[i]);
+      }
+   }
+   // calculate offsets
+   field_offset = -(field_max + field_min)/2;
+   // display all to user
+   uart->printf("Heading: % 6.2f [% 3d,% 3d,% 3d]",
+       static_cast<double>(ToDeg(heading)),
+       (int)mag.x ,
+       (int)mag.y ,
+       (int)mag.z 
+   );
 
-        // display offsets
-        hal.console->printf(" offsets(%.2f, %.2f, %.2f)",
-                      static_cast<double>(offset[0]) 
-                     ,static_cast<double>(offset[1])
-                     ,static_cast<double>(offset[2]));
+   uart->printf(" offsets[% 6.2f, % 6.2f, % 6.2f\n",
+                static_cast<double>(field_offset[0]) 
+               ,static_cast<double>(field_offset[1])
+               ,static_cast<double>(field_offset[2]));
 
-        hal.console->printf(" t=%u", (unsigned)read_time);
-
-        hal.console->println();
-#endif
-
-
+   #endif
 }
 
 
@@ -128,6 +181,7 @@ namespace {
       flags.init_gpio = true;
       flags.init_scheduler = true;
       flags.init_uartA = true;
+      flags.init_uartC = true;
       flags.init_i2c = true;
       return flags.value;
    }
