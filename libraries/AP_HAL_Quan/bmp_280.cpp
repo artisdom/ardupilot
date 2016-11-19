@@ -11,58 +11,6 @@ extern const AP_HAL::HAL& hal;
 
 namespace {
 
-#if 0
-   bool bmp_280_write_reg(uint8_t reg, uint8_t val)
-   {
-      if ( Quan::bmp280::write(reg, val)){
-         return true;
-      }else{
-         hal.console->printf("bmp 280 write reg failed\n");
-         return false;
-      }
-   }
-
-   bool bmp_280_read_regs(uint8_t reg,uint8_t * result, uint32_t len)
-   {
-      if ( Quan::bmp280::read(reg, result, len)){
-         return true;
-      }else{
-         hal.console->printf("bmp 280 read reg failed\n");
-         return false;
-      }
-   }
-
-   // blocking
-   bool bmp_280_read_cal_params()
-   {  
-      if (bmp_280_read_regs(Quan::bmp280::reg::dig_T1,Quan::bmp280::calib_param.arr,24)){
-   #if 0
-         hal.console->printf("--------- call_ params ----------\n");
-         
-         serial_port::printf<100>("dig_T1 = %u\n",Quan::bmp280::calib_param.dig_T1);
-         serial_port::printf<100>("dig_T2 = %d\n",Quan::bmp280::calib_param.dig_T2);
-         serial_port::printf<100>("dig_T3 = %d\n",Quan::bmp280::calib_param.dig_T3);
-         serial_port::printf<100>("dig_P1 = %u\n",Quan::bmp280::calib_param.dig_P1);
-         serial_port::printf<100>("dig_P2 = %d\n",Quan::bmp280::calib_param.dig_P2);
-         serial_port::printf<100>("dig_P3 = %d\n",Quan::bmp280::calib_param.dig_P3);
-         serial_port::printf<100>("dig_P4 = %d\n",Quan::bmp280::calib_param.dig_P4);
-         serial_port::printf<100>("dig_P5 = %d\n",Quan::bmp280::calib_param.dig_P5);
-         serial_port::printf<100>("dig_P6 = %d\n",Quan::bmp280::calib_param.dig_P6);
-         serial_port::printf<100>("dig_P7 = %d\n",Quan::bmp280::calib_param.dig_P7);
-         serial_port::printf<100>("dig_P8 = %d\n",Quan::bmp280::calib_param.dig_P8);
-         serial_port::printf<100>("dig_P9 = %d\n",Quan::bmp280::calib_param.dig_P9);
-
-         hal.console->printf("-------- ~call_ params ----------\n");
-   #endif
-         return true;
-      }else{
-         hal.console->printf("failed to read cal params\n");
-         return false;
-      }
-
-   }
-#endif
-
    bool bmp_280_setup()
    {
       Quan::bmp280::config_bits config;
@@ -257,5 +205,5 @@ namespace Quan{
       }
       return true;
    }
-   
 }
+
