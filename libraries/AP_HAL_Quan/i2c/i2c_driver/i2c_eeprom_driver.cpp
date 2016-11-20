@@ -1,7 +1,7 @@
 
-#include "i2c_eeprom_driver.hpp"
-#include "../eeprom/eeprom.hpp"
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
+#include <AP_HAL_Quan/eeprom.hpp>
+#include "i2c_eeprom_driver.hpp"
 
 extern const AP_HAL::HAL& hal;
 
@@ -13,9 +13,13 @@ uint32_t                                  Quan::i2c_eeprom_driver_base::m_memory
 uint32_t                                  Quan::i2c_eeprom_driver_base::m_page_size_bytes;
 
 #if !defined QUAN_I2C_TX_DMA
-uint32_t        Quan::i2c_eeprom_driver_base::m_data_length = 0;
+uint32_t   Quan::i2c_eeprom_driver_base::m_data_length = 0;
 Quan::i2c_eeprom_driver_base::data_ptr_type Quan::i2c_eeprom_driver_base::m_data;
-uint32_t        Quan::i2c_eeprom_driver_base::m_data_idx =0;
+#endif
+
+#if !defined QUAN_I2C_RX_DMA
+uint32_t Quan::i2c_eeprom_driver_base::m_data_idx = 0U;
+uint32_t Quan::i2c_eeprom_driver_base::m_bytes_left = 0U;
 #endif
 
 uint8_t         Quan::i2c_eeprom_driver_base::m_data_address[2] ={0U,0U};
@@ -81,7 +85,6 @@ bool Quan::i2c_eeprom_driver_base::install_device(
    set_write_cycle_time_ms(write_cycle_time_ms);
    return true;  
 }
-
 
 template <typename ID>
 bool Quan::i2c_eeprom_driver<ID>::read(uint32_t start_address_in,uint8_t* data_out, uint32_t len)
@@ -405,7 +408,7 @@ bool Quan::i2c_eeprom_driver<ID>::write(uint32_t start_address_in, uint8_t const
    return true;
 };
 
-template struct Quan::i2c_eeprom_driver<Quan::eeprom_info::eeprom_24lc128>;
+template struct Quan::i2c_eeprom_driver<Quan::eeprom_info::eeprom_m24m01>;
 
 bool Quan::i2c_eeprom_driver_base::ll_write(uint32_t data_address_in, uint8_t const * data_in, uint32_t len)
 {

@@ -111,17 +111,16 @@ namespace {
       TickType_t previous_waketime_ms = xTaskGetTickCount();
 
       task tasks [] = {
-          {"baro : request conversion"    ,  1 , 1, Quan::baro_request_conversion}
-         ,{"compass : request conversion" ,  2 , 1, Quan::compass_request_conversion}
-          // 7 ms spare
-         ,{"compass : start_read"         ,  10, 2, Quan::compass_start_read}
-         ,{"compass_calculate"            ,  13 ,1, Quan::compass_calculate}  
-       // leaves about 30 ms for eeprom
-
-         
-         ,{"baro : start read"            , 45 , 2, Quan::baro_start_read}
-         ,{"baro : calculate"             , 47 , 1, Quan::baro_calculate}
+          {"baro : request conversion"    ,  1 ,   1, Quan::baro_request_conversion}
+         ,{"compass : request conversion" ,  2 ,   1, Quan::compass_request_conversion}
+          // 7 ms spare add Airspeed here
+         ,{"compass : start_read"         ,  10,   2, Quan::compass_start_read}
+         ,{"compass_calculate"            ,  13 ,  1, Quan::compass_calculate}  
+         ,{"eeprom : opt write"           ,  14 , 25, Quan::eeprom_opt_write}
+         ,{"baro : start read"            ,  45 ,  2, Quan::baro_start_read}
+         ,{"baro : calculate"             ,  47 ,  1, Quan::baro_calculate}
       };
+
       constexpr uint32_t num_tasks = sizeof(tasks)/ sizeof(task);
 
       bool succeeded = true;
@@ -129,11 +128,17 @@ namespace {
 #if defined QUAN_I2C_DEBUG
          flags_idx = 0;
 #endif
-         auto loop_start_ms = millis();
+         auto const loop_start_ms = millis();
          for ( uint32_t i = 0; i < num_tasks ; ++i){
+           // do any eeprom reads in a timely fashion, though it messses up the timing of other tasks
+           if (!Quan::eeprom_opt_read()){
+               succeeded = false;
+               break;
+           }
            task & t = tasks[i];
-           if ( t.get_begin_ms() > (millis() - loop_start_ms) ){
-               vTaskDelay( t.get_begin_ms() - (millis() - loop_start_ms));
+           auto const time_since_task_started = millis() - loop_start_ms;
+           if ( time_since_task_started < t.get_begin_ms()  ){
+              vTaskDelay( t.get_begin_ms() - time_since_task_started);
            }
            if ( !t.run()){
                hal.console->printf("i2c task %s failed\n",t.get_name());
@@ -201,17 +206,13 @@ namespace Quan {
 
    void create_i2c_task()
    {
-           // As long as the baro data is read at less than 50 Hz
-      // and the compass at less than 100 Hz
-      // 1 in queue should be ok
-      // The update rates are listed in ArduPlane.cpp
-      // as 10 Hz for update_compass
-      // and 10 Hz for update_alt ( baro)
-      // (The higher rate accumulate functions are not used or required)
-      // Same rates in ArduCopter
-      constexpr uint32_t num_in_queue = 1;
-      hBaroQueue = xQueueCreate(num_in_queue,sizeof(Quan::detail::baro_args));
-      hCompassQueue = xQueueCreate(num_in_queue,sizeof(Quan::detail::compass_args));
+
+      hBaroQueue = xQueueCreate(1,sizeof(Quan::detail::baro_args));
+      hCompassQueue = xQueueCreate(1,sizeof(Quan::detail::compass_args));
+
+      if (! Quan::setup_eeprom()){
+         AP_HAL::panic("eeprom setup failed");
+      }
 
       xTaskCreate(
          i2c_task,"I2C_task",

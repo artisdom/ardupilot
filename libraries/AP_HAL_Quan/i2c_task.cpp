@@ -48,8 +48,6 @@ Needs usart and i2c and scheduler objects to be ready
 
 extern const AP_HAL::HAL& hal;
 
-
-
 namespace Quan{
    AP_HAL::I2CDriver * get_quan_i2c_driver();
 }
@@ -110,8 +108,6 @@ namespace {
    {
       // need to wait for 5V on the external sensor voltage regs
       wait_for_power_up();
-
-    //  hal_printf("starting i2c task\n");
 
       if ( (hBaroQueue == nullptr) || (hCompassQueue == nullptr) ){
         // panic("create FreeRTOS queues failed in I2c task\n");

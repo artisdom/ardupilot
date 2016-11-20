@@ -15,7 +15,7 @@
 #include <quan/magnetic_flux_density.hpp>
 #include <quan/three_d/vect.hpp>
 
-#include <AP_HAL/AP_HAL.h>
+
 #include "I2CDriver.h"
 
 namespace Quan{ 
@@ -29,15 +29,16 @@ namespace Quan{
       struct baro_args{
          quan::pressure_<float>::Pa         pressure;
          quan::temperature_<float>::K       temperature;
-      };
+      }; 
 
       struct compass_args{
          quan::three_d::vect<quan::magnetic_flux_density_<float>::milli_gauss> field;
          uint32_t time_us;
       };
+
    }
 
-   #if defined QUAN_AERFLITE_BOARD
+#if defined QUAN_AERFLITE_BOARD
    uint32_t * get_i2c_task_notify();
    TaskHandle_t   get_i2c_task_handle();
 
@@ -50,7 +51,7 @@ namespace Quan{
    bool baro_request_conversion();
    bool baro_start_read();
    bool baro_calculate();
-   #endif
+#endif
 }
 
 #endif //CONFIG_HAL_BOARD == HAL_BOARD_QUAN
