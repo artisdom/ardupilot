@@ -15,8 +15,9 @@
 #include <quan/magnetic_flux_density.hpp>
 #include <quan/three_d/vect.hpp>
 
-
+#if !defined QUAN_AERFLITE_BOARD
 #include "I2CDriver.h"
+#endif
 
 namespace Quan{ 
 

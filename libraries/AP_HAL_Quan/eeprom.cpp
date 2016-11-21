@@ -39,22 +39,27 @@ namespace {
 
 namespace Quan{
 
-
-   bool eeprom_opt_read()
-   {
+   /*
+      return 
+         0 on  nothing done, 
+         1 on  successful read
+        -1 on  fail
+   */
+   int eeprom_service_read_requests()
+   {  
       eeprom_read_msg msg;
       if ( xQueueReceive(eeprom_read_handle,&msg,0) == pdTRUE){
           bool result = eeprom::read(msg.eeprom_address,msg.mcu_address, msg.num_elements);
           if (result ){
             xSemaphoreGive(eeprom_read_complete_semaphore);
-            return true;
+            return 1;
           }else{
             AP_HAL::panic("eeprom : read to queue failed");
-            return false;
+            return -1;
           }
       }else{
          // nothing to do
-         return true;
+         return 0;
       }
    }
 
@@ -67,7 +72,7 @@ namespace {
 
 namespace Quan{
 
-   bool eeprom_opt_write()
+   bool eeprom_service_write_buffer()
    {
       auto now = millis();
       // keep rolling for 25 ms

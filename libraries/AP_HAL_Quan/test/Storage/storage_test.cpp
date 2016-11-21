@@ -6,6 +6,7 @@
 #include <StorageManager/StorageManager.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
+#include <AP_HAL_Quan/AP_HAL_Quan_Test_Main.h>
 #include <AP_HAL/utility/functor.h>
 
 #include <quantracker/osd/osd.hpp>
@@ -38,15 +39,13 @@ namespace {
           if ( m_count == false){
              char const text [] = "This is a string of stuff\n";
              hal.storage->write_block(5000,text,27);
-             m_count == true;
+             m_count = true;
           }else{
              char buffer[100];
-             
              hal.storage->read_block(buffer,5000,27);
-
              hal.console->write((unsigned char const*)buffer,27);
              hal.console->printf("-------------------------\n");
-             m_count == false;
+             m_count = false;
           }
       };
 
@@ -90,13 +89,26 @@ namespace {
 void loop() 
 {
    vTaskDelayUntil(&prev_wake_time,100); 
-   test_task.fun();
+  // test_task.fun();
    if ( ++led_count == 5){
       led_count = 0;
       hal.gpio->toggle(test_pin);
    }
 }
 
-AP_HAL_MAIN();
+namespace {
+   uint32_t get_flags()
+   {
+      HAL_Quan::start_flags flags{0};
+      flags.init_gpio = true;
+      flags.init_scheduler = true;
+      flags.init_uartA = true;
+      flags.init_uartC = true;
+      flags.init_i2c = true;
+      return flags.value;
+   }
+}
+
+AP_HAL_TEST_MAIN( get_flags() )
 
 

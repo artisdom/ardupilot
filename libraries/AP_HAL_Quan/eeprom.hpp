@@ -71,8 +71,8 @@ namespace Quan{
    SemaphoreHandle_t   get_read_complete_semaphore();
 
    bool setup_eeprom();
-   bool eeprom_opt_write();
-   bool eeprom_opt_read();
+   bool eeprom_service_write_buffer();
+   int eeprom_service_read_requests();
    
 }// Quan
 

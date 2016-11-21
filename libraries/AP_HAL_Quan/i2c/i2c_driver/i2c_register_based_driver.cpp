@@ -1,9 +1,11 @@
 
-
-#include "i2c_register_based_driver.hpp"
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
 
+#include "i2c_register_based_driver.hpp"
 
+#if defined QUAN_I2C_DEBUG
+#include <AP_HAL_Quan/i2c/i2c_driver/i2c_debug.hpp>
+#endif
 
 Quan::i2c_register_based_driver_base::data_ptr_type Quan::i2c_register_based_driver_base::m_data{}; // return data
 uint32_t Quan::i2c_register_based_driver_base::m_data_length = 0U;
@@ -15,28 +17,7 @@ uint32_t Quan::i2c_register_based_driver_base::m_bytes_left = 0U;
 using AP_HAL::panic;
 extern const AP_HAL::HAL& hal;
 
-#if defined QUAN_I2C_DEBUG
-namespace {
 
-   struct irq_info{
-      irq_info(){}
-      irq_info(const char* name,uint32_t flags):m_name{name},m_flags{flags}{}
-      const char * m_name;
-      uint32_t     m_flags;
-   };
-
-   irq_info infos[100];
-   uint32_t flags_idx = 0;
-
-   uint32_t incr_flags()
-   { 
-      uint32_t const result = flags_idx ;
-      flags_idx = (flags_idx + 1) % 100;
-      return result;
-   }
-
-}
-#endif
 
 bool Quan::i2c_register_based_driver_base::ll_read(uint8_t register_index, uint8_t * data, uint32_t len)
 {
@@ -88,7 +69,7 @@ void Quan::i2c_register_based_driver_base::on_read_start_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"on_read_start_sent",flags};
+   capture_i2c_sr1_flags("on_read_start_sent",flags);
 #endif
    if (flags & 1U){ // sb
       Quan::i2c_periph::set_event_handler(on_read_device_address_sent);
@@ -103,7 +84,7 @@ void Quan::i2c_register_based_driver_base::on_read_device_address_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"on_read_device_address_sent",flags};
+   capture_i2c_sr1_flags("on_read_device_address_sent",flags);
 #endif
    if ( flags & 2U){ // addr
       Quan::i2c_periph::get_sr2();  // clear addr bit
@@ -118,7 +99,7 @@ void Quan::i2c_register_based_driver_base::on_read_reg_index_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"on_read_reg_index_sent",flags};
+   capture_i2c_sr1_flags("on_read_reg_index_sent",flags);
 #endif
    if (flags & 4U){ // btf
       Quan::i2c_periph::receive_data(); //clear the txe and btf flags
@@ -133,7 +114,7 @@ void Quan::i2c_register_based_driver_base::on_read_repeated_start_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"on_read_repeated_start_sent",flags};
+   capture_i2c_sr1_flags("on_read_repeated_start_sent",flags);
 #endif
    if ( flags & 1U){ // sb
       Quan::i2c_periph::send_data(get_device_address() | 1);  //add
@@ -147,7 +128,7 @@ void Quan::i2c_register_based_driver_base::on_read_device_read_address_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"on_read_device_read_address_sent",flags};
+   capture_i2c_sr1_flags("on_read_device_read_address_sent",flags);
 #endif
    if ( flags & 2U){ // addr
       Quan::i2c_periph::get_sr2();
@@ -176,7 +157,7 @@ void Quan::i2c_register_based_driver_base::on_read_multi_byte_handler()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"on_read_multi_byte_handler",flags};
+   capture_i2c_sr1_flags("on_read_multi_byte_handler",flags);
 #endif
    if ( flags & 4U){
       if (m_data_length == 2){
@@ -215,7 +196,7 @@ void Quan::i2c_register_based_driver_base::on_read_single_byte_handler()
    Quan::i2c_periph::enable_event_interrupts(false);
    Quan::i2c_periph::enable_buffer_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"on_read_single_byte_handler",flags};
+   capture_i2c_sr1_flags("on_read_single_byte_handler",flags);
 #endif
    if ( flags & 64U){
       m_data.read_ptr[m_data_idx] = Quan::i2c_periph::receive_data();
@@ -283,7 +264,7 @@ void Quan::i2c_register_based_driver_base::on_write_start_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"on_write_start_sent",flags};
+   capture_i2c_sr1_flags("on_write_start_sent",flags);
 #endif
    if ( flags & 1){ // sb
       Quan::i2c_periph::send_data(get_device_address());
@@ -297,7 +278,7 @@ void Quan::i2c_register_based_driver_base::on_write_device_address_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"on_write_device_address_sent",flags};
+   capture_i2c_sr1_flags("on_write_device_address_sent",flags);
 #endif
    if ( flags & 2U){ // addr
       Quan::i2c_periph::get_sr2();
@@ -312,7 +293,7 @@ void Quan::i2c_register_based_driver_base::on_write_reg_index_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"on_write_reg_index_sent",flags};
+   capture_i2c_sr1_flags("on_write_reg_index_sent",flags);
 #endif
    if ( flags &  4U){ //  btf
       Quan::i2c_periph::send_data(m_data.value_to_write);
@@ -326,7 +307,7 @@ void Quan::i2c_register_based_driver_base::on_write_value_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"on_write_device_address_sent",flags};
+   capture_i2c_sr1_flags("on_write_device_address_sent",flags);
 #endif
    if ( flags & 4U){ // btf
       Quan::i2c_periph::request_stop_condition();

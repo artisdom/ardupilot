@@ -3,6 +3,10 @@
 #include <AP_HAL_Quan/eeprom.hpp>
 #include "i2c_eeprom_driver.hpp"
 
+#if defined QUAN_I2C_DEBUG
+#include <AP_HAL_Quan/i2c/i2c_driver/i2c_debug.hpp>
+#endif
+
 extern const AP_HAL::HAL& hal;
 
 using AP_HAL::millis;
@@ -181,7 +185,7 @@ void Quan::i2c_eeprom_driver_base::on_read_start_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"eeprom on_read_start_sent",flags};
+   capture_i2c_sr1_flags("eeprom on_read_start_sent",flags);
 #endif
    if (flags & 1U){ // sb
       Quan::i2c_periph::send_data(get_device_address() | m_data_address_hi);
@@ -195,7 +199,7 @@ void Quan::i2c_eeprom_driver_base::on_read_device_address_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"eeprom on_read_device_address_sent",flags};
+   capture_i2c_sr1_flags("eeprom on_read_device_address_sent",flags);
 #endif
    if (flags & 2U){ // addr
       Quan::i2c_periph::get_sr2();
@@ -210,7 +214,7 @@ void Quan::i2c_eeprom_driver_base::on_read_data_address_hi_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"eeprom on_read_data_address_hi_sent",flags};
+   capture_i2c_sr1_flags("eeprom on_read_data_address_hi_sent",flags);
 #endif
    if (flags & 4U){ //  txe btf
       Quan::i2c_periph::send_data(m_data_address[1]);
@@ -224,7 +228,7 @@ void Quan::i2c_eeprom_driver_base::on_read_data_address_lo_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"eeprom on_read_data_address_lo_sent",flags};
+   capture_i2c_sr1_flags("eeprom on_read_data_address_lo_sent",flags);
 #endif
    if (flags & 4U){ //  txe btf
       Quan::i2c_periph::receive_data(); //clear the txe and btf flags
@@ -239,7 +243,7 @@ void Quan::i2c_eeprom_driver_base::on_read_repeated_start_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"eeprom on_read_repeated_start_sent",flags};
+   capture_i2c_sr1_flags("eeprom on_read_repeated_start_sent",flags);
 #endif
    if (flags & 1U){ // sb
       Quan::i2c_periph::send_data(get_device_address() | m_data_address_hi | 1U); // send eeprom read address
@@ -253,7 +257,7 @@ void Quan::i2c_eeprom_driver_base::on_read_device_read_address_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"eeprom on_read_device_read_address_sent",flags};
+   capture_i2c_sr1_flags("eeprom on_read_device_read_address_sent",flags);
 #endif
    if ( flags & 2U){ // addr
       Quan::i2c_periph::get_sr2();
@@ -283,7 +287,7 @@ void Quan::i2c_eeprom_driver_base::on_read_multi_byte_handler()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"eeprom on_read_multi_byte_handler",flags};
+   capture_i2c_sr1_flags("eeprom on_read_multi_byte_handler",flags);
 #endif
    if ( flags & 4U){ // btf
       if (m_data_length == 2){
@@ -322,7 +326,7 @@ void Quan::i2c_eeprom_driver_base::on_read_single_byte_handler()
    Quan::i2c_periph::enable_event_interrupts(false);
    Quan::i2c_periph::enable_buffer_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"eeprom on_read_single_byte_handler",flags};
+   capture_i2c_sr1_flags("eeprom on_read_single_byte_handler",flags);
 #endif
    if ( flags & 64U){
       m_data.read_ptr[m_data_idx] = Quan::i2c_periph::receive_data();
@@ -457,7 +461,7 @@ void Quan::i2c_eeprom_driver_base::on_write_start_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"eeprom on_write_start_sent",flags};
+   capture_i2c_sr1_flags("eeprom on_write_start_sent",flags);
 #endif
    if ( flags & 1){ // sb
       Quan::i2c_periph::send_data(get_device_address() | m_data_address_hi);
@@ -471,7 +475,7 @@ void Quan::i2c_eeprom_driver_base::on_write_device_address_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"eeprom on_write_device_address_sent",flags};
+   capture_i2c_sr1_flags("eeprom on_write_device_address_sent",flags);
 #endif
    if ( flags & 2U){ // addr
       Quan::i2c_periph::get_sr2();
@@ -486,7 +490,7 @@ void Quan::i2c_eeprom_driver_base::on_write_data_address_hi_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"eeprom on_write_data_address_hi_sent",flags};
+   capture_i2c_sr1_flags("eeprom on_write_data_address_hi_sent",flags);
 #endif
    if (flags & 4U) {// btf
       Quan::i2c_periph::send_data(m_data_address[1]);
@@ -510,7 +514,7 @@ void Quan::i2c_eeprom_driver_base::on_write_data_address_lo_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"eeprom on_write_data_address_lo_sent",flags};
+   capture_i2c_sr1_flags("eeprom on_write_data_address_lo_sent",flags);
 #endif
    if (flags & 4U) {// btf
      Quan::i2c_periph::enable_dma_tx_stream(true);
@@ -532,7 +536,7 @@ void Quan::i2c_eeprom_driver_base::on_writing_data()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   infos[incr_flags()] = {"eeprom on_writing_data",flags};
+   capture_i2c_sr1_flags("eeprom on_writing_data",flags);
 #endif
    if (flags & 64U){ // btf txe
       Quan::i2c_periph::send_data(m_data.write_ptr[m_data_idx]);
