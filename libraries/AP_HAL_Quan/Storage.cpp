@@ -20,7 +20,6 @@ namespace Quan{
     bool storage_read(void * buffer,uint16_t eeprom_address,size_t n);
     bool storage_write(uint16_t eeprom_address, void const * buffer,size_t n);
 
-    
 }
 
 using namespace Quan;
@@ -34,14 +33,14 @@ void QuanStorage::init(void*)
 void QuanStorage::read_block(void* dst, uint16_t eeprom_address, size_t n) 
 {
    if ( !Quan::storage_read(dst,eeprom_address,n) ){
-      AP_HAL::panic("eeprom read failed");
+      hal.console->write("eeprom read failed\n");
    }
 }
 
 void QuanStorage::write_block(uint16_t eeprom_address, const void* src, size_t n)
 {
    if ( !Quan::storage_write(eeprom_address,src,n) ){
-      AP_HAL::panic("eeprom write failed");
+      hal.console->write("eeprom write failed\n");
    }  
 }
 
@@ -60,15 +59,16 @@ namespace Quan{
 
       eeprom_read_msg msg{buffer,storage_address,n};
       
-      if  (xQueueSendToBack(get_eeprom_read_handle(),&msg,100) == pdFALSE ){
-         AP_HAL::panic("eeprom read send to q failed\n");
+      if  (xQueueSendToBack(get_eeprom_read_handle(),&msg,500) == pdFALSE ){
+         hal.console->write("eeprom read send to queue failed\n");
          return false;
       }
 
-      if (xSemaphoreTake(get_read_complete_semaphore(), 100) == pdTRUE){
+      if (xSemaphoreTake(get_read_complete_semaphore(), 500) == pdTRUE){
+          hal.console->write("eeprom get read complete sem succeeded\n");
          return true;
       }else{
-         AP_HAL::panic("eeprom read complete sem failed\n");
+         hal.console->write("eeprom get read complete sem failed\n");
          return false;
       }
    }

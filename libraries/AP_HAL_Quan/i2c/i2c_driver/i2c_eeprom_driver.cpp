@@ -60,9 +60,10 @@ bool Quan::i2c_eeprom_driver_base::wait_for_write_complete()
    return true;
 }
 
+// call from isr
 void Quan::i2c_eeprom_driver_base::set_new_write_end_time()
 {
-   m_write_end_time_ms = millis() + m_write_cycle_time_ms + 1U;
+   m_write_end_time_ms = Quan::millis_from_isr() + m_write_cycle_time_ms + 1U;
 }
 
 bool Quan::i2c_eeprom_driver_base::install_device(
@@ -144,6 +145,7 @@ bool Quan::i2c_eeprom_driver_base::ll_read(uint32_t start_address_in, uint8_t * 
 #if !defined QUAN_I2C_TX_DMA
    m_data.read_ptr = data;
    m_data_length   = len;
+   m_bytes_left    = len;
    m_data_idx      = 0;
 #endif   
    
@@ -165,6 +167,9 @@ bool Quan::i2c_eeprom_driver_base::ll_read(uint32_t start_address_in, uint8_t * 
    }
 #endif
 
+#if defined QUAN_I2C_DEBUG
+    if (Quan::want_flags_index_reset()){ Quan::reset_i2c_sr1_flags_index();}
+#endif
    Quan::i2c_periph::request_start_condition();
 
    uint32_t const max_wait_ms = 2U + len / 10U + ((len % 10)?1:0);
@@ -201,7 +206,7 @@ void Quan::i2c_eeprom_driver_base::on_read_device_address_sent()
 #if defined QUAN_I2C_DEBUG
    capture_i2c_sr1_flags("eeprom on_read_device_address_sent",flags);
 #endif
-   if (flags & 2U){ // addr
+   if (flags & 2U){ // addr txe
       Quan::i2c_periph::get_sr2();
       Quan::i2c_periph::send_data(m_data_address[0]);
       Quan::i2c_periph::set_event_handler(on_read_data_address_hi_sent);
@@ -290,6 +295,7 @@ void Quan::i2c_eeprom_driver_base::on_read_multi_byte_handler()
    capture_i2c_sr1_flags("eeprom on_read_multi_byte_handler",flags);
 #endif
    if ( flags & 4U){ // btf
+    
       if (m_data_length == 2){
          Quan::i2c_periph::request_stop_condition();
          m_data.read_ptr[0] = Quan::i2c_periph::receive_data();
@@ -415,7 +421,18 @@ bool Quan::i2c_eeprom_driver<ID>::write(uint32_t start_address_in, uint8_t const
 template struct Quan::i2c_eeprom_driver<Quan::eeprom_info::eeprom_m24m01>;
 
 bool Quan::i2c_eeprom_driver_base::ll_write(uint32_t data_address_in, uint8_t const * data_in, uint32_t len)
+
+  
 {
+   if ( len == 0){
+      AP_HAL::panic("eeprom_orig write zero length");
+      return false;
+   }
+   if ( data_in == nullptr){
+      AP_HAL::panic("eeprom_orig write data is null");
+      return false;
+   }
+   
    m_data_address[0] = static_cast<uint8_t>((data_address_in & 0xFF00) >> 8U);
    m_data_address[1] = static_cast<uint8_t>(data_address_in & 0xFF);
 // TODO check that address in range
@@ -441,9 +458,13 @@ bool Quan::i2c_eeprom_driver_base::ll_write(uint32_t data_address_in, uint8_t co
    Quan::i2c_periph::enable_event_interrupts(true);
    Quan::i2c_periph::enable_buffer_interrupts(false);
 
+#if defined QUAN_I2C_DEBUG
+    if (Quan::want_flags_index_reset()){ Quan::reset_i2c_sr1_flags_index();}
+#endif
+
    Quan::i2c_periph::request_start_condition();
 
-   uint32_t const max_wait_ms = 2U + len / 10U + ((len % 10)?1:0);
+   uint32_t const max_wait_ms = 100U + len / 10U + ((len % 10)?1:0);
    if (ulTaskNotifyTake(pdTRUE,max_wait_ms)!= 0){
       return true;
    }else{
@@ -463,7 +484,7 @@ void Quan::i2c_eeprom_driver_base::on_write_start_sent()
 #if defined QUAN_I2C_DEBUG
    capture_i2c_sr1_flags("eeprom on_write_start_sent",flags);
 #endif
-   if ( flags & 1){ // sb
+   if ( flags & 0x01){ // sb
       Quan::i2c_periph::send_data(get_device_address() | m_data_address_hi);
       Quan::i2c_periph::set_event_handler(on_write_device_address_sent);
       Quan::i2c_periph::enable_event_interrupts(true);
@@ -477,7 +498,7 @@ void Quan::i2c_eeprom_driver_base::on_write_device_address_sent()
 #if defined QUAN_I2C_DEBUG
    capture_i2c_sr1_flags("eeprom on_write_device_address_sent",flags);
 #endif
-   if ( flags & 2U){ // addr
+   if ( flags & 0x02){ // addr txe
       Quan::i2c_periph::get_sr2();
       Quan::i2c_periph::send_data(m_data_address[0]);
       Quan::i2c_periph::set_event_handler(on_write_data_address_hi_sent); 
@@ -492,7 +513,7 @@ void Quan::i2c_eeprom_driver_base::on_write_data_address_hi_sent()
 #if defined QUAN_I2C_DEBUG
    capture_i2c_sr1_flags("eeprom on_write_data_address_hi_sent",flags);
 #endif
-   if (flags & 4U) {// btf
+   if (flags & 0x04) {// btf txe
       Quan::i2c_periph::send_data(m_data_address[1]);
    #if defined QUAN_I2C_TX_DMA
       Quan::i2c_periph::set_event_handler(on_write_data_address_lo_sent);
@@ -516,7 +537,7 @@ void Quan::i2c_eeprom_driver_base::on_write_data_address_lo_sent()
 #if defined QUAN_I2C_DEBUG
    capture_i2c_sr1_flags("eeprom on_write_data_address_lo_sent",flags);
 #endif
-   if (flags & 4U) {// btf
+   if (flags & 0x04) {// btf
      Quan::i2c_periph::enable_dma_tx_stream(true);
    }
 }
@@ -538,14 +559,20 @@ void Quan::i2c_eeprom_driver_base::on_writing_data()
 #if defined QUAN_I2C_DEBUG
    capture_i2c_sr1_flags("eeprom on_writing_data",flags);
 #endif
-   if (flags & 64U){ // btf txe
+   if (flags & 0x84){ // btf txe
       Quan::i2c_periph::send_data(m_data.write_ptr[m_data_idx]);
-      if ( m_data_idx == 0){ 
-         Quan::i2c_periph::enable_buffer_interrupts(true); // txe
-      }
+//      if ( m_data_idx == 0){ 
+//         Quan::i2c_periph::enable_buffer_interrupts(true); // txe
+//      }
+
       if ( ++m_data_idx == m_data_length){
+        // hal.gpio->write(1,1);
          Quan::i2c_periph::set_event_handler(on_write_last_byte_transfer_complete);
-         Quan::i2c_periph::enable_buffer_interrupts(false);
+//         Quan::i2c_periph::request_stop_condition();
+//         Quan::i2c_periph::set_default_handlers();
+//         set_new_write_end_time();
+//         Quan::i2c_periph::release_bus();
+//        // Quan::i2c_periph::enable_buffer_interrupts(false);
       }
       Quan::i2c_periph::enable_event_interrupts(true);
    }
@@ -555,8 +582,13 @@ void Quan::i2c_eeprom_driver_base::on_writing_data()
 // txe on last
 void Quan::i2c_eeprom_driver_base::on_write_last_byte_transfer_complete()
 {
+   uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
-   Quan::i2c_periph::enable_buffer_interrupts(false);
+#if defined QUAN_I2C_DEBUG
+   capture_i2c_sr1_flags("on_write_last_byte_transfer_complete",flags);
+#endif
+   
+  // Quan::i2c_periph::enable_buffer_interrupts(false);
    Quan::i2c_periph::request_stop_condition();
    Quan::i2c_periph::set_default_handlers();
    set_new_write_end_time();

@@ -95,6 +95,13 @@ void Quan::show_i2c_sr1_flags()
    hal.console->printf("----------------\n");
 }
 
+namespace{
+   bool m_want_flags_index_reset = false;
+}
+
+    bool Quan::want_flags_index_reset() {return m_want_flags_index_reset;}
+    void Quan::set_want_flags_index_reset(bool b){m_want_flags_index_reset = b;}
+
 void Quan::reset_i2c_sr1_flags_index()
 {
    flags_idx = 0;

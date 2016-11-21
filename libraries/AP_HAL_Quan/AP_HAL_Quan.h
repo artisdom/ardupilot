@@ -31,6 +31,25 @@
 #include <quan/max.hpp>
 #include "HAL_Quan_Class.h"
 #include "AP_HAL_Quan_Main.h"
+
+namespace Quan{
+
+   uint64_t micros64_from_isr();
+
+   inline uint64_t millis64_from_isr() 
+   {
+      return micros64_from_isr() / 1000ULL;
+   }
+
+   inline uint32_t millis_from_isr() {
+       return millis64_from_isr();
+   }
+
+   inline uint32_t micros_from_isr() {
+       return micros64_from_isr();
+   }
+
+};
 #endif
 #endif //__AP_HAL_QUAN_H__
 

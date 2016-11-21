@@ -22,28 +22,37 @@ const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 namespace {
 
-   constexpr uint8_t red_led_pin = 1U;
+  // constexpr uint8_t red_led_pin = 1U;
    // Pin2 == PC14
    constexpr uint8_t test_pin = 2U;
 
    constexpr uint8_t pin_off = 0U;
    constexpr uint8_t pin_on = 1U;
 
+   constexpr uint32_t ee_addr = 6;
+
    struct test_task_t{
 
       test_task_t(): m_count{false}{}
 
       void fun()
-      {
-          hal.gpio->toggle(red_led_pin);
+      { 
+          char const text [] = "Hello\n";
+          uint32_t len = strlen(text)+1;
+       //   hal.gpio->toggle(red_led_pin);
           if ( m_count == false){
-             char const text [] = "This is a string of stuff\n";
-             hal.storage->write_block(5000,text,27);
+             hal.storage->write_block(ee_addr,text,len);
              m_count = true;
           }else{
-             char buffer[100];
-             hal.storage->read_block(buffer,5000,27);
-             hal.console->write((unsigned char const*)buffer,27);
+             hal.console->printf("-------------------------\n");
+             char buffer[100] = {'\0'};
+             hal.storage->read_block(buffer,ee_addr,len);
+             if ( buffer[0] != '\0'){
+               hal.console->write("got something\n");
+               //hal.console->write((unsigned char const*)buffer,len);
+             }else{
+               hal.console->write("read failed\n");
+             }
              hal.console->printf("-------------------------\n");
              m_count = false;
           }
@@ -51,8 +60,8 @@ namespace {
 
       void init()
       {
-          hal.gpio->pinMode(red_led_pin,HAL_GPIO_OUTPUT);
-          hal.gpio->write(red_led_pin,pin_off);
+         // hal.gpio->pinMode(red_led_pin,HAL_GPIO_OUTPUT);
+         // hal.gpio->write(red_led_pin,pin_off);
           
       }
    private:
@@ -67,7 +76,10 @@ void setup()
  	hal.console->printf("Quan APM Storage test\n");
    hal.gpio->pinMode(test_pin,HAL_GPIO_OUTPUT);
    hal.gpio->write(test_pin,pin_off);
-   test_task.init();
+//   test_task.init();
+//
+//   test_task.fun();
+//   test_task.fun();
 }
 
 void on_telemetry_transmitted()
@@ -88,12 +100,10 @@ namespace {
 // called forever in apm_task
 void loop() 
 {
-   vTaskDelayUntil(&prev_wake_time,100); 
-  // test_task.fun();
-   if ( ++led_count == 5){
-      led_count = 0;
-      hal.gpio->toggle(test_pin);
-   }
+   vTaskDelayUntil(&prev_wake_time,500); 
+
+   hal.gpio->toggle(test_pin);
+   
 }
 
 namespace {
