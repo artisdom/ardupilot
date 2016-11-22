@@ -34,8 +34,8 @@ void setup(void)
 
     // we output data on telemetry uart
     // which is connected to the RF modem.
-    uart = hal.uartC;
-    uart->begin(57600);
+    uart = hal.console;
+   // uart->begin(57600);
     uart->println("AP_InertialSensor startup...");
     ins.init(AP_InertialSensor::RATE_50HZ);
     // display initial values
