@@ -143,7 +143,7 @@ extern "C" void EXTI15_10_IRQHandler()
 {      
    if (quan::stm32::is_event_pending<Quan::bmi160::not_DR>()){
 
-      Quan::spi::disable();
+   //   Quan::spi::disable();
       // reset the watchdog
       mpu_watchdog::get()->cnt = 0; 
       mpu_watchdog::get()->sr = 0;
@@ -156,14 +156,12 @@ extern "C" void EXTI15_10_IRQHandler()
       DMA2->LIFCR = ( 0b111101 << 0) ; // Stream 0 clear flags
       DMA2_Stream0->NDTR = Quan::bmi160::dma_buffer_size; // RX
 
-      Quan::spi::enable();
-
       rx_buffer_idx = 0;
       Quan::spi::ll_read();
-      Quan::spi::enable_rxneie();
+
       while (!Quan::spi::txe()){;}
       Quan::spi::ll_write(Quan::bmi160::reg::gyro_data_lsb | 0x80);
-
+      Quan::spi::enable_rxneie();
    }else{
       uint32_t const exti_pr_reg = quan::stm32::exti::get()->pr.get();
       // mask interrupts to prevent recur forever
@@ -211,19 +209,18 @@ namespace Quan{
 extern "C" void  SPI1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void  SPI1_IRQHandler()
 {
-  if ( rx_buffer_idx < (Quan::bmi160::dma_buffer_size+2)){
-     if ( rx_buffer_idx == 0){
-        Quan::spi::ll_read();
-        Quan::spi::disable_rxneie();
-        Quan::spi::enable_txeie();
-        DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
-        while ( !  Quan::spi::txe()){;}
-     }
-     Quan::spi::ll_write(0U);
-     ++rx_buffer_idx;
-  }else{
      Quan::spi::disable_txeie();
-  }
+     if ( rx_buffer_idx == 0){
+        Quan::spi::disable_rxneie();
+        Quan::spi::ll_read();
+        DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
+     }
+
+     if ( rx_buffer_idx < (Quan::bmi160::dma_buffer_size+1)){
+       Quan::spi::ll_write(0U);
+       ++rx_buffer_idx;
+       Quan::spi::enable_txeie();
+     }
 }
 
 // RX DMA complete
