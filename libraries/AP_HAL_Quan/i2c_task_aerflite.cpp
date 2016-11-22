@@ -141,10 +141,10 @@ namespace {
                       
          ,{"compass : start_read"         ,  10,   2, Quan::compass_start_read}
          ,{"compass_calculate"            ,  13 ,  1, Quan::compass_calculate}  
-         //,{"eeprom : serv write buffer"   ,  14 , 25, Quan::eeprom_service_write_buffer}
+         ,{"eeprom : serv write buffer"   ,  14 , 25, Quan::eeprom_service_write_buffer}
 
-          ,{"test_write"                   ,  15 ,   1, test_write}
-          ,{"test_read"                    ,  25 ,  1, test_read}
+       //   ,{"test_write"                   ,  15 ,   1, test_write}
+       //   ,{"test_read"                    ,  25 ,  1, test_read}
          ,{"baro : start read"            ,  45 ,  2, Quan::baro_start_read}
          ,{"baro : calculate"             ,  47 ,  1, Quan::baro_calculate}
       };
@@ -163,7 +163,7 @@ namespace {
             //############################################
             // do any eeprom reads in a timely fashion, 
             // but allow the start conv requests to be started first
-#if 0
+#if 1
             if ( i > 1) {// now the baro and compass request have been started
                // though it stalls the other tasks
                // need to know if a read occurred

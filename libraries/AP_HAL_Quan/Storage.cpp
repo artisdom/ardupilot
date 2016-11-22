@@ -65,7 +65,7 @@ namespace Quan{
       }
 
       if (xSemaphoreTake(get_read_complete_semaphore(), 500) == pdTRUE){
-          hal.console->write("eeprom get read complete sem succeeded\n");
+        //  hal.console->write("eeprom get read complete sem succeeded\n");
          return true;
       }else{
          hal.console->write("eeprom get read complete sem failed\n");

@@ -53,17 +53,10 @@ namespace Quan{
       if ( xQueueReceive(eeprom_read_handle,&msg,0) == pdTRUE){
           bool result = eeprom::read(msg.eeprom_address,msg.mcu_address, msg.num_elements);
           if (result ){
-            hal.console->write("READ Successful :::) \n");
-            hal.console->printf("ee addr = %lu,mcu_addr = %lu,num = %lu\n",
-                  (uint32_t)msg.eeprom_address,(uint32_t)msg.mcu_address,(uint32_t) msg.num_elements);
-            for (uint32_t i = 0; i < msg.num_elements; ++i){
-               hal.console->printf("%c",((const char*)msg.mcu_address)[i]);
-            }
-            hal.console->printf("\n");
             xSemaphoreGive(eeprom_read_complete_semaphore);
             return 1;
           }else{
-            hal.console->write("eeprom : read to queue failed");
+            hal.console->write("eeprom : service read to queue failed");
             return -1;
           }
       }else{
@@ -86,7 +79,7 @@ namespace Quan{
       auto now = millis();
       // keep rolling for 25 ms
       while ( (millis() - now ) < 25U){
-         if ( xQueueReceive(eeprom_read_handle,&m_eeprom_write_msg,0) == pdTRUE){
+         if ( xQueueReceive(eeprom_write_handle,&m_eeprom_write_msg,0) == pdTRUE){
              bool result = eeprom::write(
                m_eeprom_write_msg.eeprom_address,
                m_eeprom_write_msg.data,

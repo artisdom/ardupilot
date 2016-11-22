@@ -37,8 +37,8 @@ namespace {
 
       void fun()
       { 
-          char const text [] = "Hello\n";
-          uint32_t len = strlen(text)+1;
+          char const text [] = "Hello There";
+          uint32_t len = strlen(text) +1;
        //   hal.gpio->toggle(red_led_pin);
           if ( m_count == false){
              hal.storage->write_block(ee_addr,text,len);
@@ -47,9 +47,12 @@ namespace {
              hal.console->printf("-------------------------\n");
              char buffer[100] = {'\0'};
              hal.storage->read_block(buffer,ee_addr,len);
-             if ( buffer[0] != '\0'){
+             if ( buffer[len-1] == '\0'){
                hal.console->write("got something\n");
-               //hal.console->write((unsigned char const*)buffer,len);
+               for ( uint32_t i= 0; i < len; ++i){
+                  hal.console->printf("%c",(((char const*)buffer)[i]));
+               }
+               hal.console->write("\n");
              }else{
                hal.console->write("read failed\n");
              }
@@ -78,8 +81,8 @@ void setup()
    hal.gpio->write(test_pin,pin_off);
 //   test_task.init();
 //
-//   test_task.fun();
-//   test_task.fun();
+   test_task.fun();
+   test_task.fun();
 }
 
 void on_telemetry_transmitted()
@@ -94,7 +97,7 @@ void quan::uav::osd::on_draw()
 namespace {
 
    TickType_t prev_wake_time= 0; 
-   uint32_t led_count = 0;
+ 
 
 }
 // called forever in apm_task
