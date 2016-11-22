@@ -26,6 +26,14 @@
 #include "imu_task.hpp"
 #include "bmi_160.hpp"
 
+/*
+  This works better with tx dma but that channel may also be useful for a usart which conflicts
+  TODO make it a compile option to use TX DMA
+  currently only RX DMA is enabled but since you need a clock which is triggered by a write to dr it doesnt gain much
+  Could prob just read the dr and not use DMA, but since there isnt anything else useful on this channel
+  not critical
+*/
+
 extern const AP_HAL::HAL& hal;
 
 float Quan::bmi160::accel_constant;
@@ -142,26 +150,25 @@ extern "C" void EXTI15_10_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void EXTI15_10_IRQHandler()
 {      
    if (quan::stm32::is_event_pending<Quan::bmi160::not_DR>()){
-
-   //   Quan::spi::disable();
       // reset the watchdog
       mpu_watchdog::get()->cnt = 0; 
       mpu_watchdog::get()->sr = 0;
 
       Quan::spi::cs_assert<Quan::bmi160::not_CS>(); // start transaction
-  //    quan::stm32::disable_exti_interrupt<Quan::bmi160::not_DR>();
       quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
      
-
       DMA2->LIFCR = ( 0b111101 << 0) ; // Stream 0 clear flags
       DMA2_Stream0->NDTR = Quan::bmi160::dma_buffer_size; // RX
 
       rx_buffer_idx = 0;
-      Quan::spi::ll_read();
 
+      // clear any junk
+      Quan::spi::ll_read();
       while (!Quan::spi::txe()){;}
+
       Quan::spi::ll_write(Quan::bmi160::reg::gyro_data_lsb | 0x80);
       Quan::spi::enable_rxneie();
+
    }else{
       uint32_t const exti_pr_reg = quan::stm32::exti::get()->pr.get();
       // mask interrupts to prevent recur forever
@@ -206,6 +213,8 @@ namespace Quan{
 
 } // Quan
 
+// first time triggered by rxne
+// then by txe, then rx dma is taking care of the data
 extern "C" void  SPI1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void  SPI1_IRQHandler()
 {
@@ -216,7 +225,7 @@ extern "C" void  SPI1_IRQHandler()
         DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
      }
 
-     if ( rx_buffer_idx < (Quan::bmi160::dma_buffer_size+1)){
+     if ( rx_buffer_idx < (Quan::bmi160::dma_buffer_size)){
        Quan::spi::ll_write(0U);
        ++rx_buffer_idx;
        Quan::spi::enable_txeie();
