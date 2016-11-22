@@ -26,14 +26,6 @@
 #include "imu_task.hpp"
 #include "bmi_160.hpp"
 
-/*
-  This works better with tx dma but that channel may also be useful for a usart which conflicts
-  TODO make it a compile option to use TX DMA
-  currently only RX DMA is enabled but since you need a clock which is triggered by a write to dr it doesnt gain much
-  Could prob just read the dr and not use DMA, but since there isnt anything else useful on this channel
-  not critical
-*/
-
 extern const AP_HAL::HAL& hal;
 
 float Quan::bmi160::accel_constant;
@@ -218,18 +210,20 @@ namespace Quan{
 extern "C" void  SPI1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void  SPI1_IRQHandler()
 {
-     Quan::spi::disable_txeie();
-     if ( rx_buffer_idx == 0){
+//     Quan::spi::disable_txeie();
+//     if ( rx_buffer_idx == 0){
         Quan::spi::disable_rxneie();
         Quan::spi::ll_read();
+        Quan::spi::ll_write(0U);
         DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
-     }
-
-     if ( rx_buffer_idx < (Quan::bmi160::dma_buffer_size)){
-       Quan::spi::ll_write(0U);
-       ++rx_buffer_idx;
-       Quan::spi::enable_txeie();
-     }
+        
+//     }
+//
+//     if ( rx_buffer_idx < (Quan::bmi160::dma_buffer_size)){
+//       Quan::spi::ll_write(0U);
+//       ++rx_buffer_idx;
+//       Quan::spi::enable_txeie();
+//     }
 }
 
 // RX DMA complete
