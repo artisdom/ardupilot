@@ -15,6 +15,10 @@
 #include <stm32f4xx.h>
 
 #error "This isnt connected"
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#error the quan and quan aerflite boards don't expose the spi driver
+#endif
+#endif
 
 const AP_HAL::HAL& hal = AP_HAL_BOARD_DRIVER;
 

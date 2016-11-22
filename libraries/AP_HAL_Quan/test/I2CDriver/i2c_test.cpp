@@ -1,5 +1,12 @@
 
 #include <AP_HAL/AP_HAL.h>
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#if defined QUAN_AERFLITE_BOARD
+#error the quan aerflite board doesnt expose the i2c driver
+#endif
+#endif
+
 #include <AP_Common/AP_Common.h>
 #include <AP_Progmem/AP_Progmem.h>
 #include <AP_Param/AP_Param.h>
