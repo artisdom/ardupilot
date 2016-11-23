@@ -71,8 +71,7 @@ namespace Quan{
       if (! Quan::bmi160::setup()){
          AP_HAL::panic("bmi160 IMU setup failed\n");
       }
-      // num irqs depends on bmi setup
-      
+
       // watchdog depends on bmi setup
       // initialise but not start yet
       inertial_sensor_watchdog_init();
@@ -80,6 +79,7 @@ namespace Quan{
 
    namespace detail{
 
+      // num irqs before sending a sample depends on bmi setup
       // Called from AP_InertialSensor::detect
       // before this point the spi and bmi160 have been setup by calling Quan::init_spi()
       // to init the Quan inertial sensor ( bmi160)
