@@ -6,6 +6,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_ADC/AP_ADC.h>
 #include <AP_ADC_AnalogSource/AP_ADC_AnalogSource.h>
+#include <AP_HAL_Quan/AP_HAL_Quan_Test_Main.h>
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_OSD/AP_OSD_enqueue.h>
 
@@ -143,5 +144,19 @@ void loop(void)
    }
 #endif
 }
+namespace {
+   uint32_t get_flags()
+   {
+      HAL_Quan::start_flags flags{0};
+      flags.init_gpio = true;
+      flags.init_scheduler = true;
+      flags.init_analogin = true;
+      flags.init_uartA = true;
+      flags.init_uartC = true;
+      flags.init_i2c = true;
+      flags.init_spi = true;
+      return flags.value;
+   }
+}
 
-AP_HAL_MAIN();
+AP_HAL_TEST_MAIN( get_flags() )
