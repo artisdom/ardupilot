@@ -1,5 +1,4 @@
-#include ../../../../../mk/apm.mk
-include /home/andy/cpp/projects/apm_quantracker/ardupilot/mk/apm.mk
+include ../../../../mk/apm.mk
 
  .PHONY: upload_sp
 upload_sp : StorageTest.bin
