@@ -4,6 +4,17 @@
 
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
 
+namespace Quan{
+
+    bool storage_read(void * buffer,uint16_t eeprom_address,size_t n);
+    bool storage_write(uint16_t eeprom_address, void const * buffer,size_t n);
+
+    bool eeprom_write_queue_flushed();
+
+    void wait_for_eeprom_write_queue_flushed();
+
+}
+
 class Quan::QuanStorage : public AP_HAL::Storage {
 public:
     QuanStorage();

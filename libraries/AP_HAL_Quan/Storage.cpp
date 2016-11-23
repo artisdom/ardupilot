@@ -2,8 +2,6 @@
 #include <AP_HAL/AP_HAL.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 
-
-
 #include "Storage.h"
 
 #if  defined QUAN_AERFLITE_BOARD
@@ -15,12 +13,16 @@
 
 extern const AP_HAL::HAL& hal;
 
-namespace Quan{
-
-    bool storage_read(void * buffer,uint16_t eeprom_address,size_t n);
-    bool storage_write(uint16_t eeprom_address, void const * buffer,size_t n);
-
-}
+//namespace Quan{
+//
+//    bool storage_read(void * buffer,uint16_t eeprom_address,size_t n);
+//    bool storage_write(uint16_t eeprom_address, void const * buffer,size_t n);
+//
+//    bool eeprom_write_queue_flushed();
+//
+//    void wait_for_eeprom_write_queue_flushed();
+//
+//}
 
 using namespace Quan;
 
@@ -47,6 +49,20 @@ void QuanStorage::write_block(uint16_t eeprom_address, const void* src, size_t n
 #if defined QUAN_AERFLITE_BOARD
 
 namespace Quan{
+
+   bool eeprom_write_queue_flushed(){ return uxQueueMessagesWaiting(get_eeprom_write_handle()) == 0U;}
+
+   void wait_for_eeprom_write_queue_flushed()
+   { 
+      for( ;;){
+         UBaseType_t messages_waiting = uxQueueMessagesWaiting(get_eeprom_write_handle());
+         if ( messages_waiting == 0U){
+            return;
+         }else{
+            vTaskDelay(Quan::eeprom::get_write_cycle_time_ms() * messages_waiting);
+         }
+      }
+   }
 
    // This function blocks while the data is read
    // since it is i2c eeprom, it may take a while!
