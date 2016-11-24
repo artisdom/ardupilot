@@ -79,7 +79,7 @@ bool Quan::compass_calculate()
    // AN4602 2.1 Full scale for milli gauss at +-4G full scale
    // data sheet table 3
    constexpr float scale_mult = static_cast<float>(1.0/6.842);
-
+   // todo add gains
    quan::three_d::vect<mgauss> field {
       // provide a 90 degree rotation since the compass is orientated that way
        mgauss{vect.y * -scale_mult}   // y to -x

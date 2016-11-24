@@ -226,14 +226,14 @@ extern "C" void DMA2_Stream0_IRQHandler()
    Vector3f const gyro {
       Quan::bmi160::dma_rx_buffer.gyro_x * gyro_k
       ,Quan::bmi160::dma_rx_buffer.gyro_y * gyro_k
-      ,Quan::bmi160::dma_rx_buffer.gyro_z * gyro_k 
+      , -Quan::bmi160::dma_rx_buffer.gyro_z * gyro_k 
    };        
 
    float const accel_k = Quan::bmi160::get_accel_constant();
    Vector3f const accel{
       Quan::bmi160::dma_rx_buffer.accel_x * accel_k
-      ,Quan::bmi160::dma_rx_buffer.accel_y * accel_k
-      ,Quan::bmi160::dma_rx_buffer.accel_z * accel_k 
+      ,-Quan::bmi160::dma_rx_buffer.accel_y * accel_k
+      ,-Quan::bmi160::dma_rx_buffer.accel_z * accel_k 
    }; 
 
    BaseType_t HigherPriorityTaskWoken_imu = pdFALSE;
