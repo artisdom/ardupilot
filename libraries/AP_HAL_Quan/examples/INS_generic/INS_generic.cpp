@@ -26,6 +26,11 @@ void quan::uav::osd::on_draw()
 { 
    draw_text("Quan APM INS_generic test",{-140,50});
 }
+
+void on_telemetry_transmitted()
+{
+}
+
 #endif
 
 void setup(void)
