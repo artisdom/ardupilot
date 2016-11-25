@@ -37,11 +37,18 @@ namespace Quan{
          uint32_t time_us;
       };
 
+      struct compass_gain{
+         quan::three_d::vect<float> field;
+      };
+
    }
 
 #if defined QUAN_AERFLITE_BOARD
    uint32_t * get_i2c_task_notify();
    TaskHandle_t   get_i2c_task_handle();
+   QueueHandle_t get_compass_gain_handle();
+
+   void set_gains(quan::three_d::vect<float> const & g);
 
    bool setup_compass();
    bool compass_request_conversion();

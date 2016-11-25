@@ -88,6 +88,8 @@ namespace {
    // queue for sending compass data to apm thread
    QueueHandle_t hCompassQueue = nullptr;
 
+   QueueHandle_t hCompassGainQueue = nullptr;
+
    void wait_for_power_up();
 
    struct task{
@@ -245,6 +247,7 @@ namespace Quan {
 
       hBaroQueue = xQueueCreate(1,sizeof(Quan::detail::baro_args));
       hCompassQueue = xQueueCreate(1,sizeof(Quan::detail::compass_args));
+      hCompassGainQueue = xQueueCreate(1,sizeof(Quan::detail::compass_gain));
 
       if (! Quan::setup_eeprom()){
          AP_HAL::panic("eeprom setup failed");
@@ -273,6 +276,14 @@ namespace Quan {
          panic("Requesting null baro queue handle\n");
       }
       return hBaroQueue;
+   }
+
+   QueueHandle_t get_compass_gain_handle()
+   {
+      if ( hCompassGainQueue == nullptr){
+         panic("Requesting null compass gain queue handle\n");
+      }
+      return hCompassGainQueue;
    }
 }
 

@@ -9,6 +9,15 @@
 
 extern const AP_HAL::HAL& hal;
 
+
+
+void Quan::set_gains(quan::three_d::vect<float> const & g)
+{
+//   Quan::detail::compass_gain args;
+//   args.field = g;
+//   xQueueSendToBack(get_compass_gain_handle(),&args,20);
+}
+
 bool Quan::setup_compass()
 {
     // add whoami check section 7.1
@@ -41,6 +50,7 @@ bool Quan::setup_compass()
 
 namespace {
    uint8_t __attribute__ ((section (".dma_memory"))) result_values[8] ;
+  
 }
 
 // result is ready 5 ms after return
@@ -60,9 +70,22 @@ bool Quan::compass_start_read()
    // or the reg index with 0x80 for self increment of read registers
    return Quan::lis3mdl_onboard::read(Quan::lis3mdl_onboard::reg::out_X_reg_L | 0x80 ,result_values,8);
 }
+
+namespace {
+   float compass_gains[3] = {1.0f,1.0f,1.0f};
+}
    
 bool Quan::compass_calculate()
 {
+   // redo the gains
+   Quan::detail::compass_gain gain_args;
+   if ( xQueueReceive(get_compass_gain_handle(),&gain_args,0) == pdTRUE){
+      for (uint32_t i =0; i < 3; ++i){
+         if (gain_args.field[i] > 0.5f){
+             compass_gains[i] = gain_args.field[i];
+         }
+      }
+   }
    quan::three_d::vect<int> vect;
    for ( uint32_t i = 0; i < 3; ++i){
       union {
@@ -82,9 +105,9 @@ bool Quan::compass_calculate()
    // todo add gains
    quan::three_d::vect<mgauss> field {
       // provide a 90 degree rotation since the compass is orientated that way
-       mgauss{vect.y * -scale_mult}   // y to -x
-      ,mgauss{vect.x * -scale_mult}  // x to y
-      ,mgauss{vect.z * -scale_mult}
+       mgauss{vect.y * -scale_mult * compass_gains[0]}   // y to -x
+      ,mgauss{vect.x * -scale_mult * compass_gains[1]}  // x to y
+      ,mgauss{vect.z * -scale_mult * compass_gains[2]}
    };
    QueueHandle_t hCompassQueue = get_compass_queue_handle();
 
