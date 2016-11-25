@@ -7,6 +7,7 @@
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <AP_Compass/AP_Compass.h>
+#include <Filter/LowPassFilter2p.h>
 #include <AP_HAL_Quan/AP_HAL_Quan_Test_Main.h>
 #include <AP_HAL_Quan/Storage.h>
 #include <quantracker/osd/osd.hpp>
@@ -26,6 +27,10 @@ namespace {
    Compass compass;
 
    AP_HAL::UARTDriver * uart = nullptr;
+
+   LowPassFilter2p<Vector3f> mag_field;
+
+   float cutoff_freq = 1.f;
 
    quan::uav::osd::pxp_type ar[4];
 
@@ -100,16 +105,38 @@ namespace {
       uart->printf("\n"); 
    }
 
+   Vector3f update_compass()
+   {
+      vTaskSuspendAll();
+      compass.read();
+      Vector3f field = mag_field.apply(compass.get_field());
+      xTaskResumeAll();  
+      return field;
+   }
+
+   float get_heading_deg()
+   {
+      Matrix3f dcm_matrix;
+      // use roll = 0, pitch = 0 for this example
+      dcm_matrix.from_euler(0, 0, 0);
+      vTaskSuspendAll();
+      float heading = ToDeg(compass.calculate_heading(dcm_matrix));
+      xTaskResumeAll(); 
+      return heading;
+   }
+
 }
 
 void setup() {
     // we output data on telemetry uart
     // which is connected to the RF modem.
-    uart = hal.console;
-   // uart->begin(57600);
+    uart = hal.uartB;
+    uart->begin(57600);
 
-    hal.console->println("Compass library test 1\n");
- //hal.scheduler->delay(1000);
+    hal.scheduler->delay(1000);
+
+    hal.console->println("Compass library test (console)\n");
+    uart->println("Compass library test (uart)\n");
 
     int magic_exists = read_magic();
     if (magic_exists == -1){
@@ -120,46 +147,48 @@ void setup() {
         write_magic();
         write_compass_params(compass_params);
     }
+
     if (magic_exists ==1){
         uart->printf("reading params\n");
         read_compass_params(compass_params);
     }
   
-    uart->printf("compass params\n");
-    view_params();
-      
     if (!compass.init()) {
         AP_HAL::panic("compass initialisation failed!");
     }
-  //  uart->printf("init done - %u compasses detected\n", compass.get_count());
-
-    // mod this to your own offsets
 
     compass.set_offsets(compass.get_primary(),compass_params.offset);
     compass.set_declination(ToRad(0.0f)); // set local difference between magnetic north and true north
 
-    hal.scheduler->delay(1000);
+    mag_field.set_cutoff_frequency(50,cutoff_freq);
 
-}
+    for ( uint8_t i = 0; i < 25; ++i){
+      update_compass();
+      hal.scheduler->delay(20);
+    }
 
-namespace {
+    uart->printf("compass params\n");
+    view_params();
 
-   Vector3f raw_field;
+    uart->printf("press space for menu\n");
+
 }
 
 void quan::uav::osd::on_draw() 
 { 
-   pxp_type pos{-140,100};
+   pxp_type pos{-158,80};
    char buf[100];
-   vTaskSuspendAll();
+   Vector3f field = update_compass();
    sprintf(buf,"[% 6.2f,% 6.2f, %6.2f]"
-      ,static_cast<double>(raw_field.x)
-      ,static_cast<double>(raw_field.y)
-      ,static_cast<double>(raw_field.z)
-   ); 
-   xTaskResumeAll();    
-   draw_text(buf,pos,Quan::FontID::MWOSD);
-
+      ,static_cast<double>(field.x)
+      ,static_cast<double>(field.y)
+      ,static_cast<double>(field.z)
+   );    
+   draw_text(buf,pos,Quan::FontID::OSD_Charset);
+   pos -= pxp_type{0,20};
+   float heading = get_heading_deg();
+   sprintf(buf,"heading = % 6.1f",static_cast<double>(heading));
+   draw_text(buf,pos,Quan::FontID::OSD_Charset);
 }
 
 namespace {
@@ -174,7 +203,7 @@ namespace {
          char user_input = uart->read();
          switch(user_input){
          case 'x':
-             uart->printf("x entered\n");
+            uart->printf("x entered\n");
             return 0;
          case 'y':
             uart->printf("y entered\n");
@@ -243,9 +272,10 @@ namespace {
       int idx= parse_channel();
       float number = parse_number();
       compass_params.offset[idx] = number;
+      compass.set_offsets(compass.get_primary(),compass_params.offset);
       uart->printf("offsets = ");
       print_float(compass_params.offset);
-      
+ 
    }
 
    void do_gain()
@@ -260,6 +290,16 @@ namespace {
       print_float(compass_params.gain);
    }
 
+   void do_filter_cutoff()
+   {
+      float new_cutoff_freq = parse_number();
+      vTaskSuspendAll();
+      cutoff_freq = new_cutoff_freq;
+      mag_field.set_cutoff_frequency(50,new_cutoff_freq);
+      xTaskResumeAll();
+      uart->printf("cutoff set to %f\n",static_cast<double>(cutoff_freq));
+   }
+
    void save_to_eeprom()
    {
       write_compass_params(compass_params);
@@ -270,17 +310,18 @@ namespace {
    void print_menu()
    {
          while( uart->available() ) {
-          uart->read();
+            uart->read();
          } 
           uart->printf(
          "Menu:\r\n"
          "    V) view gains and offsets\r\n"
          "    O) set offset\r\n"
-         "    G) set gain \r\n"
+         "    G) set gain\r\n"
+         "    F) set filter cutoff\r\n"
          "    S) save to eeprom\r\n");
 
          while( !uart->available() ) {
-          hal.scheduler->delay(20);
+            hal.scheduler->delay(20);
          }
 
    }
@@ -300,6 +341,9 @@ namespace {
          case 'G':
          do_gain();
          break;
+         case 'F':
+         do_filter_cutoff();
+         break;
          case 'S':
          save_to_eeprom();
          break;
@@ -318,12 +362,10 @@ void loop()
 {
    hal.scheduler->delay(100);
 
-   compass.read();
-
-   raw_field = compass.get_raw_field();
-
    if (uart->available()){
-      display_options();
+      if (uart->read() == ' '){
+         display_options();
+      }
    }
 
 }
