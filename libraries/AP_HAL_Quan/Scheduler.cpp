@@ -69,17 +69,7 @@ QuanScheduler::QuanScheduler()
 void QuanScheduler::init(void* )
 {
    setup_usec_timer();
-  // create_scheduler_timer_task();
-#if ! defined QUAN_AERFLITE_BOARD
-#if ! (defined (QUAN_APM_DONT_START_I2C_TASK))
-   #error check i2c is initialised in HAL_Quan::run now
-  // Quan::create_i2c_task();
-#else 
-#warning "I2C task wont be run due to defined QUAN_APM_DONT_START_I2C_TASK"
-#endif
-#endif
-   // can now get Compass and baro q handles
-   
+
    start_usec_timer();
 }
 
