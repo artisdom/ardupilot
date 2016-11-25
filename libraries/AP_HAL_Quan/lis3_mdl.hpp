@@ -1,6 +1,10 @@
 #ifndef LIS3_MDL_HPP_INCLUDED
 #define LIS3_MDL_HPP_INCLUDED
 
+#include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#if defined QUAN_AERFLITE_BOARD
+
 #include "i2c/i2c_driver/i2c_register_based_driver.hpp"
 
 namespace Quan {
@@ -62,4 +66,6 @@ namespace Quan {
 
 } // Quan
 
+#endif  // !defined QUAN_AERFLITE_BOARD
+#endif // CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #endif // LIS3_MDL_HPP_INCLUDED

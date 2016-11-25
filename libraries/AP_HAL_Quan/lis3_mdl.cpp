@@ -1,9 +1,10 @@
 
-
+#include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#if defined QUAN_AERFLITE_BOARD
 
 #include "FreeRTOS.h"
 #include <task.h>
-#include <AP_HAL/AP_HAL.h>
 #include "i2c_task.hpp"
 #include "lis3_mdl.hpp"
 
@@ -119,5 +120,8 @@ bool Quan::compass_calculate()
 
    return true;
 }
+
+#endif  // !defined QUAN_AERFLITE_BOARD
+#endif // CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 
 
