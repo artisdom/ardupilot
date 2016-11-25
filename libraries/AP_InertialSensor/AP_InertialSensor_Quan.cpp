@@ -54,6 +54,7 @@ bool AP_InertialSensor_Quan::update()
       _publish_gyro(m_gyro_id,gyro);
       return true;
    }else{
+      hal.console->printf("AP_InertialSensor_Quan::update , Quan::update_ins(accel,gyro) failed\n");
       return false;
    }
 }
