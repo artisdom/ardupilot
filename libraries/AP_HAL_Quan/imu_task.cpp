@@ -63,11 +63,8 @@ namespace {
    }
 
   void inertial_sensor_init();
-#if  defined QUAN_AERFLITE_BOARD
-  void inertial_sensor_watch_dog_init();
-#else
+
   void create_fram_task();
-#endif
 
   struct spi_device_driver  {
 
@@ -76,9 +73,9 @@ namespace {
 
       static void init() 
       {
-#if ! defined QUAN_AERFLITE_BOARD
+
          h_spi_mutex = xSemaphoreCreateMutex();
-#endif
+
          quan::stm32::rcc::get()->apb2enr.bb_setbit<12>(); 
          quan::stm32::rcc::get()->apb2rstr.bb_setbit<12>();
          quan::stm32::rcc::get()->apb2rstr.bb_clearbit<12>();
@@ -86,13 +83,11 @@ namespace {
          setup_spi_regs(); 
          start_spi();
          inertial_sensor_init();
-#if  defined QUAN_AERFLITE_BOARD
-         inertial_sensor_watch_dog_init();
-#else
+
          create_fram_task();
-#endif
+
       }
-#if ! defined QUAN_AERFLITE_BOARD
+
       static bool acquire_mutex(uint32_t ms)
       {
          if ( h_spi_mutex != nullptr){
@@ -106,11 +101,11 @@ namespace {
       {
          return xSemaphoreGive(h_spi_mutex) == pdTRUE;
       }
-#endif
+
 private:
-#if ! defined QUAN_AERFLITE_BOARD
+
        static  QueueHandle_t h_spi_mutex;
-#endif
+
        static uint8_t transfer(uint8_t data)
        {
          while (!txe()){;}
@@ -219,9 +214,9 @@ private:
       typedef quan::mcu::pin<quan::stm32::gpiob,4>  spi1_miso;
       typedef quan::mcu::pin<quan::stm32::gpiob,3>  spi1_sck;
 public:
-#if ! defined QUAN_AERFLITE_BOARD
+
       typedef quan::mcu::pin<quan::stm32::gpiob,1> fram_ncs;
-#endif
+
 private:
       static void setup_spi_pins()
       {
@@ -249,7 +244,7 @@ private:
             ,quan::stm32::gpio::pupd::none
             ,quan::stm32::gpio::ospeed::medium_fast
          >();
-#if ! defined QUAN_AERFLITE_BOARD
+
         quan::stm32::apply<
             fram_ncs
             ,quan::stm32::gpio::mode::output
@@ -257,7 +252,7 @@ private:
             ,quan::stm32::gpio::ospeed::medium_fast
             ,quan::stm32::gpio::ostate::high
          >();
-#endif
+
       }
 
       static void setup_spi_regs()
@@ -294,16 +289,13 @@ public:
    };
 
    bool spi_device_driver::m_fast_speed = true;
-#if !defined QUAN_AERFLITE_BOARD
+
    QueueHandle_t spi_device_driver::h_spi_mutex = nullptr;
-#endif
+
 //-----------------------------------------------------------------------
 
-#if defined QUAN_AERFLITE_BOARD
-   typedef quan::stm32::tim7 mpu_watchdog;
-#else
    typedef quan::stm32::tim14 mpu_watchdog;
-#endif
+
    struct inertial_sensor{
 
       typedef Vector3<volatile float> vvect3;
@@ -348,13 +340,10 @@ public:
         return static_cast<float>(((quan::acceleration::g * accel_fsr_g_in)/32768).numeric_value());
       };
 
-#if defined QUAN_AERFLITE_BOARD
-      typedef quan::mcu::pin<quan::stm32::gpioa,15> chip_select;
-      typedef quan::mcu::pin<quan::stm32::gpioc,13> data_ready_irq;
-#else
+
       typedef quan::mcu::pin<quan::stm32::gpioa,12> chip_select;
       typedef quan::mcu::pin<quan::stm32::gpioc,14> data_ready_irq;
-#endif
+
       static void init()
       {
          setup_pins();
@@ -362,11 +351,6 @@ public:
          setup_dma();
          initial_setup();
       }
-#if defined QUAN_AERFLITE_BOARD
-
-       static constexpr uint16_t dma_buffer_size = 16U; // buffer size fof trsnsfer for BMI160
-    // BMI160 regs and values
-#else
        // imu register values for mpu6000
       struct val{
          static constexpr uint8_t device_wakeup = 0U;
@@ -423,14 +407,10 @@ public:
          static constexpr uint8_t D9 = 0x59;
       };
       static constexpr uint16_t dma_buffer_size = 16U;
-#endif
+
       static uint8_t dma_tx_buffer[dma_buffer_size] ;
       static volatile uint8_t  dma_rx_buffer[dma_buffer_size];
-
-#if !defined QUAN_AERFLITE_BOARD
       static volatile bool dma_transaction_in_progress;
-#endif
-
       static void setup_pins()
       {
          quan::stm32::module_enable<chip_select::port_type>();
@@ -527,7 +507,7 @@ public:
          inertial_sensor::h_args_queue = xQueueCreate(1,sizeof(inertial_sensor_args_t *));
 
          vTaskDelay(200);
-#if !defined QUAN_AERFLITE_BOARD
+
          if ( ! spi_device_driver::acquire_mutex(1000)){
             panic("couldnt get spi mutex in mpu600 setup registers");
             return;
@@ -552,14 +532,14 @@ public:
          spi_device_driver::set_bus_speed(1);
 
          spi_device_driver::release_mutex();
-#endif
+
 
       }
 
       // assumes sample rate == 400, 200, 100, 50 Hz
       static void setup_registers( uint16_t sample_rate_Hz, uint8_t acc_cutoff_Hz, uint8_t gyro_cutoff_Hz)
       {
-#if !defined QUAN_AERFLITE_BOARD
+
          if ( ! spi_device_driver::acquire_mutex(1000)){
             panic("couldnt get spi mutex in mpu600 setup registers");
             return;
@@ -654,14 +634,12 @@ public:
          quan::stm32::enable_exti_interrupt<inertial_sensor::data_ready_irq>(); 
          mpu_watchdog::get()->cr1.bb_setbit<0>(); // (CEN)
          vTaskPrioritySet(NULL,old_prio);
-#endif
+
       }
 
       static bool whoami_test()
       {
-#if defined QUAN_AERFLITE_BOARD
-         return false;
-#else
+
          uint8_t value = inertial_sensor::reg_read(inertial_sensor::reg::whoami);
 
          if ( value == inertial_sensor::val::whoami){
@@ -670,40 +648,35 @@ public:
             hal_printf("whoami failed\n");
             return false;
          }
-#endif
+
       }
 
    }; // mpu6000
 
    void inertial_sensor_init()
    {
-#if !defined QUAN_AERFLITE_BOARD
+
       inertial_sensor::init();
-#endif
+
    }
 
    volatile uint8_t  inertial_sensor::dma_rx_buffer[16] __attribute__((section(".telem_buffer"))) = {0};
    uint8_t inertial_sensor::dma_tx_buffer[16] __attribute__((section(".telem_buffer"))) = 
-
-#if defined QUAN_AERFLITE_BOARD
-   {0}; // TODO #####################################
-#else
     {
       (inertial_sensor::reg::intr_status | 0x80),0,0,0,
       0,0,0,0,
       0,0,0,0,
       0,0,0,0
    };
-#endif
 
    inertial_sensor::lp_filter  inertial_sensor::gyro_filter{};
    inertial_sensor::lp_filter  inertial_sensor::accel_filter{};
 
    uint32_t inertial_sensor::num_irqs_for_update_message = 1;
    QueueHandle_t inertial_sensor::h_args_queue = nullptr;
-#if ! defined QUAN_AERFLITE_BOARD
+
    volatile bool inertial_sensor::dma_transaction_in_progress = false;
-#endif
+
 }
 
 namespace Quan{ 
@@ -754,9 +727,9 @@ extern "C" void EXTI15_10_IRQHandler()
    if (quan::stm32::is_event_pending<inertial_sensor::data_ready_irq>()){
 
       mpu_watchdog::get()->cnt = 0;  
- #if ! defined QUAN_AERFLITE_BOARD
+
       inertial_sensor::dma_transaction_in_progress = true;
-#endif
+
       spi_device_driver::cs_assert<inertial_sensor::chip_select>(); // start transaction
       spi_device_driver::stop_spi();
       
@@ -904,9 +877,8 @@ extern "C" void DMA2_Stream0_IRQHandler()
        inertial_sensor::gyro_filter.apply(gyro);
    }
    quan::stm32::pop_FPregs();
- #if ! defined QUAN_AERFLITE_BOARD
    inertial_sensor::dma_transaction_in_progress = false;
-#endif
+
    portEND_SWITCHING_ISR(HigherPriorityTaskWoken_imu);
 }
 
@@ -914,7 +886,6 @@ extern "C" void DMA2_Stream0_IRQHandler()
 
 namespace {
 
- #if ! defined QUAN_AERFLITE_BOARD
 // for the fram
    struct fram_message_t{
       static constexpr uint8_t read  = 0;
@@ -970,14 +941,14 @@ namespace {
    {
       fram_write_statusreg(0b00000000);
    }
-#endif
+
    // dont ask ! 
    void inertial_sensor_bump()
    {
       quan::stm32::generate_software_interrupt<inertial_sensor::data_ready_irq>();
       hal_printf("#*#\n");
    }
- #if ! defined QUAN_AERFLITE_BOARD
+
    // max size of a discrete read before the subsystem
    // yields to interrupts.
    // At 21 Mhz 8bit read takes < 0.5 usec 
@@ -1098,8 +1069,6 @@ namespace {
       }
    }
 
-#endif
-
    void inertial_sensor_watch_dog_init()
    {
       
@@ -1112,34 +1081,25 @@ namespace {
       mpu_watchdog::get()->arr = 1050; // overflow in 1.05 ms
       mpu_watchdog::get()->sr = 0;
       mpu_watchdog::get()->dier.setbit<0>(); //(UIE)  
-#if defined QUAN_AERFLITE_BOARD
-      NVIC_SetPriority(TIM7_IRQn,13);
-      NVIC_EnableIRQ(TIM7_IRQn);
-#else
+
       NVIC_SetPriority(TIM8_TRG_COM_TIM14_IRQn,13);
       NVIC_EnableIRQ(TIM8_TRG_COM_TIM14_IRQn);
-#endif
+
       // dont start the timer until the mpu6000 is up and running
 
    }
 }
 
 // watchdog interrupt
-#if defined QUAN_AERFLITE_BOARD
-extern "C" void TIM7_IRQHandler() __attribute__ ((interrupt ("IRQ")));
-extern "C" void TIM7_IRQHandler()
-#else
+
 extern "C" void TIM8_TRG_COM_TIM14_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void TIM8_TRG_COM_TIM14_IRQHandler()
-#endif
+
 {
    mpu_watchdog::get()->sr = 0;
    mpu_watchdog::get()->cnt = 0;
    // send a message to h_fram_command_queue
-#if defined QUAN_AERFLITE_BOARD
-   inertial_sensor_bump();
-   BaseType_t higher_prio_task_woken = pdFALSE;
-#else
+
 
    fram_message_t msg;
    msg.num_elements = 0;
@@ -1149,12 +1109,12 @@ extern "C" void TIM8_TRG_COM_TIM14_IRQHandler()
 
    BaseType_t higher_prio_task_woken = pdFALSE;
    xQueueSendToFrontFromISR(h_fram_cmd_queue,&msg,&higher_prio_task_woken);
-#endif
+
    portEND_SWITCHING_ISR(higher_prio_task_woken);
 
 }
 
-#if ! defined QUAN_AERFLITE_BOARD
+
 namespace {
 
    void create_fram_task()
@@ -1174,14 +1134,12 @@ namespace {
    }
 
 }
-#endif
+
 namespace Quan{
 
-    bool storage_read(void * buffer,uint16_t storage_address,size_t n)
+    bool storage_read(void * buffer,uint32_t storage_address,size_t n)
    {
-#if  defined QUAN_AERFLITE_BOARD
-return false;
-#else
+
       if ( (storage_address + n) > fram_size){
          return false;
       }
@@ -1206,16 +1164,14 @@ return false;
       }
 
       return false;
-#endif
+
    }
 
    // called from the APM Storage object in apm task
    // (blocks)
-   bool storage_write(uint16_t storage_address, void const * buffer,size_t n)
+   bool storage_write(uint32_t storage_address, void const * buffer,size_t n)
    {
-#if  defined QUAN_AERFLITE_BOARD
-   return false;
-#else
+
       if ( (storage_address + n) > fram_size){
          return false;
       }
@@ -1235,7 +1191,7 @@ return false;
       }
 
       return false;
-#endif
+
    }
 
 } // Quan
