@@ -4,6 +4,8 @@
 
 #include <AP_HAL/AP_HAL.h>
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
 #include "AP_HAL_Quan_Namespace.h"
 
 class HAL_Quan final : public AP_HAL::HAL {
@@ -36,5 +38,6 @@ public:
 
 };
 
+#endif  // CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #endif // __AP_HAL_QUAN_CLASS_H__
 
