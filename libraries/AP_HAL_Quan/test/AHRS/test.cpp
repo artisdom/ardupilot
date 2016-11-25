@@ -53,7 +53,7 @@ void setup(void)
  
 
     
-    compass.set_offsets(0, {10.6004,-35.4656,-48.9482});
+    compass.set_offsets(0, {341,-295,525});
 
     gps.init(NULL, serial_manager);
     ahrs.set_fly_forward(true);
@@ -117,7 +117,7 @@ namespace {
    {
       HAL_Quan::start_flags flags{0};
       flags.init_uartA = true;
-      flags.init_uartC = true;
+      flags.init_uartB = true;
     //  flags.init_analogin = true;
       flags.init_gpio = true;
       flags.init_scheduler = true;

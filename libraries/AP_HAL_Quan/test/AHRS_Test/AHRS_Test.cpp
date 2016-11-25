@@ -52,7 +52,7 @@ void setup(void)
     
     if( compass.init() ) {
         hal.console->printf("Enabling compass\n");
-        compass.set_offsets(0, {0,0,0});
+        compass.set_offsets(0, {341,-295,525});
         ahrs.set_compass(&compass);
     } else {
         hal.console->printf("No compass detected\n");
