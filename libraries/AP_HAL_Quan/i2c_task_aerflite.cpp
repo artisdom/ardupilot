@@ -139,8 +139,7 @@ namespace {
           {"baro : request conversion"    ,  1 ,   1, Quan::baro_request_conversion}
          ,{"compass : request conversion" ,  2 ,   1, Quan::compass_request_conversion}
           // 7 ms spare add Airspeed here
-  
-                      
+    
          ,{"compass : start_read"         ,  10,   2, Quan::compass_start_read}
          ,{"compass_calculate"            ,  13 ,  1, Quan::compass_calculate}  
          ,{"eeprom : serv write buffer"   ,  14 , 25, Quan::eeprom_service_write_buffer}
