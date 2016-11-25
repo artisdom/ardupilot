@@ -1178,12 +1178,14 @@ bool AP_InertialSensor::_calibrate_accel(const Vector3f accel_sample[6],
     // sanity check scale
     if( accel_scale.is_nan() || fabsf(accel_scale.x-1.0f) > 0.1f || fabsf(accel_scale.y-1.0f) > 0.1f || fabsf(accel_scale.z-1.0f) > 0.1f ) {
         success = false;
+        hal.console->printf("ins accel cal fail1\n");
     }
 
     if (accel_offsets.is_nan() ||
         fabsf(accel_offsets.x) > max_abs_offsets ||
         fabsf(accel_offsets.y) > max_abs_offsets ||
         fabsf(accel_offsets.z) > max_abs_offsets) {
+        hal.console->printf("ins accel cal fail2\n");
         success = false;
     }
 
