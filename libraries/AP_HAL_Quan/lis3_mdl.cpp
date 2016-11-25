@@ -9,17 +9,16 @@
 
 extern const AP_HAL::HAL& hal;
 
-
-
 void Quan::set_gains(quan::three_d::vect<float> const & g)
 {
-//   Quan::detail::compass_gain args;
-//   args.field = g;
-//   xQueueSendToBack(get_compass_gain_handle(),&args,20);
+   Quan::detail::compass_gain args;
+   args.field = g;
+   xQueueSendToBack(get_compass_gain_handle(),&args,20);
 }
 
 bool Quan::setup_compass()
 {
+    // TODO get gains and offsets
     // add whoami check section 7.1
     /*
         CTRL_REG1 section 7.2
@@ -33,7 +32,7 @@ bool Quan::setup_compass()
              set FODR to 1                    CTRL_REG1  |=    bit(FODR)
              set single measurement           CTRL_REG3   = (CTRL_REG3 & ~(bit(MD1)) | bit(MD0))
          temperature sensor on
-     */
+    */
 
    bool result = lis3mdl_onboard::write( Quan::lis3mdl_onboard::reg::ctrlreg2, 0U ) &&
           lis3mdl_onboard::write( Quan::lis3mdl_onboard::reg::ctrlreg1, (0b1 << 7U) | (0b11 << 5U) | (0b1 << 1U))  &&
