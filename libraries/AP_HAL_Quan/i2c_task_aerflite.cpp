@@ -5,7 +5,6 @@
 
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
 
-
 #include "i2c_task.hpp"
 #include "eeprom.hpp"
 #include <AP_HAL_Quan/i2c/i2c_driver/i2c_periph.hpp>
