@@ -208,10 +208,16 @@ namespace Quan{
 extern "C" void  SPI1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void  SPI1_IRQHandler()
 {
-   Quan::spi::disable_rxneie();
-   Quan::spi::ll_read();
-   Quan::spi::ll_write(0U);
-   DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
+   if ( rx_buffer_idx == 0){
+      Quan::spi::disable_rxneie();
+      Quan::spi::ll_read();
+      DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
+   }
+   Quan::spi::disable_txeie();
+   if ( ++rx_buffer_idx <= Quan::bmi160::dma_buffer_size){
+     Quan::spi::ll_write(0U);
+     Quan::spi::enable_txeie();
+   }
 }
 
 // RX DMA complete
