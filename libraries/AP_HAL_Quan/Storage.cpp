@@ -66,7 +66,7 @@ namespace Quan{
 
    // This function blocks while the data is read
    // since it is i2c eeprom, it may take a while!
-   bool storage_read(void * buffer,uint16_t storage_address,size_t n)
+   bool storage_read(void * buffer,uint32_t storage_address,size_t n)
    {
       if ( (storage_address + n) > eeprom_info::eeprom_m24m01::get_memory_size_bytes() ){
          AP_HAL::panic("size out of range in eeprom read");
@@ -167,7 +167,7 @@ namespace {
 namespace Quan{
    // called from the APM Storage object in apm task
    // wont block unless its a very large write
-   bool storage_write(uint16_t storage_address, void const * buffer,size_t n)
+   bool storage_write(uint32_t storage_address, void const * buffer,size_t n)
    {
       if ( (storage_address + n) > eeprom_info::eeprom_m24m01::get_memory_size_bytes()){
          return false;

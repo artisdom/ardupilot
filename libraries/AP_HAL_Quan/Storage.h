@@ -6,8 +6,8 @@
 
 namespace Quan{
 
-    bool storage_read(void * buffer,uint16_t eeprom_address,size_t n);
-    bool storage_write(uint16_t eeprom_address, void const * buffer,size_t n);
+    bool storage_read(void * buffer,uint32_t eeprom_address,size_t n);
+    bool storage_write(uint32_t eeprom_address, void const * buffer,size_t n);
 
     bool eeprom_write_queue_flushed();
 
