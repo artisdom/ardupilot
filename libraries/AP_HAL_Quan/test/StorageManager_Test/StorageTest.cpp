@@ -10,7 +10,7 @@
 // todo add separateley
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
-
+#include <AP_HAL_Quan/Storage.h>
 #include <quantracker/osd/osd.hpp>
 #include <task.h>
 
@@ -65,14 +65,20 @@ void setup(void)
     uint32_t start_write_time = AP_HAL::millis();
     uint32_t total_storage_written = 0;
     for (uint8_t type=0; type<4; type++) {
-        const StorageAccess &storage = all_storage[type];
-        hal.console->printf("Init type %u of size %u\n", (unsigned)type,(unsigned)storage.size());
-        
-        for (uint16_t i=0; i<storage.size(); i++) {
-            storage.write_byte(i, pvalue(i));
-        }
-        total_storage_written += storage.size();
+      const StorageAccess &storage = all_storage[type];
+      hal.console->printf("Init type %u of size %u\n", (unsigned)type,(unsigned)storage.size());
+
+      for (uint16_t i=0; i<storage.size(); i++) {
+         storage.write_byte(i, pvalue(i));
+      }
+      total_storage_written += storage.size();
     }
+    
+    #if defined QUAN_AERFLITE_BOARD
+       hal.console->printf("Sectors written, waiting for queue to be flushed\n");
+       Quan::wait_for_eeprom_write_queue_flushed();
+       hal.console->printf("write queue flushed\n");
+#endif
     uint32_t end_write_time = AP_HAL::millis();
     hal.console->printf("To individual write %u bytes took %u ms\n"
       ,static_cast<unsigned>(total_storage_written)
@@ -108,12 +114,24 @@ void loop(void)
     }
 
     if (get_random() % 2 == 1) {
+        while (hal.console->tx_pending() ){asm volatile ("nop":::);}
+        hal.console->printf("writing ee addr %u len %u\n",static_cast<unsigned>(offset),static_cast<unsigned>(length));
         if (!storage.write_block(offset, b, length)) {
             hal.console->printf("write failed at offset %u length %u\n",
                                 (unsigned)offset, (unsigned)length);
         }
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#if defined QUAN_AERFLITE_BOARD
+       hal.console->printf("write wait q flushed\n");
+       Quan::wait_for_eeprom_write_queue_flushed();
+       hal.console->printf("write q flushed\n");
+#endif
+#endif
     } else {
+        while (hal.console->tx_pending() ){asm volatile ("nop":::);}
+        
         uint8_t b2[length];
+        hal.console->printf("reading ee addr %u len %u\n",static_cast<unsigned>(offset),static_cast<unsigned>(length));
         if (!storage.read_block(b2, offset, length)) {
             hal.console->printf("read failed at offset %u length %u\n",
                                 (unsigned)offset, (unsigned)length);
