@@ -72,7 +72,7 @@ namespace Quan{
 
    bool setup_eeprom();
    bool eeprom_service_write_buffer();
-   int eeprom_service_read_requests();
+   bool eeprom_service_read_requests();
    
 }// Quan
 

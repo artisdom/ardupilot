@@ -47,23 +47,22 @@ namespace Quan{
          1 on  successful read
         -1 on  fail
    */
-   int eeprom_service_read_requests()
+   bool eeprom_service_read_requests()
    {  
       eeprom_read_msg msg;
       if ( xQueueReceive(eeprom_read_handle,&msg,0) == pdTRUE){
           bool result = eeprom::read(msg.eeprom_address,msg.mcu_address, msg.num_elements);
           if (result ){
             xSemaphoreGive(eeprom_read_complete_semaphore);
-            return 1;
+            return true;
           }else{
             hal.console->write("eeprom : service read to queue failed");
-            return -1;
+            return false;
           }
       }else{
-         // nothing to do
-         return 0;
+         return true;
       }
-   }
+  }
 
 }//Quan
 
@@ -76,24 +75,21 @@ namespace Quan{
 
    bool eeprom_service_write_buffer()
    {
-      auto now = millis();
-      // keep rolling for 25 ms
-      while ( (millis() - now ) < 25U){
-         if ( xQueueReceive(eeprom_write_handle,&m_eeprom_write_msg,0) == pdTRUE){
-             bool result = eeprom::write(
-               m_eeprom_write_msg.eeprom_address,
-               m_eeprom_write_msg.data,
-               m_eeprom_write_msg.num_elements
-             );
-             if (! result){
-                AP_HAL::panic("eeprom : write from queue failed");
-                return false;
-             }
-         }else{
-            return true;  // nothing more to do this time
-         }
+      if ( xQueueReceive(eeprom_write_handle,&m_eeprom_write_msg,0) == pdTRUE){
+          bool result = eeprom::write(
+            m_eeprom_write_msg.eeprom_address,
+            m_eeprom_write_msg.data,
+            m_eeprom_write_msg.num_elements
+          );
+          if (result){
+             return true;
+          }else{
+             AP_HAL::panic("eeprom : write from queue failed");
+             return false;
+          }
+      }else{
+         return true;  // nothing more to do this time
       }
-      return true;
    }
 
    QueueHandle_t get_eeprom_read_handle()
