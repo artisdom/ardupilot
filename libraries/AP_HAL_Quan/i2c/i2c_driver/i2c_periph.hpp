@@ -70,6 +70,29 @@ for stm32f405/7
 namespace Quan{
 
    struct i2c_periph{
+
+      enum class errno_t{
+         no_error, 
+         invalid_address,
+         cant_start_new_transfer_when_i2c_busy,
+         zero_data,
+         data_pointer_is_null,
+         invalid_num_bytes_in_rx_multibyte_btf,
+         unexpected_single_total_bytes_in_rx_btf,
+         unexpected_not_last_byte_in_rxne,
+         unexpected_flags_in_irq,
+         unknown_i2c_err_handler,
+         address_timed_out,
+         unknown_exti_irq,
+         i2c_err_handler_BERR,
+         i2c_err_handler_AF,
+         i2c_err_handler_ARLO,
+         i2c_err_handler_OVR,
+         i2c_err_handler_TIMEOUT,
+         i2c_err_handler_PECERR,
+         i2c_err_handler_SMB_ALERT
+      };
+
    private:
        typedef quan::stm32::i2c3  i2c_type;
    public:
@@ -228,7 +251,8 @@ namespace Quan{
       static uint8_t receive_data(){return static_cast<uint8_t>(i2c_type::get()->dr);}
       static const char* get_error_string();
       static bool has_errored() { return m_errored;}
-
+      static const char* get_last_error_c_str();
+      static errno_t get_last_error(){ return m_last_error;}
    private:
 #if defined QUAN_I2C_TX_DMA
       friend void ::DMA_IRQ_Handler<1,4>() ;
@@ -246,6 +270,7 @@ namespace Quan{
 
       static volatile bool m_bus_taken_token;
       static volatile bool m_errored;
+      static errno_t       m_last_error;
     //  static volatile bool m_thread_mode;
       // add a is_running_threaded
       static void (* volatile pfn_event_handler)();
@@ -259,10 +284,12 @@ namespace Quan{
       i2c_periph() = delete;
       i2c_periph(i2c_periph const & ) = delete;
       i2c_periph& operator = (i2c_periph&) = delete;
-
+    
    };
 
    bool wait_for_bus_free_ms(uint32_t t_ms);
+
+   
 
 } // Quan
 #endif // QUAN_STM32_EEPROM_TEST_I2C_HPP_INCLUDED

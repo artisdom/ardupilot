@@ -28,6 +28,7 @@ namespace {
 // token representing wthat i2c bus has been acquired
 volatile bool Quan::i2c_periph::m_bus_taken_token = false;
 volatile bool Quan::i2c_periph::m_errored = false;
+Quan::i2c_periph::errno_t Quan::i2c_periph::m_last_error = Quan::i2c_periph::errno_t::no_error;
 //volatile bool Quan::i2c_periph::m_thread_mode = false;
 
 void (* volatile Quan::i2c_periph::pfn_event_handler)()  = Quan::i2c_periph::default_event_handler;
@@ -99,6 +100,20 @@ bool Quan::wait_for_bus_free_ms(uint32_t t_ms)
       vTaskDelay(1);
       if ( (millis() - now) > t_ms){
          hal.console->printf("bus didnt free in %lu ms\n",t_ms);
+          const char* name = i2c_driver::get_device_name();
+         if(name == nullptr){
+            name = "unknown driver";
+         }
+         hal.console->printf("last device name = %s\n",name);
+         if(!Quan::i2c_periph::bus_released()){
+            hal.console->printf("i2c bus not released\n");
+         }
+         if(Quan::i2c_periph::is_busy()){
+          
+           hal.console->printf("bus still busy\n");
+           
+         }
+
          return false;
       }
    }
@@ -176,6 +191,7 @@ void Quan::i2c_periph::init()
 #endif
 
    m_errored = false;
+   m_last_error = errno_t::no_error;
   // release_bus(); 
    peripheral_enable(true);
 }
@@ -338,6 +354,38 @@ void Quan::i2c_periph::default_error_handler()
 {
  //  Quan::set_console_irq_mode(true);
   // hal.console->printf("i2c error handler called : ");
+   uint32_t const sr1 = get_sr1();
+   //m_last_error = errno_t::i2c_err_handler;
+    //TODO ideally should allow multiple errors
+   if ( sr1 & (1 << 8) ){
+      m_last_error = errno_t::i2c_err_handler_BERR;
+   }else{
+      if (sr1 & (1 << 9) ){
+         m_last_error = errno_t::i2c_err_handler_ARLO;
+      }else{
+         if (sr1 & (1 << 10) ){
+            m_last_error = errno_t::i2c_err_handler_AF;
+         }else{
+            if (sr1 & (1 << 11) ){
+               m_last_error = errno_t::i2c_err_handler_OVR;
+            }else{
+               if (sr1 & (1 << 12) ){
+                  m_last_error =  errno_t::i2c_err_handler_PECERR; 
+               }else{
+                  if (sr1 & (1 << 14) ){
+                     m_last_error =  errno_t::i2c_err_handler_TIMEOUT; 
+                  }else{
+                     if (sr1 & (1 << 15) ){
+                        m_last_error =  errno_t::i2c_err_handler_SMB_ALERT;
+                     }else{
+                        m_last_error =  errno_t::unknown_i2c_err_handler; 
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
 #if defined QUAN_I2C_TX_DMA
    NVIC_DisableIRQ(DMA1_Stream4_IRQn);
 #endif
@@ -347,7 +395,6 @@ void Quan::i2c_periph::default_error_handler()
    enable_error_interrupts(false);
    enable_event_interrupts(false);
    enable_buffer_interrupts(false);
-
    // disable dma
 #if defined QUAN_I2C_TX_DMA
    enable_dma_tx_stream(false);
@@ -371,6 +418,49 @@ void Quan::i2c_periph::default_error_handler()
  //  Quan::set_console_irq_mode(false);
    m_errored = true;
    
+}
+
+const char* Quan::i2c_periph::get_last_error_c_str()
+{
+   typedef Quan::i2c_periph::errno_t errno_t;
+   switch(m_last_error){
+      case errno_t::no_error:
+         return "no error has been detected";
+      case errno_t::invalid_address:
+         return "invalid address";
+      case errno_t::cant_start_new_transfer_when_i2c_busy:
+         return "cant start new transfer when i2c busy";
+      case errno_t::zero_data:
+         return "zero data";
+      case errno_t::data_pointer_is_null:
+         return "data pointer is null";
+      case errno_t::invalid_num_bytes_in_rx_multibyte_btf:
+         return "invalid numbytes in rx multibyte buffer";
+      case errno_t::unexpected_single_total_bytes_in_rx_btf:
+         return "unexpected single total bytes in rx btf";
+      case errno_t::unexpected_not_last_byte_in_rxne:
+         return "unexpected not last byte in rxne";
+      case errno_t::unexpected_flags_in_irq:
+         return "unexpected flags in irq";
+      case errno_t::unknown_i2c_err_handler:
+         return "unknown i2c errhandler";
+      case errno_t::unknown_exti_irq:
+         return "unknown exti irq";
+      case errno_t::address_timed_out:
+         return "timed out after sending address";
+      case errno_t:: i2c_err_handler_BERR:
+         return "bus error";
+      case errno_t::i2c_err_handler_AF:
+         return "acknowledge failure";
+      case errno_t::i2c_err_handler_ARLO:
+         return "arbitration lost";
+      case errno_t::i2c_err_handler_OVR:
+         return "under/overrun error";
+      case errno_t::i2c_err_handler_TIMEOUT:
+         return "time out error";
+      default:
+         return "unlisted i2c error";
+   }
 }
 
 #if defined QUAN_I2C_TX_DMA
