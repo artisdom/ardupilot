@@ -19,6 +19,10 @@ namespace {
 
 }
 
+void on_telemetry_transmitted()
+{
+}
+
 // do something on osd to check its running ok
 void quan::uav::osd::on_draw() 
 { 
