@@ -21,66 +21,6 @@
 using AP_HAL::millis;
 extern const AP_HAL::HAL& hal;
 
-#if 0
-namespace {
-
-   const char text [] = "Hello, Is it working?"; 
-   uint32_t ee_address = 3;
-  // uint32_t test_len = 0;
-
-   uint32_t test_write_done = 0;
-
-   bool test_write()
-   {
-      if ( test_write_done > 1){
-         return true;
-      }else{
-         ++test_write_done;
-         constexpr uint32_t test_len1 = sizeof(text);
-         #if defined QUAN_I2C_DEBUG
-         if ( test_write_done == 1) {  Quan::set_want_flags_index_reset(true);}
-         #endif
-         if (Quan::eeprom::write(ee_address,(uint8_t*)text, test_len1)){
-            hal.console->write("ee write test succeeded\n");
-            return true;
-         }else{
-             hal.console->write("ee write test failed\n");
-            return false;
-         }
-      }
-   }
-
-   char test_buffer[100]= {'\0'};
-
-   uint32_t test_read_done = 0;
-
-   bool test_read()
-   {
-      if ( test_read_done > 1){
-         return true;
-      }else{
-  
-         ++test_read_done;
-         constexpr uint32_t test_len1 = sizeof(text);
-         #if defined QUAN_I2C_DEBUG
-         if ( test_read_done == 1) {  Quan::set_want_flags_index_reset(true);}
-         #endif
-         if ( Quan::eeprom::read(ee_address,(uint8_t*)test_buffer, test_len1)){
-            hal.console->write("ee Read Test Succeeded got\"");
-            for (uint32_t i = 0; i < test_len1; ++i){
-               hal.console->printf("%c",test_buffer[i]);
-            }
-            hal.console->write("\"\n");
-         //   Quan::show_i2c_sr1_flags();
-            return true;
-         }else{
-            hal.console->write("ee read test failed\n");
-            return false;
-         }
-      }
-   }
-}
-#endif
 namespace {
 
    // queue for sending baro data to apm thread
@@ -142,8 +82,8 @@ namespace {
     
          ,{"compass : start_read"         ,  10,   2, Quan::compass_start_read}
          ,{"compass_calculate"            ,  13 ,  1, Quan::compass_calculate}  
-         ,{"eeprom : serv write buffer"   ,  14 , 25, Quan::eeprom_service_write_buffer}
-         ,{"eeprom : serv read req"       ,  26,  40, Quan::eeprom_service_read_requests}
+         ,{"eeprom : serv write buffer"   ,  14 ,  25, Quan::eeprom_service_write_buffer}
+        // ,{"eeprom : serv read req"       ,  26,  40, Quan::eeprom_service_read_requests}
        //   ,{"test_write"                   ,  15 ,   1, test_write}
        //   ,{"test_read"                    ,  25 ,  1, test_read}
          ,{"baro : start read"            ,  45 ,  2, Quan::baro_start_read}
@@ -159,27 +99,14 @@ namespace {
 #endif
          auto loop_start_ms = millis();
          for ( uint32_t i = 0; i < num_tasks ; ++i){
-            //############################################
-            // TODO actually eeprom read needs its own task
-            //############################################
             // do any eeprom reads in a timely fashion, 
             // but allow the start conv requests to be started first
-#if 0
             if ( i > 1) {// now the baro and compass request have been started
-               // though it stalls the other tasks
-               // need to know if a read occurred
-               int read_result = Quan::eeprom_service_read_requests();
-               switch (read_result){
-                  case 0:  // nothing to read
-                     break;
-                  case 1:  // read was successful, but task timing is messed up now
-                     break;
-                  default:  
-                     succeeded = false;
-                     break;
+               succeeded = Quan::eeprom_service_read_requests();
+               if( !succeeded){
+                  break;
                }
             }
-#endif
             task & t = tasks[i];
             auto const time_since_task_started = millis() - loop_start_ms;
             if ( time_since_task_started < t.get_begin_ms()  ){

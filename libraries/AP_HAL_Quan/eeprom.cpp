@@ -75,21 +75,31 @@ namespace Quan{
 
    bool eeprom_service_write_buffer()
    {
-      if ( xQueueReceive(eeprom_write_handle,&m_eeprom_write_msg,0) == pdTRUE){
-          bool result = eeprom::write(
-            m_eeprom_write_msg.eeprom_address,
-            m_eeprom_write_msg.data,
-            m_eeprom_write_msg.num_elements
-          );
-          if (result){
-             return true;
-          }else{
-             AP_HAL::panic("eeprom : write from queue failed");
-             return false;
-          }
-      }else{
-         return true;  // nothing more to do this time
+      auto const start_time = millis();
+      for(;;){
+         eeprom_read_msg read_msg;
+         if ( xQueuePeek(eeprom_read_handle,&read_msg,0) == pdTRUE ){
+            // if there is a read message quite and deal with it
+            break;
+         }
+         auto up_time = millis() - start_time;
+         if (up_time < 20) {
+            if ( xQueueReceive(eeprom_write_handle,&m_eeprom_write_msg,up_time) == pdTRUE){
+               bool result = eeprom::write(
+                  m_eeprom_write_msg.eeprom_address,
+                  m_eeprom_write_msg.data,
+                  m_eeprom_write_msg.num_elements
+               );
+               if (!result){
+                  AP_HAL::panic("eeprom : write from queue failed");
+                  return false;
+               }
+            }
+         }else{
+            break;
+         }
       }
+      return true;
    }
 
    QueueHandle_t get_eeprom_read_handle()

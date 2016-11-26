@@ -75,76 +75,109 @@ void setup(void)
     }
     
     #if defined QUAN_AERFLITE_BOARD
-       hal.console->printf("Sectors written, waiting for queue to be flushed\n");
        Quan::wait_for_eeprom_write_queue_flushed();
-       hal.console->printf("write queue flushed\n");
 #endif
-    uint32_t end_write_time = AP_HAL::millis();
-    hal.console->printf("To individual write %u bytes took %u ms\n"
+
+    uint32_t time_taken_ms = AP_HAL::millis() - start_write_time;
+    double write_rate_per_sec = static_cast<double>(total_storage_written * 1000)/ (time_taken_ms);
+    hal.console->printf("To individual write %u bytes took %u ms so write_rate = % 7.2f bytes/sec\n"
       ,static_cast<unsigned>(total_storage_written)
-      ,static_cast<unsigned>(end_write_time - start_write_time) );
+      ,static_cast<unsigned>(time_taken_ms)
+      ,write_rate_per_sec);
 #endif
 }
 
 namespace {
    uint32_t count = 0;
 
+   uint32_t num_errors = 0;
+
+   bool quit = false;
+
+   uint32_t start_time = 0;
+
 }
 
 void loop(void)
 {
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-   // need some yield time for quan
-    hal.scheduler->delay(20);
-#endif
+     if ( count == 0){
+        start_time =  AP_HAL::millis();
+     }
+     if ( ( count < 10000 ) && !quit ){
+   #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+      // need some yield time for quan
+       hal.scheduler->delay(20);
+   #endif
 
-    uint8_t type = get_random() % 4;
-    const StorageAccess &storage = all_storage[type];
-    uint16_t offset = get_random() % storage.size();
-    uint8_t  length = (get_random() & 31);
-    if (offset + length > storage.size()) {
-        length = storage.size() - offset;
-    }
-    if (length == 0) {
-        return;
-    }
-    uint8_t b[length];
-    for (uint8_t i=0; i<length; i++) {
-        b[i] = pvalue(offset+i);
-    }
+       uint8_t type = get_random() % 4;
+       const StorageAccess &storage = all_storage[type];
+       uint16_t offset = get_random() % storage.size();
+       uint8_t  length = (get_random() & 31);
+       if (offset + length > storage.size()) {
+           length = storage.size() - offset;
+       }
+       if (length == 0) {
+           return;
+       }
+       uint8_t b[length];
+       for (uint8_t i=0; i<length; i++) {
+           b[i] = pvalue(offset+i);
+       }
 
-    if (get_random() % 2 == 1) {
-        while (hal.console->tx_pending() ){asm volatile ("nop":::);}
-        hal.console->printf("writing ee addr %u len %u\n",static_cast<unsigned>(offset),static_cast<unsigned>(length));
-        if (!storage.write_block(offset, b, length)) {
-            hal.console->printf("write failed at offset %u length %u\n",
-                                (unsigned)offset, (unsigned)length);
-        }
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-#if defined QUAN_AERFLITE_BOARD
-       hal.console->printf("write wait q flushed\n");
-       Quan::wait_for_eeprom_write_queue_flushed();
-       hal.console->printf("write q flushed\n");
-#endif
-#endif
-    } else {
-        while (hal.console->tx_pending() ){asm volatile ("nop":::);}
-        
-        uint8_t b2[length];
-        hal.console->printf("reading ee addr %u len %u\n",static_cast<unsigned>(offset),static_cast<unsigned>(length));
-        if (!storage.read_block(b2, offset, length)) {
-            hal.console->printf("read failed at offset %u length %u\n",
-                                (unsigned)offset, (unsigned)length);
-        }
-        if (memcmp(b, b2, length) != 0) {
-            hal.console->printf("bad data at offset %u length %u\n",
-                                (unsigned)offset, (unsigned)length);
-        }
-    }
+       if (get_random() % 2 == 1) {
+          // while (hal.console->tx_pending() ){asm volatile ("nop":::);}
+         //  hal.console->printf("writing ee addr %u len %u\n",static_cast<unsigned>(offset),static_cast<unsigned>(length));
+           if (!storage.write_block(offset, b, length)) {
+               hal.console->printf("write failed at offset %u length %u\n",
+                                   (unsigned)offset, (unsigned)length);
+               quit = true;
+               
+           }
+   #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   #if defined QUAN_AERFLITE_BOARD
+       //   hal.console->printf("write wait q flushed\n");
+          
+        //  hal.console->printf("write q flushed\n");
+   #endif
+   #endif
+       } else {
+         //  while (hal.console->tx_pending() ){asm volatile ("nop":::);}
+           
+           uint8_t b2[length];
+           Quan::wait_for_eeprom_write_queue_flushed();
+         //  hal.console->printf("reading ee addr %u len %u\n",static_cast<unsigned>(offset),static_cast<unsigned>(length));
+           if (!storage.read_block(b2, offset, length)) {
+               hal.console->printf("read failed at offset %u length %u\n",
+                                   (unsigned)offset, (unsigned)length);
+               quit = true;
+           }
+           if (memcmp(b, b2, length) != 0) {
+               hal.console->printf("bad data at offset %u length %u\n",
+                                   (unsigned)offset, (unsigned)length);
+               ++num_errors;
+           }
+       }
 
-    count++;
-    if (count % 10000 == 0) {
-        hal.console->printf("%u ops\n", (unsigned)count);
+       count++;
+       if (count % 1000 == 0) {
+           double write_sec = (count * 1000.0) / (AP_HAL::millis() - start_time);
+           hal.console->printf("################ %u ops at % 8.f ops/sec ##############\n", (unsigned)count, write_sec);
+       }
+    } else{
+       hal.console->printf("TEST COMPLETED after %lu iterations\n", count);
+       if(quit == true){
+           hal.console->printf("TEST FAIL due to eeprom read write failures\n"); 
+       }
+       if ( num_errors > 0){
+          hal.console->printf("TEST FAIL due to data integrity failures\n"); 
+       }
+      
+       if ( (quit == false) && (num_errors == 0 )){
+          hal.console->printf("TESTED COMPLETED SUCCESSFULLY\n");
+       }
+       for(;;){
+         hal.scheduler->delay(1000);
+       }
     }
 }
 
