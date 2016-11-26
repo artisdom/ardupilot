@@ -156,6 +156,7 @@ bool Quan::i2c_eeprom_driver_base::ll_read(uint32_t start_address_in, uint8_t * 
    Quan::i2c_periph::enable_event_interrupts(true);
    Quan::i2c_periph::enable_buffer_interrupts(false);
    Quan::i2c_periph::enable_ack_bit(true);
+   Quan::i2c_periph::enable_pos_bit(false);
 #if defined QUAN_I2C_RX_DMA
    if (len > 1 ){
       Quan::i2c_periph::enable_dma_bit(true);
@@ -178,7 +179,7 @@ bool Quan::i2c_eeprom_driver_base::ll_read(uint32_t start_address_in, uint8_t * 
    }else{
       hal.console->printf("i2c_eeprom : read notify failed\n");
       if(Quan::i2c_periph::has_errored()){
-         hal.console->printf("i2c error : trying reset\n");
+         hal.console->printf("i2c error %s : trying reset\n",i2c_periph::get_last_error_c_str());
          Quan::i2c_periph::init();
       }
       return false;

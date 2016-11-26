@@ -34,6 +34,7 @@ bool Quan::i2c_register_based_driver_base::ll_read(uint8_t register_index, uint8
    Quan::i2c_periph::enable_event_interrupts(true);
    Quan::i2c_periph::enable_buffer_interrupts(false);
    Quan::i2c_periph::enable_ack_bit(true);
+   Quan::i2c_periph::enable_pos_bit(false);
 
 #if defined QUAN_I2C_RX_DMA
    if (m_data_length > 1 ){
@@ -307,7 +308,7 @@ void Quan::i2c_register_based_driver_base::on_write_value_sent()
    uint32_t const flags = Quan::i2c_periph::get_sr1();
    Quan::i2c_periph::enable_event_interrupts(false);
 #if defined QUAN_I2C_DEBUG
-   capture_i2c_sr1_flags("on_write_device_address_sent",flags);
+   capture_i2c_sr1_flags("on_write_value_sent",flags);
 #endif
    if ( flags & 4U){ // btf
       Quan::i2c_periph::request_stop_condition();
