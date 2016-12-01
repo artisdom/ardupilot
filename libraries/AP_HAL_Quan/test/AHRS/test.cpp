@@ -51,8 +51,6 @@ void setup(void)
         while (1){;}
     }
  
-
-    
     compass.set_offsets(0, {341,-295,525});
 
     gps.init(NULL, serial_manager);

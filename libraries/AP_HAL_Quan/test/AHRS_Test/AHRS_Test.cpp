@@ -9,8 +9,6 @@
 #include <AP_HAL_Quan/AP_HAL_Quan_Test_Main.h>
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_OSD/AP_OSD_enqueue.h>
-
-
 #include <AP_BattMonitor/AP_BattMonitor.h>
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
@@ -18,9 +16,7 @@ const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 // INS and Baro declaration
 AP_InertialSensor ins;
-
 Compass compass;
-
 AP_GPS gps;
 AP_Baro baro;
 AP_SerialManager serial_manager;
@@ -76,11 +72,8 @@ void loop(void)
    if (++counter10_Hz == 5){
       counter10_Hz = 0;
       compass.read();
-
       baro.update();
-
       gps.update();
-
       AP_OSD::gps_info_t gps_info;
       gps_info.ground_speed_m_per_s   = gps.ground_speed();
       gps_info.ground_course_cd       = gps.ground_course_cd();
