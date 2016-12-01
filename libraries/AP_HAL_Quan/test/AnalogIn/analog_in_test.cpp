@@ -28,6 +28,9 @@ namespace {
 
    constexpr uint8_t num_adc_channels = 5U;
 
+   constexpr float battery_voltage_scale = 4.29541951026795;
+   float battery_voltage = 0.f;
+
    struct test_task_t{
 
       test_task_t(): m_count{0}{}
@@ -72,8 +75,8 @@ namespace {
                for ( int i = 0; i < num_adc_channels; ++i){
                 float voltage = hal.analogin->channel(i)->voltage_average();
                 if ( i == 3){ // battery
-                   constexpr float scale = 4.29541951026795;
-                   hal.console->printf("battery voltage = %f V\n",static_cast<double>(voltage * scale));
+                   battery_voltage = get_battery_voltage();
+                   hal.console->printf("battery voltage = %f V\n",static_cast<double>(battery_voltage));
                 }else{
                   hal.console->printf("voltage[%d] = %f V\n",i,static_cast<double>(voltage));
                 }
@@ -93,6 +96,14 @@ namespace {
 
 }
 
+float get_battery_voltage()
+{
+    vTaskSuspendAll();
+    float result = hal.analogin->channel(3)->voltage_average() * battery_voltage_scale;
+    xTaskResumeAll();
+    return result;
+}
+
 // called once after init of hal before startup of apm task
 void setup() 
 {
@@ -106,7 +117,15 @@ void on_telemetry_transmitted()
 
 void quan::uav::osd::on_draw() 
 { 
-   draw_text("Quan APM AnalogIn test",{-140,50});
+   pxp_type pos {-140,50};
+   draw_text("Quan APM AnalogIn test",pos);
+
+   float battery_voltage = get_battery_voltage();
+   char buf[100];
+   fprintf(buf,"batt ery voltage = % 5.2f",battery_voltage);
+   pos.y += 20;
+   draw_text(buf,pos);
+
 }
 
 namespace {
