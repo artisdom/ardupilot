@@ -57,14 +57,23 @@
  # define AP_BATT_CURR_PIN                  101
  # define AP_BATT_VOLTDIVIDER_DEFAULT       1.1f
  # define AP_BATT_CURR_AMP_PERVOLT_DEFAULT  17.0f
-#elif CONFUG_HAL_BOARD == CONFIG_HAL_QUAN
+#elif CONFIG_HAL_BOARD == CONFIG_HAL_QUAN
+  #if defined QUAN_AERFLITE_BOARD
+ # define AP_BATT_VOLT_PIN                  3
+ # define AP_BATT_CURR_PIN                  2
+   // 39K high side
+   // 7k5 low side
+ # define AP_BATT_VOLTDIVIDER_DEFAULT       4.092f
+  #else
  # define AP_BATT_VOLT_PIN                  0
  # define AP_BATT_CURR_PIN                  1
 // using a 33 K res low side and 270 k high side
 // but the voltage is scaled as if it was 5V   
  # define AP_BATT_VOLTDIVIDER_DEFAULT       6.06f
-// current sensor 
+ #endif
+// current sensor same for both boards
  # define AP_BATT_CURR_AMP_PERVOLT_DEFAULT  16.67f
+
 #else
  # define AP_BATT_VOLT_PIN                  -1
  # define AP_BATT_CURR_PIN                  -1

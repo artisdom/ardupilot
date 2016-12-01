@@ -27,10 +27,6 @@ void quan::uav::osd::on_draw()
 void setup() {
     hal.console->println("Battery monitor library test");
 
-// 
-    // set battery monitor to smbus
-   // battery_mon.set_monitoring(0, AP_BattMonitor::BattMonitor_TYPE_SMBUS);
-    // initialise the battery monitor
     battery_mon.init();
 
     hal.scheduler->delay(1000);
@@ -50,9 +46,10 @@ void loop()
     if (++counter >= 10) {
         counter = 0;
         hal.console->printf("\nVoltage: %.2f V \tCurrent: %.2f A \tTotCurr:%.2f mAh",
-			    battery_mon.voltage(),
-			    battery_mon.current_amps(),
-                battery_mon.current_total_mah());
+			    static_cast<double>(battery_mon.voltage()),
+			    static_cast<double>(battery_mon.current_amps()),
+             static_cast<double>(battery_mon.current_total_mah())
+       );
     }
 }
 
