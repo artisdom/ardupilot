@@ -1,24 +1,26 @@
 
 #include <AP_HAL/AP_HAL.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-
+#include "FreeRTOS.h"
+#include <task.h>
+#include <stm32f4xx.h>
+#include <cstring>
+#include <cstdio>
 #include <AP_Common/AP_Common.h>
 #include <AP_Progmem/AP_Progmem.h>
 #include <AP_Param/AP_Param.h>
 #include <StorageManager/StorageManager.h>
 #include <AP_Math/AP_Math.h>
+#include <AP_HAL/utility/functor.h>
 #include <AP_HAL_Quan/AP_HAL_Quan.h>
 #include <AP_HAL_Quan/AP_HAL_Quan_Test_Main.h>
-#include <AP_HAL/utility/functor.h>
-
 #include <quantracker/osd/osd.hpp>
-#include <task.h>
-#include <cstring>
-#include <stm32f4xx.h>
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 namespace {
+
+   float get_battery_voltage();
 
    constexpr uint8_t red_led_pin = 1U;
    constexpr uint8_t test_pin = 2U;
@@ -94,14 +96,14 @@ namespace {
       uint32_t m_count ;
    } test_task;
 
-}
+   float get_battery_voltage()
+   {
+       vTaskSuspendAll();
+       float result = hal.analogin->channel(3)->voltage_average() * battery_voltage_scale;
+       xTaskResumeAll();
+       return result;
+   }
 
-float get_battery_voltage()
-{
-    vTaskSuspendAll();
-    float result = hal.analogin->channel(3)->voltage_average() * battery_voltage_scale;
-    xTaskResumeAll();
-    return result;
 }
 
 // called once after init of hal before startup of apm task
@@ -122,7 +124,7 @@ void quan::uav::osd::on_draw()
 
    float battery_voltage = get_battery_voltage();
    char buf[100];
-   fprintf(buf,"batt ery voltage = % 5.2f",battery_voltage);
+   sprintf(buf,"battery voltage = % 5.2f",static_cast<double>(battery_voltage));
    pos.y += 20;
    draw_text(buf,pos);
 
