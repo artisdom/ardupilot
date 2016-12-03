@@ -28,8 +28,12 @@ bool AP_Airspeed_Quan::get_differential_pressure(float &pressure)
 //
 //  Pa = v_adc  * 1000
 // In fact should be offset at VCC/2 but think that offset is taken care of externally
-   // ch2 is selected as Airspeed
-   pressure = hal.analogin->channel(2)->voltage_average_ratiometric() * 1000.f;
+#if defined QUAN_AERFLITE_BOARD
+   static constexpr uint8_t airspeed_adc_channel = 4;
+#else
+   static constexpr uint8_t airspeed_adc_channel = 2;
+#endif
+   pressure = hal.analogin->channel(airspeed_adc_channel)->voltage_average_ratiometric() * 1000.f;
    return true;
 }
 

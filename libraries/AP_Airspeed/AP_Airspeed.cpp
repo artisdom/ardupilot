@@ -58,7 +58,11 @@ extern const AP_HAL::HAL& hal;
 #elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX
  #define ARSPD_DEFAULT_PIN AP_AIRSPEED_I2C_PIN
 #elif CONFIG_HAL_BOARD == HAL_BOARD_QUAN
- #define ARSPD_DEFAULT_PIN 2
+  #if defined QUAN_AERFLITE_BOARD
+    #define ARSPD_DEFAULT_PIN 4
+  #else
+    #define ARSPD_DEFAULT_PIN 2
+  #endif
 #else
  #define ARSPD_DEFAULT_PIN 0
 #endif
