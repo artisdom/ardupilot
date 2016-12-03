@@ -13,7 +13,6 @@
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
-
 // INS and Baro declaration
 AP_InertialSensor ins;
 Compass compass;
@@ -34,9 +33,14 @@ AP_AHRS_DCM  ahrs(ins, baro, gps);
 
 void setup(void)
 {
+    AP_Param::set_object_value(&battery_monitor, battery_monitor.var_info, "_VOLT_PIN", 3);
+    AP_Param::set_object_value(&battery_monitor, battery_monitor.var_info, "_CURR_PIN", 2);
+    AP_Param::set_object_value(&battery_monitor, battery_monitor.var_info,"_VOLT_MULT", 4.092f);
+    AP_Param::set_object_value(&battery_monitor, battery_monitor.var_info,"_AMP_OFFSET", 0.0f);
+    AP_Param::set_object_value(&battery_monitor, battery_monitor.var_info,"_AMP_PERVOLT", 16.67f);
 
+    battery_monitor.init();
     ins.init(AP_InertialSensor::RATE_100HZ);
-
     ahrs.init();
     serial_manager.init();
     AP_OSD::enqueue::initialise();
@@ -48,25 +52,23 @@ void setup(void)
     
     if( compass.init() ) {
         hal.console->printf("Enabling compass\n");
-        compass.set_offsets(0, {341,-295,525});
+        // compass.set_offsets(0, {341,-295,525}); //orig board
+        compass.set_offsets(0, {347.5,-284.5,649});    // ref2 board
         ahrs.set_compass(&compass);
     } else {
         hal.console->printf("No compass detected\n");
     }
     gps.init(NULL, serial_manager);
- 
 }
 
 namespace {
 
   uint16_t print_counter =0;
   uint16_t counter10_Hz;
- 
 }
 
 void loop(void)
 {
-    
    ins.wait_for_sample();
    float heading = 0;
    if (++counter10_Hz == 5){
@@ -94,33 +96,13 @@ void loop(void)
             battery_monitor.current_amps(),
                battery_monitor.current_total_mah()}
       );
+   }
 
-    }
+   ahrs.update();
 
-    ahrs.update();
-#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
-    counter++;
+   AP_OSD::enqueue::attitude({ToDeg(ahrs.pitch),ToDeg(ahrs.roll),ToDeg(ahrs.yaw)});
 
-    if (now - last_print >= 100000 /* 100ms : 10hz */) {
-        Vector3f drift  = ahrs.get_gyro_drift();
-        hal.console->printf(
-                "r:%4.1f  p:%4.1f y:%4.1f "
-                    "drift=(%5.1f %5.1f %5.1f) hdg=%.1f rate=%.1f\n",
-                        ToDeg(ahrs.roll),
-                        ToDeg(ahrs.pitch),
-                        ToDeg(ahrs.yaw),
-                        ToDeg(drift.x),
-                        ToDeg(drift.y),
-                        ToDeg(drift.z),
-                        compass.use_for_yaw() ? ToDeg(heading) : 0.0f,
-                        (1.0e6f*counter)/(now-last_print));
-        last_print = now;
-        counter = 0;
-    }
-#else
-    AP_OSD::enqueue::attitude({ToDeg(ahrs.pitch),ToDeg(ahrs.roll),ToDeg(ahrs.yaw)});
-
-    if (++print_counter == 20) {
+   if (++print_counter == 20) {
       print_counter = 0;
       Vector3f drift  = ahrs.get_gyro_drift();
       hal.console->printf(
@@ -135,8 +117,8 @@ void loop(void)
             compass.use_for_yaw() ? static_cast<double>(ToDeg(heading)) : 0.0
       );
    }
-#endif
 }
+
 namespace {
    uint32_t get_flags()
    {
