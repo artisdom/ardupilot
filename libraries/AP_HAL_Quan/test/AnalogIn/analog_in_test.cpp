@@ -117,16 +117,31 @@ void on_telemetry_transmitted()
 {
 }
 
+namespace {
+   const char * adc_descr[]  = {
+          "ana  "
+         ,"rssi "
+         ,"curr "
+         ,"volt "
+         ,"aspd "
+   };
+}
+
 void quan::uav::osd::on_draw() 
 { 
-   pxp_type pos {-140,50};
+   pxp_type pos {-150,80};
    draw_text("Quan APM AnalogIn test",pos);
 
    float battery_voltage = get_battery_voltage();
    char buf[100];
    sprintf(buf,"battery voltage = % 5.2f",static_cast<double>(battery_voltage));
-   pos.y += 20;
+   pos.y -= 20;
    draw_text(buf,pos);
+   for ( uint32_t i = 0; i < num_adc_channels; ++i){
+      sprintf(buf,"v[%2lu]=% 5.2f (%s)",i,static_cast<double>(hal.analogin->channel(i)->voltage_average()),adc_descr[i]);
+      pos.y -= 20;
+      draw_text(buf,pos);
+   }
 
 }
 

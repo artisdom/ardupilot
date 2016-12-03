@@ -256,10 +256,10 @@ namespace {
         float const m_gain;
    };
 
-   average_filter_t   batt_voltage_adc{0.f, 0.03f};
-   average_filter_t   batt_current_adc{0.f, 0.03f};
+   average_filter_t   batt_voltage_adc{0.f, 0.2f};
+   average_filter_t   batt_current_adc{0.f, 0.2f};
    average_filter_t   airspeed_adc{2.5f , 0.2f};
-   average_filter_t   rssi_adc{0.f, 0.01f};
+   average_filter_t   rssi_adc{0.f, 0.5f};
 #if defined QUAN_AERFLITE_BOARD
    average_filter_t   analog_in_adc{2.5f , 0.2f};
 #endif
