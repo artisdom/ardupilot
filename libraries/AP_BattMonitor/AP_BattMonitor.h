@@ -111,7 +111,7 @@ public:
 
     static const struct AP_Param::GroupInfo var_info[];
 
-protected:
+//protected:
 
     /// parameters
     AP_Int8     _monitoring[AP_BATT_MONITOR_MAX_INSTANCES];         /// 0=disabled, 3=voltage only, 4=voltage and current

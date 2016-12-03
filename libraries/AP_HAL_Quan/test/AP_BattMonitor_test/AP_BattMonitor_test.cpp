@@ -3,30 +3,32 @@
  *       Code by DIYDrones.com
  */
 
+#include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 
 #include <AP_BattMonitor/AP_BattMonitor.h>
-#include <AP_HAL/AP_HAL.h>
-
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <quantracker/osd/osd.hpp>
-#endif
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 AP_BattMonitor battery_mon;
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 // do something on osd to check its running ok
 void quan::uav::osd::on_draw() 
 { 
     pxp_type pos{-140,50};
     draw_text("Quan APM Battery monitor test",pos);
 }
-#endif
 
 void setup() {
     hal.console->println("Battery monitor library test");
 
+    AP_Param::set_object_value(&battery_mon, battery_mon.var_info, "_VOLT_PIN", 3);
+    AP_Param::set_object_value(&battery_mon, battery_mon.var_info, "_CURR_PIN", 2);
+    AP_Param::set_object_value(&battery_mon, battery_mon.var_info,"_VOLT_MULT", 4.092f);
+    AP_Param::set_object_value(&battery_mon, battery_mon.var_info,"_AMP_OFFSET", 0.0f);
+    AP_Param::set_object_value(&battery_mon, battery_mon.var_info,"_AMP_PERVOLT", 16.67f);
+ 
     battery_mon.init();
 
     hal.scheduler->delay(1000);
@@ -54,3 +56,5 @@ void loop()
 }
 
 AP_HAL_MAIN();
+
+#endif 
