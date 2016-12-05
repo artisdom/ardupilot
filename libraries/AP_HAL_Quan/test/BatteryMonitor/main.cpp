@@ -11,13 +11,27 @@
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
-AP_BattMonitor battery_mon;
+namespace {
+
+   AP_BattMonitor battery_mon;
+
+   float voltage_V = 0.f;
+   float current_A = 0.f;
+
+}
 
 // do something on osd to check its running ok
 void quan::uav::osd::on_draw() 
 { 
-    pxp_type pos{-140,50};
-    draw_text("Quan APM Battery monitor test",pos);
+    pxp_type pos{-150,70};
+    draw_text("Battery monitor test",pos);
+
+    pos.y -= 40;
+    draw_text<100>(pos,"Batt voltage = % 8.3f V",static_cast<double>(voltage_V));
+
+    pos.y -= 20;
+    draw_text<100>(pos,"Batt current = % 8.3f A",static_cast<double>(current_A));
+      
 }
 
 void setup() {
@@ -44,12 +58,15 @@ void loop()
 
     battery_mon.read();
 
+    voltage_V = battery_mon.voltage();
+    current_A = battery_mon.current_amps();
+    
     // display output at 1hz
     if (++counter >= 10) {
         counter = 0;
         hal.console->printf("\nVoltage: %.2f V \tCurrent: %.2f A \tTotCurr:%.2f mAh",
-			    static_cast<double>(battery_mon.voltage()),
-			    static_cast<double>(battery_mon.current_amps()),
+			    static_cast<double>(voltage_V),
+			    static_cast<double>(current_A),
              static_cast<double>(battery_mon.current_total_mah())
        );
     }
