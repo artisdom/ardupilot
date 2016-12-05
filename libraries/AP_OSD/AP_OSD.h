@@ -46,21 +46,18 @@ namespace AP_OSD{
    };
    // ID to identify what is in the message
    enum class msgID{
-    //  heading , // float
-      attitude, // vect3df
-  //    raw_compass, // vect3df
-    //  drift ,  // vect3df
-      gps_status, // uint8_t
-      gps_location, // vect3du32 lat, lon, alt
-      home_location,
-     // baro_altitude,
-      airspeed,
-      battery,
-      system_status,
-      rcin_0_to_5,
-      rcin_6_to_11,
-      rcin_12_to_17,
-      control_mode,
+      attitude,                         // 0 
+      gps_status,                       // 1
+      gps_location,                     // 2  
+      home_location,                    // 3
+      airspeed,                         // 4
+      battery,                          // 5
+      system_status,                    // 6
+      rcin_0_to_5,                      // 7
+      rcin_6_to_11,                     // 8
+      rcin_12_to_17,                    // 9
+      control_mode,                     // 10
+      baro_alt,                         // 11
       max_messages
    };
 

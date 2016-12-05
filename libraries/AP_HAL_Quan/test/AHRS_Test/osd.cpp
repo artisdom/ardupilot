@@ -35,43 +35,43 @@ void quan::uav::osd::on_draw()
 
     char buf [100];
 
-    sprintf(buf,"pitch   = %8.3f deg",static_cast<double>(aircraft_info.attitude.pitch.numeric_value()));
+    sprintf(buf,"pitch   = % 8.3f deg",static_cast<double>(aircraft_info.attitude.pitch.numeric_value()));
     draw_text(buf,pos);
     pos.y -= 20;
 
-    sprintf(buf,"roll    = %8.3f deg",static_cast<double>(aircraft_info.attitude.roll.numeric_value()));
+    sprintf(buf,"roll    = % 8.3f deg",static_cast<double>(aircraft_info.attitude.roll.numeric_value()));
     draw_text(buf,pos);
     pos.y -= 20;
 
-    sprintf(buf,"yaw     = %8.3f deg",static_cast<double>(aircraft_info.attitude.yaw.numeric_value()));
+    sprintf(buf,"yaw     = % 8.3f deg",static_cast<double>(aircraft_info.attitude.yaw.numeric_value()));
     draw_text(buf,pos);
     pos.y -= 20;
 
-    sprintf(buf,"lat     = %8.3f deg",static_cast<double>(aircraft_info.aircraft_position.lat.numeric_value())* 1e-7);
+    sprintf(buf,"lat     = % 8.3f deg",static_cast<double>(aircraft_info.aircraft_position.lat.numeric_value())* 1e-7);
     draw_text(buf,pos);
     pos.y -= 20;
 
-    sprintf(buf,"lon     = %8.3f deg",static_cast<double>(aircraft_info.aircraft_position.lon.numeric_value())*1e-7);
+    sprintf(buf,"lon     = % 8.3f deg",static_cast<double>(aircraft_info.aircraft_position.lon.numeric_value())*1e-7);
     draw_text(buf,pos);
     pos.y -= 20;
 
-    sprintf(buf,"alt     = %8.3f m",static_cast<double>(aircraft_info.aircraft_position.alt.numeric_value()) * 1e-3);
+    sprintf(buf,"alt     = % 8.3f m",static_cast<double>(aircraft_info.aircraft_position.alt.numeric_value()) * 1e-3);
     draw_text(buf,pos);
     pos.y -= 20;
 
-//    sprintf(buf,"baroalt = %8.3f m",static_cast<double>(aircraft_info.baro_altitude) );
-//    draw_text(buf,pos);
-//    pos.y -= 20;
-
-    sprintf(buf,"airspd  = %8.3f m/s",static_cast<double>(aircraft_info.airspeed.numeric_value()) );
+    sprintf(buf,"baroalt = % 8.3f m",static_cast<double>(aircraft_info.baro_alt.numeric_value()) );
     draw_text(buf,pos);
     pos.y -= 20;
 
-    sprintf(buf,"Batt V  = %8.3f m/s",static_cast<double>(aircraft_info.battery_voltage.numeric_value()) );
+    sprintf(buf,"airspd  = % 8.3f m/s",static_cast<double>(aircraft_info.airspeed.numeric_value()) );
+    draw_text(buf,pos);
+    pos.y -= 20;
+
+    sprintf(buf,"Batt V  = % 8.3f V",static_cast<double>(aircraft_info.battery_voltage.numeric_value()) );
     draw_text(buf,pos);
     pos.y -= 20;
    
-    sprintf(buf,"Batt I  = %8.3f m/s",static_cast<double>(aircraft_info.battery_current.numeric_value()) );
+    sprintf(buf,"Batt I  = % 8.3f A",static_cast<double>(aircraft_info.battery_current.numeric_value()) );
     draw_text(buf,pos);
     pos.y -= 20;
       

@@ -89,26 +89,28 @@ namespace{
    {
        info.control_mode = msg.value.u8;
    }
+
+   void get_baro_alt(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
+   {
+       info.baro_alt = quan::length_<float>::m{msg.value.f};
+   }
    
    typedef void(*fun_ptr)(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info);
 
    // order must match enums
    fun_ptr funs[] = {
-   //   get_heading,
-      get_attitude,
-   //   get_raw_compass,
-   //   get_drift,
-      get_gps_status, // uint8_t
-      get_gps_location, // vect3di32
-      get_home_location, // vect3di32
-  //    get_baro_altitude, // float
-      get_airspeed,
-      get_battery,
-      get_system_status,
-      get_rcin_0_to_5,
-      get_rcin_6_to_11,
-      get_rcin_12_to_17,
-      get_control_mode
+      get_attitude,        //   0
+      get_gps_status,      //   1 
+      get_gps_location,    //   2
+      get_home_location,   //   3
+      get_airspeed,        //   4
+      get_battery,         //   5
+      get_system_status,   //   6
+      get_rcin_0_to_5,     //   7
+      get_rcin_6_to_11,    //   8
+      get_rcin_12_to_17,   //   9
+      get_control_mode,    //  10
+      get_baro_alt         //  11
    };
 
    QueueHandle_t osd_queue = nullptr;

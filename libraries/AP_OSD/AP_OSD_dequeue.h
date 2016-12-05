@@ -40,7 +40,10 @@ namespace AP_OSD { namespace dequeue{
       quan::voltage::V                    battery_voltage; 
       quan::current::A                    battery_current; 
       quan::charge::mA_h                  battery_mAh_consumed; 
+
+      quan::length_<float>::m             baro_alt;
       AP_OSD::system_status_t             system_status; 
+      
      
       uint16_t                            rc_in_channels[18];
       uint8_t                             gps_status; // enum as per AP_GPS.h

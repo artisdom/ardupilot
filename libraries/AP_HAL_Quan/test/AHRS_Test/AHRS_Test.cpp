@@ -25,11 +25,7 @@ static AP_Vehicle::FixedWing aparm;
 
 AP_Airspeed airspeed(aparm);
 
-// choose which AHRS system to use
 AP_AHRS_DCM  ahrs(ins, baro, gps);
-
-#define HIGH 1
-#define LOW 0
 
 void setup(void)
 {
@@ -74,15 +70,18 @@ void loop(void)
    if (++counter10_Hz == 5){
       counter10_Hz = 0;
       compass.read();
+
       baro.update();
+      AP_OSD::enqueue::baro_alt(baro.get_altitude());
+
       gps.update();
       AP_OSD::gps_info_t gps_info;
       gps_info.ground_speed_m_per_s   = gps.ground_speed();
       gps_info.ground_course_cd       = gps.ground_course_cd();
       gps_info.num_sats               = gps.num_sats();
       gps_info.status                 = gps.status();
-
       AP_OSD::enqueue::gps_status(gps_info);
+
       AP_OSD::enqueue::gps_location(
          {gps.location().lat,gps.location().lng,gps.location().alt}
       );
@@ -96,6 +95,7 @@ void loop(void)
             battery_monitor.current_amps(),
                battery_monitor.current_total_mah()}
       );
+
    }
 
    ahrs.update();
