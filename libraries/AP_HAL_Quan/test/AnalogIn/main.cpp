@@ -25,7 +25,6 @@ namespace {
    constexpr uint8_t pin_off = 0U;
    constexpr uint8_t pin_on = 1U;
    constexpr uint8_t num_adc_channels = 5U;
-   constexpr float battery_voltage_scale = 4.29541951026795;
 
    struct test_task_t{
 
@@ -37,11 +36,11 @@ namespace {
             m_count = 0;
             for ( int i = 0; i < num_adc_channels; ++i){
                float voltage = hal.analogin->channel(i)->voltage_average();
-                  hal.console->printf("voltage[%d] = %f V\n",i,static_cast<double>(voltage));
-               }
+               hal.console->printf("voltage[%d] = %f V\n",i,static_cast<double>(voltage));
             }
          }
-      };
+      }
+
 
       void init()
       {
@@ -51,15 +50,6 @@ namespace {
    private:
       uint32_t m_count ;
    } test_task;
-
-   float get_battery_voltage()
-   {
-       vTaskSuspendAll();
-       float result = hal.analogin->channel(3)->voltage_average() * battery_voltage_scale;
-       xTaskResumeAll();
-       return result;
-   }
-
 }
 
 // called once after init of hal before startup of apm task
@@ -88,17 +78,14 @@ void quan::uav::osd::on_draw()
    pxp_type pos {-150,80};
    draw_text("Quan APM AnalogIn test",pos);
 
-   float battery_voltage = get_battery_voltage();
-   char buf[100];
-   sprintf(buf,"battery voltage = % 5.2f",static_cast<double>(battery_voltage));
-   pos.y -= 20;
-   draw_text(buf,pos);
    for ( uint32_t i = 0; i < num_adc_channels; ++i){
-      sprintf(buf,"v[%2lu]=% 5.2f (%s)",i,static_cast<double>(hal.analogin->channel(i)->voltage_average()),adc_descr[i]);
-      pos.y -= 20;
-      draw_text(buf,pos);
+      pos.y -= 20;  // newline
+      draw_text<100>(pos,"v[%2lu]=% 5.2f (%s)"
+         ,i
+         ,static_cast<double>(hal.analogin->channel(i)->voltage_average())
+         ,adc_descr[i]
+      );
    }
-
 }
 
 namespace {
