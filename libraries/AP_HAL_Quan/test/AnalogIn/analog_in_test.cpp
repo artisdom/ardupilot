@@ -20,18 +20,12 @@ const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 namespace {
 
-   float get_battery_voltage();
-
    constexpr uint8_t red_led_pin = 1U;
    constexpr uint8_t test_pin = 2U;
-
    constexpr uint8_t pin_off = 0U;
    constexpr uint8_t pin_on = 1U;
-
    constexpr uint8_t num_adc_channels = 5U;
-
    constexpr float battery_voltage_scale = 4.29541951026795;
-   float battery_voltage = 0.f;
 
    struct test_task_t{
 
@@ -39,52 +33,14 @@ namespace {
 
       void fun()
       {
-          if (++m_count == 500){
-              m_count = 0;
-          
-              uint32_t flags =  DMA2->HISR;
-              if( flags & (1 << 0)){
-                  hal.console->printf("Stream X fifo error\n");
-              }
-              if (flags & (1<<2)){
-                  hal.console->printf("direct mode error\n");
-              }
-              if (flags & (1<<3)){
-                  hal.console->printf("stream transfer error\n");
-              }
-              if (flags & (1<<4)){
-                  hal.console->printf("half transfer interrupt\n");
-              }
-              if (flags & (1<<4)){
-                  hal.console->printf("transfer complete interrupt\n");
-              }
-//              uint32_t ndtr = DMA2_Stream4->NDTR;
-//                   hal.console->printf("ndtr = %d\n", static_cast<int>(ndtr));
-           
-              uint32_t adc_flags = ADC1->SR;
-              if (adc_flags & (1<<5)){
-                  hal.console->printf("adc overrun\n");
-              }
-              if (adc_flags & (1<<1)){
-                  hal.console->printf("adc eoc\n");
-              }
-              if (adc_flags & (1<<4)){
-                  hal.console->printf("adc start\n");
-              }
-
-             // uint32_t voltage = ADC1->DR;
-             // hal.console->printf("adc result =%d\n",static_cast<int>(voltage));
-               for ( int i = 0; i < num_adc_channels; ++i){
-                float voltage = hal.analogin->channel(i)->voltage_average();
-                if ( i == 3){ // battery
-                   battery_voltage = get_battery_voltage();
-                   hal.console->printf("battery voltage = %f V\n",static_cast<double>(battery_voltage));
-                }else{
+         if (++m_count == 500){
+            m_count = 0;
+            for ( int i = 0; i < num_adc_channels; ++i){
+               float voltage = hal.analogin->channel(i)->voltage_average();
                   hal.console->printf("voltage[%d] = %f V\n",i,static_cast<double>(voltage));
-                }
                }
-            //hal.gpio->toggle(red_led_pin);
-          }
+            }
+         }
       };
 
       void init()
