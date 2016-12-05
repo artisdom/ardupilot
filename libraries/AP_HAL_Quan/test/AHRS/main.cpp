@@ -1,4 +1,3 @@
-// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
 //
 // Simple test for the AP_AHRS interface
@@ -13,19 +12,18 @@
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
-// INS and Baro declaration
-AP_InertialSensor ins;
-Compass compass;
-AP_GPS gps;
-AP_Baro baro;
-AP_SerialManager serial_manager;
-AP_BattMonitor  battery_monitor;
+namespace {
 
-static AP_Vehicle::FixedWing aparm;
-
-AP_Airspeed airspeed(aparm);
-
-AP_AHRS_DCM  ahrs(ins, baro, gps);
+   AP_InertialSensor             ins;
+   Compass                       compass;
+   AP_GPS                        gps;
+   AP_Baro                       baro;
+   AP_SerialManager              serial_manager;
+   AP_BattMonitor                battery_monitor;
+   AP_Vehicle::FixedWing         aparm;
+   AP_Airspeed                   airspeed(aparm);
+   AP_AHRS_DCM                   ahrs(ins, baro, gps);
+}
 
 void setup(void)
 {
@@ -61,15 +59,18 @@ namespace {
 
   uint16_t print_counter =0;
   uint16_t counter10_Hz;
+  float    heading = 0;
 }
 
 void loop(void)
 {
    ins.wait_for_sample();
-   float heading = 0;
+   
    if (++counter10_Hz == 5){
       counter10_Hz = 0;
       compass.read();
+
+      heading = compass.calculate_heading(ahrs.get_dcm_matrix());
 
       baro.update();
       AP_OSD::enqueue::baro_alt(baro.get_altitude());
@@ -114,7 +115,7 @@ void loop(void)
             static_cast<double>(ToDeg(drift.x)),
             static_cast<double>(ToDeg(drift.y)),
             static_cast<double>(ToDeg(drift.z)),
-            compass.use_for_yaw() ? static_cast<double>(ToDeg(heading)) : 0.0
+            static_cast<double>(ToDeg(heading))
       );
    }
 }

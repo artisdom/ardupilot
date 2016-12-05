@@ -12,7 +12,6 @@
 
 namespace {
 
-   // the structure to receive the osd data
    AP_OSD::dequeue::osd_info_t aircraft_info;
 
    void do_gps(quan::uav::osd::pxp_type const & pos);
@@ -23,7 +22,6 @@ void on_telemetry_transmitted()
 {
 }
 
-// do something on osd to check its running ok
 void quan::uav::osd::on_draw() 
 { 
     AP_OSD::dequeue::read_stream(aircraft_info);
