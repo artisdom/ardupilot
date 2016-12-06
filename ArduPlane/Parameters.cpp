@@ -1381,20 +1381,40 @@ void Plane::load_parameters(void)
         cliSerial->printf("Bad parameter table\n");
         AP_HAL::panic("Bad parameter table");
     }
-    if (!g.format_version.load() ||
-        g.format_version != Parameters::k_format_version) {
-
+    bool try_load = g.format_version.load();
+    bool not_version_check = g.format_version != Parameters::k_format_version;
+    if ( (! try_load) || not_version_check){
+        if(!try_load){
+           cliSerial->printf("Plane::load parameters load format version failed\n");
+        }
+        if(not_version_check){
+           cliSerial->printf("Plane::load parameters check version failed\n");
+        }
+/*
         // erase all parameters
         cliSerial->printf("Firmware change: erasing EEPROM...\n");
-        AP_Param::erase_all();
-
+        if (!AP_Param::erase_all()){
+            cliSerial->printf("Plane::load parameters erase_all failed\n");
+        }
+*/
+        
         // save the current format version
-        g.format_version.set_and_save(Parameters::k_format_version);
+        if (!g.format_version.set_and_save(Parameters::k_format_version)){
+            cliSerial->printf("Plane::load_parameters: save format version failed\n");
+        }else{
+            cliSerial->printf("Plane::load_parameters: save format version as %i\n", g.format_version.get());
+        }
+        try_load = g.format_version.load();
+        if(!try_load){
+           cliSerial->printf("Plane::load parameters load format version failed again\n");
+        }
         cliSerial->println("done.");
     } else {
         uint32_t before = micros();
         // Load all auto-loaded EEPROM variables
-        AP_Param::load_all();
+        if (!AP_Param::load_all()){
+           cliSerial->printf("load_all failed\n");
+        }
         AP_Param::convert_old_parameters(&conversion_table[0], ARRAY_SIZE(conversion_table));
         cliSerial->printf("load_all took %uus\n", static_cast<unsigned>(micros() - before));
     }
