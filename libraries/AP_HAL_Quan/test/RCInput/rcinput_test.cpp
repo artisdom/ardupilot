@@ -36,6 +36,7 @@ namespace {
    constexpr uint8_t max_input_channels = 16U;
    uint16_t stick_inputs[max_input_channels];
    uint8_t num_rc_in_channels = 0;
+   uint8_t constexpr num_rc_out_channels = 6;
 
    struct test_task_t{
 
@@ -49,6 +50,7 @@ namespace {
             if ( num_rc_in_channels > 0){
                for ( uint8_t i = 0U; i < num_rc_in_channels; ++i){
                   stick_inputs[i] = hal.rcin->read(i);
+                  hal.rcout->write(i,stick_inputs[i]);
                   hal.console->printf("rc in ch[%d] = %u usec\n",i,static_cast<unsigned int>(stick_inputs[i]));
                }
             }else{
@@ -68,6 +70,11 @@ namespace {
           hal.gpio->write(red_led_pin,pin_off);
 
           for (auto & v: stick_inputs){ v = 0;}
+
+
+          for (uint8_t i =0; i < num_rc_out_channels; ++i){
+             hal.rcout->enable_ch(i);
+          }
       }
    private:
       uint32_t m_led_count ;
@@ -141,6 +148,7 @@ namespace {
       flags.init_gpio = true;
       flags.init_scheduler = true;
       flags.init_rcin = true;
+      flags.init_rcout = true;
       return flags.value;
    }
 }
