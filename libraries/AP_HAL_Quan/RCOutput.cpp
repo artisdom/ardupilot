@@ -15,6 +15,8 @@
 at same time
 */
 
+extern const AP_HAL::HAL& hal;
+
 namespace {
 
    typedef quan::stm32::tim4 rcout_1to4_timer;
@@ -308,6 +310,7 @@ namespace {
 
       void enable_ch(uint8_t ch)
       {
+         hal.console->printf("Enabling servo[%u]\n",static_cast<unsigned>(ch));
          if ( ch < 4){
             rcout_1to4_timer::get()->ccer |= (1 << (ch * 4));
             return;
@@ -321,6 +324,7 @@ namespace {
 
       void disable_ch(uint8_t ch)
       {
+         hal.console->printf("Disabling servo[%u]\n",static_cast<unsigned>(ch));
          if ( ch < 4){
             rcout_1to4_timer::get()->ccer &= ~(1 << (ch * 4));
             return;
