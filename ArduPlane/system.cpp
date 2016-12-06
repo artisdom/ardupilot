@@ -79,7 +79,7 @@ static void failsafe_check_static()
 
 void Plane::init_ardupilot()
 {
-
+  
     // initialise serial port
     serial_manager.init_console();
 
@@ -88,10 +88,15 @@ void Plane::init_ardupilot()
                         static_cast<unsigned long>(hal.util->available_memory()));
 
 
+
+
+
     //
     // Check the EEPROM format version before loading any parameters from EEPROM
     //
     load_parameters();
+
+    hal.console->printf("Parameters loaded\n");
 
 #if HIL_SUPPORT
     if (g.hil_mode == 1) {
@@ -113,6 +118,7 @@ void Plane::init_ardupilot()
     }
 #endif
 
+    
     BoardConfig.init();
 
     // initialise serial ports
@@ -241,9 +247,9 @@ void Plane::init_ardupilot()
     startup_ground();
 
 //    // choose the nav controller
-     set_nav_controller();
+    set_nav_controller();
 //
-     set_mode((FlightMode)g.initial_mode.get());
+    set_mode((FlightMode)g.initial_mode.get());
 //
 //    // set the correct flight mode
 //    // ---------------------------
@@ -326,7 +332,10 @@ void Plane::startup_ground(void)
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     AP_OSD::enqueue::system_status(AP_OSD::system_status_t::running);
 #endif
-
+//    for(;;){
+//
+//      vTaskDelay(100);
+//    }
 }
 
 enum FlightMode Plane::get_previous_mode() {

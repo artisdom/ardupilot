@@ -40,6 +40,9 @@ struct AP_Notify::notify_events_type AP_Notify::events;
     ToshibaLED_I2C toshibaled;
     ExternalLED externalled;
     NotifyDevice *AP_Notify::_devices[] = {&boardled, &toshibaled, &externalled, &buzzer};
+#elif CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   AP_BoardLED boardled;
+   NotifyDevice *AP_Notify::_devices[] = {&boardled}; 
 #elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX
     #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIO
         AP_BoardLED boardled;
@@ -65,9 +68,10 @@ struct AP_Notify::notify_events_type AP_Notify::events;
         NotifyDevice *AP_Notify::_devices[] = {&boardled, &toshibaled, &tonealarm};
     #endif
 #else
-    AP_BoardLED boardled;
-    ToshibaLED_I2C toshibaled;
-    NotifyDevice *AP_Notify::_devices[] = {&boardled, &toshibaled};
+   #error board not defined in AP_Notify
+//    AP_BoardLED boardled;
+//    ToshibaLED_I2C toshibaled;
+//    NotifyDevice *AP_Notify::_devices[] = {&boardled, &toshibaled};
 #endif
 
 #define CONFIG_NOTIFY_DEVICES_COUNT (ARRAY_SIZE(AP_Notify::_devices))

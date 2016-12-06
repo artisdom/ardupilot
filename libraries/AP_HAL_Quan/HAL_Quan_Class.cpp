@@ -3,7 +3,7 @@
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <quantracker/osd/osd.hpp>
 #include <task.h>
-
+#include <AP_HAL_Empty/I2CDriver.h>
 #include "HAL_Quan_Class.h"
 #include "AP_HAL_Quan_Private.h"
 
@@ -29,6 +29,9 @@ namespace Quan{
 }
 
 static Empty::EmptySPIDeviceManager spiDeviceManager;
+static Empty::EmptySemaphore i2c_semaphore;
+static Empty::EmptyI2CDriver i2c_driver{&i2c_semaphore};
+
 static QuanStorage storageDriver;
 static QuanGPIO gpioDriver;
 //static QuanRCOutput rcoutDriver;
@@ -47,7 +50,7 @@ HAL_Quan::HAL_Quan()
 #endif
    NULL,            /* no uartE */
 #if defined QUAN_AERFLITE_BOARD  /* no exposed i2c for AERFLITE */
-   NULL,
+   &i2c_driver,    // dummy
  #else
    Quan::get_i2c_driver(), 
 #endif
@@ -109,14 +112,17 @@ void HAL_Quan::run(void * params) const
    }
 
    if (rcin && flags.init_rcin ){
+      console->write("starting rcin\n");
       rcin->init(NULL);
    }
 
    if ( rcout && flags.init_rcout ){
+      console->write("starting rcout\n");
       rcout->init(NULL);
    }
 
    if ( analogin && flags.init_analogin ){
+      console->write("starting analogin\n");
       analogin->init(NULL);
    }
 
@@ -158,7 +164,7 @@ void create_apm_task( uint32_t params)
 { 
   xTaskCreate( 
       apm_task,"apm task", 
-      4000, 
+      5000, 
       (void*)params, 
       tskIDLE_PRIORITY + 1, 
       &task_handle 
