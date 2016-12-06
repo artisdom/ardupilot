@@ -207,7 +207,7 @@ public:
     static bool load_all(void);
 
     // set a AP_Param variable to a specified value
-    static void         set_value(enum ap_var_type type, void *ptr, float def_value);
+    static void   set_value(enum ap_var_type type, void *ptr, float def_value);
 
     /*
       set a parameter to a float
@@ -232,7 +232,7 @@ public:
 
     /// Erase all variables in EEPROM.
     ///
-    static void         erase_all(void);
+    static bool         erase_all(void);
 
     /// print the value of all variables
     static void         show_all(AP_HAL::BetterStream *port, bool showKeyValues=false);
@@ -354,12 +354,12 @@ private:
                                     uint8_t vindex,
                                     const struct GroupInfo *group_info,
                                     enum ap_var_type *ptype);
-    static void                 write_sentinal(uint16_t ofs);
+    static bool                 write_sentinal(uint16_t ofs);
     static bool                 scan(
                                     const struct Param_header *phdr,
                                     uint16_t *pofs);
     static uint8_t				type_size(enum ap_var_type type);
-    static void                 eeprom_write_check(
+    static bool                 eeprom_write_check(
                                     const void *ptr,
                                     uint16_t ofs,
                                     uint8_t size);

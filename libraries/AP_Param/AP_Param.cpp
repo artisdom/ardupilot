@@ -40,9 +40,8 @@ extern const AP_HAL::HAL &hal;
 #include "FreeRTOS.h"
 #include <task.h>
 #include <cmath>
-#endif
+#include <AP_HAL_Quan/Storage.h>
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 namespace {
   // keep a count of tim used in loop
   uint32_t thread_timer = 0;
@@ -64,7 +63,9 @@ namespace {
 }
 #endif
 
-#define ENABLE_DEBUG 0
+//#define ENABLE_DEBUG 0
+
+#define ENABLE_DEBUG 1
 
 #if ENABLE_DEBUG
  # define Debug(fmt, args ...)  do {hal.console->printf("%s:%d: " fmt "\n", __FUNCTION__, __LINE__, ## args); } while(0)
@@ -112,24 +113,31 @@ uint16_t AP_Param::num_param_overrides = 0;
 StorageAccess AP_Param::_storage(StorageManager::StorageParam);
 
 // write to EEPROM
-void AP_Param::eeprom_write_check(const void *ptr, uint16_t ofs, uint8_t size)
+bool AP_Param::eeprom_write_check(const void *ptr, uint16_t ofs, uint8_t size)
 {
-    _storage.write_block(ofs, ptr, size);
+   bool result =  _storage.write_block(ofs, ptr, size);
+   if (!result){
+      Debug("storage write_block failed");
+   }
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    Quan::wait_for_eeprom_write_queue_flushed();
+#endif
+   return result;
 }
 
 // write a sentinal value at the given offset
-void AP_Param::write_sentinal(uint16_t ofs)
+bool AP_Param::write_sentinal(uint16_t ofs)
 {
     struct Param_header phdr;
     phdr.type = _sentinal_type;
     phdr.key  = _sentinal_key;
     phdr.group_element = _sentinal_group;
-    eeprom_write_check(&phdr, ofs, sizeof(phdr));
+    return eeprom_write_check(&phdr, ofs, sizeof(phdr));
 }
 
 // erase all EEPROM variables by re-writing the header and adding
 // a sentinal
-void AP_Param::erase_all(void)
+bool AP_Param::erase_all(void)
 {
     struct EEPROM_header hdr;
 
@@ -140,10 +148,12 @@ void AP_Param::erase_all(void)
     hdr.magic[1] = k_EEPROM_magic1;
     hdr.revision = k_EEPROM_revision;
     hdr.spare    = 0;
-    eeprom_write_check(&hdr, 0, sizeof(hdr));
 
-    // add a sentinal directly after the header
-    write_sentinal(sizeof(struct EEPROM_header));
+    bool result =
+      eeprom_write_check(&hdr, 0, sizeof(hdr)) &&
+      write_sentinal(sizeof(struct EEPROM_header));
+
+    return result;
 }
 
 // validate a group info table
@@ -203,9 +213,11 @@ bool AP_Param::duplicate_key(uint8_t vindex, uint8_t key)
         uint8_t key2 = PGM_UINT8(&_var_info[i].key);
         if (key2 == key) {
             // no duplicate keys allowed
+            Debug("duplicate key found");
             return true;
         }
     }
+    
     return false;
 }
 
@@ -219,7 +231,8 @@ bool AP_Param::check_var_info(void)
         uint8_t key = PGM_UINT8(&_var_info[i].key);
         if (type == AP_PARAM_GROUP) {
             if (i == 0) {
-                // first element can't be a group, for first() call
+                // 
+                Debug("first element can't be a group, for first() call");
                 return false;
             }
             const struct GroupInfo *group_info = (const struct GroupInfo *)PGM_POINTER(&_var_info[i].group_info);
@@ -232,6 +245,7 @@ bool AP_Param::check_var_info(void)
             if (size == 0) {
                 // not a valid type - the top level list can't contain
                 // AP_PARAM_NONE
+                Debug("not a valid type");
                 return false;
             }
             total_size += size + sizeof(struct Param_header);
@@ -257,7 +271,12 @@ bool AP_Param::setup(void)
     Debug("setup %u vars", (unsigned)_num_vars);
 
     // check the header
-    _storage.read_block(&hdr, 0, sizeof(hdr));
+    if ( ! _storage.read_block(&hdr, 0, sizeof(hdr))){
+         Debug("AP_Param::setup failed to read header from eeprom");
+         return false;
+    }
+
+
     if (hdr.magic[0] != k_EEPROM_magic0 ||
         hdr.magic[1] != k_EEPROM_magic1 ||
         hdr.revision != k_EEPROM_revision) {
@@ -265,8 +284,10 @@ bool AP_Param::setup(void)
         // the header and setup the sentinal directly after the header
         Debug("bad header in setup - erasing");
         erase_all();
+    }else{
+        Debug("AP_Param::setup header from eeprom found and matches magic");
     }
-
+    
     return true;
 }
 
@@ -294,6 +315,7 @@ const struct AP_Param::Info *AP_Param::find_by_header_group(struct Param_header 
             if (group_shift + _group_level_shift >= _group_bits) {
                 // too deeply nested - this should have been caught by
                 // setup() !
+                Debug("nesting too deep");
                 return NULL;
             }
             const struct GroupInfo *ginfo = (const struct GroupInfo *)PGM_POINTER(&group_info[i].group_info);
@@ -502,7 +524,10 @@ bool AP_Param::scan(const AP_Param::Param_header *target, uint16_t *pofs)
 
     while (ofs < _storage.size()) {
 
-        _storage.read_block(&phdr, ofs, sizeof(phdr));
+        if (! _storage.read_block(&phdr, ofs, sizeof(phdr))){
+            Debug("read eeprom failed");
+            return false;
+        }
         if (phdr.type == target->type &&
             phdr.key == target->key &&
             phdr.group_element == target->group_element) {
@@ -516,13 +541,14 @@ bool AP_Param::scan(const AP_Param::Param_header *target, uint16_t *pofs)
             phdr.key == _sentinal_key ||
             phdr.group_element == _sentinal_group) {
             // we've reached the sentinal
+          //  Debug("reached sentinel");
             *pofs = ofs;
             return false;
         }
         ofs += type_size((enum ap_var_type)phdr.type) + sizeof(phdr);
     }
     *pofs = 0xffff;
-    Debug("scan past end of eeprom");
+    Debug("passed end of eeprom");
     return false;
 }
 
@@ -744,6 +770,7 @@ bool AP_Param::save(bool force_save)
 
     if (info == NULL) {
         // we don't have any info on how to store it
+        Debug("no storage info");
         return false;
     }
 
@@ -760,7 +787,7 @@ bool AP_Param::save(bool force_save)
 
     ap = this;
     if (phdr.type != AP_PARAM_VECTOR3F && idx != 0) {
-        // only vector3f can have non-zero idx for now
+        Debug("only vector3f can have non-zero idx for now");
         return false;
     }
     if (idx != 0) {
@@ -774,11 +801,15 @@ bool AP_Param::save(bool force_save)
     uint16_t ofs;
     if (scan(&phdr, &ofs)) {
         // found an existing copy of the variable
-        eeprom_write_check(ap, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type));
+        Debug("scan success");
+        if ( !eeprom_write_check(ap, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type))){
+            Debug("eeprom write failed");
+        }
         send_parameter(name, (enum ap_var_type)phdr.type);
         return true;
     }
     if (ofs == (uint16_t) ~0) {
+        Debug("Whacky error 1");
         return false;
     }
 
@@ -811,9 +842,15 @@ bool AP_Param::save(bool force_save)
     }
 
     // write a new sentinal, then the data, then the header
-    write_sentinal(ofs + sizeof(phdr) + type_size((enum ap_var_type)phdr.type));
-    eeprom_write_check(ap, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type));
-    eeprom_write_check(&phdr, ofs, sizeof(phdr));
+    if (! write_sentinal(ofs + sizeof(phdr) + type_size((enum ap_var_type)phdr.type))){
+        Debug("eeprom write failed");
+    }
+    if (!eeprom_write_check(ap, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type))){
+      Debug("eeprom write failed");
+    }
+    if (! eeprom_write_check(&phdr, ofs, sizeof(phdr))){
+            Debug("eeprom write failed");
+    }
 
     send_parameter(name, (enum ap_var_type)phdr.type);
     return true;
@@ -829,6 +866,7 @@ bool AP_Param::load(void)
     const struct AP_Param::Info *info = find_var_info(&group_element, &ginfo, &idx);
     if (info == NULL) {
         // we don't have any info on how to load it
+        Debug("no load info");
         return false;
     }
 
@@ -847,11 +885,14 @@ bool AP_Param::load(void)
     uint16_t ofs;
     if (!scan(&phdr, &ofs)) {
         // if the value isn't stored in EEPROM then set the default value
+        Debug("Scan failed");
         if (ginfo != NULL) {
+            Debug("ginfo is null");
             uintptr_t base = PGM_POINTER(&info->ptr);
             set_value((enum ap_var_type)phdr.type, (void*)(base + PGM_UINT16(&ginfo->offset)),
                       get_default_value(&ginfo->def_value));
         } else {
+            Debug("ginfo not null");
             set_value((enum ap_var_type)phdr.type, (void*)PGM_POINTER(&info->ptr), 
                       get_default_value(&info->def_value));
         }
@@ -860,6 +901,7 @@ bool AP_Param::load(void)
 
     if (phdr.type != AP_PARAM_VECTOR3F && idx != 0) {
         // only vector3f can have non-zero idx for now
+        Debug("not vector3f");
         return false;
     }
 
@@ -870,8 +912,11 @@ bool AP_Param::load(void)
     }
 
     // found it
-    _storage.read_block(ap, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type));
-    return true;
+   bool result =  _storage.read_block(ap, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type));
+   if(!result){
+      Debug("read eeprom failed");
+   }
+   return result;
 }
 
 bool AP_Param::configured_in_storage(void)
@@ -1026,7 +1071,10 @@ bool AP_Param::load_all(void)
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
          check_thread_timer();
  #endif 
-        _storage.read_block(&phdr, ofs, sizeof(phdr));
+        if (! _storage.read_block(&phdr, ofs, sizeof(phdr))){
+            Debug("read eeprom failed");
+            return false;
+        }
         // note that this is an || not an && for robustness
         // against power off while adding a variable
         if (phdr.type == _sentinal_type ||
@@ -1041,9 +1089,11 @@ bool AP_Param::load_all(void)
 
         info = find_by_header(phdr, &ptr);
         if (info != NULL) {
-            _storage.read_block(ptr, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type));
+           if ( ! _storage.read_block(ptr, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type))){
+               Debug("read eeprom failed");
+               return false;
+           }
         }
-
         ofs += type_size((enum ap_var_type)phdr.type) + sizeof(phdr);
     }
 
