@@ -19,3 +19,6 @@
  */
 
 #include "AP_ADC.h"
+
+#include "AP_ADC_ADS7844.h"
+#include "AP_ADC_ADS1115.h"
