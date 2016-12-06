@@ -23,6 +23,7 @@
 #define __AP_AIRSPEED_PX4_H__
 
 #include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_PX4  || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
 #include "AP_Airspeed_Backend.h"
 
 class AP_Airspeed_PX4 : public AP_Airspeed_Backend {
@@ -45,4 +46,5 @@ private:
     float _temperature;
 };
 
+#endif // #if CONFIG_HAL_BOARD == HAL_BOARD_PX4  || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
 #endif // __AP_AIRSPEED_PX4_H__

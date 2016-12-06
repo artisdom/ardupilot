@@ -23,6 +23,8 @@
 #define __AP_AIRSPEED_I2C_H__
 
 #include <AP_HAL/AP_HAL.h>
+
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 #include "AP_Airspeed_Backend.h"
 
 class AP_Airspeed_I2C : public AP_Airspeed_Backend 
@@ -47,6 +49,7 @@ private:
     uint32_t _measurement_started_ms;
 };
 
+#endif // #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 #endif // __AP_AIRSPEED_I2C_H__
 
 

@@ -3,10 +3,12 @@
 #define __AP_ADC_ADS1115_H__
 
 
-#include <inttypes.h>
-#include "AP_ADC.h"
 #include <AP_HAL/AP_HAL.h>
 
+#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
+#include <inttypes.h>
+#include "AP_ADC.h"
 
 struct adc_report_s 
 {
@@ -43,5 +45,7 @@ private:
 
     float _convert_register_data_to_mv(int16_t word) const;
 };
+
+#endif // #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 
 #endif
