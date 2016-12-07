@@ -57,7 +57,7 @@
  # define AP_BATT_CURR_PIN                  101
  # define AP_BATT_VOLTDIVIDER_DEFAULT       1.1f
  # define AP_BATT_CURR_AMP_PERVOLT_DEFAULT  17.0f
-#elif CONFIG_HAL_BOARD == CONFIG_HAL_QUAN
+#elif CONFIG_HAL_BOARD == HAL_BOARD_QUAN
   #if defined QUAN_AERFLITE_BOARD
  # define AP_BATT_VOLT_PIN                  3
  # define AP_BATT_CURR_PIN                  2

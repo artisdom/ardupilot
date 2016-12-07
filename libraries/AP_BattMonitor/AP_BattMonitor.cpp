@@ -190,7 +190,7 @@ AP_BattMonitor::init()
         }
     }
 
-#endif // CONFIG_HAL_BOARD != CONFIG_HAL_QUAN
+#endif // CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 }
 
 // read - read the voltage and current for all instances
