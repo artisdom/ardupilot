@@ -79,24 +79,12 @@ static void failsafe_check_static()
 
 void Plane::init_ardupilot()
 {
-  
-    // initialise serial port
     serial_manager.init_console();
 
     cliSerial->printf("\n\nInit " FIRMWARE_STRING
                          "\n\nFree RAM: %lu\n",
                         static_cast<unsigned long>(hal.util->available_memory()));
-
-
-
-
-
-    //
-    // Check the EEPROM format version before loading any parameters from EEPROM
-    //
     load_parameters();
-
-    hal.console->printf("Parameters loaded\n");
 
 #if HIL_SUPPORT
     if (g.hil_mode == 1) {

@@ -46,10 +46,10 @@ namespace {
 
    void do_startup_screen()
    {
-      quan::uav::osd::pxp_type pos {-140,20};
-      quan::uav::osd::draw_text("Air Flight Controller V1.0",pos); 
+      quan::uav::osd::pxp_type pos {-150,20};
+      quan::uav::osd::draw_text("AerFlite OSD V1.0",pos); 
       pos.y -= 20;
-      quan::uav::osd::draw_text("Press return x 3 CLI",pos,Quan::FontID::MWOSD); 
+      quan::uav::osd::draw_text("Press return x 3 for CLI",pos,Quan::FontID::MWOSD); 
    }
 
    // ideally hand over to osd
@@ -62,9 +62,8 @@ namespace {
 
    void do_initialising()
    {
-      quan::uav::osd::pxp_type pos {-140,20};
+      quan::uav::osd::pxp_type pos {-150,20};
       quan::uav::osd::draw_text("initialising",pos); 
-     
       pos.y -= 20;
       quan::uav::osd::draw_text("Press return x 3 for CLI",pos,Quan::FontID::MWOSD); 
    } 
@@ -114,7 +113,7 @@ void quan::uav::osd::on_draw()
    }
     
 }
-// todo
+
 void on_telemetry_transmitted()
 {
     quan::uav::osd::norm_position_type norm_pos;
