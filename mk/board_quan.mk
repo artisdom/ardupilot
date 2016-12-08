@@ -212,8 +212,15 @@ LIBS += $(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_system.a  \
 $(QUANTRACKER_ROOT_DIR)lib/osd/quantracker_air_graphics_api.a
 
 else
-LIBS += $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_osd.a \
-         $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_system.a  \
+
+ifeq ($(QUAN_TARGET_VEHICLE),QUAN_APM_ANTENNATRACKER)
+error( na for aerflite)
+endif
+
+ifeq ($(QUAN_TARGET_VEHICLE),QUAN_APM_ARDUPLANE)
+LIBS += $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_osd_tx.a
+endif
+LIBS +=  $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_system.a  \
           $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_graphics_api.a
 
 endif
