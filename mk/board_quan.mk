@@ -132,7 +132,7 @@ QUAN_LINKER_FLAGS  = -T$(LINKER_SCRIPT) -$(OPTIMISATION_LEVEL) -nostartfiles -no
 
 #------------------------------------------- ardupilot stuff --------
 
-#VERBOSE = True
+VERBOSE = True
 #
 # Tool options
 #
