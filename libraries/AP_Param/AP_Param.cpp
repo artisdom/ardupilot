@@ -43,23 +43,37 @@ extern const AP_HAL::HAL &hal;
 #include <AP_HAL_Quan/Storage.h>
 
 namespace {
-  // keep a count of tim used in loop
-  uint32_t thread_timer = 0;
-  constexpr uint32_t max_task_time_ms = 5;
-  constexpr uint32_t delay_time_ms = 2;
+   // keep a count of tim used in loop
+   uint32_t thread_timer = 0U;
+   uint32_t feedback_timer = 0U;
+   uint8_t  char_count = 0;
+   constexpr uint32_t max_task_time_ms = 5;
+   constexpr uint32_t user_feedback_time_ms = 500;
+   constexpr uint32_t delay_time_ms = 2;
 
-  void start_thread_timer()
-  {
-    thread_timer = AP_HAL::millis();
-  }
+   void start_thread_timer()
+   {
+      thread_timer = AP_HAL::millis();
+      feedback_timer = AP_HAL::millis();
+   }
 
-  void check_thread_timer()
-  {
-    if ( (AP_HAL::millis() - thread_timer) > max_task_time_ms ){
-       vTaskDelay(delay_time_ms);
-       thread_timer = AP_HAL::millis();
-    }
-  }
+   void check_thread_timer()
+   {
+      if ( (AP_HAL::millis() - thread_timer) > max_task_time_ms ){
+         vTaskDelay(delay_time_ms);
+         thread_timer = AP_HAL::millis();
+      }
+      // provide user feedback that something is happeneing since eeprom load can take a while
+      if ( (AP_HAL::millis() - feedback_timer) > user_feedback_time_ms ){
+         feedback_timer = 0U;
+
+         hal.console->printf("*");
+         if ( ++char_count == 40U){
+            hal.console->printf("\n");
+            char_count = 0U;
+         }
+      }
+   }
 }
 #endif
 
@@ -1314,7 +1328,9 @@ void AP_Param::show_all(AP_HAL::BetterStream *port, bool showKeyValues)
 // convert one old vehicle parameter to new object parameter
 void AP_Param::convert_old_parameter(const struct ConversionInfo *info)
 {
-
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    check_thread_timer();
+#endif
     // find the old value in EEPROM.
     uint16_t pofs;
     AP_Param::Param_header header;
