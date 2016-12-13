@@ -67,6 +67,18 @@ namespace {
       if (!Quan::setup_baro()) {
          AP_HAL::panic("baro setup failed");
       }
+/*
+      add in here.
+      probe for external compass
+        get bus and install the ext compass device
+         try whoami
+         if timeout after n tries
+         device doesnt exist
+         reset the bus
+      if external compass found use it
+        Only search for HMC5883/ HMC5983
+      else use internal compass
+*/
 
       if (!Quan::setup_compass()) {
          AP_HAL::panic("compass setup failed");
