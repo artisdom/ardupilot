@@ -116,7 +116,7 @@ namespace Quan{
             Quan::bmi160::enable_interrupt_from_device();
             quan::stm32::enable_exti_interrupt<Quan::bmi160::not_DR>();
 //##################### TODO Make sure to enable before flight  but off for tsesting #####################
-            //inertial_sensor_watchdog_enable();
+            inertial_sensor_watchdog_enable();
 //#################################################################
          }
          xTaskResumeAll();
