@@ -104,10 +104,10 @@ bool Quan::compass_calculate()
    constexpr float scale_mult = static_cast<float>(1.0/6.842);
    // todo add gains
    quan::three_d::vect<mgauss> field {
-      // provide a 90 degree rotation since the compass is orientated that way
-       mgauss{vect.y * -scale_mult * compass_gains[0]}   // y to -x
-      ,mgauss{vect.x * -scale_mult * compass_gains[1]}  // x to y
-      ,mgauss{vect.z * -scale_mult * compass_gains[2]}
+
+       mgauss{vect.x * scale_mult }   
+      ,mgauss{vect.y * scale_mult }  
+      ,mgauss{vect.z * scale_mult }
    };
    QueueHandle_t hCompassQueue = get_compass_queue_handle();
 
