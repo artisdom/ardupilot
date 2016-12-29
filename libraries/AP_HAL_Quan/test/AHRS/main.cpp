@@ -30,7 +30,7 @@ void setup(void)
     AP_Param::set_object_value(&battery_monitor, battery_monitor.var_info, "_VOLT_PIN", 3);
     AP_Param::set_object_value(&battery_monitor, battery_monitor.var_info, "_CURR_PIN", 2);
     AP_Param::set_object_value(&battery_monitor, battery_monitor.var_info,"_VOLT_MULT", 4.092f);
-    AP_Param::set_object_value(&battery_monitor, battery_monitor.var_info,"_AMP_OFFSET", 0.0f);
+    AP_Param::set_object_value(&battery_monitor, battery_monitor.var_info,"_AMP_OFFSET", 0.6f);
     AP_Param::set_object_value(&battery_monitor, battery_monitor.var_info,"_AMP_PERVOLT", 16.67f);
 
     battery_monitor.init();
