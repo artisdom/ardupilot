@@ -106,7 +106,7 @@ bool Quan::compass_calculate()
    quan::three_d::vect<mgauss> field {
 
        mgauss{vect.x * scale_mult }   
-      ,mgauss{vect.y * scale_mult }  
+      ,mgauss{-vect.y * scale_mult }  
       ,mgauss{vect.z * scale_mult }
    };
    QueueHandle_t hCompassQueue = get_compass_queue_handle();
