@@ -849,8 +849,8 @@ extern "C" void DMA2_Stream0_IRQHandler()
 
    while( (DMA2_Stream5->CR | DMA2_Stream0->CR ) & (1 << 0) ){;}
  
-   DMA2->HIFCR |= ( 0b111101 << 6) ; // Stream 5 clear flags
-   DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
+   DMA2->HIFCR = ( 0b111101 << 6) ; // Stream 5 clear flags
+   DMA2->LIFCR = ( 0b111101 << 0) ; // Stream 0 clear flags
 
    spi_device_driver::cs_release<inertial_sensor::chip_select>();
 
