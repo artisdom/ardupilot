@@ -262,7 +262,7 @@ extern "C" void DMA2_Stream0_IRQHandler()
  
    while( DMA2_Stream0->CR & (1 << 0) ){;}
 
-   DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
+   DMA2->LIFCR = ( 0b111101 << 0) ; // Stream 0 clear flags
 
    Quan::spi::cs_release<Quan::bmi160::not_CS>();
 

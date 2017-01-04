@@ -274,7 +274,7 @@ namespace {
       dma_stream->CR &= ~(0b11 << 6) ; // (DIR ) peripheral to memory
       dma_stream->CR |= ( 1 << 4) ; // (TCIE)
     //  dma_stream->CR = ( dma_stream->CR &  ~(0b11 << 23)) | (0b01 << 23); // ( MBURST)
-       dma_stream->CR &= ~(0b11 << 23);
+      dma_stream->CR &= ~(0b11 << 23);
       dma_stream->CR &=  ~(0b11 << 21); // ( PBURST)
 
     //  dma_stream->FCR |= (1 << 2) ; // (DMDIS)
@@ -286,7 +286,7 @@ namespace {
       NVIC_SetPriority(DMA2_Stream0_IRQn,13); 
       NVIC_EnableIRQ(DMA2_Stream0_IRQn);
 
-      DMA2->LIFCR |= ( 0b111101 << 0) ; // Stream 0 clear flags
+      DMA2->LIFCR = ( 0b111101 << 0) ; // Stream 0 clear flags
    }
 
 
