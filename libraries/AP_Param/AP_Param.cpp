@@ -134,7 +134,9 @@ bool AP_Param::eeprom_write_check(const void *ptr, uint16_t ofs, uint8_t size)
       Debug("storage write_block failed");
    }
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    #if defined QUAN_AERFLITE_BOARD
     Quan::wait_for_eeprom_write_queue_flushed();
+    #endif
 #endif
    return result;
 }
