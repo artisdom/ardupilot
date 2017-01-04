@@ -29,9 +29,10 @@ namespace Quan{
 }
 
 static Empty::EmptySPIDeviceManager spiDeviceManager;
+#if defined QUAN_AERFLITE_BOARD
 static Empty::EmptySemaphore i2c_semaphore;
 static Empty::EmptyI2CDriver i2c_driver{&i2c_semaphore};
-
+#endif
 static QuanStorage storageDriver;
 static QuanGPIO gpioDriver;
 //static QuanRCOutput rcoutDriver;
@@ -41,8 +42,13 @@ static QuanUtil utilInstance;
 HAL_Quan::HAL_Quan() 
 :AP_HAL::HAL(
    Quan::get_serial_port<0>(),//   uartA console  usart1   3.3V
+#if defined QUAN_AERFLITE_BOARD
    Quan::get_serial_port<1>(),//   uartC 1st GPS  uart4    5V  with invert
    Quan::get_serial_port<2>(),//   uartB telemetry usart3  5V  with invert
+#else
+ Quan::get_serial_port<2>(),//  hack board 1st GPS 
+ Quan::get_serial_port<1>(),//  hack board telemetry
+#endif
 #if defined QUAN_AERFLITE_BOARD
    Quan::get_serial_port<3>(),//   uartD  usart6           3.3V 
 #else
