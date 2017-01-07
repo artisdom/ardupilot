@@ -34,20 +34,20 @@
 
 namespace Quan{
 
-   uint64_t micros64_from_isr();
-
-   inline uint64_t millis64_from_isr() 
-   {
-      return micros64_from_isr() / 1000ULL;
-   }
-
-   inline uint32_t millis_from_isr() {
-       return millis64_from_isr();
-   }
-
-   inline uint32_t micros_from_isr() {
-       return micros64_from_isr();
-   }
+//   uint64_t micros64_from_isr();
+//
+//   inline uint64_t millis64_from_isr() 
+//   {
+//      return micros64_from_isr() / 1000ULL;
+//   }
+//
+//   inline uint32_t millis_from_isr() {
+//       return millis64_from_isr();
+//   }
+//
+//   inline uint32_t micros_from_isr() {
+//       return micros64_from_isr();
+//   }
 
 };
 #endif
