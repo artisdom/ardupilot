@@ -116,18 +116,18 @@ uint64_t AP_HAL::micros64()
    }
 }
 
-uint64_t Quan::micros64_from_isr()
-{
-   uint32_t const hi1 = timer_micros_ovflo_count;
-   uint16_t const lo1 = usec_timer::get()->cnt;
-   uint32_t const hi2 = timer_micros_ovflo_count;
-   if ( hi2 == hi1){
-      return (static_cast<uint64_t>(hi1) << 16U) | lo1; 
-   }else{
-      uint16_t const lo2 = usec_timer::get()->cnt;
-      return (static_cast<uint64_t>(hi2) << 16U) | lo2; 
-   }
-}
+//uint64_t Quan::micros64_from_isr()
+//{
+//   uint32_t const hi1 = timer_micros_ovflo_count;
+//   uint16_t const lo1 = usec_timer::get()->cnt;
+//   uint32_t const hi2 = timer_micros_ovflo_count;
+//   if ( hi2 == hi1){
+//      return (static_cast<uint64_t>(hi1) << 16U) | lo1; 
+//   }else{
+//      uint16_t const lo2 = usec_timer::get()->cnt;
+//      return (static_cast<uint64_t>(hi2) << 16U) | lo2; 
+//   }
+//}
 
 uint64_t AP_HAL::millis64() 
 {
