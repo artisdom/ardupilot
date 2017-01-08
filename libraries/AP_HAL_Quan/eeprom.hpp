@@ -70,6 +70,8 @@ namespace Quan{
 
    SemaphoreHandle_t   get_read_complete_semaphore();
 
+   TimerHandle_t get_eeprom_timer_handle();
+
    bool setup_eeprom();
    bool eeprom_service_write_buffer();
    bool eeprom_service_read_requests();

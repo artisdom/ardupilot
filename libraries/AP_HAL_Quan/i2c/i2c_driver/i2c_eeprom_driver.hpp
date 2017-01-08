@@ -2,6 +2,8 @@
 #define STM32F4_TEST_I2C_MEMORY_DRIVER_HPP_INCLUDED
 
 #include <cstdint>
+#include "FreeRTOS.h"
+#include "timers.h"
 #include "i2c_driver.hpp"
 
 namespace Quan{
@@ -11,17 +13,17 @@ namespace Quan{
       // return the absolute system time when write will complete
       // note that i2c bus is available to other devices during this time
       // as long as the bus is free
-      static millis_type get_write_end_time_ms() { return millis_type{m_write_end_time_ms};}
-
+  
       // true if a write to this eeprom is in progress
-      static bool write_in_progress();
+      static bool write_in_progress() { return m_write_in_progress;}
 
+      // blocks the thread
       static bool wait_for_write_complete();
 
-      static uint32_t get_write_time_left_ms();
+      static TickType_t get_write_time_left_ms();
 
       // return how long the write takes from end of the actual i2c write communication  
-      static millis_type get_write_cycle_time_ms() { return millis_type{m_write_cycle_time_ms};}
+      static TickType_t get_write_cycle_time_ms() { return m_write_cycle_time_ms;}
       
       // return the size of a memory page
       // only one page can be read or written at at time
@@ -35,6 +37,9 @@ namespace Quan{
       {
          return ( address / page_size) == (( address + (len -1) ) / page_size);
       }
+
+      // one shot timer
+      static void  timer_callback( TimerHandle_t xTimer ) { m_write_in_progress = false;}
    protected :
       // call i2c_bus_free first
       // install this device as the current i2c bus owner
@@ -45,7 +50,7 @@ namespace Quan{
             uint8_t address,
             uint32_t memory_size,
             uint32_t page_size,
-            millis_type write_cycle_time_ms
+            TickType_t write_cycle_time_ms
       );
 
    /*
@@ -69,13 +74,16 @@ namespace Quan{
       static bool ll_write(uint32_t address_in, uint8_t const * data_in, uint32_t len);
 
    private:
-      static void set_new_write_end_time();
-      static void set_write_cycle_time_ms(millis_type t) { m_write_cycle_time_ms = t;}
+     // static TickType_t get_write_start_time_ms() { return m_write_start_time_ms_ms;}
+      static void set_new_write_start_time_from_isr(BaseType_t & hprtw);
+      static void set_write_cycle_time_ms(TickType_t t) { m_write_cycle_time_ms = t;}
       static void set_memory_size_bytes( uint32_t bytes){ m_memory_size_bytes = bytes;}
       static void set_page_size_bytes( uint32_t bytes) { m_page_size_bytes = bytes;}
       
-      static millis_type       m_write_cycle_time_ms;
-      static volatile uint32_t m_write_end_time_ms;
+      static TickType_t          m_write_cycle_time_ms;
+      static volatile bool       m_write_in_progress;
+      static volatile TickType_t m_write_start_time_ms;
+      
       static uint32_t          m_memory_size_bytes ;
       static uint32_t          m_page_size_bytes;
       i2c_eeprom_driver_base() = delete;
@@ -90,8 +98,6 @@ namespace Quan{
       // The result of bus_free should be reliable. If bus_free() is true
       // then get_bus() shouldnt fail
      // static bool get_bus();
-
-   private:
 
       static void on_write_start_sent();
       static void on_write_device_address_sent();

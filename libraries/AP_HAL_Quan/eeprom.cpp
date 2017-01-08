@@ -37,6 +37,8 @@ namespace {
 
    SemaphoreHandle_t  eeprom_read_complete_semaphore = nullptr;
 
+   TimerHandle_t      h_eeprom_timer = nullptr;
+
 }
 
 namespace Quan{
@@ -126,23 +128,43 @@ namespace Quan{
       return eeprom_read_complete_semaphore;
    }
 
+   TimerHandle_t get_eeprom_timer_handle()
+   {
+      if ( h_eeprom_timer != nullptr){
+         return h_eeprom_timer;
+      }else{
+         panic("Requesting null eeprom timer handle\n");
+      }
+   }
+
    bool setup_eeprom()
    {
-     // for reading block till it returns so only 1 element
-     constexpr uint32_t read_msg_size = sizeof(Quan::eeprom_read_msg);
-     eeprom_read_handle = xQueueCreate(1,read_msg_size);
+      // for reading block till it returns so only 1 element
+      constexpr uint32_t read_msg_size = sizeof(Quan::eeprom_read_msg);
+      eeprom_read_handle = xQueueCreate(1,read_msg_size);
 
-     // for writing dont block if possible so use a reasonable size queue
-     // allow 1k mem
-     // with a queue element size of 36 bytes , gives 28 elements
-     // that can be written before the queue blocks
-     constexpr uint32_t write_msg_size = sizeof(Quan::eeprom_write_msg);
-     eeprom_write_handle = xQueueCreate(1024/write_msg_size,write_msg_size);
+      // for writing dont block if possible so use a reasonable size queue
+      // allow 1k mem
+      // with a queue element size of 36 bytes , gives 28 elements
+      // that can be written before the queue blocks
+      constexpr uint32_t write_msg_size = sizeof(Quan::eeprom_write_msg);
+      eeprom_write_handle = xQueueCreate(1024/write_msg_size,write_msg_size);
 
-     eeprom_read_complete_semaphore = xSemaphoreCreateBinary();
+      eeprom_read_complete_semaphore = xSemaphoreCreateBinary();
 
-     return (eeprom_read_handle != nullptr) 
-         && (eeprom_write_handle != nullptr) 
-         && (eeprom_read_complete_semaphore != nullptr);
+      static constexpr TickType_t init_ee_timer_period = 5U;
+      static constexpr BaseType_t reload_false = pdFALSE;
+      h_eeprom_timer = xTimerCreate(
+         "ee_timer"
+         ,init_ee_timer_period
+         ,reload_false          // This makes a "one shot" timer
+         ,(void*) 0             // The timer id 
+         ,&i2c_eeprom_driver_base::timer_callback
+      );
+
+      return (eeprom_read_handle != nullptr) 
+      && (eeprom_write_handle != nullptr) 
+      && (eeprom_read_complete_semaphore != nullptr)
+      && (h_eeprom_timer != nullptr) ;
    }
 }

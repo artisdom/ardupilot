@@ -11,10 +11,11 @@ extern const AP_HAL::HAL& hal;
 
 using AP_HAL::millis;
 
-Quan::i2c_eeprom_driver_base::millis_type       Quan::i2c_eeprom_driver_base::m_write_cycle_time_ms;
-volatile uint32_t                         Quan::i2c_eeprom_driver_base::m_write_end_time_ms;
-uint32_t                                  Quan::i2c_eeprom_driver_base::m_memory_size_bytes ;
-uint32_t                                  Quan::i2c_eeprom_driver_base::m_page_size_bytes;
+TickType_t                    Quan::i2c_eeprom_driver_base::m_write_cycle_time_ms;
+volatile bool                 Quan::i2c_eeprom_driver_base::m_write_in_progress = false;
+volatile TickType_t           Quan::i2c_eeprom_driver_base::m_write_start_time_ms = 0U;
+uint32_t                      Quan::i2c_eeprom_driver_base::m_memory_size_bytes ;
+uint32_t                      Quan::i2c_eeprom_driver_base::m_page_size_bytes;
 
 #if !defined QUAN_I2C_TX_DMA
 uint32_t   Quan::i2c_eeprom_driver_base::m_data_length = 0;
@@ -29,41 +30,44 @@ uint32_t Quan::i2c_eeprom_driver_base::m_bytes_left = 0U;
 uint8_t         Quan::i2c_eeprom_driver_base::m_data_address[2] ={0U,0U};
 uint8_t         Quan::i2c_eeprom_driver_base::m_data_address_hi = 0U;
 
-uint32_t Quan::i2c_eeprom_driver_base::get_write_time_left_ms()
+// non isr no state change
+TickType_t Quan::i2c_eeprom_driver_base::get_write_time_left_ms()
 {
-   auto const write_end_time = get_write_end_time_ms();
-   auto const now = millis();
-   if (write_end_time > now){
-      return write_end_time - now;
-   }else{
+   if ( m_write_in_progress){
+      TickType_t const eewrite_runtime = xTaskGetTickCountFromISR() - m_write_start_time_ms;
+      if ( eewrite_runtime < m_write_cycle_time_ms){
+         return m_write_cycle_time_ms - eewrite_runtime;
+      }else{
+         return 0U;
+      }
+   }else{ // no write in progress
       return 0U;
-   } 
+   }
 }
 
-bool Quan::i2c_eeprom_driver_base::write_in_progress() 
-{ 
-    return millis() < m_write_end_time_ms;
-}
-
+// non isr no state change
 bool Quan::i2c_eeprom_driver_base::wait_for_write_complete()
 {
-   auto now = millis();
-   auto last_end_time = now + get_write_cycle_time_ms() +1;
-   while (write_in_progress()){
-      if ( millis() <= (last_end_time +1)){ // sanity check
-         vTaskDelay(get_write_time_left_ms());
-      }else{
-         AP_HAL::panic("eeprom write failed to complete");
-         return false;
+   if ( m_write_in_progress){
+      for ( uint32_t time_left = get_write_time_left_ms(); time_left > 0U; time_left = get_write_time_left_ms()){
+         vTaskDelay(time_left);
+      }
+      // the write in progress callback will probably not have fired yet
+      while ( m_write_in_progress){
+        vTaskDelay(1);
       }
    }
    return true;
 }
 
 // call from isr
-void Quan::i2c_eeprom_driver_base::set_new_write_end_time()
+void Quan::i2c_eeprom_driver_base::set_new_write_start_time_from_isr(BaseType_t & hpthw)
 {
-   m_write_end_time_ms = Quan::millis_from_isr() + m_write_cycle_time_ms + 1U;
+   m_write_start_time_ms = xTaskGetTickCountFromISR() ;
+   m_write_in_progress = true;
+   auto handle = get_eeprom_timer_handle();
+   xTimerChangePeriodFromISR(handle, m_write_cycle_time_ms , & hpthw);
+   xTimerStartFromISR(handle,&hpthw);
 }
 
 bool Quan::i2c_eeprom_driver_base::install_device(
@@ -71,7 +75,7 @@ bool Quan::i2c_eeprom_driver_base::install_device(
       uint8_t address,
       uint32_t memory_size,
       uint32_t page_size,
-      i2c_driver::millis_type write_cycle_time_ms
+      TickType_t write_cycle_time_ms
 ){
 
    if (!wait_for_write_complete()){
@@ -422,8 +426,6 @@ bool Quan::i2c_eeprom_driver<ID>::write(uint32_t start_address_in, uint8_t const
 template struct Quan::i2c_eeprom_driver<Quan::eeprom_info::eeprom_m24m01>;
 
 bool Quan::i2c_eeprom_driver_base::ll_write(uint32_t data_address_in, uint8_t const * data_in, uint32_t len)
-
-  
 {
    if ( len == 0){
       AP_HAL::panic("eeprom_orig write zero length");
@@ -592,8 +594,10 @@ void Quan::i2c_eeprom_driver_base::on_write_last_byte_transfer_complete()
   // Quan::i2c_periph::enable_buffer_interrupts(false);
    Quan::i2c_periph::request_stop_condition();
    Quan::i2c_periph::set_default_handlers();
-   set_new_write_end_time();
+   BaseType_t hpthw = pdFALSE;
+   set_new_write_start_time_from_isr(hpthw);
    Quan::i2c_periph::release_bus();
+   portEND_SWITCHING_ISR(hpthw);
 }
 
 void Quan::i2c_eeprom_driver_base::on_write_error()
