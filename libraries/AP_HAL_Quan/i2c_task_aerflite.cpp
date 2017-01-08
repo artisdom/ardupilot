@@ -173,6 +173,7 @@ namespace {
 
    TaskHandle_t task_handle;
    void * dummy_params;
+
 }
 
 namespace Quan {
@@ -186,7 +187,7 @@ namespace Quan {
       hBaroQueue = xQueueCreate(1,sizeof(Quan::detail::baro_args));
       hCompassQueue = xQueueCreate(1,sizeof(Quan::detail::compass_args));
       hCompassGainQueue = xQueueCreate(1,sizeof(Quan::detail::compass_gain));
-
+     
       if (! Quan::setup_eeprom()){
          AP_HAL::panic("eeprom setup failed");
       }
