@@ -817,7 +817,7 @@ bool AP_Param::save(bool force_save)
     uint16_t ofs;
     if (scan(&phdr, &ofs)) {
         // found an existing copy of the variable
-        Debug("scan success");
+        Debug("scan success \"%s\"",name);
         if ( !eeprom_write_check(ap, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type))){
             Debug("eeprom write failed");
         }
