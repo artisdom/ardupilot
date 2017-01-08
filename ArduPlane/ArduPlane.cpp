@@ -79,7 +79,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(airspeed_ratio_update,  50,   1000),
     SCHED_TASK(update_mount,            1,   1500),
   //  SCHED_TASK(log_perf_info,         500,   1000),
-    SCHED_TASK(compass_save,         3000,   2500),
+//    SCHED_TASK(compass_save,         3000,   2500),
 //    SCHED_TASK(update_logging1,         5,   1700),
 //    SCHED_TASK(update_logging2,         5,   1700),
 //    SCHED_TASK(parachute_check,         5,    500),
