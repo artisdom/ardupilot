@@ -178,7 +178,6 @@ namespace {
 
 namespace Quan {
 
-   //uint32_t * get_i2c_task_notify(){return & task_notify;}
    TaskHandle_t get_i2c_task_handle() { return task_handle;}
 
    void create_i2c_task()

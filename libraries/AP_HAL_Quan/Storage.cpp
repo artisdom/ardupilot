@@ -10,19 +10,7 @@
 
 #endif
 
-
 extern const AP_HAL::HAL& hal;
-
-//namespace Quan{
-//
-//    bool storage_read(void * buffer,uint16_t eeprom_address,size_t n);
-//    bool storage_write(uint16_t eeprom_address, void const * buffer,size_t n);
-//
-//    bool eeprom_write_queue_flushed();
-//
-//    void wait_for_eeprom_write_queue_flushed();
-//
-//}
 
 using namespace Quan;
 
@@ -81,7 +69,7 @@ namespace Quan{
       }
 
       if (xSemaphoreTake(get_read_complete_semaphore(), 500) == pdTRUE){
-        //  hal.console->write("eeprom get read complete sem succeeded\n");
+  
          return true;
       }else{
          hal.console->write("eeprom get read complete sem failed\n");

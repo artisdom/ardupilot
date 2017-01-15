@@ -172,11 +172,6 @@ namespace {
 
 }// namespace
 
-//void Quan::set_console_irq_mode(bool b)
-//{
-//   sp1::serial_port::set_irq_mode(b);
-//}
-
 template <uint32_t I>
 AP_HAL::UARTDriver * Quan::get_serial_port()
 {

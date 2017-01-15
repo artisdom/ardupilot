@@ -999,7 +999,6 @@ namespace {
 
    void fram_write_burst(uint16_t fram_address,const void* memory_address, size_t num_elements)
    {
-      //taskENTER_CRITICAL();
          UBaseType_t const old_prio = uxTaskPriorityGet(NULL);
          vTaskPrioritySet(NULL,configMAX_PRIORITIES - 1 );
          while (! spi_device_driver::acquire_mutex(1000)){
@@ -1021,7 +1020,6 @@ namespace {
          quan::stm32::enable_exti_interrupt<inertial_sensor::data_ready_irq>();
          spi_device_driver::release_mutex();
          vTaskPrioritySet(NULL,old_prio);
-      //taskEXIT_CRITICAL();
    }
 
    void fram_write( uint16_t fram_address_in, const void* memory_address_in,size_t num_elements_in)

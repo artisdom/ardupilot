@@ -167,11 +167,7 @@ namespace {
       for ( uint8_t i = 0; i < 20; ++i){
          asm volatile ("nop" : : :);
       }
-    // no need to do this?
-    //  quan::stm32::rcc::get()->ahb1rstr |= (1 << 22);
-     // quan::stm32::rcc::get()->ahb1rstr &= ~(1 << 22);
 
-      // DMA setup
       DMA_Stream_TypeDef * dma_stream = DMA2_Stream4;
       constexpr uint32_t  dma_channel = 0;
       constexpr uint32_t  dma_priority = 0b00; // low
@@ -209,7 +205,6 @@ namespace {
 
 // TODO add ADC Overrun interrupt
 
-// adc dma interrupt
 extern "C" void DMA2_Stream4_IRQHandler() __attribute__ ( (interrupt ("IRQ")));
 
 extern "C" void DMA2_Stream4_IRQHandler() 
@@ -217,7 +212,6 @@ extern "C" void DMA2_Stream4_IRQHandler()
    DMA2_Stream4->CR &= ~(1 << 0); // (EN)
    while(DMA2_Stream4->CR & (1 << 0)){;}
    DMA2->HIFCR = (0b111101 << 0) ; // clear flags for Dma2 Stream 4
-   //DMA2->HIFCR &= ~(0b111101 << 0) ; 
    DMA2_Stream4->M0AR = (uint32_t)adc_results;
    DMA2_Stream4->NDTR = num_adc_channels;
    DMA2_Stream4->CR |= (1 << 0); // (EN)
