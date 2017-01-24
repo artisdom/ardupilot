@@ -818,12 +818,12 @@ void AP_TECS::update_pitch_throttle(int32_t hgt_dem_cm,
     if (_pitch_max <= 0) {
         _PITCHmaxf = aparm.pitch_limit_max_cd * 0.01f;
     } else {
-        _PITCHmaxf = min(_pitch_max, aparm.pitch_limit_max_cd * 0.01f);
+        _PITCHmaxf = min(_pitch_max.get(), aparm.pitch_limit_max_cd * 0.01f);
     }
     if (_pitch_min >= 0) {
         _PITCHminf = aparm.pitch_limit_min_cd * 0.01f;
     } else {
-        _PITCHminf = max(_pitch_min, aparm.pitch_limit_min_cd * 0.01f);
+        _PITCHminf = max(_pitch_min.get(), aparm.pitch_limit_min_cd * 0.01f);
     }
     if (flight_stage == FLIGHT_LAND_FINAL) {
         // in flare use min pitch from LAND_PITCH_CD
@@ -831,7 +831,7 @@ void AP_TECS::update_pitch_throttle(int32_t hgt_dem_cm,
 
         // and use max pitch from TECS_LAND_PMAX
         if (_land_pitch_max > 0) {
-            _PITCHmaxf = min(_PITCHmaxf, _land_pitch_max);
+            _PITCHmaxf = min(_PITCHmaxf, _land_pitch_max.get());
         }
 
         // and allow zero throttle
