@@ -15,19 +15,22 @@
  along with this program. If not, see http://www.gnu.org/licenses./
  */
 
+
 #include <AP_HAL/AP_HAL.h>
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-#include "Plane.h"
 
 #include <quan/where.hpp>
-#include <task.h>
 #include <quantracker/osd/osd.hpp>
+#include <task.h>
 #include <quantracker/osd/telemetry_transmitter.hpp>
 #include <quan/tracker/zapp4/position.hpp>
-
+#include <quan/tracker/zapp4/gps_status.hpp>
 #include <AP_OSD/AP_OSD_dequeue.h>
 #include <AP_OSD/fonts.hpp>
+#include <AP_GPS/AP_GPS.h>
+#include "Plane.h"
+
 
 namespace{
 
@@ -109,22 +112,67 @@ void quan::uav::osd::on_draw()
      default:
          do_unknown();
          break;
-
    }
     
 }
 
+namespace{
+
+   void transmit_gps_data()
+   {
+      quan::uav::osd::norm_position_type norm_pos;
+      {
+         vTaskSuspendAll();
+          norm_pos.lat = info.aircraft_position.lat;
+          norm_pos.lon = info.aircraft_position.lon;
+          norm_pos.alt = info.aircraft_position.alt;
+         xTaskResumeAll();
+      }
+      uint8_t encoded [19];
+      quan::tracker::zapp4::encode_position(norm_pos,encoded);
+      write_telemetry_data((const char*)encoded,19);
+   }
+
+   void transmit_gps_status(quan::tracker::zapp4::gps_status_t gps_status)
+   {
+      uint8_t encoded[11];
+      quan::tracker::zapp4::encode_gps_status(gps_status,encoded);
+      write_telemetry_data((const char*)encoded,11);
+
+   }
+}
+
+
+// called in context of sytem transmit telemetry task
 void on_telemetry_transmitted()
 {
-    quan::uav::osd::norm_position_type norm_pos;
-    norm_pos.lat = info.aircraft_position.lat;
-    norm_pos.lon = info.aircraft_position.lon;
-    norm_pos.alt = info.aircraft_position.alt;
 
-    uint8_t encoded [19];
-    quan::tracker::zapp4::encode_position(norm_pos,encoded);
-    write_telemetry_data((const char*)encoded,19);
+/*
+    if GPS is in a good state just send data, else send status. If it isnt syatem startup that is bad
+    since it probably means the GPS has lost its lock or is dead!
+*/
+   switch ( info.gps_status ){
 
+      case AP_GPS::GPS_OK_FIX_3D:      
+      case AP_GPS::GPS_OK_FIX_3D_DGPS: 
+      case AP_GPS::GPS_OK_FIX_3D_RTK:
+         transmit_gps_data();
+         break;
+      case AP_GPS::NO_GPS:
+         transmit_gps_status(quan::tracker::zapp4::gps_status_t::no_gps);
+         break;
+      case AP_GPS::NO_FIX:
+         transmit_gps_status(quan::tracker::zapp4::gps_status_t::no_fix);
+         break;
+      case AP_GPS::GPS_OK_FIX_2D:
+         transmit_gps_status(quan::tracker::zapp4::gps_status_t::fix_2d);
+         break;
+      default:
+         transmit_gps_status(quan::tracker::zapp4::gps_status_t::unknown);
+         break;
+      
+   }
+   
 }
 
 #endif  // #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
