@@ -5,7 +5,6 @@
 #include "AP_Mount.h"
 #include "AP_Mount_Backend.h"
 #include "AP_Mount_Servo.h"
-#include "AP_Mount_MAVLink.h"
 #include "AP_Mount_Alexmos.h"
 #include "AP_Mount_SToRM32.h"
 #include "AP_Mount_SToRM32_serial.h"
@@ -459,7 +458,7 @@ const AP_Param::GroupInfo AP_Mount::var_info[] = {
     AP_GROUPEND
 };
 
-AP_Mount::AP_Mount(const AP_AHRS_TYPE &ahrs, const struct Location &current_loc) :
+AP_Mount::AP_Mount(const AP_AHRS_DCM &ahrs, const struct Location &current_loc) :
     _ahrs(ahrs),
     _current_loc(current_loc),
     _num_instances(0),
@@ -504,14 +503,6 @@ void AP_Mount::init(const AP_SerialManager& serial_manager)
         if (mount_type == Mount_Type_Servo) {
             _backends[instance] = new AP_Mount_Servo(*this, state[instance], instance);
             _num_instances++;
-
-#if AP_AHRS_NAVEKF_AVAILABLE
-        // check for MAVLink mounts
-        } else if (mount_type == Mount_Type_MAVLink) {
-            _backends[instance] = new AP_Mount_MAVLink(*this, state[instance], instance);
-            _num_instances++;
-#endif
-
         // check for Alexmos mounts
         } else if (mount_type == Mount_Type_Alexmos) {
             _backends[instance] = new AP_Mount_Alexmos(*this, state[instance], instance);

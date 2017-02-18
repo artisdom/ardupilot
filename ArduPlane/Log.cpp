@@ -170,14 +170,6 @@ void Plane::Log_Write_Attitude(void)
     DataFlash.Log_Write_PID(LOG_PIDY_MSG, yawController.get_pid_info());
     DataFlash.Log_Write_PID(LOG_PIDS_MSG, steerController.get_pid_info());
 
-#if AP_AHRS_NAVEKF_AVAILABLE
- #if OPTFLOW == ENABLED
-    DataFlash.Log_Write_EKF(ahrs,optflow.enabled());
- #else
-    DataFlash.Log_Write_EKF(ahrs,false);
- #endif
-    DataFlash.Log_Write_AHRS2(ahrs);
-#endif
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     sitl.Log_Write_SIMSTATE(&DataFlash);
 #endif
@@ -460,14 +452,6 @@ void Plane::Log_Write_Airspeed(void)
 // log ahrs home and EKF origin to dataflash
 void Plane::Log_Write_Home_And_Origin()
 {
-#if AP_AHRS_NAVEKF_AVAILABLE
-    // log ekf origin if set
-    Location ekf_orig;
-    if (ahrs.get_NavEKF_const().getOriginLLH(ekf_orig)) {
-        DataFlash.Log_Write_Origin(LogOriginType::ekf_origin, ekf_orig);
-    }
-#endif // AP_AHRS_NAVEKF_AVAILABLE
-
     // log ahrs home if set
     if (home_is_set != HOME_UNSET) {
         DataFlash.Log_Write_Origin(LogOriginType::ahrs_home, ahrs.get_home());

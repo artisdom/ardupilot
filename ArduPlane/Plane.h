@@ -28,14 +28,6 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-////////////////////////////////////////////////////////////////////////////////
-// Header includes
-////////////////////////////////////////////////////////////////////////////////
-
-#include <math.h>
-#include <stdarg.h>
-#include <stdio.h>
-
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Common/AP_Common.h>
 #include <AP_Menu/AP_Menu.h>
@@ -212,15 +204,7 @@ private:
 
     AP_RPM rpm_sensor;
     
-// Inertial Navigation EKF
-#if AP_AHRS_NAVEKF_AVAILABLE
-    NavEKF EKF{&ahrs, barometer, rangefinder};
-    NavEKF2 EKF2{&ahrs, barometer, rangefinder};
-    AP_AHRS_NavEKF ahrs {ins, barometer, gps, rangefinder, EKF, EKF2};
-#else
     AP_AHRS_DCM ahrs {ins, barometer, gps};
-#endif
-
     AP_L1_Control L1_controller {ahrs};
     AP_TECS TECS_controller {ahrs, aparm};
 
