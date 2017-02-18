@@ -4,6 +4,9 @@
  */
 
 #include "Plane.h"
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <AP_OSD/AP_OSD_enqueue.h>
+#endif
 
 /*
  *  set_next_WP - sets the target location the vehicle should fly to
