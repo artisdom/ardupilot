@@ -47,7 +47,7 @@ public:
         uint32_t esc_calibration    : 1;    // 1 if calibrating escs
         uint32_t failsafe_radio     : 1;    // 1 if radio failsafe
         uint32_t failsafe_battery   : 1;    // 1 if battery failsafe
-        uint32_t parachute_release  : 1;    // 1 if parachute is being released
+        uint32_t parachute_release  : 1;    // 1 if parachute is being released (NA)
         uint32_t ekf_bad            : 1;    // 1 if ekf is reporting problems
         uint32_t autopilot_mode     : 1;    // 1 if vehicle is in an autopilot flight mode (only used by OreoLEDs)
         uint32_t firmware_update    : 1;    // 1 just before vehicle firmware is updated

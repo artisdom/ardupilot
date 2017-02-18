@@ -1487,39 +1487,6 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         case MAV_CMD_DO_CANCEL_MAG_CAL:
             result = plane.compass.handle_mag_cal_command(packet);
             break;
-
-#if PARACHUTE == ENABLED
-        case MAV_CMD_DO_PARACHUTE:
-            // configure or release parachute
-            result = MAV_RESULT_ACCEPTED;
-            switch ((uint16_t)packet.param1) {
-                case PARACHUTE_DISABLE:
-                    plane.parachute.enabled(false);
-                    break;
-                case PARACHUTE_ENABLE:
-                    plane.parachute.enabled(true);
-                    break;
-                case PARACHUTE_RELEASE:
-                    // treat as a manual release which performs some additional check of altitude
-                    if (plane.parachute.released()) {
-                        plane.gcs_send_text_fmt(MAV_SEVERITY_NOTICE, "Parachute already released");
-                        result = MAV_RESULT_FAILED;
-                    } else if (!plane.parachute.enabled()) {
-                        plane.gcs_send_text_fmt(MAV_SEVERITY_NOTICE, "Parachute not enabled");
-                        result = MAV_RESULT_FAILED;
-                    } else {
-                        if (!plane.parachute_manual_release()) {
-                            result = MAV_RESULT_FAILED;
-                        }
-                    }
-                    break;
-                default:
-                    result = MAV_RESULT_FAILED;
-                    break;
-            }
-            break;
-#endif
-
         default:
             break;
         }

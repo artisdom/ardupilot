@@ -42,7 +42,7 @@
 #include <AP_TECS/AP_TECS.h>
 #include <AP_Notify/AP_Notify.h>      
 #include <AP_Arming/AP_Arming.h>                
-#include <AP_Parachute/AP_Parachute.h>
+//#include <AP_Parachute/AP_Parachute.h>
 #include <AP_ADSB/AP_ADSB.h>
 
 #include "config.h"
@@ -489,30 +489,13 @@ private:
             FUNCTOR_BIND_MEMBER(&Plane::exit_mission_callback, void)};
 
 
-#if PARACHUTE == ENABLED
-    AP_Parachute parachute {relay};
-#endif
-
-    // terrain handling
-#if AP_TERRAIN_AVAILABLE
-    AP_Terrain terrain {ahrs, mission, rally};
-#endif
-
     AP_ADSB adsb {ahrs};
     struct {
-
         // for Loiter_and_descend behavior, keeps track of rate changes
         uint32_t time_last_alt_change_ms;
-
         // previous wp to restore to when switching between modes back to AUTO
         Location prev_wp;
     } adsb_state;
-
-
-    // Outback Challenge Failsafe Support
-#if OBC_FAILSAFE == ENABLED
-    APM_OBC obc {mission, barometer, gps, rcmap};
-#endif
 
     /*
       meta data to support counting the number of circles in a loiter
@@ -618,12 +601,6 @@ private:
 
     // Counter of main loop executions.  Used for performance monitoring and failsafe processing
     uint16_t mainLoop_count = 0;
-
-    // Camera/Antenna mount tracking and stabilisation stuff
-#if MOUNT == ENABLED
-    // current_loc uses the baro/gps soloution for altitude rather than gps only.
-    AP_Mount camera_mount {ahrs, current_loc};
-#endif
 
     // Arming/Disarming mangement class
     AP_Arming_Plane arming {ahrs, barometer, compass, home_is_set };
@@ -921,11 +898,6 @@ private:
     void init_capabilities(void);
     void dataflash_periodic(void);
     uint16_t throttle_min(void) const;
-    
-    void do_parachute(const AP_Mission::Mission_Command& cmd);
-    void parachute_check();
-    void parachute_release();
-    bool parachute_manual_release();
 
 public:
     void mavlink_delay_cb();

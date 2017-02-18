@@ -143,10 +143,7 @@ public:
         k_param_land_abort_throttle_enable,
         k_param_rssi = 97,
         k_param_rpm_sensor,
-        k_param_parachute,
         k_param_arming = 100,
-        k_param_parachute_channel,
-
         // 105: Extra parameters
         k_param_fence_retalt = 105,
         k_param_fence_autoenable,
@@ -487,7 +484,6 @@ public:
     AP_Int8 rangefinder_landing;
     AP_Int8 flap_slewrate;
     AP_Int16 gcs_pid_mask;
-    AP_Int8 parachute_channel;
 
     // RC channels
     RC_Channel rc_1;

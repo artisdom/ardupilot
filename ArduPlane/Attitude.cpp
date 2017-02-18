@@ -401,9 +401,6 @@ void Plane::stabilize()
 void Plane::calc_throttle()
 {
     if (aparm.throttle_cruise <= 1) {
-        // user has asked for zero throttle - this may be done by a
-        // mission which wants to turn off the engine for a parachute
-        // landing
         channel_throttle->servo_out = 0;
         return;
     }
@@ -567,13 +564,7 @@ void Plane::flap_slew_limit(int8_t &last_value, int8_t &new_value)
    *       5 - Home location is not set
 */
 bool Plane::suppress_throttle(void)
-{
-    if (auto_throttle_mode && parachute.released()) {
-        // throttle always suppressed in auto-throttle modes after parachute release
-        throttle_suppressed = true;
-        return true;
-    }
-    
+{    
     if (!throttle_suppressed) {
         // we've previously met a condition for unsupressing the throttle
         return false;
@@ -596,7 +587,6 @@ bool Plane::suppress_throttle(void)
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
    using quan::max;
 #endif
-
         uint32_t launch_duration_ms = ((int32_t)g.takeoff_throttle_delay)*100 + 2000;
         if (is_flying() &&
             millis() - started_flying_ms > max(launch_duration_ms,5000U) && // been flying >5s in any mode
