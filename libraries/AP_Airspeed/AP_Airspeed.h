@@ -13,7 +13,6 @@
 #else
 #include "AP_Airspeed_Backend.h"
 #include "AP_Airspeed_analog.h"
-#include "AP_Airspeed_PX4.h"
 #include "AP_Airspeed_I2C.h"
 #endif
 
@@ -196,12 +195,7 @@ private:
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     AP_Airspeed_Quan m_backend;
 #else
-    AP_Airspeed_Analog analog;
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
-    AP_Airspeed_PX4    digital;
-#else
     AP_Airspeed_I2C    digital;
-#endif
 #endif
 };
 

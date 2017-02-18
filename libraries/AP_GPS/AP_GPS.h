@@ -394,7 +394,6 @@ private:
 #include "AP_GPS_NMEA.h"
 #include "AP_GPS_SIRF.h"
 #include "AP_GPS_SBP.h"
-#include "AP_GPS_PX4.h"
 #include "AP_GPS_SBF.h"
 #include "AP_GPS_GSOF.h"
 

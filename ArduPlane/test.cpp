@@ -26,10 +26,6 @@ static const struct Menu::command test_menu_commands[] = {
     {"airpressure",         MENU_FUNC(test_pressure)},
     {"compass",             MENU_FUNC(test_mag)},
     {"logging",             MENU_FUNC(test_logging)},
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
-    {"shell", 				MENU_FUNC(test_shell)},
-#endif
-
 };
 
 // A Macro to create the Menu
@@ -300,17 +296,6 @@ int8_t Plane::test_logging(uint8_t argc, const Menu::arg *argv)
     DataFlash.ShowDeviceInfo(cliSerial);
     return 0;
 }
-
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
-/*
- *  run a debug shell
- */
-int8_t Plane::test_shell(uint8_t argc, const Menu::arg *argv)
-{
-    hal.util->run_debug_shell(cliSerial);
-    return 0;
-}
-#endif
 
 //-------------------------------------------------------------------------------------------
 // tests in this section are for real sensors or sensors that have been simulated
