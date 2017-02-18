@@ -1287,7 +1287,7 @@ const AP_Param::Info Plane::var_info[] = {
 
     // @Group: BRD_
     // @Path: ../libraries/AP_BoardConfig/AP_BoardConfig.cpp
-    GOBJECT(BoardConfig,            "BRD_",       AP_BoardConfig),
+//    GOBJECT(BoardConfig,            "BRD_",       AP_BoardConfig),
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     // @Group: SIM_

@@ -85,7 +85,7 @@
 #include <AP_BattMonitor/AP_BattMonitor.h> // Battery monitor library
 
 #include <AP_Arming/AP_Arming.h>
-#include <AP_BoardConfig/AP_BoardConfig.h>
+//#include <AP_BoardConfig/AP_BoardConfig.h>
 #include <AP_Frsky_Telem/AP_Frsky_Telem.h>
 #include <AP_ServoRelayEvents/AP_ServoRelayEvents.h>
 
@@ -166,7 +166,7 @@ private:
     RCMapper rcmap;
 
     // board specific config
-    AP_BoardConfig BoardConfig;
+//    AP_BoardConfig BoardConfig;
 
     // primary control channels
     RC_Channel *channel_roll;
