@@ -60,12 +60,6 @@ void Plane::read_control_switch()
         // fly upside down when that channel goes above INVERTED_FLIGHT_PWM
         inverted_flight = (control_mode != MANUAL && hal.rcin->read(g.inverted_flight_ch-1) > INVERTED_FLIGHT_PWM);
     }
-
-    if (g.parachute_channel > 0) {
-        if (hal.rcin->read(g.parachute_channel-1) >= 1700) {
-            parachute_manual_release();
-        }
-    }
     
 }
 
