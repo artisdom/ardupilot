@@ -104,9 +104,6 @@ private:
     // mapping between input channels
     RCMapper rcmap;
 
-    // board specific config
-//    AP_BoardConfig BoardConfig;
-
     // primary control channels
     RC_Channel *channel_roll;
     RC_Channel *channel_pitch;
@@ -162,6 +159,8 @@ private:
     AP_RollController  rollController {ahrs, aparm, DataFlash};
     AP_PitchController pitchController {ahrs, aparm, DataFlash};
     AP_YawController   yawController {ahrs, aparm};
+
+    // used for ground steering only
     AP_SteerController steerController {ahrs};
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
