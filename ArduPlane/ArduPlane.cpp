@@ -24,6 +24,10 @@
 
 #include "Plane.h"
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#include <AP_OSD/AP_OSD_enqueue.h>
+#endif
+
 #define SCHED_TASK(func, _interval_ticks, _max_time_micros) {\
     .function = FUNCTOR_BIND(&plane, &Plane::func, void),\
     AP_SCHEDULER_NAME_INITIALIZER(func)\

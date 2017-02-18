@@ -1,5 +1,6 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
+#include <RC_Channel/RC_Channel.h>
 #include "Plane.h"
 
 void Plane::read_control_switch()

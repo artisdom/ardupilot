@@ -29,80 +29,31 @@
  */
 
 #include <AP_HAL/AP_HAL.h>
-#include <AP_Common/AP_Common.h>
 #include <AP_Menu/AP_Menu.h>
-#include <AP_Param/AP_Param.h>
-#include <StorageManager/StorageManager.h>
-#include <AP_GPS/AP_GPS.h>         // ArduPilot GPS library
-#include <AP_Baro/AP_Baro.h>        // ArduPilot barometer library
-#include <AP_Compass/AP_Compass.h>     // ArduPilot Mega Magnetometer Library
-#include <AP_Math/AP_Math.h>        // ArduPilot Mega Vector/Matrix math Library
-#include <AP_ADC/AP_ADC.h>         // ArduPilot Mega Analog to Digital Converter Library
-#include <AP_ADC_AnalogSource/AP_ADC_AnalogSource.h>
-#include <AP_InertialSensor/AP_InertialSensor.h> // Inertial Sensor Library
-#include <AP_AHRS/AP_AHRS.h>         // ArduPilot Mega DCM Library
-#include <RC_Channel/RC_Channel.h>     // RC Channel Library
-#include <AP_RangeFinder/AP_RangeFinder.h>     // Range finder library
-#include <Filter/Filter.h>                     // Filter library
-#include <AP_Buffer/AP_Buffer.h>      // APM FIFO Buffer
-#include <AP_Relay/AP_Relay.h>       // APM relay
-#include <AP_Camera/AP_Camera.h>          // Photo or video camera
-#include <AP_Airspeed/AP_Airspeed.h>
-#include <AP_Terrain/AP_Terrain.h>
-#include <AP_RPM/AP_RPM.h>
-
-#include <APM_OBC/APM_OBC.h>
-#include <APM_Control/APM_Control.h>
-#include <APM_Control/AP_AutoTune.h>
-#include <GCS_MAVLink/GCS.h>
-#include <GCS_MAVLink/GCS_MAVLink.h>    // MAVLink GCS definitions
-#include <AP_SerialManager/AP_SerialManager.h>   // Serial manager library
-#include <AP_Mount/AP_Mount.h>           // Camera/Antenna mount
-#include <AP_Declination/AP_Declination.h> // ArduPilot Mega Declination Helper Library
-#include <DataFlash/DataFlash.h>
-#include <AP_Scheduler/AP_Scheduler.h>       // main loop scheduler
-
-#include <AP_Navigation/AP_Navigation.h>
-#include <AP_L1_Control/AP_L1_Control.h>
-#include <AP_RCMapper/AP_RCMapper.h>        // RC input mapping library
-
-#include <AP_Vehicle/AP_Vehicle.h>
-#include <AP_SpdHgtControl/AP_SpdHgtControl.h>
-#include <AP_TECS/AP_TECS.h>
-#include <AP_Mission/AP_Mission.h>     // Mission command library
-
-#include <AP_Notify/AP_Notify.h>      // Notify library
-#include <AP_BattMonitor/AP_BattMonitor.h> // Battery monitor library
-
-#include <AP_Arming/AP_Arming.h>
-#include <AP_Frsky_Telem/AP_Frsky_Telem.h>
+#include <AP_AHRS/AP_AHRS_DCM.h>    
+#include <AP_Relay/AP_Relay.h>     
 #include <AP_ServoRelayEvents/AP_ServoRelayEvents.h>
-
 #include <AP_Rally/AP_Rally.h>
-
-#include <AP_OpticalFlow/AP_OpticalFlow.h>     // Optical Flow library
-#include <AP_RSSI/AP_RSSI.h>                   // RSSI Library
+#include <GCS_MAVLink/GCS.h>
+#include <APM_Control/APM_Control.h>
+#include <AP_Scheduler/AP_Scheduler.h>     
+#include <AP_L1_Control/AP_L1_Control.h>
+#include <AP_RCMapper/AP_RCMapper.h>        
+#include <AP_TECS/AP_TECS.h>
+#include <AP_Notify/AP_Notify.h>      
+#include <AP_Arming/AP_Arming.h>                
 #include <AP_Parachute/AP_Parachute.h>
 #include <AP_ADSB/AP_ADSB.h>
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-#include <AP_OSD/AP_OSD_enqueue.h>
-#endif
-
-
-// Configuration
 #include "config.h"
-
-// Local modules
 #include "defines.h"
-
 #include "Parameters.h"
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #include <SITL/SITL.h>
 #endif
 
-
+class RC_Channel;
 /*
   a plane specific arming class
  */
