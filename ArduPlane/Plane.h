@@ -42,7 +42,6 @@
 #include <AP_TECS/AP_TECS.h>
 #include <AP_Notify/AP_Notify.h>      
 #include <AP_Arming/AP_Arming.h>                
-//#include <AP_Parachute/AP_Parachute.h>
 #include <AP_ADSB/AP_ADSB.h>
 
 #include "config.h"
@@ -153,7 +152,7 @@ private:
     } rangefinder_state;
 #endif
 
-    AP_RPM rpm_sensor;
+   // AP_RPM rpm_sensor;
     
     AP_AHRS_DCM ahrs {ins, barometer, gps};
     AP_L1_Control L1_controller {ahrs};
@@ -637,7 +636,6 @@ private:
     void send_hwstatus(mavlink_channel_t chan);
     void send_wind(mavlink_channel_t chan);
     void send_pid_tuning(mavlink_channel_t chan);
-    void send_rpm(mavlink_channel_t chan);
     void send_rangefinder(mavlink_channel_t chan);
     void send_current_waypoint(mavlink_channel_t chan);
     void send_statustext(mavlink_channel_t chan);
@@ -777,7 +775,6 @@ private:
     void zero_airspeed(bool in_startup);
     void read_battery(void);
     void read_receiver_rssi(void);
-    void rpm_update(void);
     void report_radio();
     void report_ins();
     void report_compass();

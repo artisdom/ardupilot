@@ -1321,13 +1321,4 @@ void DataFlash_Class::Log_Write_Origin(uint8_t origin_type, const Location &loc)
     WriteBlock(&pkt, sizeof(pkt));
 }
 
-void DataFlash_Class::Log_Write_RPM(const AP_RPM &rpm_sensor)
-{
-    struct log_RPM pkt = {
-        LOG_PACKET_HEADER_INIT(LOG_RPM_MSG),
-        time_us     : AP_HAL::micros64(),
-        rpm1        : rpm_sensor.get_rpm(0),
-        rpm2        : rpm_sensor.get_rpm(1)
-    };
-    WriteBlock(&pkt, sizeof(pkt));
-}
+

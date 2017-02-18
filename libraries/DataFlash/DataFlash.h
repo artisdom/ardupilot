@@ -18,7 +18,6 @@
 #include <AP_Mission/AP_Mission.h>
 #include <AP_Airspeed/AP_Airspeed.h>
 #include <AP_BattMonitor/AP_BattMonitor.h>
-#include <AP_RPM/AP_RPM.h>
 #include <AP_RangeFinder/AP_RangeFinder.h>
 #include <stdint.h>
 
@@ -110,7 +109,6 @@ public:
     bool Log_Write_Mission_Cmd(const AP_Mission &mission,
                                const AP_Mission::Mission_Command &cmd);
     void Log_Write_Origin(uint8_t origin_type, const Location &loc);
-    void Log_Write_RPM(const AP_RPM &rpm_sensor);
 
     // This structure provides information on the internal member data of a PID for logging purposes
     struct PID_Info {
