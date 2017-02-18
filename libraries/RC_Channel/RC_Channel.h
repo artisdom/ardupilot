@@ -72,30 +72,13 @@ public:
     // return a limit PWM value
     uint16_t    get_limit_pwm(LimitValue limit) const;
 
-    // pwm is stored here
-    int16_t        radio_in;
-
     // call after first set_pwm
     void        trim();
 
-    // value generated from PWM
-    int16_t         control_in;
-
-    int16_t         control_mix(float value);
-
-    // current values to the servos - degrees * 100 (approx assuming servo is -45 to 45 degrees except [3] is 0 to 100
-    int16_t        servo_out;
+    int16_t     control_mix(float value);
 
     // generate PWM from servo_out value
     void        calc_pwm(void);
-
-    // PWM is without the offset from radio_min
-    int16_t         pwm_out;
-    int16_t         radio_out;
-
-    AP_Int16        radio_min;
-    AP_Int16        radio_trim;
-    AP_Int16        radio_max;
 
     // includes offset from PWM
     //int16_t   get_radio_out(void);
@@ -137,6 +120,22 @@ public:
 
     bool in_trim_dz();
 
+    // actuator output
+    // current values to the servos - degrees * 100 (approx assuming servo is -45 to 45 degrees except [3] is 0 to 100
+    int16_t        servo_out;
+    // PWM is without the offset from radio_min
+    int16_t         pwm_out;
+    int16_t         radio_out;
+        // value generated from PWM ???
+    int16_t         control_in;
+    // pwm is stored here stick input I think
+    int16_t         radio_in;
+
+
+    AP_Int16        radio_min;
+    AP_Int16        radio_trim;
+    AP_Int16        radio_max;
+
 private:
     AP_Int8         _reverse;
     AP_Int16        _dead_zone;
@@ -149,7 +148,8 @@ private:
     static RC_Channel *rc_ch[RC_MAX_CHANNELS];
 
 protected:
-    uint8_t         _ch_out;
+    // channel index for rc input?
+    uint8_t const         _ch_out;
 };
 
 // This is ugly, but it fixes poorly architected library
