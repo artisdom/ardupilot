@@ -77,15 +77,12 @@
 #include <AP_Vehicle/AP_Vehicle.h>
 #include <AP_SpdHgtControl/AP_SpdHgtControl.h>
 #include <AP_TECS/AP_TECS.h>
-#include <AP_NavEKF/AP_NavEKF.h>
-#include <AP_NavEKF2/AP_NavEKF2.h>
 #include <AP_Mission/AP_Mission.h>     // Mission command library
 
 #include <AP_Notify/AP_Notify.h>      // Notify library
 #include <AP_BattMonitor/AP_BattMonitor.h> // Battery monitor library
 
 #include <AP_Arming/AP_Arming.h>
-//#include <AP_BoardConfig/AP_BoardConfig.h>
 #include <AP_Frsky_Telem/AP_Frsky_Telem.h>
 #include <AP_ServoRelayEvents/AP_ServoRelayEvents.h>
 

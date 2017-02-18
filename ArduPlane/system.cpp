@@ -106,9 +106,6 @@ void Plane::init_ardupilot()
     }
 #endif
 
-    
-//    BoardConfig.init();
-
     // initialise serial ports
     serial_manager.init();
 
