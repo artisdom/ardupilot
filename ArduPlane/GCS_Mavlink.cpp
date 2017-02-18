@@ -490,19 +490,6 @@ void Plane::send_wind(mavlink_channel_t chan)
 }
 
 /*
-  send RPM packet
- */
-void NOINLINE Plane::send_rpm(mavlink_channel_t chan)
-{
-    if (rpm_sensor.healthy(0) || rpm_sensor.healthy(1)) {
-        mavlink_msg_rpm_send(
-            chan,
-            rpm_sensor.get_rpm(0),
-            rpm_sensor.get_rpm(1));
-    }
-}
-
-/*
   send PID tuning message
  */
 void Plane::send_pid_tuning(mavlink_channel_t chan)
@@ -826,11 +813,6 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         send_vibration(plane.ins);
         break;
 
-    case MSG_RPM:
-        CHECK_PAYLOAD_SIZE(RPM);
-        plane.send_rpm(chan);
-        break;
-
     case MSG_MISSION_ITEM_REACHED:
         CHECK_PAYLOAD_SIZE(MISSION_ITEM_REACHED);
         mavlink_msg_mission_item_reached_send(chan, mission_item_reached_index);
@@ -845,9 +827,9 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         CHECK_PAYLOAD_SIZE(MAG_CAL_REPORT);
         plane.compass.send_mag_cal_report(chan);
         break;
+    default:
+        break;
     }
-   // default?
-    
     return true;
 }
 
