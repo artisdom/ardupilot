@@ -112,17 +112,6 @@ const AP_Param::GroupInfo AP_AHRS::var_info[] = {
     // NOTE: index 12 was for GPS_DELAY, but now removed, fixed delay
     // of 1 was found to be the best choice
 
-    // 13 was the old EKF_USE
-
-#if AP_AHRS_NAVEKF_AVAILABLE
-    // @Param: EKF_TYPE
-    // @DisplayName: Use NavEKF Kalman filter for attitude and position estimation
-    // @Description: This controls whether the NavEKF Kalman filter is used for attitude and position estimation and whether fallback to the DCM algorithm is allowed. Note that on copters "disabled" is not available, and will be the same as "enabled - no fallback"
-    // @Values: 0:Disabled,1:Enabled,2:Enable EKF2
-    // @User: Advanced
-    AP_GROUPINFO("EKF_TYPE",  14, AP_AHRS, _ekf_type, 1),
-#endif
-
     AP_GROUPEND
 };
 

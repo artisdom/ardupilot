@@ -154,3 +154,6 @@ void AP_Mount_Backend::calc_angle_to_location(const struct Location &target, Vec
         angles_to_target_rad.z = wrap_PI(atan2f(GPS_vector_x, GPS_vector_y) - _frontend._ahrs.yaw);
     }
 }
+
+
+

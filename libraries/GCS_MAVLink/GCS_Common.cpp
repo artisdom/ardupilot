@@ -217,37 +217,6 @@ void GCS_MAVLINK::send_power_status(void)
 #endif
 }
 
-// report AHRS2 state
-void GCS_MAVLINK::send_ahrs2(AP_AHRS &ahrs)
-{
-#if AP_AHRS_NAVEKF_AVAILABLE
-    Vector3f euler;
-    struct Location loc {};
-    if (ahrs.get_secondary_attitude(euler)) {
-        mavlink_msg_ahrs2_send(chan,
-                               euler.x,
-                               euler.y,
-                               euler.z,
-                               loc.alt*1.0e-2f,
-                               loc.lat,
-                               loc.lng);
-    }
-    AP_AHRS_NavEKF &_ahrs = reinterpret_cast<AP_AHRS_NavEKF&>(ahrs);
-    if (_ahrs.get_NavEKF2().activeCores() > 0) {
-        _ahrs.get_NavEKF2().getLLH(loc);
-        _ahrs.get_NavEKF2().getEulerAngles(-1,euler);
-        mavlink_msg_ahrs3_send(chan,
-                               euler.x,
-                               euler.y,
-                               euler.z,
-                               loc.alt*1.0e-2f,
-                               loc.lat,
-                               loc.lng,
-                               0, 0, 0, 0);
-    }
-#endif
-}
-
 /*
   handle a MISSION_REQUEST_LIST mavlink packet
  */
@@ -1231,40 +1200,6 @@ void GCS_MAVLINK::handle_set_mode(mavlink_message_t* msg, set_mode_fn set_mode)
     // send ACK or NAK
     mavlink_msg_command_ack_send_buf(msg, chan, MAVLINK_MSG_ID_SET_MODE, result);
 }
-
-#if AP_AHRS_NAVEKF_AVAILABLE
-/*
-  send OPTICAL_FLOW message
- */
-void GCS_MAVLINK::send_opticalflow(AP_AHRS_NavEKF &ahrs, const OpticalFlow &optflow)
-{
-    // exit immediately if no optical flow sensor or not healthy
-    if (!optflow.healthy()) {
-        return;
-    }
-
-    // get rates from sensor
-    const Vector2f &flowRate = optflow.flowRate();
-    const Vector2f &bodyRate = optflow.bodyRate();
-    float hagl = 0;
-
-    if (ahrs.have_inertial_nav()) {
-        ahrs.get_NavEKF().getHAGL(hagl);
-    }
-
-    // populate and send message
-    mavlink_msg_optical_flow_send(
-        chan,
-        AP_HAL::millis(),
-        0, // sensor id is zero
-        flowRate.x,
-        flowRate.y,
-        bodyRate.x,
-        bodyRate.y,
-        optflow.quality(),
-        hagl); // ground distance (in meters) set to zero
-}
-#endif
 
 /*
   send AUTOPILOT_VERSION packet

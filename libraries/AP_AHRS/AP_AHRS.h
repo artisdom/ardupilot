@@ -491,13 +491,4 @@ protected:
     uint8_t _active_accel_instance;
 };
 
-#include "AP_AHRS_DCM.h"
-#include "AP_AHRS_NavEKF.h"
-
-#if AP_AHRS_NAVEKF_AVAILABLE
-#define AP_AHRS_TYPE AP_AHRS_NavEKF
-#else
-#define AP_AHRS_TYPE AP_AHRS
-#endif
-
 #endif // __AP_AHRS_H__

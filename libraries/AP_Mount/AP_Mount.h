@@ -25,7 +25,7 @@
 #include <AP_Math/AP_Math.h>
 #include <AP_Common/AP_Common.h>
 #include <AP_GPS/AP_GPS.h>
-#include <AP_AHRS/AP_AHRS.h>
+#include <AP_AHRS/AP_AHRS_DCM.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include <RC_Channel/RC_Channel.h>
 #include <AP_SerialManager/AP_SerialManager.h>
@@ -76,7 +76,7 @@ public:
     };
 
     // Constructor
-    AP_Mount(const AP_AHRS_TYPE &ahrs, const struct Location &current_loc);
+    AP_Mount(const AP_AHRS_DCM &ahrs, const struct Location &current_loc);
 
     // init - detect and initialise all mounts
     void init(const AP_SerialManager& serial_manager);
@@ -139,9 +139,8 @@ public:
     static const struct AP_Param::GroupInfo        var_info[];
 
 protected:
-
     // private members
-    const AP_AHRS_TYPE     &_ahrs;
+    const AP_AHRS_DCM     &_ahrs;
     const struct Location   &_current_loc;  // reference to the vehicle's current location
 
     // frontend parameters

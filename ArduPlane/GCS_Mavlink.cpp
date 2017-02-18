@@ -734,8 +734,6 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
     case MSG_SIMSTATE:
         CHECK_PAYLOAD_SIZE(SIMSTATE);
         plane.send_simstate(chan);
-        CHECK_PAYLOAD_SIZE2(AHRS2);
-        plane.gcs[chan-MAVLINK_COMM_0].send_ahrs2(plane.ahrs);
         break;
 
     case MSG_HWSTATUS:
@@ -787,10 +785,8 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         break;
 
     case MSG_EKF_STATUS_REPORT:
-#if AP_AHRS_NAVEKF_AVAILABLE
-        CHECK_PAYLOAD_SIZE(EKF_STATUS_REPORT);
-        plane.ahrs.send_ekf_status_report(chan);
-#endif
+//TODO remove
+// return false?
         break;
 
     case MSG_GIMBAL_REPORT:
@@ -837,6 +833,8 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         plane.compass.send_mag_cal_report(chan);
         break;
     }
+   // default?
+    
     return true;
 }
 
