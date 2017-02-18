@@ -1004,27 +1004,6 @@ const AP_Param::Info Plane::var_info[] = {
     // @User: Advanced
     GSCALAR(land_flap_percent,     "LAND_FLAP_PERCNT", 0),
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4
-    // @Param: OVERRIDE_CHAN
-    // @DisplayName: PX4IO override channel
-    // @Description: If set to a non-zero value then this is an RC input channel number 
-    // to use for testing manual control in case the main FMU microcontroller on a PX4 or Pixhawk fails. 
-    // When this RC input channel goes above 1750 the FMU will stop sending servo controls to the PX4IO board, 
-    // which will trigger the PX4IO board to start using its failsafe override behaviour,
-    // which should give you manual control of the aircraft. 
-    // That allows you to test for correct manual behaviour without actually crashing the FMU.
-    // This parameter is normally only set to a non-zero value for ground testing purposes. 
-    // When the override channel is used it also forces the PX4 safety switch into an armed state. 
-    // This allows it to be used as a way to re-arm a plane after an in-flight reboot. 
-    // Use in that way is considered a developer option, for people testing unstable developer code. 
-    // Note that you may set OVERRIDE_CHAN to the same channel as FLTMODE_CH to get PX4IO based override 
-    // when in flight mode 6. Note that when override is triggered the 6 auxiliary output channels 
-    // on Pixhawk will no longer be updated, so all the flight controls you need must be assigned to 
-    // the first 8 channels.
-    // @User: Advanced
-    GSCALAR(override_channel,      "OVERRIDE_CHAN",  0),
-#endif
-
     // @Param: INVERTEDFLT_CH
     // @DisplayName: Inverted flight channel
     // @Description: A RC input channel number to enable inverted flight. If this is non-zero then the APM will monitor the corresponding RC input channel and will enable inverted flight when the channel goes above 1750.
@@ -1182,32 +1161,6 @@ const AP_Param::Info Plane::var_info[] = {
     // @Group: RC8_
     // @Path: ../libraries/RC_Channel/RC_Channel.cpp,../libraries/RC_Channel/RC_Channel_aux.cpp
     GGROUP(rc_8,                    "RC8_", RC_Channel_aux),
-
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
-    // @Group: RC9_
-    // @Path: ../libraries/RC_Channel/RC_Channel.cpp,../libraries/RC_Channel/RC_Channel_aux.cpp
-    GGROUP(rc_9,                    "RC9_", RC_Channel_aux),
-
-    // @Group: RC10_
-    // @Path: ../libraries/RC_Channel/RC_Channel.cpp,../libraries/RC_Channel/RC_Channel_aux.cpp
-    GGROUP(rc_10,                    "RC10_", RC_Channel_aux),
-
-    // @Group: RC11_
-    // @Path: ../libraries/RC_Channel/RC_Channel.cpp,../libraries/RC_Channel/RC_Channel_aux.cpp
-    GGROUP(rc_11,                    "RC11_", RC_Channel_aux),
-
-    // @Group: RC12_
-    // @Path: ../libraries/RC_Channel/RC_Channel.cpp,../libraries/RC_Channel/RC_Channel_aux.cpp
-    GGROUP(rc_12,                    "RC12_", RC_Channel_aux),
-
-    // @Group: RC13_
-    // @Path: ../libraries/RC_Channel/RC_Channel.cpp,../libraries/RC_Channel/RC_Channel_aux.cpp
-    GGROUP(rc_13,                    "RC13_", RC_Channel_aux),
-
-    // @Group: RC14_
-    // @Path: ../libraries/RC_Channel/RC_Channel.cpp,../libraries/RC_Channel/RC_Channel_aux.cpp
-    GGROUP(rc_14,                    "RC14_", RC_Channel_aux),
-#endif
 
     // @Group: RLL2SRV_
     // @Path: ../libraries/APM_Control/AP_RollController.cpp

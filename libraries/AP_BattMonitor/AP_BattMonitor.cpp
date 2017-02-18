@@ -1,8 +1,6 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 #include "AP_BattMonitor.h"
 #include "AP_BattMonitor_Analog.h"
-#include "AP_BattMonitor_SMBus.h"
-#include "AP_BattMonitor_Bebop.h"
 
 extern const AP_HAL::HAL& hal;
 
@@ -167,11 +165,7 @@ AP_BattMonitor::init()
                 break;
             case BattMonitor_TYPE_SMBUS:
                 state[instance].instance = instance;
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4
-                drivers[instance] = new AP_BattMonitor_SMBus_PX4(*this, instance, state[instance]);
-#else
                 drivers[instance] = new AP_BattMonitor_SMBus_I2C(*this, instance, state[instance]);
-#endif
                 _num_instances++;
                 break;
             case BattMonitor_TYPE_BEBOP:

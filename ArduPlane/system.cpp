@@ -98,17 +98,6 @@ void Plane::init_ardupilot()
     }
 #endif
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4
-    // this must be before BoardConfig.init() so if
-    // BRD_SAFETYENABLE==0 then we don't have safety off yet
-    for (uint8_t tries=0; tries<10; tries++) {
-        if (setup_failsafe_mixing()) {
-            break;
-        }
-        hal.scheduler->delay(10);
-    }
-#endif
-
     // initialise serial ports
     serial_manager.init();
 
