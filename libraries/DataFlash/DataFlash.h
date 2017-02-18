@@ -22,10 +22,6 @@
 #include <AP_RangeFinder/AP_RangeFinder.h>
 #include <stdint.h>
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4
-#include <uORB/topics/esc_status.h>
-#endif
-
 #include "DFMessageWriter.h"
 
 class DataFlash_Backend;

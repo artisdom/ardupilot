@@ -23,14 +23,11 @@
 #include "AP_BoardLED.h"
 #include "ToshibaLED.h"
 #include "ToshibaLED_I2C.h"
-#include "ToshibaLED_PX4.h"
-#include "ToneAlarm_PX4.h"
 #include "ToneAlarm_Linux.h"
 #include "NavioLED_I2C.h"
 #include "ExternalLED.h"
 #include "Buzzer.h"
 #include "VRBoard_LED.h"
-#include "OreoLED_PX4.h"
 
 #ifndef OREOLED_ENABLED
  # define OREOLED_ENABLED   0   // set to 1 to enable OreoLEDs

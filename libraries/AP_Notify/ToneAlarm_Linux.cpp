@@ -101,4 +101,4 @@ void ToneAlarm_Linux::update()
     }
 }
 
-#endif // CONFIG_HAL_BOARD == HAL_BOARD_PX4
+#endif // CONFIG_HAL_BOARD == HAL_BOARD_LINUX

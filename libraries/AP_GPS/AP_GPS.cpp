@@ -186,16 +186,6 @@ AP_GPS::detect_instance(uint8_t instance)
     struct detect_state *dstate = &detect_state[instance];
     uint32_t now = AP_HAL::millis();
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4
-    if (_type[instance] == GPS_TYPE_PX4) {
-        // check for explicitely chosen PX4 GPS beforehand
-        // it is not possible to autodetect it, nor does it require a real UART
-        hal.console->print(" PX4 ");
-        new_gps = new AP_GPS_PX4(*this, state[instance], _port[instance]);
-        goto found_gps;
-    }
-#endif
-
     if (_port[instance] == NULL) {
         // UART not available
         return;
@@ -288,9 +278,6 @@ AP_GPS::detect_instance(uint8_t instance)
 		}
 	}
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4
-found_gps:
-#endif
 	if (new_gps != NULL) {
         state[instance].status = NO_FIX;
         drivers[instance] = new_gps;

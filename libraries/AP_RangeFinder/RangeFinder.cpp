@@ -19,8 +19,6 @@
 #include "AP_RangeFinder_analog.h"
 #include "AP_RangeFinder_PulsedLightLRF.h"
 #include "AP_RangeFinder_MaxsonarI2CXL.h"
-#include "AP_RangeFinder_PX4.h"
-#include "AP_RangeFinder_PX4_PWM.h"
 #include "AP_RangeFinder_BBB_PRU.h"
 #include "AP_RangeFinder_LightWareI2C.h"
 #include "AP_RangeFinder_LightWareSerial.h"
@@ -472,13 +470,7 @@ void RangeFinder::detect_instance(uint8_t instance)
 {
  #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
     uint8_t type = _type[instance];
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
-    if (type == RangeFinder_TYPE_PLI2C || 
-        type == RangeFinder_TYPE_MBI2C) {
-        // I2C sensor types are handled by the PX4Firmware code
-        type = RangeFinder_TYPE_PX4;
-    }
-#endif
+
     if (type == RangeFinder_TYPE_PLI2C) {
         if (AP_RangeFinder_PulsedLightLRF::detect(*this, instance)) {
             state[instance].instance = instance;
@@ -500,31 +492,7 @@ void RangeFinder::detect_instance(uint8_t instance)
             return;
         }
     } 
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4  || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
-    if (type == RangeFinder_TYPE_PX4) {
-        if (AP_RangeFinder_PX4::detect(*this, instance)) {
-            state[instance].instance = instance;
-            drivers[instance] = new AP_RangeFinder_PX4(*this, instance, state[instance]);
-            return;
-        }
-    }
-    if (type == RangeFinder_TYPE_PX4_PWM) {
-        if (AP_RangeFinder_PX4_PWM::detect(*this, instance)) {
-            state[instance].instance = instance;
-            drivers[instance] = new AP_RangeFinder_PX4_PWM(*this, instance, state[instance]);
-            return;
-        }
-    }
-#endif
-#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BBBMINI
-    if (type == RangeFinder_TYPE_BBB_PRU) {
-        if (AP_RangeFinder_BBB_PRU::detect(*this, instance)) {
-            state[instance].instance = instance;
-            drivers[instance] = new AP_RangeFinder_BBB_PRU(*this, instance, state[instance]);
-            return;
-        }
-    }
-#endif
+
     if (type == RangeFinder_TYPE_LWSER) {
         if (AP_RangeFinder_LightWareSerial::detect(*this, instance, serial_manager)) {
             state[instance].instance = instance;

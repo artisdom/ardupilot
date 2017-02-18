@@ -95,7 +95,6 @@ private:
 
 #include "OpticalFlow_backend.h"
 #include "AP_OpticalFlow_HIL.h"
-#include "AP_OpticalFlow_PX4.h"
 #include "AP_OpticalFlow_Linux.h"
 
 #endif

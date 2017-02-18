@@ -11,11 +11,6 @@
 #include <AP_HAL_Quan/AP_HAL_Quan_Main.h>
 #else
 
-
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4 || CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
-#define AP_MAIN __EXPORT ArduPilot_main
-#endif
-
 #ifndef AP_MAIN
 #define AP_MAIN main
 #endif
