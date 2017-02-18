@@ -6,11 +6,8 @@
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4
-static ToshibaLED_PX4 toshiba_led;
-#else
+
 static ToshibaLED_I2C toshiba_led;
-#endif
 
 void setup(void)
 {

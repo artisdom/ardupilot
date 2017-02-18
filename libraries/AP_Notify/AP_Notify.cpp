@@ -20,58 +20,11 @@
 struct AP_Notify::notify_flags_type AP_Notify::flags;
 struct AP_Notify::notify_events_type AP_Notify::events;
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_PX4
-    AP_BoardLED boardled;
-    ToshibaLED_PX4 toshibaled;
-    ToneAlarm_PX4 tonealarm;
-#if OREOLED_ENABLED
-    OreoLED_PX4 oreoled;
-    NotifyDevice *AP_Notify::_devices[] = {&boardled, &toshibaled, &tonealarm, &oreoled};
-#else
-    NotifyDevice *AP_Notify::_devices[] = {&boardled, &toshibaled, &tonealarm};
-#endif
-#elif CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
-    Buzzer buzzer;
-#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_VRBRAIN_V45
-    AP_BoardLED boardled;
-#else
-    VRBoard_LED boardled;
-#endif
-    ToshibaLED_I2C toshibaled;
-    ExternalLED externalled;
-    NotifyDevice *AP_Notify::_devices[] = {&boardled, &toshibaled, &externalled, &buzzer};
-#elif CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
    AP_BoardLED boardled;
    NotifyDevice *AP_Notify::_devices[] = {&boardled}; 
-#elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX
-    #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIO
-        AP_BoardLED boardled;
-        NavioLED_I2C navioled;
-        ToshibaLED_I2C toshibaled;
-        NotifyDevice *AP_Notify::_devices[] = {&boardled, &navioled, &toshibaled};
-    #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BBBMINI
-        ToshibaLED_I2C toshibaled;
-        NotifyDevice *AP_Notify::_devices[] = {&toshibaled};
-    #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RASPILOT
-        ToshibaLED_I2C toshibaled;
-        ToneAlarm_Linux tonealarm;
-        NotifyDevice *AP_Notify::_devices[] = {&toshibaled, &tonealarm};
-    #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_MINLURE
-        NotifyDevice *AP_Notify::_devices[0];
-    #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_ERLEBRAIN2
-        AP_BoardLED boardled;
-        NotifyDevice *AP_Notify::_devices[] = {&boardled};
-    #else
-        AP_BoardLED boardled;
-        ToshibaLED_I2C toshibaled;
-        ToneAlarm_Linux tonealarm;
-        NotifyDevice *AP_Notify::_devices[] = {&boardled, &toshibaled, &tonealarm};
-    #endif
 #else
    #error board not defined in AP_Notify
-//    AP_BoardLED boardled;
-//    ToshibaLED_I2C toshibaled;
-//    NotifyDevice *AP_Notify::_devices[] = {&boardled, &toshibaled};
 #endif
 
 #define CONFIG_NOTIFY_DEVICES_COUNT (ARRAY_SIZE(AP_Notify::_devices))
