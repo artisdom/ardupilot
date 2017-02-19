@@ -55,15 +55,11 @@ int8_t Plane::test_radio_pwm(uint8_t argc, const Menu::arg *argv)
         // ----------------------------------------------------------
         read_radio();
 
-        cliSerial->printf("IN:\t1: %d\t2: %d\t3: %d\t4: %d\t5: %d\t6: %d\t7: %d\t8: %d\n",
+        cliSerial->printf("IN:\t1: %d\t2: %d\t3: %d\t4: %d\n",
                         (int)channel_roll->radio_in,
                         (int)channel_pitch->radio_in,
                         (int)channel_throttle->radio_in,
-                        (int)channel_rudder->radio_in,
-                        (int)g.rc_5.radio_in,
-                        (int)g.rc_6.radio_in,
-                        (int)g.rc_7.radio_in,
-                        (int)g.rc_8.radio_in);
+                        (int)channel_rudder->radio_in);
 
         if(cliSerial->available() > 0) {
             return (0);
@@ -119,15 +115,11 @@ int8_t Plane::test_radio(uint8_t argc, const Menu::arg *argv)
         // ------------------------------
         set_servos();
 
-        cliSerial->printf("IN 1: %d\t2: %d\t3: %d\t4: %d\t5: %d\t6: %d\t7: %d\t8: %d\n",
+        cliSerial->printf("IN 1: %d\t2: %d\t3: %d\t4: %d\n",
                         (int)channel_roll->control_in,
                         (int)channel_pitch->control_in,
                         (int)channel_throttle->control_in,
-                        (int)channel_rudder->control_in,
-                        (int)g.rc_5.control_in,
-                        (int)g.rc_6.control_in,
-                        (int)g.rc_7.control_in,
-                        (int)g.rc_8.control_in);
+                        (int)channel_rudder->control_in);
 
         if(cliSerial->available() > 0) {
             return (0);

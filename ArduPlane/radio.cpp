@@ -50,7 +50,7 @@ void Plane::init_rc_in()
     channel_rudder->set_default_dead_zone(30);
     channel_throttle->set_default_dead_zone(30);
 
-    update_aux();
+//    update_aux();
 }
 
 /*
@@ -72,7 +72,7 @@ void Plane::init_rc_out()
         channel_throttle->enable_out();
     }
     channel_rudder->enable_out();
-    RC_Channel_aux::enable_aux_servos();
+//    RC_Channel_aux::enable_aux_servos();
 
     // Initialization of servo outputs
     RC_Channel::output_trim_all();
@@ -323,8 +323,8 @@ void Plane::trim_control_surfaces()
         // the secondary aileron/elevator is trimmed only if it has a
         // corresponding transmitter input channel, which k_aileron
         // doesn't have
-        RC_Channel_aux::set_radio_trim(RC_Channel_aux::k_aileron_with_input);
-        RC_Channel_aux::set_radio_trim(RC_Channel_aux::k_elevator_with_input);
+//        RC_Channel_aux::set_radio_trim(RC_Channel_aux::k_aileron_with_input);
+   //     RC_Channel_aux::set_radio_trim(RC_Channel_aux::k_elevator_with_input);
     } else{
         if (elevon.ch1_temp != 0) {
             elevon.trim1 = elevon.ch1_temp;
