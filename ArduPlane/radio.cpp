@@ -65,7 +65,6 @@ void Plane::init_rc_out()
         channel_throttle->enable_out();
     }
     channel_rudder->enable_out();
-//    RC_Channel_aux::enable_aux_servos();
 
     // Initialization of servo outputs
     RC_Channel::output_trim_all();
@@ -235,7 +234,6 @@ void Plane::control_failsafe(uint16_t pwm)
 
         // note that we don't set channel_throttle->radio_in to radio_trim,
         // as that would cause throttle failsafe to not activate
-
         channel_roll->control_in     = 0;
         channel_pitch->control_in    = 0;
         channel_rudder->control_in   = 0;
@@ -278,44 +276,34 @@ void Plane::control_failsafe(uint16_t pwm)
 
 void Plane::trim_control_surfaces()
 {
-    read_radio();
-    int16_t trim_roll_range = (channel_roll->radio_max - channel_roll->radio_min)/5;
-    int16_t trim_pitch_range = (channel_pitch->radio_max - channel_pitch->radio_min)/5;
-    if (channel_roll->radio_in < channel_roll->radio_min+trim_roll_range ||
-        channel_roll->radio_in > channel_roll->radio_max-trim_roll_range ||
-        channel_pitch->radio_in < channel_pitch->radio_min+trim_pitch_range ||
-        channel_pitch->radio_in > channel_pitch->radio_max-trim_pitch_range) {
-        // don't trim for extreme values - if we attempt to trim so
-        // there is less than 20 percent range left then assume the
-        // sticks are not properly centered. This also prevents
-        // problems with starting APM with the TX off
-        return;
-    }
+   read_radio();
+   int16_t trim_roll_range = (channel_roll->radio_max - channel_roll->radio_min)/5;
+   int16_t trim_pitch_range = (channel_pitch->radio_max - channel_pitch->radio_min)/5;
+   if (channel_roll->radio_in < channel_roll->radio_min+trim_roll_range ||
+      channel_roll->radio_in > channel_roll->radio_max-trim_roll_range ||
+      channel_pitch->radio_in < channel_pitch->radio_min+trim_pitch_range ||
+      channel_pitch->radio_in > channel_pitch->radio_max-trim_pitch_range) {
+      // don't trim for extreme values - if we attempt to trim so
+      // there is less than 20 percent range left then assume the
+      // sticks are not properly centered. This also prevents
+      // problems with starting APM with the TX off
+      return;
+   }
 
-    // Store control surface trim values
-    // ---------------------------------
+   if (channel_roll->radio_in != 0) {
+      channel_roll->radio_trim = channel_roll->radio_in;
+   }
+   if (channel_pitch->radio_in != 0) {
+      channel_pitch->radio_trim = channel_pitch->radio_in;
+   }
 
-     if (channel_roll->radio_in != 0) {
-         channel_roll->radio_trim = channel_roll->radio_in;
-     }
-     if (channel_pitch->radio_in != 0) {
-         channel_pitch->radio_trim = channel_pitch->radio_in;
-     }
+   if (channel_rudder->radio_in != 0) {
+      channel_rudder->radio_trim = channel_rudder->radio_in;
+   }
 
-        // the secondary aileron/elevator is trimmed only if it has a
-        // corresponding transmitter input channel, which k_aileron
-        // doesn't have
-//        RC_Channel_aux::set_radio_trim(RC_Channel_aux::k_aileron_with_input);
-   //     RC_Channel_aux::set_radio_trim(RC_Channel_aux::k_elevator_with_input);
-
-    if (channel_rudder->radio_in != 0) {
-        channel_rudder->radio_trim = channel_rudder->radio_in;
-    }
-
-    // save to eeprom
-    channel_roll->save_eeprom();
-    channel_pitch->save_eeprom();
-    channel_rudder->save_eeprom();
+   channel_roll->save_eeprom();
+   channel_pitch->save_eeprom();
+   channel_rudder->save_eeprom();
 }
 
 void Plane::trim_radio()
