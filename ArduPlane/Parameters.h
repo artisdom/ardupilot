@@ -433,7 +433,7 @@ public:
     AP_Int8 mix_mode;
     AP_Int8 vtail_output;
     AP_Int8 elevon_output;
-    AP_Int8 rudder_only;
+  //  AP_Int8 rudder_only;
     AP_Float mixing_gain;
     AP_Int8 reverse_elevons;
     AP_Int8 reverse_ch1_elevon;
