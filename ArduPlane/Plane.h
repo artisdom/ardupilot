@@ -43,7 +43,7 @@
 #include <AP_Notify/AP_Notify.h>      
 #include <AP_Arming/AP_Arming.h>                
 #include <AP_ADSB/AP_ADSB.h>
-
+#include <RC_Channel/RC_Channel_aux.h>
 #include "config.h"
 #include "defines.h"
 #include "Parameters.h"
@@ -52,7 +52,7 @@
 #include <SITL/SITL.h>
 #endif
 
-class RC_Channel;
+//class RC_Channel;
 /*
   a plane specific arming class
  */

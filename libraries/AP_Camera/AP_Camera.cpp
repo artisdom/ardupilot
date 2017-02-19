@@ -4,6 +4,7 @@
 #include <AP_Relay/AP_Relay.h>
 #include <AP_Math/AP_Math.h>
 #include <RC_Channel/RC_Channel.h>
+#include <RC_Channel/RC_Channel_aux.h>
 #include <AP_HAL/AP_HAL.h>
 
 // ------------------------------
