@@ -16,7 +16,7 @@
 #include <stdint.h>
 #include "MAVLink_routing.h"
 #include <AP_SerialManager/AP_SerialManager.h>
-#include <AP_Mount/AP_Mount.h>
+//#include <AP_Mount/AP_Mount.h>
 
 // check if a message will fit in the payload space available
 #define HAVE_PAYLOAD_SPACE(chan, id) (comm_get_txspace(chan) >= MAVLINK_NUM_NON_PAYLOAD_BYTES+MAVLINK_MSG_ID_ ## id ## _LEN)
@@ -320,7 +320,7 @@ private:
     void lock_channel(mavlink_channel_t chan, bool lock);
     FUNCTOR_TYPEDEF(set_mode_fn, bool, uint8_t);
     void handle_set_mode(mavlink_message_t* msg, set_mode_fn set_mode);
-    void handle_gimbal_report(AP_Mount &mount, mavlink_message_t *msg) const;
+//    void handle_gimbal_report(AP_Mount &mount, mavlink_message_t *msg) const;
 
     void handle_gps_inject(const mavlink_message_t *msg, AP_GPS &gps);
 
