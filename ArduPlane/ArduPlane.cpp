@@ -23,6 +23,7 @@
  */
 
 #include "Plane.h"
+#include <quan/min.hpp>
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <AP_OSD/AP_OSD_enqueue.h>
@@ -62,7 +63,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(update_alt,              5,   3400),
 ///----------------------------------------
     SCHED_TASK(adjust_altitude_target,  5,   1000),
-    SCHED_TASK(obc_fs_check,            5,   1000),
+  //  SCHED_TASK(obc_fs_check,            5,   1000),
     SCHED_TASK(gcs_update,              1,   1700),
     SCHED_TASK(gcs_data_stream_send,    1,   3000),
     SCHED_TASK(update_events,           1,   1500),
@@ -81,7 +82,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(read_receiver_rssi,      5,   1000),
  //   SCHED_TASK(rpm_update,              5,    200),
     SCHED_TASK(airspeed_ratio_update,  50,   1000),
-    SCHED_TASK(update_mount,            1,   1500),
+ //   SCHED_TASK(update_mount,            1,   1500),
   //  SCHED_TASK(log_perf_info,         500,   1000),
 //    SCHED_TASK(compass_save,         3000,   2500),
 //    SCHED_TASK(update_logging1,         5,   1700),
@@ -103,7 +104,6 @@ void Plane::setup()
 #endif
     cliSerial = hal.console;
 
-    // load the default values of variables listed in var_info[]
     AP_Param::setup_sketch_defaults();
 
     AP_Notify::flags.failsafe_battery = false;
@@ -114,18 +114,14 @@ void Plane::setup()
 
     init_ardupilot();
 
-    // initialise the main loop scheduler
     scheduler.init(&scheduler_tasks[0], ARRAY_SIZE(scheduler_tasks));
 }
 
 void Plane::loop()
 {
-    
-    // wait for an INS sample
     ins.wait_for_sample();
-   
-    uint32_t timer = micros();
 
+    uint32_t const timer = micros();
     delta_us_fast_loop  = timer - fast_loopTimer_us;
     G_Dt                = delta_us_fast_loop * 1.0e-6f;
 
@@ -136,22 +132,10 @@ void Plane::loop()
     if (delta_us_fast_loop < G_Dt_min || G_Dt_min == 0) {
         G_Dt_min = delta_us_fast_loop;
     }
-    fast_loopTimer_us   = timer;
-
-    mainLoop_count++;
-
-    // tell the scheduler one tick has passed
+    fast_loopTimer_us = timer;
+    ++mainLoop_count;
     scheduler.tick();
-
-    // run all the tasks that are due to run. Note that we only
-    // have to call this once per loop, as the tasks are scheduled
-    // in multiples of the main loop tick. So if they don't run on
-    // the first call to the scheduler they won't run on a later
-    // call until scheduler.tick() is called again
-    uint32_t remaining = (timer + 20000) - micros();
-    if (remaining > 19500) {
-        remaining = 19500;
-    }
+    uint32_t const remaining = quan::min( (timer + 20000U) - micros(),19500U);
     scheduler.run(remaining);
 }
 
@@ -186,7 +170,7 @@ void Plane::ahrs_update()
     roll_limit_cd = g.roll_limit_cd * cosf(ahrs.pitch);
     pitch_limit_min_cd = aparm.pitch_limit_min_cd * fabsf(cosf(ahrs.roll));
 
-    // updated the summed gyro used for ground steering and
+    // update the summed gyro used for ground steering and
     // auto-takeoff. Dot product of DCM.c with gyro vector gives earth
     // frame yaw rate
     steer_state.locked_course_err += ahrs.get_yaw_rate_earth() * G_Dt;
@@ -204,21 +188,6 @@ void Plane::update_speed_height(void)
 	    // takeoff detection
         SpdHgt_Controller->update_50hz(tecs_hgt_afe());
     }
-}
-
-
-/*
-  update camera mount
- */
-void Plane::update_mount(void)
-{
-#if MOUNT == ENABLED
-    camera_mount.update();
-#endif
-
-#if CAMERA == ENABLED
-    camera.trigger_pic_cleanup();
-#endif
 }
 
 /*
@@ -285,27 +254,6 @@ void Plane::update_logging2(void)
     if (should_log(MASK_LOG_IMU))
         DataFlash.Log_Write_Vibration(ins);
 }
-
-
-/*
-  check for OBC failsafe check
- */
-void Plane::obc_fs_check(void)
-{
-#if OBC_FAILSAFE == ENABLED
-    // perform OBC failsafe checks
-    obc.check(OBC_MODE(control_mode), failsafe.last_heartbeat_ms, geofence_breached(), failsafe.last_valid_rc_ms);
-#endif
-}
-
-
-/*
-  update aux servo mappings
- */
-//void Plane::update_aux(void)
-//{
-//    RC_Channel_aux::enable_aux_servos();
-//}
 
 void Plane::one_second_loop()
 {

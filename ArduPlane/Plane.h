@@ -799,14 +799,12 @@ private:
     void update_GPS_10Hz(void);
     void update_compass(void);
     void update_alt(void);
-    void obc_fs_check(void);
     void compass_accumulate(void);
     void compass_cal_update();
     void barometer_accumulate(void);
     void update_optical_flow(void);
     void one_second_loop(void);
     void airspeed_ratio_update(void);
-    void update_mount(void);
     void log_perf_info(void);
     void compass_save(void);
     void update_logging1(void);
