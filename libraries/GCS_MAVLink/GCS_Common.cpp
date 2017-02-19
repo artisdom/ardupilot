@@ -378,10 +378,10 @@ void GCS_MAVLINK::handle_mission_write_partial_list(AP_Mission &mission, mavlink
 /*
   handle a GIMBAL_REPORT mavlink packet
  */
-void GCS_MAVLINK::handle_gimbal_report(AP_Mount &mount, mavlink_message_t *msg) const
-{
-    mount.handle_gimbal_report(chan, msg);
-}
+//void GCS_MAVLINK::handle_gimbal_report(AP_Mount &mount, mavlink_message_t *msg) const
+//{
+//    mount.handle_gimbal_report(chan, msg);
+//}
 
 
 /*
