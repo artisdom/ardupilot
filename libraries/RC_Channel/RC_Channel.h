@@ -126,9 +126,9 @@ public:
     int16_t         servo_out;
  
     int16_t         radio_out;
-        // value generated from PWM ???
+        // value generated from PWM ??? values in range +- 4000 ?
     int16_t         control_in;
-    // pwm is stored here direct stick input I think
+    // pwm is stored here direct stick input I think e.g approx 1000 to 2000 us;
     // looks to be same units as Read()
     int16_t         radio_in;
 

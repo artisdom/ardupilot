@@ -54,7 +54,6 @@ void Plane::read_control_switch()
     }
 
     switch_debouncer = false;
-    
 }
 
 uint8_t Plane::readSwitch(void)

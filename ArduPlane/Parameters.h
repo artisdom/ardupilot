@@ -57,14 +57,14 @@ public:
         k_param_auto_trim      = 10,
         k_param_log_bitmask_old,  // unused
         k_param_pitch_trim_cd,
-        k_param_mix_mode,
-        k_param_reverse_elevons,
-        k_param_reverse_ch1_elevon,
-        k_param_reverse_ch2_elevon,
-        k_param_flap_1_percent,
-        k_param_flap_1_speed,
-        k_param_flap_2_percent,
-        k_param_flap_2_speed,
+        k_param_mix_mode,         //unused
+        k_param_reverse_elevons,  //unused
+        k_param_reverse_ch1_elevon,  //unused
+        k_param_reverse_ch2_elevon,  //unused
+        k_param_flap_1_percent,   //unused
+        k_param_flap_1_speed,   //unused
+        k_param_flap_2_percent,  //unused
+        k_param_flap_2_speed,  //unused
         k_param_reset_switch_chan,
         k_param_manual_level, // unused
         k_param_land_pitch_cd,
@@ -83,7 +83,7 @@ public:
         k_param_takeoff_heading_hold, // unused
         k_param_level_roll_limit,
         k_param_hil_servos,
-        k_param_vtail_output,
+        k_param_vtail_output,  
         k_param_nav_controller,
         k_param_elevon_output,
         k_param_att_controller,
@@ -430,14 +430,6 @@ public:
     // Misc
     //
     AP_Int8 auto_trim;
-  //  AP_Int8 mix_mode;
-  //  AP_Int8 vtail_output;
-  //  AP_Int8 elevon_output;
-  //  AP_Int8 rudder_only;
-  //  AP_Float mixing_gain;
-  //  AP_Int8 reverse_elevons;
-  //  AP_Int8 reverse_ch1_elevon;
-  //  AP_Int8 reverse_ch2_elevon;
     AP_Int16 num_resets;
     AP_Int32 log_bitmask;
     AP_Int8 reset_switch_chan;
@@ -456,13 +448,6 @@ public:
 #endif
 
     AP_Int8 compass_enabled;
- //   AP_Int8 flap_1_percent;
- //   AP_Int8 flap_1_speed;
- //   AP_Int8 flap_2_percent;
- //   AP_Int8 flap_2_speed;
-  //  AP_Int8 land_flap_percent;
- //   AP_Int8 takeoff_flap_percent;  
-  //  AP_Int8 inverted_flight_ch;             // 0=disabled, 1-8 is channel for inverted flight trigger
     AP_Int8 stick_mixing;
     AP_Float takeoff_throttle_min_speed;
     AP_Float takeoff_throttle_min_accel;
