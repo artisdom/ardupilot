@@ -105,6 +105,7 @@ public:
     int16_t                                         pwm_to_range_dz(uint16_t dead_zone);
     int16_t                                         range_to_pwm();
 
+    //send values to the PWM timers for output
     void                                            output() const;
     void                                            output_trim() const;
     static void                                     output_trim_all();
