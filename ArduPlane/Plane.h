@@ -43,7 +43,7 @@
 #include <AP_Notify/AP_Notify.h>      
 #include <AP_Arming/AP_Arming.h>                
 #include <AP_ADSB/AP_ADSB.h>
-//#include <RC_Channel/RC_Channel_aux.h>
+#include <RC_Channel/RC_Channel.h>
 #include "config.h"
 #include "defines.h"
 #include "Parameters.h"
@@ -233,23 +233,6 @@ private:
     // Used to maintain the state of the previous control switch position
     // This is set to 254 when we need to re-read the switch
     uint8_t oldSwitchPosition = 254;
-
-    // This is used to enable the inverted flight feature
-    bool inverted_flight;
-
-    // This is used to enable the PX4IO override for testing
-    bool px4io_override_enabled;
-
-    struct {
-        // These are trim values used for elevon control
-        // For elevons radio_in[CH_ROLL] and radio_in[CH_PITCH] are
-        // equivalent aileron and elevator, not left and right elevon
-        uint16_t trim1;
-        uint16_t trim2;
-        // These are used in the calculation of elevon1_trim and elevon2_trim
-        uint16_t ch1_temp;
-        uint16_t ch2_temp;
-    } elevon { 1500, 1500, 1500, 1500 };
 
     // Failsafe
     struct {
