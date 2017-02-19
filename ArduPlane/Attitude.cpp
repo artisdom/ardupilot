@@ -1051,13 +1051,7 @@ void Plane::set_servos(void)
 #endif
 
     // send values to the PWM timers for output
-    // ----------------------------------------
-    if (g.rudder_only == 0) {
-        // when we RUDDER_ONLY mode we don't send the channel_roll
-        // output and instead rely on KFF_RDDRMIX. That allows the yaw
-        // damper to operate.
-        channel_roll->output();
-    }
+    channel_roll->output();
     channel_pitch->output();
     channel_throttle->output();
     channel_rudder->output();

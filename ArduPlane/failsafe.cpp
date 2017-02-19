@@ -93,10 +93,8 @@ void Plane::failsafe_check(void)
             channel_pitch->output();
         }
         channel_throttle->output();
-        if (g.rudder_only == 0) {
-            channel_rudder->output();
-        }
-
+        channel_rudder->output();
+        
         // setup secondary output channels that do have
         // corresponding input channels
 //        RC_Channel_aux::copy_radio_in_out(RC_Channel_aux::k_manual, true);

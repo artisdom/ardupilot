@@ -13,13 +13,8 @@
  */
 void Plane::set_control_channels(void)
 {
-    if (g.rudder_only) {
-        // in rudder only mode the roll and rudder channels are the
-        // same.
-        channel_roll     = RC_Channel::rc_channel(rcmap.yaw()-1);
-    } else {
-        channel_roll     = RC_Channel::rc_channel(rcmap.roll()-1);
-    }
+
+    channel_roll     = RC_Channel::rc_channel(rcmap.roll()-1);
     channel_pitch    = RC_Channel::rc_channel(rcmap.pitch()-1);
     channel_throttle = RC_Channel::rc_channel(rcmap.throttle()-1);
     channel_rudder   = RC_Channel::rc_channel(rcmap.yaw()-1);
@@ -49,8 +44,6 @@ void Plane::init_rc_in()
     channel_pitch->set_default_dead_zone(30);
     channel_rudder->set_default_dead_zone(30);
     channel_throttle->set_default_dead_zone(30);
-
-//    update_aux();
 }
 
 /*
@@ -232,14 +225,8 @@ void Plane::read_radio()
     }
 
     rudder_arm_disarm_check();
-
-    if (g.rudder_only != 0) {
-        // in rudder only mode we discard rudder input and get target
-        // attitude from the roll channel.
-        rudder_input = 0;
-    } else {
-        rudder_input = channel_rudder->control_in;
-    }
+    rudder_input = channel_rudder->control_in;
+    
 }
 
 void Plane::control_failsafe(uint16_t pwm)
