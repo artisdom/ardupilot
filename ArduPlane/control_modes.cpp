@@ -54,12 +54,6 @@ void Plane::read_control_switch()
     }
 
     switch_debouncer = false;
-
-    if (g.inverted_flight_ch != 0) {
-        // if the user has configured an inverted flight channel, then
-        // fly upside down when that channel goes above INVERTED_FLIGHT_PWM
-        inverted_flight = (control_mode != MANUAL && hal.rcin->read(g.inverted_flight_ch-1) > INVERTED_FLIGHT_PWM);
-    }
     
 }
 
@@ -116,12 +110,5 @@ void Plane::autotune_enable(bool enable)
  */
 bool Plane::fly_inverted(void)
 {
-    if (g.inverted_flight_ch != 0 && inverted_flight) {
-        // controlled with INVERTED_FLIGHT_CH
-        return true;
-    }
-    if (control_mode == AUTO && auto_state.inverted_flight) {
-        return true;
-    }
     return false;
 }

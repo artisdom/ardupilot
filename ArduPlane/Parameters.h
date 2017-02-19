@@ -431,13 +431,13 @@ public:
     //
     AP_Int8 auto_trim;
   //  AP_Int8 mix_mode;
-    AP_Int8 vtail_output;
-    AP_Int8 elevon_output;
+  //  AP_Int8 vtail_output;
+  //  AP_Int8 elevon_output;
   //  AP_Int8 rudder_only;
-    AP_Float mixing_gain;
-    AP_Int8 reverse_elevons;
-    AP_Int8 reverse_ch1_elevon;
-    AP_Int8 reverse_ch2_elevon;
+  //  AP_Float mixing_gain;
+  //  AP_Int8 reverse_elevons;
+  //  AP_Int8 reverse_ch1_elevon;
+  //  AP_Int8 reverse_ch2_elevon;
     AP_Int16 num_resets;
     AP_Int32 log_bitmask;
     AP_Int8 reset_switch_chan;
@@ -456,13 +456,13 @@ public:
 #endif
 
     AP_Int8 compass_enabled;
-    AP_Int8 flap_1_percent;
-    AP_Int8 flap_1_speed;
-    AP_Int8 flap_2_percent;
-    AP_Int8 flap_2_speed;
-    AP_Int8 land_flap_percent;
-    AP_Int8 takeoff_flap_percent;  
-    AP_Int8 inverted_flight_ch;             // 0=disabled, 1-8 is channel for inverted flight trigger
+ //   AP_Int8 flap_1_percent;
+ //   AP_Int8 flap_1_speed;
+ //   AP_Int8 flap_2_percent;
+ //   AP_Int8 flap_2_speed;
+  //  AP_Int8 land_flap_percent;
+ //   AP_Int8 takeoff_flap_percent;  
+  //  AP_Int8 inverted_flight_ch;             // 0=disabled, 1-8 is channel for inverted flight trigger
     AP_Int8 stick_mixing;
     AP_Float takeoff_throttle_min_speed;
     AP_Float takeoff_throttle_min_accel;
@@ -472,8 +472,8 @@ public:
     AP_Float takeoff_rotate_speed;
     AP_Int8 takeoff_throttle_slewrate;
     AP_Int8 level_roll_limit;
-    AP_Int8 flapin_channel;
-    AP_Int8 flaperon_output;
+   // AP_Int8 flapin_channel;
+  //  AP_Int8 flaperon_output;
 #if AP_TERRAIN_AVAILABLE
     AP_Int8 terrain_follow;
     AP_Int16 terrain_lookahead;

@@ -129,7 +129,13 @@ const AP_Param::Info Plane::var_info[] = {
 
     // @Param: STICK_MIXING
     // @DisplayName: Stick Mixing
-    // @Description: When enabled, this adds user stick input to the control surfaces in auto modes, allowing the user to have some degree of flight control without changing modes.  There are two types of stick mixing available. If you set STICK_MIXING to 1 then it will use "fly by wire" mixing, which controls the roll and pitch in the same way that the FBWA mode does. This is the safest option if you usually fly ArduPlane in FBWA or FBWB mode. If you set STICK_MIXING to 2 then it will enable direct mixing mode, which is what the STABILIZE mode uses. That will allow for much more extreme maneuvers while in AUTO mode.
+    // @Description: When enabled, this adds user stick input to the control surfaces in auto modes,
+    // allowing the user to have some degree of flight control without changing modes.  
+    // There are two types of stick mixing available. If you set STICK_MIXING to 1 then it will use "fly by wire" mixing, 
+    // which controls the roll and pitch in the same way that the FBWA mode does. 
+    // This is the safest option if you usually fly ArduPlane in FBWA or FBWB mode. 
+    // If you set STICK_MIXING to 2 then it will enable direct mixing mode, which is what the STABILIZE mode uses. 
+    // That will allow for much more extreme maneuvers while in AUTO mode.
     // @Values: 0:Disabled,1:FBWMixing,2:DirectMixing
     // @User: Advanced
     GSCALAR(stick_mixing,           "STICK_MIXING",   STICK_MIXING_FBW),
@@ -242,7 +248,7 @@ const AP_Param::Info Plane::var_info[] = {
     // @Range: 0 100
     // @Units: Percent
     // @User: Advanced
-    GSCALAR(takeoff_flap_percent,     "TKOFF_FLAP_PCNT", 0),
+ //   GSCALAR(takeoff_flap_percent,     "TKOFF_FLAP_PCNT", 0),
 
     // @Param: FBWA_TDRAG_CHAN
     // @DisplayName: FBWA taildragger channel
@@ -263,7 +269,7 @@ const AP_Param::Info Plane::var_info[] = {
     // @Range: 0 45
     // @Increment: 1
     // @User: User
-    GSCALAR(level_roll_limit,              "LEVEL_ROLL_LIMIT",   5),
+    GSCALAR(level_roll_limit,         "LEVEL_ROLL_LIMIT",   5),
 
     // @Param: LAND_PITCH_CD
     // @DisplayName: Landing Pitch
@@ -274,7 +280,7 @@ const AP_Param::Info Plane::var_info[] = {
     // to achieve the configured landing sink rate.
     // @Units: centi-Degrees
     // @User: Advanced
-    ASCALAR(land_pitch_cd,          "LAND_PITCH_CD",  0),
+    ASCALAR(land_pitch_cd,           "LAND_PITCH_CD",  0),
 
     // @Param: LAND_FLARE_ALT
     // @DisplayName: Landing flare altitude
@@ -821,7 +827,7 @@ const AP_Param::Info Plane::var_info[] = {
     // @Description: Reverse elevon mixing
     // @Values: 0:Disabled,1:Enabled
     // @User: User
-    GSCALAR(reverse_elevons,        "ELEVON_REVERSE", ELEVON_REVERSE),
+//    GSCALAR(reverse_elevons,        "ELEVON_REVERSE", ELEVON_REVERSE),
 
 
     // @Param: ELEVON_CH1_REV
@@ -829,21 +835,21 @@ const AP_Param::Info Plane::var_info[] = {
     // @Description: Reverse elevon channel 1
     // @Values: -1:Disabled,1:Enabled
     // @User: User
-    GSCALAR(reverse_ch1_elevon,     "ELEVON_CH1_REV", ELEVON_CH1_REVERSE),
+  //  GSCALAR(reverse_ch1_elevon,     "ELEVON_CH1_REV", ELEVON_CH1_REVERSE),
 
     // @Param: ELEVON_CH2_REV
     // @DisplayName: Elevon reverse
     // @Description: Reverse elevon channel 2
     // @Values: -1:Disabled,1:Enabled
     // @User: User
-    GSCALAR(reverse_ch2_elevon,     "ELEVON_CH2_REV", ELEVON_CH2_REVERSE),
+  //  GSCALAR(reverse_ch2_elevon,     "ELEVON_CH2_REV", ELEVON_CH2_REVERSE),
 
     // @Param: VTAIL_OUTPUT
     // @DisplayName: VTail output
     // @Description: Enable VTail output in software. If enabled then the APM will provide software VTail mixing on the elevator and rudder channels. There are 4 different mixing modes available, which refer to the 4 ways the elevator can be mapped to the two VTail servos. Note that you must not use VTail output mixing with hardware pass-through of RC values, such as with channel 8 manual control on an APM1. So if you use an APM1 then set FLTMODE_CH to something other than 8 before you enable VTAIL_OUTPUT. Please also see the MIXING_GAIN parameter for the output gain of the mixer.
     // @Values: 0:Disabled,1:UpUp,2:UpDown,3:DownUp,4:DownDown
     // @User: User
-    GSCALAR(vtail_output,           "VTAIL_OUTPUT",  0),
+  //  GSCALAR(vtail_output,           "VTAIL_OUTPUT",  0),
 
     // @Param: ELEVON_OUTPUT
     // @DisplayName: Elevon output
@@ -856,7 +862,7 @@ const AP_Param::Info Plane::var_info[] = {
     // for the output gain of the mixer.
     // @Values: 0:Disabled,1:UpUp,2:UpDown,3:DownUp,4:DownDown
     // @User: User
-    GSCALAR(elevon_output,           "ELEVON_OUTPUT",  0),
+  //  GSCALAR(elevon_output,           "ELEVON_OUTPUT",  0),
 
     // @Param: MIXING_GAIN
     // @DisplayName: Mixing Gain
@@ -869,7 +875,7 @@ const AP_Param::Info Plane::var_info[] = {
     // The mixer allows outputs in the range 900 to 2100 microseconds.
     // @Range: 0.5 1.2
     // @User: User
-    GSCALAR(mixing_gain,            "MIXING_GAIN",    0.5f),
+   // GSCALAR(mixing_gain,            "MIXING_GAIN",    0.5f),
     // @Param: SYS_NUM_RESETS
     // @DisplayName: Num Resets
     // @Description: Number of APM board resets
@@ -951,14 +957,14 @@ const AP_Param::Info Plane::var_info[] = {
     // @DisplayName: Flap input channel
     // @Description: An RC input channel to use for flaps control. If this is set to a RC channel number then that channel will be used for manual flaps control. When enabled, the percentage of flaps is taken as the percentage travel from the TRIM value of the channel to the MIN value of the channel. A value above the TRIM values will give inverse flaps (spoilers). This option needs to be enabled in conjunction with a FUNCTION setting on an output channel to one of the flap functions. When a FLAP_IN_CHANNEL is combined with auto-flaps the higher of the two flap percentages is taken. You must also enable a FLAPERON_OUTPUT flaperon mixer setting if using flaperons.
     // @User: User
-    GSCALAR(flapin_channel,         "FLAP_IN_CHANNEL",  0),
+  //  GSCALAR(flapin_channel,         "FLAP_IN_CHANNEL",  0),
 
     // @Param: FLAPERON_OUTPUT
     // @DisplayName: Flaperon output
     // @Description: Enable flaperon output in software. If enabled then the APM will provide software flaperon mixing on the FLAPERON1 and FLAPERON2 output channels specified using the FUNCTION on two auxiliary channels. There are 4 different mixing modes available, which refer to the 4 ways the flap and aileron outputs can be mapped to the two flaperon servos. Note that you must not use flaperon output mixing with hardware pass-through of RC values, such as with channel 8 manual control on an APM1. So if you use an APM1 then set FLTMODE_CH to something other than 8 before you enable FLAPERON_OUTPUT. Please also see the MIXING_GAIN parameter for the output gain of the mixer. FLAPERON_OUTPUT cannot be combined with ELEVON_OUTPUT or ELEVON_MIXING.
     // @Values: 0:Disabled,1:UpUp,2:UpDown,3:DownUp,4:DownDown
     // @User: User
-    GSCALAR(flaperon_output,        "FLAPERON_OUTPUT",  0),
+   // GSCALAR(flaperon_output,        "FLAPERON_OUTPUT",  0),
 
     // @Param: FLAP_1_PERCNT
     // @DisplayName: Flap 1 percentage
@@ -966,7 +972,7 @@ const AP_Param::Info Plane::var_info[] = {
     // @Range: 0 100
     // @Units: Percent
     // @User: Advanced
-    GSCALAR(flap_1_percent,         "FLAP_1_PERCNT",  FLAP_1_PERCENT),
+   // GSCALAR(flap_1_percent,         "FLAP_1_PERCNT",  FLAP_1_PERCENT),
 
     // @Param: FLAP_1_SPEED
     // @DisplayName: Flap 1 speed
@@ -975,7 +981,7 @@ const AP_Param::Info Plane::var_info[] = {
 	// @Increment: 1
     // @Units: m/s
     // @User: Advanced
-    GSCALAR(flap_1_speed,           "FLAP_1_SPEED",   FLAP_1_SPEED),
+  //  GSCALAR(flap_1_speed,           "FLAP_1_SPEED",   FLAP_1_SPEED),
 
     // @Param: FLAP_2_PERCNT
     // @DisplayName: Flap 2 percentage
@@ -983,7 +989,7 @@ const AP_Param::Info Plane::var_info[] = {
     // @Range: 0 100
 	// @Units: Percent
     // @User: Advanced
-    GSCALAR(flap_2_percent,         "FLAP_2_PERCNT",  FLAP_2_PERCENT),
+   // GSCALAR(flap_2_percent,         "FLAP_2_PERCNT",  FLAP_2_PERCENT),
 
     // @Param: FLAP_2_SPEED
     // @DisplayName: Flap 2 speed
@@ -992,7 +998,7 @@ const AP_Param::Info Plane::var_info[] = {
 	// @Units: m/s
 	// @Increment: 1
     // @User: Advanced
-    GSCALAR(flap_2_speed,           "FLAP_2_SPEED",   FLAP_2_SPEED),
+   // GSCALAR(flap_2_speed,           "FLAP_2_SPEED",   FLAP_2_SPEED),
 
     // @Param: LAND_FLAP_PERCNT
     // @DisplayName: Landing flap percentage
@@ -1000,14 +1006,14 @@ const AP_Param::Info Plane::var_info[] = {
     // @Range: 0 100
     // @Units: Percent
     // @User: Advanced
-    GSCALAR(land_flap_percent,     "LAND_FLAP_PERCNT", 0),
+//    GSCALAR(land_flap_percent,     "LAND_FLAP_PERCNT", 0),
 
     // @Param: INVERTEDFLT_CH
     // @DisplayName: Inverted flight channel
     // @Description: A RC input channel number to enable inverted flight. If this is non-zero then the APM will monitor the corresponding RC input channel and will enable inverted flight when the channel goes above 1750.
     // @Values: 0:Disabled,1:Channel1,2:Channel2,3:Channel3,4:Channel4,5:Channel5,6:Channel6,7:Channel7,8:Channel8
     // @User: Standard
-    GSCALAR(inverted_flight_ch,     "INVERTEDFLT_CH", 0),
+  //  GSCALAR(inverted_flight_ch,     "INVERTEDFLT_CH", 0),
 
 #if HIL_SUPPORT
     // @Param: HIL_MODE
