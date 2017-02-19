@@ -152,7 +152,4 @@ protected:
     uint8_t const         _ch_out;
 };
 
-// This is ugly, but it fixes poorly architected library
-#include "RC_Channel_aux.h"
-
 #endif
