@@ -37,28 +37,28 @@ public:
     
 
     // setup min and max radio values in CLI
-    void        update_min_max();
-    void        zero_min_max();
+   // void        update_min_max();
+   // void        zero_min_max();
 
     // startup
     void        load_eeprom(void);
     void        save_eeprom(void);
     void        save_trim(void);
-    void        set_type(uint8_t t);
+   // void        set_type(uint8_t t);
 
     // setup the control preferences
     void        set_range(int16_t low, int16_t high);
     void        set_range_out(int16_t low, int16_t high);
     void        set_angle(int16_t angle);
-    void        set_reverse(bool reverse);
+    //void        set_reverse(bool reverse);
     bool        get_reverse(void) const;
     void        set_default_dead_zone(int16_t dzone);
     
     // get the channel number
-    uint8_t     get_ch_out(void) const { return _ch_out; };
+ //   uint8_t     get_ch_out(void) const { return _ch_out; };
 
     // get the center stick position expressed as a control_in value
-    int16_t     get_control_mid() const;
+   // int16_t     get_control_mid() const;
 
     // read input from APM_RC - create a control_in value
     void        set_pwm(int16_t pwm);
@@ -68,9 +68,9 @@ public:
 
 
     // call after first set_pwm
-    void        trim();
+   // void        trim();
 
-    int16_t     control_mix(float value);
+   // int16_t     control_mix(float value);
 
     // generate PWM from servo_out value
     void        calc_pwm(void);
@@ -78,27 +78,27 @@ public:
     // includes offset from PWM
     //int16_t   get_radio_out(void);
 
-    int16_t                                         pwm_to_angle_dz(uint16_t dead_zone);
-    int16_t                                         pwm_to_angle();
+
+    int16_t     pwm_to_angle()const;
 
     /*
       return a normalised input for a channel, in range -1 to 1,
       centered around the channel trim. Ignore deadzone.
      */
-    float                                           norm_input();
+    float       norm_input();
 
     /*
       return a normalised input for a channel, in range -1 to 1,
       centered around the channel trim. Take into account the deadzone
     */
-    float                                           norm_input_dz();
+   // float                                           norm_input_dz();
 
-    uint8_t                                         percent_input();
-    float                                           norm_output();
-    int16_t                                         angle_to_pwm();
-    int16_t                                         pwm_to_range();
-    int16_t                                         pwm_to_range_dz(uint16_t dead_zone);
-    int16_t                                         range_to_pwm();
+  //  uint8_t                                         percent_input();
+    float                                           norm_output()const;
+    int16_t                                         angle_to_pwm()const;
+    int16_t                                         pwm_to_range()const;
+    int16_t                                         pwm_to_range_dz(uint16_t dead_zone)const;
+    int16_t                                         range_to_pwm()const;
 
     //send values to the PWM timers for output
     void                                            output() const;
@@ -106,15 +106,13 @@ public:
     static void                                     output_trim_all();
     static void                                     setup_failsafe_trim_all();
     uint16_t                                        read() const;
-    void                                            input();
+    //void                                            input();
     void                                            enable_out();
     void                                            disable_out();
 
-    static const struct AP_Param::GroupInfo         var_info[];
-
     static RC_Channel *rc_channel(uint8_t i);
-
-    bool in_trim_dz();
+    static const struct AP_Param::GroupInfo         var_info[];
+   // bool in_trim_dz()const;
 
     // logical actuator output
     // current values to the servos - degrees * 100 (approx assuming servo is -45 to 45 degrees except [3] is 0 to 100
@@ -131,8 +129,9 @@ public:
     AP_Int16        radio_trim;
     AP_Int16        radio_max;
 
-private:
 
+private:
+    int16_t         pwm_to_angle_dz(uint16_t dead_zone)const;
     enum LimitValue {
         RC_CHANNEL_LIMIT_TRIM,
         RC_CHANNEL_LIMIT_MIN,
