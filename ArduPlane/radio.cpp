@@ -192,13 +192,8 @@ void Plane::read_radio()
     elevon.ch2_temp = channel_pitch->read();
     uint16_t pwm_roll, pwm_pitch;
 
-    if (g.mix_mode == 0) {
-        pwm_roll = elevon.ch1_temp;
-        pwm_pitch = elevon.ch2_temp;
-    }else{
-        pwm_roll = BOOL_TO_SIGN(g.reverse_elevons) * (BOOL_TO_SIGN(g.reverse_ch2_elevon) * int16_t(elevon.ch2_temp - elevon.trim2) - BOOL_TO_SIGN(g.reverse_ch1_elevon) * int16_t(elevon.ch1_temp - elevon.trim1)) / 2 + 1500;
-        pwm_pitch = (BOOL_TO_SIGN(g.reverse_ch2_elevon) * int16_t(elevon.ch2_temp - elevon.trim2) + BOOL_TO_SIGN(g.reverse_ch1_elevon) * int16_t(elevon.ch1_temp - elevon.trim1)) / 2 + 1500;
-    }
+    pwm_roll = elevon.ch1_temp;
+    pwm_pitch = elevon.ch2_temp;
 
     RC_Channel::set_pwm_all();
     
@@ -305,32 +300,20 @@ void Plane::trim_control_surfaces()
 
     // Store control surface trim values
     // ---------------------------------
-    if(g.mix_mode == 0) {
-        if (channel_roll->radio_in != 0) {
-            channel_roll->radio_trim = channel_roll->radio_in;
-        }
-        if (channel_pitch->radio_in != 0) {
-            channel_pitch->radio_trim = channel_pitch->radio_in;
-        }
+
+     if (channel_roll->radio_in != 0) {
+         channel_roll->radio_trim = channel_roll->radio_in;
+     }
+     if (channel_pitch->radio_in != 0) {
+         channel_pitch->radio_trim = channel_pitch->radio_in;
+     }
 
         // the secondary aileron/elevator is trimmed only if it has a
         // corresponding transmitter input channel, which k_aileron
         // doesn't have
 //        RC_Channel_aux::set_radio_trim(RC_Channel_aux::k_aileron_with_input);
    //     RC_Channel_aux::set_radio_trim(RC_Channel_aux::k_elevator_with_input);
-    } else{
-        if (elevon.ch1_temp != 0) {
-            elevon.trim1 = elevon.ch1_temp;
-        }
-        if (elevon.ch2_temp != 0) {
-            elevon.trim2 = elevon.ch2_temp;
-        }
-        //Recompute values here using new values for elevon1_trim and elevon2_trim
-        //We cannot use radio_in[CH_ROLL] and radio_in[CH_PITCH] values from read_radio() because the elevon trim values have changed
-        uint16_t center                         = 1500;
-        channel_roll->radio_trim       = center;
-        channel_pitch->radio_trim      = center;
-    }
+
     if (channel_rudder->radio_in != 0) {
         channel_rudder->radio_trim = channel_rudder->radio_in;
     }

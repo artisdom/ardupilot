@@ -128,7 +128,8 @@ public:
     int16_t         radio_out;
         // value generated from PWM ???
     int16_t         control_in;
-    // pwm is stored here stick input I think
+    // pwm is stored here direct stick input I think
+    // looks to be same units as Read()
     int16_t         radio_in;
 
     AP_Int16        radio_min;
