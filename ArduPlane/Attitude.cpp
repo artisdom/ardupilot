@@ -683,30 +683,30 @@ void Plane::channel_output_mixer(uint8_t mixing_type, int16_t &chan1_out, int16_
 /*
   setup flaperon output channels
  */
-void Plane::flaperon_update(int8_t flap_percent)
-{
-    if (!RC_Channel_aux::function_assigned(RC_Channel_aux::k_flaperon1) ||
-        !RC_Channel_aux::function_assigned(RC_Channel_aux::k_flaperon2)) {
-        return;
-    }
-    int16_t ch1, ch2;
-    /*
-      flaperons are implemented as a mixer between aileron and a
-      percentage of flaps. Flap input can come from a manual channel
-      or from auto flaps.
-
-      Use k_flaperon1 and k_flaperon2 channel trims to center servos.
-      Then adjust aileron trim for level flight (note that aileron trim is affected
-      by mixing gain). flapin_channel's trim is not used.
-     */
-     
-    ch1 = channel_roll->radio_out;
-    // The *5 is to take a percentage to a value from -500 to 500 for the mixer
-    ch2 = 1500 - flap_percent * 5;
-    channel_output_mixer(g.flaperon_output, ch1, ch2);
-    RC_Channel_aux::set_radio_trimmed(RC_Channel_aux::k_flaperon1, ch1);
-    RC_Channel_aux::set_radio_trimmed(RC_Channel_aux::k_flaperon2, ch2);
-}
+//void Plane::flaperon_update(int8_t flap_percent)
+//{
+//    if (!RC_Channel_aux::function_assigned(RC_Channel_aux::k_flaperon1) ||
+//        !RC_Channel_aux::function_assigned(RC_Channel_aux::k_flaperon2)) {
+//        return;
+//    }
+//    int16_t ch1, ch2;
+//    /*
+//      flaperons are implemented as a mixer between aileron and a
+//      percentage of flaps. Flap input can come from a manual channel
+//      or from auto flaps.
+//
+//      Use k_flaperon1 and k_flaperon2 channel trims to center servos.
+//      Then adjust aileron trim for level flight (note that aileron trim is affected
+//      by mixing gain). flapin_channel's trim is not used.
+//     */
+//     
+//    ch1 = channel_roll->radio_out;
+//    // The *5 is to take a percentage to a value from -500 to 500 for the mixer
+//    ch2 = 1500 - flap_percent * 5;
+//    channel_output_mixer(g.flaperon_output, ch1, ch2);
+//    RC_Channel_aux::set_radio_trimmed(RC_Channel_aux::k_flaperon1, ch1);
+//    RC_Channel_aux::set_radio_trimmed(RC_Channel_aux::k_flaperon2, ch2);
+//}
 
 /*
   setup servos for idle mode
@@ -715,7 +715,7 @@ void Plane::flaperon_update(int8_t flap_percent)
  */
 void Plane::set_servos_idle(void)
 {
-    RC_Channel_aux::output_ch_all();
+   // RC_Channel_aux::output_ch_all();
     if (auto_state.idle_wiggle_stage == 0) {
         RC_Channel::output_trim_all();
         return;
@@ -777,19 +777,20 @@ void Plane::set_servos(void)
         // wheel to the rudder just in case the barometer has drifted
         // a lot
         steering_control.steering = steering_control.rudder;
-    } else if (!RC_Channel_aux::function_assigned(RC_Channel_aux::k_steering)) {
+    } else  {
         // we are within the ground steering altitude but don't have a
         // dedicated steering channel. Set the rudder to the ground
         // steering output
         steering_control.rudder = steering_control.steering;
     }
+
     channel_rudder->servo_out = steering_control.rudder;
 
     // clear ground_steering to ensure manual control if the yaw stabilizer doesn't run
     steering_control.ground_steering = false;
 
-    RC_Channel_aux::set_servo_out(RC_Channel_aux::k_rudder, steering_control.rudder);
-    RC_Channel_aux::set_servo_out(RC_Channel_aux::k_steering, steering_control.steering);
+  //  RC_Channel_aux::set_servo_out(RC_Channel_aux::k_rudder, steering_control.rudder);
+ //   RC_Channel_aux::set_servo_out(RC_Channel_aux::k_steering, steering_control.steering);
 
     if (control_mode == MANUAL) {
         // do a direct pass through of radio values
@@ -809,31 +810,33 @@ void Plane::set_servos(void)
         // pwm_to_angle_dz() to ensure we don't trim the value for the
         // deadzone of the main aileron channel, otherwise the 2nd
         // aileron won't quite follow the first one
-        RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron, channel_roll->pwm_to_angle_dz(0));
-        RC_Channel_aux::set_servo_out(RC_Channel_aux::k_elevator, channel_pitch->pwm_to_angle_dz(0));
+   //     RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron, channel_roll->pwm_to_angle_dz(0));
+    //    RC_Channel_aux::set_servo_out(RC_Channel_aux::k_elevator, channel_pitch->pwm_to_angle_dz(0));
 
         // this variant assumes you have the corresponding
         // input channel setup in your transmitter for manual control
         // of the 2nd aileron
-        RC_Channel_aux::copy_radio_in_out(RC_Channel_aux::k_aileron_with_input);
-        RC_Channel_aux::copy_radio_in_out(RC_Channel_aux::k_elevator_with_input);
+    //    RC_Channel_aux::copy_radio_in_out(RC_Channel_aux::k_aileron_with_input);
+    //    RC_Channel_aux::copy_radio_in_out(RC_Channel_aux::k_elevator_with_input);
 
         if (g.mix_mode == 0 && g.elevon_output == MIXING_DISABLED) {
             // set any differential spoilers to follow the elevons in
             // manual mode. 
-            RC_Channel_aux::set_radio(RC_Channel_aux::k_dspoiler1, channel_roll->radio_out);
-            RC_Channel_aux::set_radio(RC_Channel_aux::k_dspoiler2, channel_pitch->radio_out);
+        //    RC_Channel_aux::set_radio(RC_Channel_aux::k_dspoiler1, channel_roll->radio_out);
+        //    RC_Channel_aux::set_radio(RC_Channel_aux::k_dspoiler2, channel_pitch->radio_out);
         }
     } else {
         if (g.mix_mode == 0) {
             // both types of secondary aileron are slaved to the roll servo out
-            RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron, channel_roll->servo_out);
-            RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron_with_input, channel_roll->servo_out);
+         //   RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron, channel_roll->servo_out);
+         //   RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron_with_input, channel_roll->servo_out);
 
             // both types of secondary elevator are slaved to the pitch servo out
-            RC_Channel_aux::set_servo_out(RC_Channel_aux::k_elevator, channel_pitch->servo_out);
-            RC_Channel_aux::set_servo_out(RC_Channel_aux::k_elevator_with_input, channel_pitch->servo_out);
-        }else{
+         //   RC_Channel_aux::set_servo_out(RC_Channel_aux::k_elevator, channel_pitch->servo_out);
+         //   RC_Channel_aux::set_servo_out(RC_Channel_aux::k_elevator_with_input, channel_pitch->servo_out);
+        }
+#if 0
+        else{
             /*Elevon mode*/
             float ch1;
             float ch2;
@@ -864,7 +867,7 @@ void Plane::set_servos(void)
             channel_roll->radio_out  =     elevon.trim1 + (BOOL_TO_SIGN(g.reverse_ch1_elevon) * (ch1 * 500.0f/ SERVO_MAX));
             channel_pitch->radio_out =     elevon.trim2 + (BOOL_TO_SIGN(g.reverse_ch2_elevon) * (ch2 * 500.0f/ SERVO_MAX));
         }
-
+#endif
         // push out the PWM values
         if (g.mix_mode == 0) {
             channel_roll->calc_pwm();
@@ -984,8 +987,8 @@ void Plane::set_servos(void)
     flap_slew_limit(last_auto_flap, auto_flap_percent);
     flap_slew_limit(last_manual_flap, manual_flap_percent);
 
-    RC_Channel_aux::set_servo_out(RC_Channel_aux::k_flap_auto, auto_flap_percent);
-    RC_Channel_aux::set_servo_out(RC_Channel_aux::k_flap, manual_flap_percent);
+//    RC_Channel_aux::set_servo_out(RC_Channel_aux::k_flap_auto, auto_flap_percent);
+//    RC_Channel_aux::set_servo_out(RC_Channel_aux::k_flap, manual_flap_percent);
 
     if (control_mode >= FLY_BY_WIRE_B) {
         /* only do throttle slew limiting in modes where throttle
@@ -998,14 +1001,14 @@ void Plane::set_servos(void)
         channel_rudder->radio_out   = channel_rudder->radio_in;
     }
 
-    if (g.flaperon_output != MIXING_DISABLED && g.elevon_output == MIXING_DISABLED && g.mix_mode == 0) {
-        flaperon_update(auto_flap_percent);
-    }
-    if (g.vtail_output != MIXING_DISABLED) {
-        channel_output_mixer(g.vtail_output, channel_pitch->radio_out, channel_rudder->radio_out);
-    } else if (g.elevon_output != MIXING_DISABLED) {
-        channel_output_mixer(g.elevon_output, channel_pitch->radio_out, channel_roll->radio_out);
-    }
+//    if (g.flaperon_output != MIXING_DISABLED && g.elevon_output == MIXING_DISABLED && g.mix_mode == 0) {
+//        flaperon_update(auto_flap_percent);
+//    }
+//    if (g.vtail_output != MIXING_DISABLED) {
+//        channel_output_mixer(g.vtail_output, channel_pitch->radio_out, channel_rudder->radio_out);
+//    } else if (g.elevon_output != MIXING_DISABLED) {
+//        channel_output_mixer(g.elevon_output, channel_pitch->radio_out, channel_roll->radio_out);
+//    }
 
     if (!arming.is_armed()) {
         //Some ESCs get noisy (beep error msgs) if PWM == 0.
@@ -1058,7 +1061,7 @@ void Plane::set_servos(void)
     channel_pitch->output();
     channel_throttle->output();
     channel_rudder->output();
-    RC_Channel_aux::output_ch_all();
+   // RC_Channel_aux::output_ch_all();
 }
 
 void Plane::demo_servos(uint8_t i) 

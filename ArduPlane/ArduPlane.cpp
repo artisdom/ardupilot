@@ -302,10 +302,10 @@ void Plane::obc_fs_check(void)
 /*
   update aux servo mappings
  */
-void Plane::update_aux(void)
-{
-    RC_Channel_aux::enable_aux_servos();
-}
+//void Plane::update_aux(void)
+//{
+//    RC_Channel_aux::enable_aux_servos();
+//}
 
 void Plane::one_second_loop()
 {
@@ -324,7 +324,7 @@ void Plane::one_second_loop()
     // sync MAVLink system ID
     mavlink_system.sysid = g.sysid_this_mav;
 
-    update_aux();
+   // update_aux();
 
     // update notify flags
     AP_Notify::flags.pre_arm_check = arming.pre_arm_checks(false);

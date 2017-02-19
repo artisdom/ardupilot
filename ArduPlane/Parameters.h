@@ -490,10 +490,10 @@ public:
     RC_Channel rc_2;
     RC_Channel rc_3;
     RC_Channel rc_4;
-    RC_Channel_aux rc_5;
-    RC_Channel_aux rc_6;
-    RC_Channel_aux rc_7;
-    RC_Channel_aux rc_8;
+//    RC_Channel_aux rc_5;
+//    RC_Channel_aux rc_6;
+//    RC_Channel_aux rc_7;
+//    RC_Channel_aux rc_8;
     uint8_t _dummy;
 
     Parameters() :
@@ -503,10 +503,10 @@ public:
         rc_2                                    (CH_2),
         rc_3                                    (CH_3),
         rc_4                                    (CH_4),
-        rc_5                                    (CH_5),
-        rc_6                                    (CH_6),
-        rc_7                                    (CH_7),
-        rc_8                                    (CH_8),
+//        rc_5                                    (CH_5),
+//        rc_6                                    (CH_6),
+//        rc_7                                    (CH_7),
+//        rc_8                                    (CH_8),
         _dummy(0)
         {}
 };
