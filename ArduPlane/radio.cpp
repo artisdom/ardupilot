@@ -180,13 +180,8 @@ void Plane::read_radio()
 #endif
 
     failsafe.last_valid_rc_ms = millis();
-
-    elevon.ch1_temp = channel_roll->read();
-    elevon.ch2_temp = channel_pitch->read();
-    uint16_t pwm_roll, pwm_pitch;
-
-    pwm_roll = elevon.ch1_temp;
-    pwm_pitch = elevon.ch2_temp;
+    uint16_t const pwm_roll = channel_roll->read();
+    uint16_t const pwm_pitch = channel_pitch->read();
 
     RC_Channel::set_pwm_all();
     
