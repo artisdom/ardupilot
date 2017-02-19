@@ -814,7 +814,7 @@ const AP_Param::Info Plane::var_info[] = {
     // The ELEVON_MIXING option should be set to 0 for elevon planes except for backwards compatibility with older setups.
     // @Values: 0:Disabled,1:Enabled
     // @User: User
-    GSCALAR(mix_mode,               "ELEVON_MIXING",  ELEVON_MIXING),
+//    GSCALAR(mix_mode,               "ELEVON_MIXING",  ELEVON_MIXING),
 
     // @Param: ELEVON_REVERSE
     // @DisplayName: Elevon reverse
@@ -847,7 +847,13 @@ const AP_Param::Info Plane::var_info[] = {
 
     // @Param: ELEVON_OUTPUT
     // @DisplayName: Elevon output
-    // @Description: Enable software elevon output mixer. If enabled then the APM will provide software elevon mixing on the aileron and elevator channels. There are 4 different mixing modes available, which refer to the 4 ways the elevator can be mapped to the two elevon servos. Note that you must not use elevon output mixing with hardware pass-through of RC values, such as with channel 8 manual control on an APM1. So if you use an APM1 then set FLTMODE_CH to something other than 8 before you enable ELEVON_OUTPUT. Please also see the MIXING_GAIN parameter for the output gain of the mixer.
+    // @Description: Enable software elevon output mixer. 
+    // If enabled then the APM will provide software elevon mixing on the aileron and elevator channels. 
+    // There are 4 different mixing modes available, which refer to the 4 ways the elevator can be mapped 
+    // to the two elevon servos. Note that you must not use elevon output mixing with hardware pass-through 
+    // of RC values, such as with channel 8 manual control on an APM1. So if you use an APM1 then set FLTMODE_CH
+    // to something other than 8 before you enable ELEVON_OUTPUT. Please also see the MIXING_GAIN parameter
+    // for the output gain of the mixer.
     // @Values: 0:Disabled,1:UpUp,2:UpDown,3:DownUp,4:DownDown
     // @User: User
     GSCALAR(elevon_output,           "ELEVON_OUTPUT",  0),

@@ -430,7 +430,7 @@ public:
     // Misc
     //
     AP_Int8 auto_trim;
-    AP_Int8 mix_mode;
+  //  AP_Int8 mix_mode;
     AP_Int8 vtail_output;
     AP_Int8 elevon_output;
   //  AP_Int8 rudder_only;

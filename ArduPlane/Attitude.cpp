@@ -794,7 +794,7 @@ void Plane::set_servos(void)
 
     if (control_mode == MANUAL) {
         // do a direct pass through of radio values
-        if (g.mix_mode == 0 || g.elevon_output != MIXING_DISABLED) {
+        if (g.elevon_output != MIXING_DISABLED) {
             channel_roll->radio_out                = channel_roll->radio_in;
             channel_pitch->radio_out               = channel_pitch->radio_in;
         } else {
@@ -819,65 +819,18 @@ void Plane::set_servos(void)
     //    RC_Channel_aux::copy_radio_in_out(RC_Channel_aux::k_aileron_with_input);
     //    RC_Channel_aux::copy_radio_in_out(RC_Channel_aux::k_elevator_with_input);
 
-        if (g.mix_mode == 0 && g.elevon_output == MIXING_DISABLED) {
+        if (g.elevon_output == MIXING_DISABLED) {
             // set any differential spoilers to follow the elevons in
             // manual mode. 
         //    RC_Channel_aux::set_radio(RC_Channel_aux::k_dspoiler1, channel_roll->radio_out);
         //    RC_Channel_aux::set_radio(RC_Channel_aux::k_dspoiler2, channel_pitch->radio_out);
         }
     } else {
-        if (g.mix_mode == 0) {
-            // both types of secondary aileron are slaved to the roll servo out
-         //   RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron, channel_roll->servo_out);
-         //   RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron_with_input, channel_roll->servo_out);
 
-            // both types of secondary elevator are slaved to the pitch servo out
-         //   RC_Channel_aux::set_servo_out(RC_Channel_aux::k_elevator, channel_pitch->servo_out);
-         //   RC_Channel_aux::set_servo_out(RC_Channel_aux::k_elevator_with_input, channel_pitch->servo_out);
-        }
-#if 0
-        else{
-            /*Elevon mode*/
-            float ch1;
-            float ch2;
-            ch1 = channel_pitch->servo_out - (BOOL_TO_SIGN(g.reverse_elevons) * channel_roll->servo_out);
-            ch2 = channel_pitch->servo_out + (BOOL_TO_SIGN(g.reverse_elevons) * channel_roll->servo_out);
-
-			/* Differential Spoilers
-               If differential spoilers are setup, then we translate
-               rudder control into splitting of the two ailerons on
-               the side of the aircraft where we want to induce
-               additional drag.
-             */
-			if (RC_Channel_aux::function_assigned(RC_Channel_aux::k_dspoiler1) && RC_Channel_aux::function_assigned(RC_Channel_aux::k_dspoiler2)) {
-				float ch3 = ch1;
-				float ch4 = ch2;
-				if ( BOOL_TO_SIGN(g.reverse_elevons) * channel_rudder->servo_out < 0) {
-				    ch1 += abs(channel_rudder->servo_out);
-				    ch3 -= abs(channel_rudder->servo_out);
-				} else {
-					ch2 += abs(channel_rudder->servo_out);
-				    ch4 -= abs(channel_rudder->servo_out);
-				}
-				RC_Channel_aux::set_servo_out(RC_Channel_aux::k_dspoiler1, ch3);
-				RC_Channel_aux::set_servo_out(RC_Channel_aux::k_dspoiler2, ch4);
-			}
-
-            // directly set the radio_out values for elevon mode
-            channel_roll->radio_out  =     elevon.trim1 + (BOOL_TO_SIGN(g.reverse_ch1_elevon) * (ch1 * 500.0f/ SERVO_MAX));
-            channel_pitch->radio_out =     elevon.trim2 + (BOOL_TO_SIGN(g.reverse_ch2_elevon) * (ch2 * 500.0f/ SERVO_MAX));
-        }
-#endif
-        // push out the PWM values
-        if (g.mix_mode == 0) {
-            channel_roll->calc_pwm();
-            channel_pitch->calc_pwm();
-        }
+        channel_roll->calc_pwm();
+        channel_pitch->calc_pwm();
         channel_rudder->calc_pwm();
 
-#if THROTTLE_OUT == 0
-        channel_throttle->servo_out = 0;
-#else
         // convert 0 to 100% into PWM
         uint8_t min_throttle = aparm.throttle_min.get();
         uint8_t max_throttle = aparm.throttle_max.get();
@@ -925,7 +878,7 @@ void Plane::set_servos(void)
             // normal throttle calculation based on servo_out
             channel_throttle->calc_pwm();
         }
-#endif
+
     }
 
     // Auto flap deployment
