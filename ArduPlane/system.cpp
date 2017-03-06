@@ -678,13 +678,14 @@ void Plane::print_comma(void)
 
 /*
   write to a servo
+  in usec units
  */
 void Plane::servo_write(uint8_t ch, uint16_t pwm)
 {
 #if HIL_SUPPORT
     if (g.hil_mode==1 && !g.hil_servos) {
         if (ch < 8) {
-            RC_Channel::rc_channel(ch)->radio_out = pwm;
+            RC_Channel::rc_channel(ch)->set_radio_out(pwm);
         }
         return;
     }
