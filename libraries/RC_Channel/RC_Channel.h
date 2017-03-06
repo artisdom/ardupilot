@@ -24,6 +24,7 @@ public:
     /// @param key      EEPROM storage key for the channel trim parameters.
     /// @param name     Optional name for the group.
     ///
+
     RC_Channel(uint8_t ch_out) :
         _high(1),
         _ch_out(ch_out) {
@@ -105,6 +106,7 @@ public:
     void                                            output_trim() const;
     static void                                     output_trim_all();
     static void                                     setup_failsafe_trim_all();
+    // reads rcin
     uint16_t                                        read() const;
     //void                                            input();
     void                                            enable_out();
@@ -117,20 +119,25 @@ public:
     // logical actuator output
     // current values to the servos - degrees * 100 (approx assuming servo is -45 to 45 degrees except [3] is 0 to 100
     int16_t         servo_out;
- 
-    int16_t         radio_out;
-        // value generated from PWM ??? values in range +- 4000 ?
+
+    // value generated from PWM ??? values in range +- 4000 ?
     int16_t         control_in;
     // pwm is stored here direct stick input I think e.g approx 1000 to 2000 us;
     // looks to be same units as Read()
     int16_t         radio_in;
 
+    //radio_min, radio_max , radio_trim in usec units
     AP_Int16        radio_min;
     AP_Int16        radio_trim;
     AP_Int16        radio_max;
 
-
+    // radio_out is in same units as rcin e.g raw pwm units approx 1000 to 2000 us
+    void set_radio_out(int16_t v) { m_radio_out = v;}
+    int16_t get_radio_out()const{ return m_radio_out;}
 private:
+    // is in same units as rcin e.g raw pwm units
+    int16_t         m_radio_out;
+
     int16_t         pwm_to_angle_dz(uint16_t dead_zone)const;
     enum LimitValue {
         RC_CHANNEL_LIMIT_TRIM,
@@ -141,8 +148,10 @@ private:
         // return a limit PWM value
     uint16_t    get_limit_pwm(LimitValue limit) const;
 
-    // PWM is without the offset from radio_min
+    // pwm out type depends on the _type member
+    // see calc_pwm memfun
     int16_t         pwm_out;
+    // 
     AP_Int8         _reverse;
     AP_Int16        _dead_zone;
     uint8_t         _type;

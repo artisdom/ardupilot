@@ -200,19 +200,19 @@ RC_Channel::calc_pwm(void)
 {
     if(_type == RC_CHANNEL_TYPE_RANGE) {
         pwm_out         = range_to_pwm();
-        radio_out       = (_reverse >= 0) ? (radio_min + pwm_out) : (radio_max - pwm_out);
+        this->set_radio_out((_reverse >= 0) ? (radio_min + pwm_out) : (radio_max - pwm_out) );
 
     }else if(_type == RC_CHANNEL_TYPE_ANGLE_RAW) {
         pwm_out         = (float)servo_out * 0.1f;
         int16_t reverse_mul = (_reverse==-1?-1:1);
-        radio_out       = (pwm_out * reverse_mul) + radio_trim;
+        this->set_radio_out((pwm_out * reverse_mul) + radio_trim);
 
     }else{     // RC_CHANNEL_TYPE_ANGLE
         pwm_out         = angle_to_pwm();
-        radio_out       = pwm_out + radio_trim;
+        this->set_radio_out(pwm_out + radio_trim);
     }
-
-    radio_out = constrain_int16(radio_out, radio_min.get(), radio_max.get());
+    // limit the values
+    this->set_radio_out( constrain_int16(this->get_radio_out(), radio_min.get(), radio_max.get()));
 }
 
 
@@ -421,10 +421,10 @@ RC_Channel::norm_output()const
     if (mid <= radio_min) {
         return 0;
     }
-    if (radio_out < mid) {
-        ret = (float)(radio_out - mid) / (float)(mid - radio_min);
-    } else if (radio_out > mid) {
-        ret = (float)(radio_out - mid) / (float)(radio_max  - mid);
+    if (this->get_radio_out() < mid) {
+        ret = (float)(this->get_radio_out() - mid) / (float)(mid - radio_min);
+    } else if (this->get_radio_out() > mid) {
+        ret = (float)(this->get_radio_out() - mid) / (float)(radio_max  - mid);
     } else {
         ret = 0;
     }
@@ -436,7 +436,7 @@ RC_Channel::norm_output()const
 
 void RC_Channel::output() const
 {
-    hal.rcout->write(_ch_out, radio_out);
+    hal.rcout->write(_ch_out, this->get_radio_out());
 }
 
 void RC_Channel::output_trim() const

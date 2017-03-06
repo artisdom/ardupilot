@@ -528,7 +528,9 @@ void Plane::throttle_slew_limit(int16_t last_throttle)
         if (temp < 1) {
             temp = 1;
         }
-        channel_throttle->radio_out = constrain_int16(channel_throttle->radio_out, last_throttle - temp, last_throttle + temp);
+        channel_throttle->set_radio_out(
+            constrain_int16(channel_throttle->get_radio_out(), last_throttle - temp, last_throttle + temp)
+        );
     }
 }
 
@@ -668,7 +670,7 @@ uint16_t Plane::throttle_min(void) const
 *****************************************/
 void Plane::set_servos(void)
 {
-    int16_t last_throttle = channel_throttle->radio_out;
+    int16_t last_throttle = channel_throttle->get_radio_out();
 
     if (control_mode == AUTO && auto_state.idle_mode) {
         // special handling for balloon launch
@@ -698,10 +700,10 @@ void Plane::set_servos(void)
 
     if (control_mode == MANUAL) {
         // do a direct pass through of radio values
-        channel_roll->radio_out        = channel_roll->radio_in;
-        channel_pitch->radio_out       = channel_pitch->radio_in;
-        channel_throttle->radio_out    = channel_throttle->radio_in;
-        channel_rudder->radio_out      = channel_rudder->radio_in;
+        channel_roll->set_radio_out(channel_roll->radio_in);
+        channel_pitch->set_radio_out(channel_pitch->radio_in);
+        channel_throttle->set_radio_out(channel_throttle->radio_in);
+        channel_rudder->set_radio_out(channel_rudder->radio_in);
 
     } else {
 
@@ -735,7 +737,7 @@ void Plane::set_servos(void)
             channel_throttle->servo_out = 0;
             if (g.throttle_suppress_manual) {
                 // manual pass through of throttle while throttle is suppressed
-                channel_throttle->radio_out = channel_throttle->radio_in;
+                channel_throttle->set_radio_out(channel_throttle->radio_in);
             } else {
                 channel_throttle->calc_pwm();                
             }
@@ -747,11 +749,11 @@ void Plane::set_servos(void)
                     control_mode == AUTOTUNE)) {
             // manual pass through of throttle while in FBWA or
             // STABILIZE mode with THR_PASS_STAB set
-            channel_throttle->radio_out = channel_throttle->radio_in;
+            channel_throttle->set_radio_out(channel_throttle->radio_in);
         } else if (control_mode == GUIDED && 
                    guided_throttle_passthru) {
             // manual pass through of throttle while in GUIDED
-            channel_throttle->radio_out = channel_throttle->radio_in;
+            channel_throttle->set_radio_out(channel_throttle->radio_in);
         } else {
             // normal throttle calculation based on servo_out
             channel_throttle->calc_pwm();
@@ -767,7 +769,7 @@ void Plane::set_servos(void)
 
     if (control_mode == TRAINING) {
         // copy rudder in training mode
-        channel_rudder->radio_out   = channel_rudder->radio_in;
+        channel_rudder->set_radio_out(channel_rudder->radio_in);
     }
 
     if (!arming.is_armed()) {
@@ -780,12 +782,12 @@ void Plane::set_servos(void)
             break;
 
         case AP_Arming::YES_ZERO_PWM:
-            channel_throttle->radio_out = 0;
+            channel_throttle->set_radio_out(0);
             break;
 
         case AP_Arming::YES_MIN_PWM:
         default:
-            channel_throttle->radio_out = throttle_min();
+            channel_throttle->set_radio_out(throttle_min());
             break;
         }
     }

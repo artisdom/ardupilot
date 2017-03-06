@@ -57,29 +57,19 @@ void Plane::failsafe_check(void)
 
         // pass RC inputs to outputs every 20ms
         hal.rcin->clear_overrides();
-        channel_roll->radio_out     = channel_roll->read();
-        channel_pitch->radio_out    = channel_pitch->read();
+
+
+/*
+ read comes from rcin
+  so radio_out is equivalent to rcin
+
+*/
+        channel_roll->set_radio_out(channel_roll->read());
+        channel_pitch->set_radio_out(channel_pitch->read());
         if (hal.util->get_soft_armed()) {
-            channel_throttle->radio_out = channel_throttle->read();
+            channel_throttle->set_radio_out(channel_throttle->read());
         }
-        channel_rudder->radio_out   = channel_rudder->read();
-
-//        int16_t roll = channel_roll->pwm_to_angle_dz(0);
-//        int16_t pitch = channel_pitch->pwm_to_angle_dz(0);
-//        int16_t rudder = channel_rudder->pwm_to_angle_dz(0);
-
-        // setup secondary output channels that don't have
-        // corresponding input channels
-//        RC_Channel_aux::set_servo_out(RC_Channel_aux::k_aileron, roll);
-//        RC_Channel_aux::set_servo_out(RC_Channel_aux::k_elevator, pitch);
-//        RC_Channel_aux::set_servo_out(RC_Channel_aux::k_rudder, rudder);
-//        RC_Channel_aux::set_servo_out(RC_Channel_aux::k_steering, rudder);
-
-//        if (g.vtail_output != MIXING_DISABLED) {
-//            channel_output_mixer(g.vtail_output, channel_pitch->radio_out, channel_rudder->radio_out);
-//        } else if (g.elevon_output != MIXING_DISABLED) {
-//            channel_output_mixer(g.elevon_output, channel_pitch->radio_out, channel_roll->radio_out);
-//        }
+        channel_rudder->set_radio_out(channel_rudder->read());
 
 #if OBC_FAILSAFE == ENABLED
         // this is to allow the failsafe module to deliberately crash 
@@ -94,16 +84,5 @@ void Plane::failsafe_check(void)
         }
         channel_throttle->output();
         channel_rudder->output();
-        
-        // setup secondary output channels that do have
-        // corresponding input channels
-//        RC_Channel_aux::copy_radio_in_out(RC_Channel_aux::k_manual, true);
-//        RC_Channel_aux::copy_radio_in_out(RC_Channel_aux::k_aileron_with_input, true);
-//        RC_Channel_aux::copy_radio_in_out(RC_Channel_aux::k_elevator_with_input, true);
-//        RC_Channel_aux::set_servo_out(RC_Channel_aux::k_flap, 0);
-//        RC_Channel_aux::set_servo_out(RC_Channel_aux::k_flap_auto, 0);
-
-        // setup flaperons
-       // flaperon_update(0);
     }
 }
