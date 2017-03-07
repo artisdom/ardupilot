@@ -1,3 +1,5 @@
+
+#error this wont compile needs rework
 /*
  *       Example of RC_Channel library.
  *       Based on original sketch by Jason Short. 2010
