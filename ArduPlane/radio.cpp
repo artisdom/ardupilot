@@ -36,14 +36,15 @@ void Plane::set_control_channels(void)
 
 /*
   initialise RC input channels
+  called by init_ardupilot
  */
 void Plane::init_rc_in()
 {
     // set rc dead zones
-    channel_roll->set_default_dead_zone(30);
-    channel_pitch->set_default_dead_zone(30);
-    channel_rudder->set_default_dead_zone(30);
-    channel_throttle->set_default_dead_zone(30);
+    channel_roll->set_default_dead_zone();
+    channel_pitch->set_default_dead_zone();
+    channel_rudder->set_default_dead_zone();
+    channel_throttle->set_default_dead_zone();
 }
 
 /*
@@ -226,9 +227,9 @@ void Plane::control_failsafe(uint16_t pwm)
         channel_roll->set_radio_in(channel_roll->get_radio_trim());
         channel_pitch->set_radio_in(channel_pitch->get_radio_trim());
         channel_rudder->set_radio_in(channel_rudder->get_radio_trim());
-
         // note that we don't set channel_throttle->radio_in to radio_trim,
         // as that would cause throttle failsafe to not activate
+
         channel_roll->set_control_in(0);
         channel_pitch->set_control_in(0);
         channel_rudder->set_control_in(0);

@@ -40,7 +40,7 @@ public:
     void        set_range();
     void        set_angle();
     bool        get_reverse(void) const;
-    void        set_default_dead_zone(int16_t dzone);
+  
     
     // read input from APM_RC - create a control_in value
     void        set_pwm(int16_t pwm);
@@ -62,7 +62,7 @@ public:
     */
     float                                           norm_output()const;
 
-    int16_t                                         pwm_to_range_dz(uint16_t dead_zone)const;
+
 
     //send values to the PWM timers for output
     void                                            output() const;
@@ -84,11 +84,17 @@ public:
     void set_servo_out(int16_t v) { m_servo_out = v;}
     int16_t get_servo_out() const { return m_servo_out;}
 
+
+    //{
+    // looks like these 2 are onlu called in Plane::control_failsafe
+    void set_radio_in(int16_t v) {m_radio_in = v;}
     void set_control_in( int16_t v) { m_control_in = v;}
+    // }
+
     int16_t get_control_in()const { return m_control_in;}
 
     int16_t get_radio_in()const {return m_radio_in;}
-    void set_radio_in(int16_t v) {m_radio_in = v;}
+
 
     int16_t get_radio_min()const {return m_radio_min.get();}
     void set_radio_min(int16_t v) {m_radio_min.set(v);}
@@ -102,13 +108,16 @@ public:
 // used externally by stick_mix_channel atm
     int16_t     pwm_to_angle()const;
 
+    void        set_default_dead_zone();
 private:
+    
+    int16_t     pwm_to_range_dz(uint16_t dead_zone)const;
     int16_t     angle_to_pwm()const;
     int16_t     pwm_to_range()const;
 
     int16_t     range_to_pwm()const;
 
-    enum class channel_type : bool { angle,range };
+    static constexpr int16_t default_dead_zone = 30;
     static constexpr int16_t angle_min_max = 4500;
     static constexpr int16_t range_high = 100;
     static constexpr int16_t range_low = 0;
@@ -122,11 +131,7 @@ private:
     // looks to be same units as Read()
     int16_t         m_radio_in;
 
-    // value generated from PWM ??? values in range +- 4000 ?
-    // (same units as servo_out I think
-    // actually is dependendt on _type :(
-    // check type for each. prob only different for throttle
-    // also reduce num of types if possible
+    //in the angle or range units, but input or output?
     int16_t         m_control_in;
 
     // logical actuator output
@@ -145,12 +150,10 @@ private:
     int16_t         pwm_out;
     // 
     AP_Int8         _reverse;
+    // eeprom value never appears to be used, just has default updated in init_rc_in
     AP_Int16        _dead_zone;
+    enum class channel_type : bool { angle,range };
     channel_type    _type;
-//    int16_t         _high;
-//    int16_t         _low;
-  //  int16_t         _high_out;
-  //  int16_t         _low_out;
 
     static RC_Channel *rc_ch[max_channels];
 
