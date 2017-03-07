@@ -66,8 +66,6 @@ public:
     static void set_pwm_all(void);
     void        set_pwm_no_deadzone(int16_t pwm);
 
-
-
     // call after first set_pwm
    // void        trim();
 
@@ -78,7 +76,6 @@ public:
 
     // includes offset from PWM
     //int16_t   get_radio_out(void);
-
 
     int16_t     pwm_to_angle()const;
 
@@ -116,16 +113,6 @@ public:
     static const struct AP_Param::GroupInfo         var_info[];
    // bool in_trim_dz()const;
 
-    // logical actuator output
-    // current values to the servos - degrees * 100 (approx assuming servo is -45 to 45 degrees except [3] is 0 to 100
-    int16_t         servo_out;
-
-    // value generated from PWM ??? values in range +- 4000 ?
-    int16_t         control_in;
-    // pwm is stored here direct stick input I think e.g approx 1000 to 2000 us;
-    // looks to be same units as Read()
-    int16_t         radio_in;
-
     //radio_min, radio_max , radio_trim in usec units
     AP_Int16        radio_min;
     AP_Int16        radio_trim;
@@ -134,7 +121,35 @@ public:
     // radio_out is in same units as rcin e.g raw pwm units approx 1000 to 2000 us
     void set_radio_out(int16_t v) { m_radio_out = v;}
     int16_t get_radio_out()const{ return m_radio_out;}
+
+    
+    void set_servo_out(int16_t v) { m_servo_out = v;}
+    int16_t get_servo_out() const { return m_servo_out;}
+
+    void set_control_in( int16_t v) { m_control_in = v;}
+    int16_t get_control_in()const { return m_control_in;}
+
+    int16_t get_radio_in()const {return m_radio_in;}
+    void set_radio_in(int16_t v) {m_radio_in = v;}
+    
 private:
+
+     // pwm is stored here direct stick input I think e.g approx 1000 to 2000 us;
+    // looks to be same units as Read()
+    int16_t         m_radio_in;
+
+    // value generated from PWM ??? values in range +- 4000 ?
+    // (same units as servo_out I think
+    // actually is dependendt on _type :(
+    int16_t         m_control_in;
+
+    // logical actuator output
+    // current values to the servos - degrees * 100 (approx assuming servo is -45 to 45 degrees except [3] is 0 to 100
+    // This is written by the various pitch/roll yaw controllers
+    // for pitch and roll one way this is set is is by assign from RC_Channel::pwm_to_angle;
+    // same units as control_in
+    int16_t         m_servo_out;
+
     // is in same units as rcin e.g raw pwm units
     int16_t         m_radio_out;
 
@@ -164,6 +179,7 @@ private:
 
 protected:
     // channel index for rc input?
+    // nope used by both :(
     uint8_t const         _ch_out;
 };
 

@@ -85,7 +85,7 @@ void Plane::calc_airspeed_errors()
         control_mode == CRUISE) {
         target_airspeed_cm = ((int32_t)(aparm.airspeed_max -
                                         aparm.airspeed_min) *
-                              channel_throttle->control_in) +
+                              channel_throttle->get_control_in()) +
                              ((int32_t)aparm.airspeed_min * 100);
     }
 
@@ -156,7 +156,7 @@ void Plane::update_loiter()
 void Plane::update_cruise()
 {
     if (!cruise_state.locked_heading &&
-        channel_roll->control_in == 0 &&
+        channel_roll->get_control_in() == 0 &&
         rudder_input == 0 &&
         gps.status() >= AP_GPS::GPS_OK_FIX_2D &&
         gps.ground_speed() >= 3 &&
@@ -192,8 +192,7 @@ void Plane::update_cruise()
 void Plane::update_fbwb_speed_height(void)
 {
     static float last_elevator_input;
-    float elevator_input;
-    elevator_input = channel_pitch->control_in / 4500.0f;
+    float elevator_input = channel_pitch->get_control_in() / 4500.0f;
     
     if (g.flybywire_elev_reverse) {
         elevator_input = -elevator_input;

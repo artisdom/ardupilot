@@ -175,11 +175,11 @@ private:
       keep steering and rudder control separated until we update servos,
       to allow for a separate wheel servo from rudder servo
     */
-    struct {
-        bool ground_steering; // are we doing ground steering?
-        int16_t steering; // value for nose/tail wheel
-        int16_t rudder;   // value for rudder
-    } steering_control;
+//    struct {
+//        bool ground_steering; // are we doing ground steering?
+//        int16_t steering; // value for nose/tail wheel
+//        int16_t rudder;   // value for rudder
+//    } steering_control;
 
     // should throttle be pass-thru in guided?
     bool guided_throttle_passthru;
@@ -832,15 +832,15 @@ private:
     bool stick_mixing_enabled(void);
     void stabilize_roll(float speed_scaler);
     void stabilize_pitch(float speed_scaler);
-    void stick_mix_channel(RC_Channel *channel, int16_t &servo_out);
+    //void stick_mix_channel(RC_Channel *channel, int16_t &servo_out);
     void stabilize_stick_mixing_direct();
     void stabilize_stick_mixing_fbw();
     void stabilize_yaw(float speed_scaler);
     void stabilize_training(float speed_scaler);
     void stabilize_acro(float speed_scaler);
-    void calc_nav_yaw_coordinated(float speed_scaler);
-    void calc_nav_yaw_course(void);
-    void calc_nav_yaw_ground(void);
+//    void calc_nav_yaw_coordinated(float speed_scaler);
+   // void calc_nav_yaw_course(void);
+   // void calc_nav_yaw_ground(void);
     void throttle_slew_limit(int16_t last_throttle);
    // void flap_slew_limit(int8_t &last_value, int8_t &new_value);
     bool suppress_throttle(void);
