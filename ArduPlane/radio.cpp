@@ -20,10 +20,10 @@ void Plane::set_control_channels(void)
     channel_rudder   = RC_Channel::rc_channel(rcmap.yaw()-1);
 
     // set rc channel ranges
-    channel_roll->set_angle(SERVO_MAX);
-    channel_pitch->set_angle(SERVO_MAX);
-    channel_rudder->set_angle(SERVO_MAX);
-    channel_throttle->set_range(0, 100);
+    channel_roll->set_angle();
+    channel_pitch->set_angle();
+    channel_rudder->set_angle();
+    channel_throttle->set_range();
 
     if (!arming.is_armed() && arming.arming_required() == AP_Arming::YES_MIN_PWM) {
         hal.rcout->set_safety_pwm(1UL<<(rcmap.throttle()-1), throttle_min());
