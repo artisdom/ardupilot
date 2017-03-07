@@ -6,7 +6,6 @@
 #ifndef __RC_CHANNEL_H__
 #define __RC_CHANNEL_H__
 
-#include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
 
 /// @class	RC_Channel
