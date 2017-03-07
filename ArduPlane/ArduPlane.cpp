@@ -66,7 +66,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
   //  SCHED_TASK(obc_fs_check,            5,   1000),
     SCHED_TASK(gcs_update,              1,   1700),
     SCHED_TASK(gcs_data_stream_send,    1,   3000),
-    SCHED_TASK(update_events,           1,   1500),
+//    SCHED_TASK(update_events,           1,   1500),
   //  SCHED_TASK(check_usb_mux,           5,    300),
     SCHED_TASK(read_battery,            5,   1000),
     SCHED_TASK(compass_accumulate,      1,   1500),

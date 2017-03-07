@@ -102,7 +102,7 @@ void Plane::init_ardupilot()
     serial_manager.init();
 
     // allow servo set on all channels except first 4
-    ServoRelayEvents.set_channel_mask(0xFFF0);
+//    ServoRelayEvents.set_channel_mask(0xFFF0);
 
     set_control_channels();
 
@@ -181,7 +181,7 @@ void Plane::init_ardupilot()
     init_rc_in();               // sets up rc channels from radio
     init_rc_out();              // sets up the timer libs
 
-    relay.init();
+//    relay.init();
 
 #if MOUNT == ENABLED
     // initialise camera mount

@@ -13,7 +13,7 @@ static const struct Menu::command test_menu_commands[] = {
     {"radio",               MENU_FUNC(test_radio)},
     {"passthru",            MENU_FUNC(test_passthru)},
     {"failsafe",            MENU_FUNC(test_failsafe)},
-    {"relay",               MENU_FUNC(test_relay)},
+   // {"relay",               MENU_FUNC(test_relay)},
     {"waypoints",           MENU_FUNC(test_wp)},
     {"xbee",                MENU_FUNC(test_xbee)},
     {"modeswitch",          MENU_FUNC(test_modeswitch)},
@@ -181,27 +181,27 @@ int8_t Plane::test_failsafe(uint8_t argc, const Menu::arg *argv)
     }
 }
 
-int8_t Plane::test_relay(uint8_t argc, const Menu::arg *argv)
-{
-    print_hit_enter();
-    hal.scheduler->delay(1000);
-
-    while(1) {
-        cliSerial->printf("Relay on\n");
-        relay.on(0);
-        hal.scheduler->delay(3000);
-        if(cliSerial->available() > 0) {
-            return (0);
-        }
-
-        cliSerial->printf("Relay off\n");
-        relay.off(0);
-        hal.scheduler->delay(3000);
-        if(cliSerial->available() > 0) {
-            return (0);
-        }
-    }
-}
+//int8_t Plane::test_relay(uint8_t argc, const Menu::arg *argv)
+//{
+//    print_hit_enter();
+//    hal.scheduler->delay(1000);
+//
+//    while(1) {
+//        cliSerial->printf("Relay on\n");
+//        relay.on(0);
+//        hal.scheduler->delay(3000);
+//        if(cliSerial->available() > 0) {
+//            return (0);
+//        }
+//
+//        cliSerial->printf("Relay off\n");
+//        relay.off(0);
+//        hal.scheduler->delay(3000);
+//        if(cliSerial->available() > 0) {
+//            return (0);
+//        }
+//    }
+//}
 
 int8_t Plane::test_wp(uint8_t argc, const Menu::arg *argv)
 {

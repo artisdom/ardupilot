@@ -1095,7 +1095,7 @@ const AP_Param::Info Plane::var_info[] = {
 
     // @Group: RELAY_
     // @Path: ../libraries/AP_Relay/AP_Relay.cpp
-    GOBJECT(relay,                  "RELAY_", AP_Relay),
+  //  GOBJECT(relay,                  "RELAY_", AP_Relay),
 
 #if RANGEFINDER_ENABLED == ENABLED
     // @Group: RNGFND

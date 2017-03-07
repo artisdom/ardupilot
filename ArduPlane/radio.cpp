@@ -31,7 +31,7 @@ void Plane::set_control_channels(void)
 
     // setup correct scaling for ESCs like the UAVCAN PX4ESC which
     // take a proportion of speed
-    hal.rcout->set_esc_scaling(channel_throttle->radio_min, channel_throttle->radio_max);
+    hal.rcout->set_esc_scaling(channel_throttle->get_radio_min(), channel_throttle->get_radio_max());
 }
 
 /*
@@ -65,7 +65,7 @@ void Plane::init_rc_out()
       configuration error where the user sets CH3_TRIM incorrectly and
       the motor may start on power up
      */
-    channel_throttle->radio_trim = throttle_min();
+    channel_throttle->set_radio_trim(throttle_min());
     
     if (arming.arming_required() != AP_Arming::YES_ZERO_PWM) {
         channel_throttle->enable_out();
@@ -229,9 +229,9 @@ void Plane::control_failsafe(uint16_t pwm)
     if (millis() - failsafe.last_valid_rc_ms > 1000 || rc_failsafe_active()) {
         // we do not have valid RC input. Set all primary channel
         // control inputs to the trim value and throttle to min
-        channel_roll->set_radio_in(channel_roll->radio_trim);
-        channel_pitch->set_radio_in(channel_pitch->radio_trim);
-        channel_rudder->set_radio_in(channel_rudder->radio_trim);
+        channel_roll->set_radio_in(channel_roll->get_radio_trim());
+        channel_pitch->set_radio_in(channel_pitch->get_radio_trim());
+        channel_rudder->set_radio_in(channel_rudder->get_radio_trim());
 
         // note that we don't set channel_throttle->radio_in to radio_trim,
         // as that would cause throttle failsafe to not activate
@@ -278,12 +278,12 @@ void Plane::control_failsafe(uint16_t pwm)
 void Plane::trim_control_surfaces()
 {
    read_radio();
-   int16_t trim_roll_range = (channel_roll->radio_max - channel_roll->radio_min)/5;
-   int16_t trim_pitch_range = (channel_pitch->radio_max - channel_pitch->radio_min)/5;
-   if (channel_roll->get_radio_in() < channel_roll->radio_min+trim_roll_range ||
-      channel_roll->get_radio_in() > channel_roll->radio_max-trim_roll_range ||
-      channel_pitch->get_radio_in() < channel_pitch->radio_min+trim_pitch_range ||
-      channel_pitch->get_radio_in() > channel_pitch->radio_max-trim_pitch_range) {
+   int16_t trim_roll_range = (channel_roll->get_radio_max() - channel_roll->get_radio_min())/5;
+   int16_t trim_pitch_range = (channel_pitch->get_radio_max() - channel_pitch->get_radio_min())/5;
+   if (channel_roll->get_radio_in() < channel_roll->get_radio_min()+trim_roll_range ||
+      channel_roll->get_radio_in() > channel_roll->get_radio_max()-trim_roll_range ||
+      channel_pitch->get_radio_in() < channel_pitch->get_radio_min()+trim_pitch_range ||
+      channel_pitch->get_radio_in() > channel_pitch->get_radio_max()-trim_pitch_range) {
       // don't trim for extreme values - if we attempt to trim so
       // there is less than 20 percent range left then assume the
       // sticks are not properly centered. This also prevents
@@ -292,14 +292,14 @@ void Plane::trim_control_surfaces()
    }
 
    if (channel_roll->get_radio_in() != 0) {
-      channel_roll->radio_trim = channel_roll->get_radio_in();
+      channel_roll->set_radio_trim(channel_roll->get_radio_in());
    }
    if (channel_pitch->get_radio_in() != 0) {
-      channel_pitch->radio_trim = channel_pitch->get_radio_in();
+      channel_pitch->set_radio_trim(channel_pitch->get_radio_in());
    }
 
    if (channel_rudder->get_radio_in() != 0) {
-      channel_rudder->radio_trim = channel_rudder->get_radio_in();
+      channel_rudder->set_radio_trim(channel_rudder->get_radio_in());
    }
 
    channel_roll->save_eeprom();
