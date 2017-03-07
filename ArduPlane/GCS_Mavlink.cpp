@@ -1327,27 +1327,27 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
             break;
 
         case MAV_CMD_DO_SET_SERVO:
-            if (plane.ServoRelayEvents.do_set_servo(packet.param1, packet.param2)) {
-                result = MAV_RESULT_ACCEPTED;
-            }
+//            if (plane.ServoRelayEvents.do_set_servo(packet.param1, packet.param2)) {
+//                result = MAV_RESULT_ACCEPTED;
+//            }
             break;
 
         case MAV_CMD_DO_REPEAT_SERVO:
-            if (plane.ServoRelayEvents.do_repeat_servo(packet.param1, packet.param2, packet.param3, packet.param4*1000)) {
-                result = MAV_RESULT_ACCEPTED;
-            }
+//            if (plane.ServoRelayEvents.do_repeat_servo(packet.param1, packet.param2, packet.param3, packet.param4*1000)) {
+//                result = MAV_RESULT_ACCEPTED;
+//            }
             break;
 
         case MAV_CMD_DO_SET_RELAY:
-            if (plane.ServoRelayEvents.do_set_relay(packet.param1, packet.param2)) {
-                result = MAV_RESULT_ACCEPTED;
-            }
+//            if (plane.ServoRelayEvents.do_set_relay(packet.param1, packet.param2)) {
+//                result = MAV_RESULT_ACCEPTED;
+//            }
             break;
 
         case MAV_CMD_DO_REPEAT_RELAY:
-            if (plane.ServoRelayEvents.do_repeat_relay(packet.param1, packet.param2, packet.param3*1000)) {
-                result = MAV_RESULT_ACCEPTED;
-            }
+//            if (plane.ServoRelayEvents.do_repeat_relay(packet.param1, packet.param2, packet.param3*1000)) {
+//                result = MAV_RESULT_ACCEPTED;
+//            }
             break;
 
         case MAV_CMD_PREFLIGHT_REBOOT_SHUTDOWN:

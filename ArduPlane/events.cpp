@@ -124,7 +124,7 @@ void Plane::low_battery_event(void)
     AP_Notify::flags.failsafe_battery = true;
 }
 
-void Plane::update_events(void)
-{
-    ServoRelayEvents.update_events();
-}
+//void Plane::update_events(void)
+//{
+//    ServoRelayEvents.update_events();
+//}

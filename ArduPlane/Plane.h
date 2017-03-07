@@ -31,8 +31,8 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Menu/AP_Menu.h>
 #include <AP_AHRS/AP_AHRS_DCM.h>    
-#include <AP_Relay/AP_Relay.h>     
-#include <AP_ServoRelayEvents/AP_ServoRelayEvents.h>
+//#include <AP_Relay/AP_Relay.h>     
+//#include <AP_ServoRelayEvents/AP_ServoRelayEvents.h>
 #include <AP_Rally/AP_Rally.h>
 #include <GCS_MAVLink/GCS.h>
 #include <APM_Control/APM_Control.h>
@@ -201,10 +201,10 @@ private:
     AP_SpdHgtControl *SpdHgt_Controller = &TECS_controller;
 
     // Relay
-    AP_Relay relay;
+//    AP_Relay relay;
 
     // handle servo and relay events
-    AP_ServoRelayEvents ServoRelayEvents {relay};
+ //   AP_ServoRelayEvents ServoRelayEvents {relay};
 
     // Camera
 #if CAMERA == ENABLED
@@ -710,7 +710,7 @@ private:
     void failsafe_long_on_event(enum failsafe_state fstype);
     void failsafe_short_off_event();
     void low_battery_event(void);
-    void update_events(void);
+  //  void update_events(void);
     uint8_t max_fencepoints(void);
     Vector2l get_fence_point_with_index(unsigned i);
     void set_fence_point_with_index(Vector2l &point, unsigned i);

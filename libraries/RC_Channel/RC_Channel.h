@@ -113,16 +113,12 @@ public:
     static const struct AP_Param::GroupInfo         var_info[];
    // bool in_trim_dz()const;
 
-    //radio_min, radio_max , radio_trim in usec units
-    AP_Int16        radio_min;
-    AP_Int16        radio_trim;
-    AP_Int16        radio_max;
+
 
     // radio_out is in same units as rcin e.g raw pwm units approx 1000 to 2000 us
     void set_radio_out(int16_t v) { m_radio_out = v;}
     int16_t get_radio_out()const{ return m_radio_out;}
 
-    
     void set_servo_out(int16_t v) { m_servo_out = v;}
     int16_t get_servo_out() const { return m_servo_out;}
 
@@ -131,8 +127,22 @@ public:
 
     int16_t get_radio_in()const {return m_radio_in;}
     void set_radio_in(int16_t v) {m_radio_in = v;}
+
+    int16_t get_radio_min()const {return m_radio_min.get();}
+    void set_radio_min(int16_t v) {m_radio_min.set(v);}
+
+    int16_t get_radio_max()const {return m_radio_max.get();}
+    void set_radio_max(int16_t v) {m_radio_max.set(v);}
+
+    int16_t get_radio_trim()const {return m_radio_trim.get();}
+    void set_radio_trim(int16_t v) {m_radio_trim.set(v);}
     
 private:
+
+    //radio_min, radio_max , radio_trim in usec units
+    AP_Int16        m_radio_min;
+    AP_Int16        m_radio_trim;
+    AP_Int16        m_radio_max;
 
      // pwm is stored here direct stick input I think e.g approx 1000 to 2000 us;
     // looks to be same units as Read()
@@ -141,6 +151,8 @@ private:
     // value generated from PWM ??? values in range +- 4000 ?
     // (same units as servo_out I think
     // actually is dependendt on _type :(
+    // check type for each. prob only different for throttle
+    // also reduce num of types if possible
     int16_t         m_control_in;
 
     // logical actuator output
@@ -149,7 +161,6 @@ private:
     // for pitch and roll one way this is set is is by assign from RC_Channel::pwm_to_angle;
     // same units as control_in
     int16_t         m_servo_out;
-
     // is in same units as rcin e.g raw pwm units
     int16_t         m_radio_out;
 

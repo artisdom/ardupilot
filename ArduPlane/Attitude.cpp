@@ -147,7 +147,7 @@ namespace {
 
    void stick_mix_channel(RC_Channel *channel)
    {
-      float const user_stick_move = quan::min(std::abs(channel->get_radio_in() - channel->radio_trim),400);
+      float const user_stick_move = quan::min(std::abs(channel->get_radio_in() - channel->get_radio_trim()),400);
       float const auto_influence = (400.f - user_stick_move)/400.f;
       int16_t servo_out = channel->get_servo_out() * auto_influence + channel->pwm_to_angle();
       channel->set_servo_out(servo_out);
@@ -545,7 +545,7 @@ void Plane::throttle_slew_limit(int16_t last_throttle)
     // if slew limit rate is set to zero then do not slew limit
     if (slewrate) {                   
         // limit throttle change by the given percentage per second
-        float temp = slewrate * G_Dt * 0.01f * fabsf(channel_throttle->radio_max - channel_throttle->radio_min);
+        float temp = slewrate * G_Dt * 0.01f * fabsf(channel_throttle->get_radio_max() - channel_throttle->get_radio_min());
         // allow a minimum change of 1 PWM per cycle
         if (temp < 1) {
             temp = 1;
@@ -683,7 +683,7 @@ void Plane::set_servos_idle(void)
  */
 uint16_t Plane::throttle_min(void) const
 {
-    return channel_throttle->get_reverse() ? channel_throttle->radio_max : channel_throttle->radio_min;
+    return channel_throttle->get_reverse() ? channel_throttle->get_radio_max() : channel_throttle->get_radio_min();
 };
 
 
