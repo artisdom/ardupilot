@@ -13,7 +13,7 @@
 
 #define DEBUG 0
 #define LOITER_RANGE 60 // for calculating power outside of loiter radius
-#define SERVO_MAX 4500  // This value represents 45 degrees and is just an
+//#define SERVO_MAX 4500  // This value represents 45 degrees and is just an
                         // arbitrary representation of servo max travel.
 
 // failsafe
