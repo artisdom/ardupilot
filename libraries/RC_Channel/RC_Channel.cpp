@@ -24,11 +24,10 @@
 #include <math.h>
 
 #include <AP_HAL/AP_HAL.h>
-extern const AP_HAL::HAL& hal;
-
 #include <AP_Math/AP_Math.h>
-
 #include "RC_Channel.h"
+
+extern const AP_HAL::HAL& hal;
 
 /// global array with pointers to all APM RC channels, will be used by AP_Mount
 /// and AP_Camera classes / It points to RC input channels.
@@ -89,24 +88,19 @@ const AP_Param::GroupInfo RC_Channel::var_info[] = {
 void
 RC_Channel::set_range()
 {
-    _type           = channel_type::range;
-//    _high           = 100;
-//    _low            = 0;
-   // _high_out       = 100;
-   // _low_out        = 0;
+    _type   = channel_type::range;
 }
 
 void
 RC_Channel::set_angle()
 {
-    _type   = channel_type::angle;
-    //_high   = angle_min_max;
+    _type  = channel_type::angle;
 }
 
 void
-RC_Channel::set_default_dead_zone(int16_t dzone)
+RC_Channel::set_default_dead_zone()
 {
-    _dead_zone.set_default(abs(dzone));
+    _dead_zone.set_default(default_dead_zone);
 }
 
 bool
@@ -127,7 +121,7 @@ RC_Channel::set_pwm(int16_t pwm)
     if (_type == channel_type::range) {
         set_control_in( pwm_to_range());
     } else {
-        //channel_type::angle, channel_type::raw_angle
+        //channel_type::angle
         set_control_in(pwm_to_angle());
     }
 }
@@ -156,7 +150,7 @@ RC_Channel::set_pwm_no_deadzone(int16_t pwm)
     if (_type == channel_type::range) {
         set_control_in(pwm_to_range_dz(0));
     } else {
-        //RC_CHANNEL_ANGLE, RC_CHANNEL_ANGLE_RAW
+        //angle
         set_control_in(pwm_to_angle_dz(0));
     }
 }
