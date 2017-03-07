@@ -145,6 +145,7 @@ void Plane::stabilize_pitch(float speed_scaler)
 
 namespace {
 
+   // ouch o only for pitch and roll
    void stick_mix_channel(RC_Channel *channel)
    {
       float const user_stick_move = quan::min(std::abs(channel->get_radio_in() - channel->get_radio_trim()),400);
