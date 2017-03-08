@@ -129,15 +129,15 @@ RC_Channel::set_pwm(int16_t pwm)
 /*
   call read() and set_pwm() on all channels
  */
-void
-RC_Channel::set_pwm_all(void)
-{
-    for (uint8_t i=0; i<max_channels; i++) {
-        if (rc_ch[i] != NULL) {
-            rc_ch[i]->set_pwm(rc_ch[i]->read());
-        }
-    }
-}
+//void
+//RC_Channel::set_pwm_all(void)
+//{
+//    for (uint8_t i=0; i<max_channels; i++) {
+//        if (rc_ch[i] != NULL) {
+//            rc_ch[i]->set_pwm(rc_ch[i]->read());
+//        }
+//    }
+//}
 
 // read input from APM_RC - create a control_in value, but use a 
 // zero value for the dead zone. When done this way the control_in
@@ -318,6 +318,7 @@ RC_Channel::norm_output()const
     return ret;
 }
 
+//
 void RC_Channel::output() const
 {
     hal.rcout->write(_ch_out, this->get_radio_out());
@@ -328,26 +329,26 @@ void RC_Channel::output_trim() const
     hal.rcout->write(_ch_out, get_radio_trim());
 }
 
-void RC_Channel::output_trim_all()
-{
-    for (uint8_t i=0; i<max_channels; i++) {
-        if (rc_ch[i] != NULL) {
-            rc_ch[i]->output_trim();
-        }
-    }
-}
+//void RC_Channel::output_trim_all()
+//{
+//    for (uint8_t i=0; i<max_channels; i++) {
+//        if (rc_ch[i] != NULL) {
+//            rc_ch[i]->output_trim();
+//        }
+//    }
+//}
 
 /*
   setup the failsafe value to the trim value for all channels
  */
-void RC_Channel::setup_failsafe_trim_all()
-{
-    for (uint8_t i=0; i<max_channels; i++) {
-        if (rc_ch[i] != NULL) {
-            hal.rcout->set_failsafe_pwm(1U<<i, rc_ch[i]->get_radio_trim());
-        }
-    }
-}
+//void RC_Channel::setup_failsafe_trim_all()
+//{
+//    for (uint8_t i=0; i<max_channels; i++) {
+//        if (rc_ch[i] != NULL) {
+//            hal.rcout->set_failsafe_pwm(1U<<i, rc_ch[i]->get_radio_trim());
+//        }
+//    }
+//}
 
 uint16_t
 RC_Channel::read() const

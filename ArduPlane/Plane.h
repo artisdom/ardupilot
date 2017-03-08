@@ -710,6 +710,8 @@ private:
     void failsafe_long_on_event(enum failsafe_state fstype);
     void failsafe_short_off_event();
     void low_battery_event(void);
+    void throttle_off();
+    void set_control_surfaces_centre();
   //  void update_events(void);
     uint8_t max_fencepoints(void);
     Vector2l get_fence_point_with_index(unsigned i);
@@ -781,7 +783,7 @@ private:
     void resetPerfData(void);
     void check_usb_mux(void);
     void print_comma(void);
-    void servo_write(uint8_t ch, uint16_t pwm);
+  //  void servo_write(uint8_t ch, uint16_t pwm);
     bool should_log(uint32_t mask);
     void frsky_telemetry_send(void);
     uint8_t throttle_percentage(void);
@@ -893,7 +895,7 @@ public:
     int8_t reboot_board(uint8_t argc, const Menu::arg *argv);
     int8_t main_menu_help(uint8_t argc, const Menu::arg *argv);
     int8_t test_radio_pwm(uint8_t argc, const Menu::arg *argv);
-    int8_t test_passthru(uint8_t argc, const Menu::arg *argv);
+   // int8_t test_passthru(uint8_t argc, const Menu::arg *argv);
     int8_t test_radio(uint8_t argc, const Menu::arg *argv);
     int8_t test_failsafe(uint8_t argc, const Menu::arg *argv);
     int8_t test_relay(uint8_t argc, const Menu::arg *argv);

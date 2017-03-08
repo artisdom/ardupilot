@@ -324,9 +324,9 @@ void Plane::set_mode(enum FlightMode mode)
         return;
     }
 
-    if(g.auto_trim > 0 && control_mode == MANUAL)
+    if(g.auto_trim > 0 && control_mode == MANUAL){
         trim_control_surfaces();
-
+    }
     // perform any cleanup required for prev flight mode
     exit_mode(control_mode);
 
@@ -448,9 +448,9 @@ void Plane::set_mode(enum FlightMode mode)
     // start with throttle suppressed in auto_throttle modes
     throttle_suppressed = auto_throttle_mode;
 
-    if (should_log(MASK_LOG_MODE))
+    if (should_log(MASK_LOG_MODE)){
         DataFlash.Log_Write_Mode(control_mode);
-
+    }
     // reset attitude integrators on mode change
     rollController.reset_I();
     pitchController.reset_I();
@@ -680,19 +680,19 @@ void Plane::print_comma(void)
   write to a servo
   in usec units
  */
-void Plane::servo_write(uint8_t ch, uint16_t pwm)
-{
-#if HIL_SUPPORT
-    if (g.hil_mode==1 && !g.hil_servos) {
-        if (ch < 8) {
-            RC_Channel::rc_channel(ch)->set_radio_out(pwm);
-        }
-        return;
-    }
-#endif
-    hal.rcout->enable_ch(ch);
-    hal.rcout->write(ch, pwm);
-}
+//void Plane::servo_write(uint8_t ch, uint16_t pwm)
+//{
+//#if HIL_SUPPORT
+//    if (g.hil_mode==1 && !g.hil_servos) {
+//        if (ch < 8) {
+//            RC_Channel::rc_channel(ch)->set_radio_out(pwm);
+//        }
+//        return;
+//    }
+//#endif
+//    hal.rcout->enable_ch(ch);
+//    hal.rcout->write(ch, pwm);
+//}
 
 /*
   should we log a message type now?
