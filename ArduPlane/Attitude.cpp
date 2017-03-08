@@ -652,7 +652,10 @@ void Plane::set_servos_idle(void)
 {
    // RC_Channel_aux::output_ch_all();
     if (auto_state.idle_wiggle_stage == 0) {
-        RC_Channel::output_trim_all();
+         throttle_off();
+         set_control_surfaces_centre();
+        //RC_Channel::output_trim_all();
+        
         return;
     }
     int16_t servo_value = 0;
@@ -846,18 +849,23 @@ void Plane::set_servos(void)
 
 void Plane::demo_servos(uint8_t i) 
 {
+    int16_t save_channel_roll_servo_out = channel_roll->get_servo_out();
     while(i > 0) {
         gcs_send_text(MAV_SEVERITY_INFO,"Demo servos");
         demoing_servos = true;
-        servo_write(1, 1400);
+        channel_roll->set_servo_out(1400);
+        channel_roll->output();
         hal.scheduler->delay(400);
-        servo_write(1, 1600);
+        channel_roll->set_servo_out(1600);
+        channel_roll->output();
         hal.scheduler->delay(200);
-        servo_write(1, 1500);
+        channel_roll->set_servo_out(1500);
+        channel_roll->output();
         demoing_servos = false;
         hal.scheduler->delay(400);
         i--;
     }
+    channel_roll->set_servo_out(save_channel_roll_servo_out);
 }
 
 /*
