@@ -188,11 +188,21 @@ void Plane::read_radio()
 #endif
 
     failsafe.last_valid_rc_ms = millis();
+    // these are just the raw rc_in reading
+    // for the hal.rcin with same as the rc_channel
     uint16_t const pwm_roll = channel_roll->read();
     uint16_t const pwm_pitch = channel_pitch->read();
 
+    // set the radio_in value to the rcin value for all channels
+    // set the control_in value (the value united to 4500 or 0 to 100 for throttle)
+    // for all channels
+    // works for passthrough?
     RC_Channel::set_pwm_all();
     
+/*
+   set_pwm sets the radio_in value to the pwm value
+   and sets the control_in value to the pwm value converted to the angle or range units
+*/
     if (control_mode == TRAINING) {
         // in training mode we don't want to use a deadzone, as we
         // want manual pass through when not exceeding attitude limits
@@ -226,6 +236,9 @@ void Plane::read_radio()
     
 }
 
+/*
+
+*/
 void Plane::control_failsafe(uint16_t pwm)
 {
     if (millis() - failsafe.last_valid_rc_ms > 1000 || rc_failsafe_active()) {

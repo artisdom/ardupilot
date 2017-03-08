@@ -152,7 +152,7 @@ void Plane::ahrs_update()
     }
 #endif
 
-    ahrs.update();
+   ahrs.update();
    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
    AP_OSD::enqueue::attitude({ToDeg(ahrs.pitch),ToDeg(ahrs.roll),ToDeg(ahrs.yaw)});
    #endif
