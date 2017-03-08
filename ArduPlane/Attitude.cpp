@@ -9,6 +9,7 @@
   get a speed scaling number for control surfaces. This is applied to
   PIDs to change the scaling of the PID with speed. At high speed we
   move the surfaces less, and at low speeds we move them more.
+  The return value hovers somewhere around 1.0f
  */
 float Plane::get_speed_scaler(void)
 {
@@ -25,6 +26,7 @@ float Plane::get_speed_scaler(void)
         speed_scaler = constrain_float(speed_scaler, 0.5f, 2.0f);
     } else {
         if (channel_throttle->get_servo_out() > 0) {
+            // THROTTLE_CRUISE is a perentage between 0 - to 100
             speed_scaler = 0.5f + ((float)THROTTLE_CRUISE / channel_throttle->get_servo_out() / 2.0f);                 // First order taylor expansion of square root
             // Should maybe be to the 2/7 power, but we aren't goint to implement that...
         }else{
@@ -379,6 +381,7 @@ void Plane::stabilize()
         // nothing to do
         return;
     }
+    // works out some scaling according to airspeed
     float speed_scaler = get_speed_scaler();
 
     if (control_mode == TRAINING) {

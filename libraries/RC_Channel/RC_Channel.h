@@ -81,6 +81,8 @@ public:
     int16_t get_radio_out()const{ return m_radio_out;}
 
     void set_servo_out(int16_t v) { m_servo_out = v;}
+    
+    // 0 to 100 for throttle
     int16_t get_servo_out() const { return m_servo_out;}
 
 
