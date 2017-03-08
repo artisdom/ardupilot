@@ -11,7 +11,7 @@
 static const struct Menu::command test_menu_commands[] = {
     {"pwm",                 MENU_FUNC(test_radio_pwm)},
     {"radio",               MENU_FUNC(test_radio)},
-    {"passthru",            MENU_FUNC(test_passthru)},
+  //  {"passthru",            MENU_FUNC(test_passthru)},
     {"failsafe",            MENU_FUNC(test_failsafe)},
    // {"relay",               MENU_FUNC(test_relay)},
     {"waypoints",           MENU_FUNC(test_wp)},
@@ -68,30 +68,30 @@ int8_t Plane::test_radio_pwm(uint8_t argc, const Menu::arg *argv)
 }
 
 
-int8_t Plane::test_passthru(uint8_t argc, const Menu::arg *argv)
-{
-    print_hit_enter();
-    hal.scheduler->delay(1000);
-
-    while(1) {
-        hal.scheduler->delay(20);
-
-        // New radio frame? (we could use also if((millis()- timer) > 20)
-        if (hal.rcin->new_input()) {
-            cliSerial->print("CH:");
-            for(int16_t i = 0; i < 8; i++) {
-                cliSerial->print(hal.rcin->read(i));        // Print channel values
-                print_comma();
-                servo_write(i, hal.rcin->read(i)); // Copy input to Servos
-            }
-            cliSerial->println();
-        }
-        if (cliSerial->available() > 0) {
-            return (0);
-        }
-    }
-    return 0;
-}
+//int8_t Plane::test_passthru(uint8_t argc, const Menu::arg *argv)
+//{
+//    print_hit_enter();
+//    hal.scheduler->delay(1000);
+//
+//    while(1) {
+//        hal.scheduler->delay(20);
+//
+//        // New radio frame? (we could use also if((millis()- timer) > 20)
+//        if (hal.rcin->new_input()) {
+//            cliSerial->print("CH:");
+//            for(int16_t i = 0; i < 8; i++) {
+//                cliSerial->print(hal.rcin->read(i));        // Print channel values
+//                print_comma();
+//                servo_write(i, hal.rcin->read(i)); // Copy input to Servos
+//            }
+//            cliSerial->println();
+//        }
+//        if (cliSerial->available() > 0) {
+//            return (0);
+//        }
+//    }
+//    return 0;
+//}
 
 int8_t Plane::test_radio(uint8_t argc, const Menu::arg *argv)
 {

@@ -54,36 +54,57 @@ void Plane::init_rc_in()
 
 }
 
+namespace {
+
+   float mixer_in_pitch = 0.f;
+   float mixer_in_roll = 0.f;
+   float mixer_in_yaw = 0.f;
+   float mixer_in_throttle = 0.f;
+
+   // not correct really we need some failsafe mixer inputs if we are to do this
+   // 
+   void setup_failsafe_mixer_inputs()
+   {
+      mixer_in_pitch = 0.f;
+      mixer_in_roll = 0.f;
+      mixer_in_yaw = 0.f;
+      mixer_in_throttle = -1.f; // 0 or -1 ?
+   }
+}
+
+void Plane::throttle_off()
+{
+   mixer_in_throttle = -1.f; // 0 or -1 ?
+}
+
+void Plane::set_control_surfaces_centre()
+{
+   mixer_in_pitch = 0.f;
+   mixer_in_roll = 0.f;
+   mixer_in_yaw = 0.f;
+}
+
 /*
   initialise RC output channels
+  They are disabled currently
  */
 void Plane::init_rc_out()
 {
+    set_control_surfaces_centre();
+
+    setup_failsafe_mixer_inputs();
+    
+    // prob dont need this here
+    // or set the output funs to no null
+    // enable_actuators() etc;
     channel_roll->enable_out();
     channel_pitch->enable_out();
+    channel_rudder->enable_out();
 
-    /*
-      change throttle trim to minimum throttle. This prevents a
-      configuration error where the user sets CH3_TRIM incorrectly and
-      the motor may start on power up
-     */
-    channel_throttle->set_radio_trim(throttle_min());
+    throttle_off();
     
     if (arming.arming_required() != AP_Arming::YES_ZERO_PWM) {
         channel_throttle->enable_out();
-    }
-    channel_rudder->enable_out();
-
-    // Initialization of servo outputs
-    RC_Channel::output_trim_all();
-
-    // setup PWM values to send if the FMU firmware dies
-    RC_Channel::setup_failsafe_trim_all();  
-
-    // setup PX4 to output the min throttle when safety off if arming
-    // is setup for min on disarm
-    if (arming.arming_required() == AP_Arming::YES_MIN_PWM) {
-        hal.rcout->set_safety_pwm(1UL<<(rcmap.throttle()-1), throttle_min());
     }
 }
 
@@ -193,11 +214,12 @@ void Plane::read_radio()
     uint16_t const pwm_roll = channel_roll->read();
     uint16_t const pwm_pitch = channel_pitch->read();
 
+    // in fact with no aux channels this is not necessary
     // set the radio_in value to the rcin value for all channels
     // set the control_in value (the value united to 4500 or 0 to 100 for throttle)
     // for all channels
     // works for passthrough?
-    RC_Channel::set_pwm_all();
+    //RC_Channel::set_pwm_all();
     
 /*
    set_pwm sets the radio_in value to the pwm value
@@ -232,13 +254,10 @@ void Plane::read_radio()
     }
 
     rudder_arm_disarm_check();
-    rudder_input = channel_rudder->get_control_in();
+    channel_rudder->set_servo_out(channel_rudder->get_control_in());
     
 }
 
-/*
-
-*/
 void Plane::control_failsafe(uint16_t pwm)
 {
     if (millis() - failsafe.last_valid_rc_ms > 1000 || rc_failsafe_active()) {
@@ -317,6 +336,8 @@ void Plane::trim_control_surfaces()
       channel_rudder->set_radio_trim(channel_rudder->get_radio_in());
    }
 
+   // done for in air restart?
+   // prob ignore this since eeprom takes 10 secs !
    channel_roll->save_eeprom();
    channel_pitch->save_eeprom();
    channel_rudder->save_eeprom();

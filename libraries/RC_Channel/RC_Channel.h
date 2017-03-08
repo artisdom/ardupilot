@@ -43,7 +43,7 @@ public:
     
     // read input from APM_RC - create a control_in value
     void        set_pwm(int16_t pwm);
-    static void set_pwm_all(void);
+ //   static void set_pwm_all(void);
     void        set_pwm_no_deadzone(int16_t pwm);
 
     // generate PWM from servo_out value
@@ -66,8 +66,8 @@ public:
     //send values to the PWM timers for output
     void                                            output() const;
     void                                            output_trim() const;
-    static void                                     output_trim_all();
-    static void                                     setup_failsafe_trim_all();
+  //  static void                                     output_trim_all();
+   // static void                                     setup_failsafe_trim_all();
     // reads rcin
     uint16_t                                        read() const;
     void                                            enable_out();
@@ -132,7 +132,8 @@ private:
     // looks to be same units as Read()
     int16_t         m_radio_in;
 
-    //in the angle or range units, but input or output?
+    // The user stick input ?
+    //in the angle or range units,?
     int16_t         m_control_in;
 
     // logical actuator output
