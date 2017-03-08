@@ -626,7 +626,7 @@ void Plane::update_flight_mode(void)
           any aileron or rudder input
         */
         if ((channel_roll->get_control_in() != 0 ||
-             rudder_input != 0)) {                
+             channel_rudder->get_control_in() != 0)) {                
             cruise_state.locked_heading = false;
             cruise_state.lock_timer_ms = 0;
         }                 
