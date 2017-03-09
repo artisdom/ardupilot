@@ -31,7 +31,7 @@ extern const AP_HAL::HAL& hal;
 
 /// global array with pointers to all APM RC channels, will be used by AP_Mount
 /// and AP_Camera classes / It points to RC input channels.
-RC_Channel *RC_Channel::rc_ch[RC_Channel::max_channels];
+//RC_Channel *RC_Channel::rc_ch[RC_Channel::max_channels];
 
 const AP_Param::GroupInfo RC_Channel::var_info[] = {
     // @Param: MIN
@@ -368,10 +368,10 @@ RC_Channel::disable_out()
     hal.rcout->disable_ch(_ch_out);
 }
 
-RC_Channel *RC_Channel::rc_channel(uint8_t i)
-{
-    if (i >= max_channels) {
-        return NULL;
-    }
-    return rc_ch[i];
-}
+//RC_Channel *RC_Channel::rc_channel(uint8_t i)
+//{
+//    if (i >= max_channels) {
+//        return NULL;
+//    }
+//    return rc_ch[i];
+//}

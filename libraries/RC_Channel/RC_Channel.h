@@ -25,9 +25,9 @@ public:
         _ch_out{ch_out} 
     {
         AP_Param::setup_object_defaults(this, var_info);
-        if (ch_out < max_channels) {
-           rc_ch[ch_out] = this;
-        }
+//        if (ch_out < max_channels) {
+//           rc_ch[ch_out] = this;
+//        }
     }
 
     // startup
@@ -73,7 +73,7 @@ public:
     void                                            enable_out();
     void                                            disable_out();
 
-    static RC_Channel *rc_channel(uint8_t i);
+  //  static RC_Channel *rc_channel(uint8_t i);
     static const struct AP_Param::GroupInfo         var_info[];
 
     // radio_out is in same units as rcin e.g raw pwm units approx 1000 to 2000 us
@@ -157,7 +157,7 @@ private:
     enum class channel_type : bool { angle,range };
     channel_type    _type;
 
-    static RC_Channel *rc_ch[max_channels];
+ //   static RC_Channel *rc_ch[max_channels];
 
 protected:
     // channel index for rc input?

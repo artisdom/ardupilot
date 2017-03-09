@@ -378,10 +378,10 @@ void Plane::send_servo_out(mavlink_channel_t chan)
         chan,
         millis(),
         0, // port 0
-        10000 * channel_roll->norm_output() * (channel_roll->get_reverse()?-1:1),
-        10000 * channel_pitch->norm_output() * (channel_pitch->get_reverse()?-1:1),
-        10000 * channel_throttle->norm_output() * (channel_throttle->get_reverse()?-1:1),
-        10000 * channel_rudder->norm_output() * (channel_rudder->get_reverse()?-1:1),
+        10000 * channel_roll.norm_output() * (channel_roll.get_reverse()?-1:1),
+        10000 * channel_pitch.norm_output() * (channel_pitch.get_reverse()?-1:1),
+        10000 * channel_throttle.norm_output() * (channel_throttle.get_reverse()?-1:1),
+        10000 * channel_rudder.norm_output() * (channel_rudder.get_reverse()?-1:1),
         0,
         0,
         0,
@@ -397,14 +397,14 @@ void Plane::send_radio_out(mavlink_channel_t chan)
             chan,
             micros(),
             0,     // port
-            RC_Channel::rc_channel(0)->get_radio_out(),
-            RC_Channel::rc_channel(1)->get_radio_out(),
-            RC_Channel::rc_channel(2)->get_radio_out(),
-            RC_Channel::rc_channel(3)->get_radio_out(),
-            RC_Channel::rc_channel(4)->get_radio_out(),
-            RC_Channel::rc_channel(5)->get_radio_out(),
-            RC_Channel::rc_channel(6)->get_radio_out(),
-            RC_Channel::rc_channel(7)->get_radio_out());
+        hal.rcout->read(0),
+        hal.rcout->read(1),
+        hal.rcout->read(2),
+        hal.rcout->read(3),
+        hal.rcout->read(4),
+        hal.rcout->read(5),
+        hal.rcout->read(6),
+        hal.rcout->read(7));
         return;
     }
 #endif

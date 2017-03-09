@@ -250,8 +250,8 @@ void Plane::Log_Write_Control_Tuning()
         roll            : (int16_t)ahrs.roll_sensor,
         nav_pitch_cd    : (int16_t)nav_pitch_cd,
         pitch           : (int16_t)ahrs.pitch_sensor,
-        throttle_out    : (int16_t)channel_throttle->servo_out,
-        rudder_out      : (int16_t)channel_rudder->servo_out,
+        throttle_out    : (int16_t)channel_throttle.servo_out,
+        rudder_out      : (int16_t)channel_rudder.servo_out,
         accel_y         : accel.y
     };
     DataFlash.WriteBlock(&pkt, sizeof(pkt));
@@ -351,7 +351,7 @@ void Plane::Log_Write_Sonar()
         voltage     : rangefinder.voltage_mv()*0.001f,
         baro_alt    : barometer.get_altitude(),
         groundspeed : gps.ground_speed(),
-        throttle    : (uint8_t)(100 * channel_throttle->norm_output()),
+        throttle    : (uint8_t)(100 * channel_throttle.norm_output()),
         count       : rangefinder_state.in_range_count,
         correction  : rangefinder_state.correction
     };
@@ -403,7 +403,7 @@ struct PACKED log_Arm_Disarm {
 
 void Plane::Log_Write_Current()
 {
-    DataFlash.Log_Write_Current(battery, channel_throttle->control_in);
+    DataFlash.Log_Write_Current(battery, channel_throttle.control_in);
 
     // also write power status
     DataFlash.Log_Write_Power();
