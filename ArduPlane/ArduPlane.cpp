@@ -199,7 +199,7 @@ void Plane::update_compass(void)
         ahrs.set_compass(&compass);
         compass.learn_offsets();
         if (should_log(MASK_LOG_COMPASS)) {
-            DataFlash.Log_Write_Compass(compass);
+           DataFlash.Log_Write_Compass(compass);
         }
     } else {
         ahrs.set_compass(NULL);

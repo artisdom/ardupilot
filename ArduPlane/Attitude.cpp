@@ -850,23 +850,23 @@ void Plane::set_servos(void)
 
 void Plane::demo_servos(uint8_t i) 
 {
-    int16_t save_channel_roll_servo_out = channel_roll.get_servo_out();
+    int16_t const save_channel_roll_radio_out = channel_roll.get_radio_out();
     while(i > 0) {
         gcs_send_text(MAV_SEVERITY_INFO,"Demo servos");
         demoing_servos = true;
-        channel_roll.set_servo_out(1400);
+        channel_roll.set_radio_out(1400);
         channel_roll.output();
         hal.scheduler->delay(400);
-        channel_roll.set_servo_out(1600);
+        channel_roll.set_radio_out(1600);
         channel_roll.output();
         hal.scheduler->delay(200);
-        channel_roll.set_servo_out(1500);
+        channel_roll.set_radio_out(1500);
         channel_roll.output();
         demoing_servos = false;
         hal.scheduler->delay(400);
         i--;
     }
-    channel_roll.set_servo_out(save_channel_roll_servo_out);
+    channel_roll.set_radio_out(save_channel_roll_radio_out);
 }
 
 /*

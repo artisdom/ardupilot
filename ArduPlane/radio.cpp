@@ -14,12 +14,6 @@
 void Plane::set_control_channels(void)
 {
 
-//    channel_roll     = RC_Channel::rc_channel(rcmap.roll()-1);
-//    channel_pitch    = RC_Channel::rc_channel(rcmap.pitch()-1);
-//    channel_throttle = RC_Channel::rc_channel(rcmap.throttle()-1);
-//    channel_rudder   = RC_Channel::rc_channel(rcmap.yaw()-1);
-
-    // set rc channel ranges
     channel_roll.set_angle();
     channel_pitch.set_angle();
     channel_rudder.set_angle();
@@ -62,7 +56,6 @@ namespace {
    float mixer_in_throttle = 0.f;
 
    // not correct really we need some failsafe mixer inputs if we are to do this
-   // 
    void setup_failsafe_mixer_inputs()
    {
       mixer_in_pitch = 0.f;
@@ -74,14 +67,14 @@ namespace {
 
 void Plane::throttle_off()
 {
-   mixer_in_throttle = -1.f; // 0 or -1 ?
+   channel_throttle.set_pwm(throttle_min());
 }
 
 void Plane::set_control_surfaces_centre()
 {
-   mixer_in_pitch = 0.f;
-   mixer_in_roll = 0.f;
-   mixer_in_yaw = 0.f;
+   channel_roll.set_pwm(channel_roll.get_radio_trim());
+   channel_pitch.set_pwm(channel_pitch.get_radio_trim());
+   channel_rudder.set_pwm(channel_rudder.get_radio_trim());
 }
 
 /*
@@ -90,22 +83,22 @@ void Plane::set_control_surfaces_centre()
  */
 void Plane::init_rc_out()
 {
-    set_control_surfaces_centre();
+   set_control_surfaces_centre();
 
-    setup_failsafe_mixer_inputs();
-    
-    // prob dont need this here
-    // or set the output funs to no null
-    // enable_actuators() etc;
-    channel_roll.enable_out();
-    channel_pitch.enable_out();
-    channel_rudder.enable_out();
+   setup_failsafe_mixer_inputs();
 
-    throttle_off();
-    
-    if (arming.arming_required() != AP_Arming::YES_ZERO_PWM) {
-        channel_throttle.enable_out();
-    }
+   // prob dont need this here
+   // or set the output funs to no null
+   // enable_actuators() etc;
+   channel_roll.enable_out();
+   channel_pitch.enable_out();
+   channel_rudder.enable_out();
+
+   throttle_off();
+
+   if (arming.arming_required() != AP_Arming::YES_ZERO_PWM) {
+     channel_throttle.enable_out();
+   }
 }
 
 /*
@@ -268,10 +261,12 @@ void Plane::control_failsafe(uint16_t pwm)
         channel_rudder.set_radio_in(channel_rudder.get_radio_trim());
         // note that we don't set channel_throttle.radio_in to radio_trim,
         // as that would cause throttle failsafe to not activate
+        // see Plane::rc_failsafe_active which checks that throttle.get_radio_in is below some value
 
         channel_roll.set_control_in(0);
         channel_pitch.set_control_in(0);
         channel_rudder.set_control_in(0);
+        // mismatch between radio_in and control in for throttle here
         channel_throttle.set_control_in(0);
     }
 
