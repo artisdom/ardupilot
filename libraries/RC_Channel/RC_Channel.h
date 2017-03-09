@@ -21,13 +21,14 @@ public:
     ///
 
     RC_Channel(uint8_t ch_out) :
-        _type{channel_type::angle},
-        _ch_out{ch_out} 
+        m_radio_in{0} // stick units usec
+        ,m_control_in{0} // angle or range units
+        ,m_servo_out{0}  // degrees * 100 or 0 to 100
+        ,m_radio_out{0}  // raw pwm
+        ,_type{channel_type::angle}
+        ,_ch_out{ch_out} 
     {
         AP_Param::setup_object_defaults(this, var_info);
-//        if (ch_out < max_channels) {
-//           rc_ch[ch_out] = this;
-//        }
     }
 
     // startup
@@ -59,19 +60,17 @@ public:
       return a normalised input for a channel, in range -1 to 1,
       centered around the channel trim. Take into account the deadzone
     */
-    float                                           norm_output()const;
-
-
+    float      norm_output()const;
 
     //send values to the PWM timers for output
-    void                                            output() const;
-    void                                            output_trim() const;
+    void       output() const;
+    void       output_trim() const;
   //  static void                                     output_trim_all();
    // static void                                     setup_failsafe_trim_all();
     // reads rcin
-    uint16_t                                        read() const;
-    void                                            enable_out();
-    void                                            disable_out();
+    uint16_t   read() const;
+    void       enable_out();
+    void       disable_out();
 
   //  static RC_Channel *rc_channel(uint8_t i);
     static const struct AP_Param::GroupInfo         var_info[];
@@ -80,11 +79,11 @@ public:
     void set_radio_out(int16_t v) { m_radio_out = v;}
     int16_t get_radio_out()const{ return m_radio_out;}
 
+    // in the units either angle or throttle range
     void set_servo_out(int16_t v) { m_servo_out = v;}
     
     // 0 to 100 for throttle
     int16_t get_servo_out() const { return m_servo_out;}
-
 
     //{
     // looks like these 2 are onlu called in Plane::control_failsafe
@@ -112,6 +111,7 @@ public:
     void        set_default_dead_zone();
 private:
     
+    int16_t     pwm_to_angle_dz(uint16_t dead_zone)const;
     int16_t     pwm_to_range_dz(uint16_t dead_zone)const;
     int16_t     angle_to_pwm()const;
     int16_t     pwm_to_range()const;
@@ -127,6 +127,9 @@ private:
     AP_Int16        m_radio_min;
     AP_Int16        m_radio_trim;
     AP_Int16        m_radio_max;
+    AP_Int8         _reverse;
+    // eeprom value never appears to be used, just has default updated in init_rc_in
+    AP_Int16        _dead_zone;
 
      // pwm is stored here direct stick input I think e.g approx 1000 to 2000 us;
     // looks to be same units as Read()
@@ -134,32 +137,24 @@ private:
 
     // The user stick input ?
     //in the angle or range units,?
+    // This is usually a function of radio_in above
+    // the exception is when Plane::control_failsafe is called
+    // 
     int16_t         m_control_in;
+    // servo_out looks to be same units as control_in
+    int16_t         m_servo_out;
 
     // logical actuator output
     // current values to the servos - degrees * 100 (approx assuming servo is -45 to 45 degrees except [3] is 0 to 100
     // This is written by the various pitch/roll yaw controllers
     // for pitch and roll one way this is set is is by assign from RC_Channel::pwm_to_angle;
     // same units as control_in
-    int16_t         m_servo_out;
     // is in same units as rcin e.g raw pwm units
     int16_t         m_radio_out;
 
-    int16_t         pwm_to_angle_dz(uint16_t dead_zone)const;
-
-    // pwm out type depends on the _type member
-    // see calc_pwm memfun
-    int16_t         pwm_out;
-    // 
-    AP_Int8         _reverse;
-    // eeprom value never appears to be used, just has default updated in init_rc_in
-    AP_Int16        _dead_zone;
     enum class channel_type : bool { angle,range };
     channel_type    _type;
 
- //   static RC_Channel *rc_ch[max_channels];
-
-protected:
     // channel index for rc input?
     // nope used by both :(
     // add a  _ch_in ?
