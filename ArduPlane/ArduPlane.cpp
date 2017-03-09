@@ -484,7 +484,7 @@ void Plane::handle_auto_mode(void)
         if (auto_state.land_complete) {
             // we are in the final stage of a landing - force
             // zero throttle
-            channel_throttle->set_servo_out(0);
+            channel_throttle.set_servo_out(0);
         }
     } else {
         // we are doing normal AUTO flight, the special cases
@@ -578,10 +578,10 @@ void Plane::update_flight_mode(void)
     case AUTOTUNE:
     case FLY_BY_WIRE_A: {
         // set nav_roll and nav_pitch using sticks
-        nav_roll_cd  = channel_roll->norm_input() * roll_limit_cd;
+        nav_roll_cd  = channel_roll.norm_input() * roll_limit_cd;
         nav_roll_cd = constrain_int32(nav_roll_cd, -roll_limit_cd, roll_limit_cd);
         update_load_factor();
-        float pitch_input = channel_pitch->norm_input();
+        float pitch_input = channel_pitch.norm_input();
         if (pitch_input > 0) {
             nav_pitch_cd = pitch_input * aparm.pitch_limit_max_cd;
         } else {
@@ -596,7 +596,7 @@ void Plane::update_flight_mode(void)
             // FBWA failsafe glide
             nav_roll_cd = 0;
             nav_pitch_cd = 0;
-            channel_throttle->set_servo_out(0);
+            channel_throttle.set_servo_out(0);
         }
         if (g.fbwa_tdrag_chan > 0) {
             // check for the user enabling FBWA taildrag takeoff mode
@@ -613,7 +613,7 @@ void Plane::update_flight_mode(void)
 
     case FLY_BY_WIRE_B:
         // Thanks to Yury MonZon for the altitude limit code!
-        nav_roll_cd = channel_roll->norm_input() * roll_limit_cd;
+        nav_roll_cd = channel_roll.norm_input() * roll_limit_cd;
         nav_roll_cd = constrain_int32(nav_roll_cd, -roll_limit_cd, roll_limit_cd);
         update_load_factor();
         update_fbwb_speed_height();
@@ -625,14 +625,14 @@ void Plane::update_flight_mode(void)
           roll when heading is locked. Heading becomes unlocked on
           any aileron or rudder input
         */
-        if ((channel_roll->get_control_in() != 0 ||
-             channel_rudder->get_control_in() != 0)) {                
+        if ((channel_roll.get_control_in() != 0 ||
+             channel_rudder.get_control_in() != 0)) {                
             cruise_state.locked_heading = false;
             cruise_state.lock_timer_ms = 0;
         }                 
         
         if (!cruise_state.locked_heading) {
-            nav_roll_cd = channel_roll->norm_input() * roll_limit_cd;
+            nav_roll_cd = channel_roll.norm_input() * roll_limit_cd;
             nav_roll_cd = constrain_int32(nav_roll_cd, -roll_limit_cd, roll_limit_cd);
             update_load_factor();
         } else {
@@ -661,9 +661,9 @@ void Plane::update_flight_mode(void)
     case MANUAL:
         // servo_out is for Sim control only
         // ---------------------------------
-        channel_roll->set_servo_out(channel_roll->pwm_to_angle());
-        channel_pitch->set_servo_out(channel_pitch->pwm_to_angle());
-        channel_rudder->set_servo_out(channel_rudder->pwm_to_angle());
+        channel_roll.set_servo_out(channel_roll.pwm_to_angle());
+        channel_pitch.set_servo_out(channel_pitch.pwm_to_angle());
+        channel_rudder.set_servo_out(channel_rudder.pwm_to_angle());
         break;
         //roll: -13788.000,  pitch: -13698.000,   thr: 0.000, rud: -13742.000
         
@@ -816,7 +816,7 @@ void Plane::update_flight_stage(void)
                 set_flight_stage(AP_SpdHgtControl::FLIGHT_TAKEOFF);
             } else if (mission.get_current_nav_cmd().id == MAV_CMD_NAV_LAND) {
 
-                if ((g.land_abort_throttle_enable && channel_throttle->get_control_in() > 95) ||
+                if ((g.land_abort_throttle_enable && channel_throttle.get_control_in() > 95) ||
                         flight_stage == AP_SpdHgtControl::FLIGHT_LAND_ABORT){
                     // abort mode is sticky, it must complete while executing NAV_LAND
                     set_flight_stage(AP_SpdHgtControl::FLIGHT_LAND_ABORT);

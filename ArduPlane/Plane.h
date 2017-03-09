@@ -105,10 +105,10 @@ private:
     RCMapper rcmap;
 
     // primary control channels
-    RC_Channel *channel_roll;
-    RC_Channel *channel_pitch;
-    RC_Channel *channel_throttle;
-    RC_Channel *channel_rudder;
+    RC_Channel channel_roll;
+    RC_Channel channel_pitch;
+    RC_Channel channel_throttle;
+    RC_Channel channel_rudder;
 
     // notification object for LEDs, buzzers etc (parameter set to false disables external leds)
     AP_Notify notify;
@@ -816,7 +816,7 @@ private:
     void adsb_handle_vehicle_threats(void);
     void update_flight_mode(void);
     void stabilize();
-    void set_servos_idle(void);
+  //  void set_servos_idle(void);
     void set_servos();
     void update_aux();
     void update_is_flying_5Hz(void);

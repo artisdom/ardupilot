@@ -23,6 +23,10 @@
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 Plane::Plane(void)
+:channel_roll{0}
+,channel_pitch{1}
+,channel_throttle{2}
+,channel_rudder{3}
 {
     // C++11 doesn't allow in-class initialisation of bitfields
     auto_state.takeoff_complete = true;

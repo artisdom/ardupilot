@@ -56,10 +56,10 @@ int8_t Plane::test_radio_pwm(uint8_t argc, const Menu::arg *argv)
         read_radio();
 
         cliSerial->printf("IN:\t1: %d\t2: %d\t3: %d\t4: %d\n",
-                        (int)channel_roll->get_radio_in(),
-                        (int)channel_pitch->get_radio_in(),
-                        (int)channel_throttle->get_radio_in(),
-                        (int)channel_rudder->get_radio_in());
+                        (int)channel_roll.get_radio_in(),
+                        (int)channel_pitch.get_radio_in(),
+                        (int)channel_throttle.get_radio_in(),
+                        (int)channel_rudder.get_radio_in());
 
         if(cliSerial->available() > 0) {
             return (0);
@@ -106,20 +106,20 @@ int8_t Plane::test_radio(uint8_t argc, const Menu::arg *argv)
         hal.scheduler->delay(20);
         read_radio();
 
-        channel_roll->calc_pwm();
-        channel_pitch->calc_pwm();
-        channel_throttle->calc_pwm();
-        channel_rudder->calc_pwm();
+        channel_roll.calc_pwm();
+        channel_pitch.calc_pwm();
+        channel_throttle.calc_pwm();
+        channel_rudder.calc_pwm();
 
         // write out the servo PWM values
         // ------------------------------
         set_servos();
 
         cliSerial->printf("IN 1: %d\t2: %d\t3: %d\t4: %d\n",
-                        (int)channel_roll->get_control_in(),
-                        (int)channel_pitch->get_control_in(),
-                        (int)channel_throttle->get_control_in(),
-                        (int)channel_rudder->get_control_in());
+                        (int)channel_roll.get_control_in(),
+                        (int)channel_pitch.get_control_in(),
+                        (int)channel_throttle.get_control_in(),
+                        (int)channel_rudder.get_control_in());
 
         if(cliSerial->available() > 0) {
             return (0);
@@ -143,7 +143,7 @@ int8_t Plane::test_failsafe(uint8_t argc, const Menu::arg *argv)
     oldSwitchPosition = readSwitch();
 
     cliSerial->printf("Unplug battery, throttle in neutral, turn off radio.\n");
-    while(channel_throttle->get_control_in() > 0) {
+    while(channel_throttle.get_control_in() > 0) {
         hal.scheduler->delay(20);
         read_radio();
     }
@@ -152,8 +152,8 @@ int8_t Plane::test_failsafe(uint8_t argc, const Menu::arg *argv)
         hal.scheduler->delay(20);
         read_radio();
 
-        if(channel_throttle->get_control_in() > 0) {
-            cliSerial->printf("THROTTLE CHANGED %d \n", (int)channel_throttle->get_control_in());
+        if(channel_throttle.get_control_in() > 0) {
+            cliSerial->printf("THROTTLE CHANGED %d \n", (int)channel_throttle.get_control_in());
             fail_test++;
         }
 
@@ -165,7 +165,7 @@ int8_t Plane::test_failsafe(uint8_t argc, const Menu::arg *argv)
         }
 
         if(rc_failsafe_active()) {
-            cliSerial->printf("THROTTLE FAILSAFE ACTIVATED: %d, ", (int)channel_throttle->get_radio_in());
+            cliSerial->printf("THROTTLE FAILSAFE ACTIVATED: %d, ", (int)channel_throttle.get_radio_in());
             print_flight_mode(cliSerial, readSwitch());
             cliSerial->println();
             fail_test++;
