@@ -112,7 +112,9 @@ RC_Channel::get_reverse(void) const
     return false;
 }
 
-// read input from APM_RC - create a control_in value
+// these two set the radio_in
+// the use that to set control_in
+// therefore control_in is a function of radio_in
 void
 RC_Channel::set_pwm(int16_t pwm)
 {
@@ -126,22 +128,6 @@ RC_Channel::set_pwm(int16_t pwm)
     }
 }
 
-/*
-  call read() and set_pwm() on all channels
- */
-//void
-//RC_Channel::set_pwm_all(void)
-//{
-//    for (uint8_t i=0; i<max_channels; i++) {
-//        if (rc_ch[i] != NULL) {
-//            rc_ch[i]->set_pwm(rc_ch[i]->read());
-//        }
-//    }
-//}
-
-// read input from APM_RC - create a control_in value, but use a 
-// zero value for the dead zone. When done this way the control_in
-// value can be used as servo_out to give the same output as input
 void
 RC_Channel::set_pwm_no_deadzone(int16_t pwm)
 {
@@ -155,20 +141,20 @@ RC_Channel::set_pwm_no_deadzone(int16_t pwm)
     }
 }
 
-// returns just the PWM without the offset from radio_min
 void
 RC_Channel::calc_pwm(void)
 {
+    int16_t radio_out = 0;
     if(_type == channel_type::range) {
-        pwm_out         = range_to_pwm();
-        this->set_radio_out((_reverse >= 0) ? (get_radio_min() + pwm_out) : (get_radio_max() - pwm_out) );
+       int16_t const pwm_out         = range_to_pwm();
+       radio_out = (_reverse >= 0) ? (get_radio_min() + pwm_out) : (get_radio_max() - pwm_out);
 
     }else{     // channel_type::angle
-        pwm_out         = angle_to_pwm();
-        this->set_radio_out(pwm_out + get_radio_trim());
+        int16_t const pwm_out         = angle_to_pwm();
+       // this->set_radio_out(pwm_out + get_radio_trim());
+        radio_out = pwm_out + get_radio_trim();
     }
-    // limit the values
-    this->set_radio_out( constrain_int16(this->get_radio_out(), this->get_radio_min(), this->get_radio_max()));
+    this->set_radio_out( constrain_int16(radio_out, this->get_radio_min(), this->get_radio_max()));
 }
 
 void
@@ -192,6 +178,7 @@ RC_Channel::save_eeprom(void)
 }
 
 /*
+  private
   return an "angle in centidegrees" (normally -4500 to 4500) from
   the current radio_in value using the specified dead_zone
   channel is in angle mode
@@ -211,11 +198,13 @@ RC_Channel::pwm_to_angle_dz(uint16_t dead_zone)const
         return reverse_mul * ((int32_t)angle_min_max * (int32_t)(get_radio_in() - radio_trim_high)) / (int32_t)(get_radio_max()  - radio_trim_high);
     }else if(get_radio_in() < radio_trim_low) {
         return reverse_mul * ((int32_t)angle_min_max * (int32_t)(get_radio_in() - radio_trim_low)) / (int32_t)(radio_trim_low - get_radio_min());
-    }else
+    }else{
         return 0;
+    }
 }
 
 /*
+  used by stick mixing
   return an "angle in centidegrees" (normally -4500 to 4500) from
   the current radio_in value
  */
@@ -225,6 +214,7 @@ RC_Channel::pwm_to_angle()const
 	return pwm_to_angle_dz(_dead_zone);
 }
 
+// private
 // in angle mode
 int16_t
 RC_Channel::angle_to_pwm()const
@@ -238,6 +228,7 @@ RC_Channel::angle_to_pwm()const
 }
 
 /*
+  private
   convert a pulse width modulation value to a value in the configured
   range, using the specified deadzone
  channel is in range mode
@@ -262,6 +253,7 @@ RC_Channel::pwm_to_range_dz(uint16_t dead_zone)const
 }
 
 /*
+  private
   convert a pulse width modulation value to a value in the configured
   range
  */
@@ -272,8 +264,8 @@ RC_Channel::pwm_to_range()const
 }
 
 
-// only called if type is range
 // private fyun
+// only called if type is range
 int16_t
 RC_Channel::range_to_pwm()const
 {
