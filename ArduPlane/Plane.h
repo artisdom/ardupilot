@@ -845,7 +845,7 @@ private:
 //    void calc_nav_yaw_coordinated(float speed_scaler);
    // void calc_nav_yaw_course(void);
    // void calc_nav_yaw_ground(void);
-    void throttle_slew_limit(int16_t last_throttle);
+    void throttle_slew_limit();
    // void flap_slew_limit(int8_t &last_value, int8_t &new_value);
     bool suppress_throttle(void);
   //  void channel_output_mixer(uint8_t mixing_type, int16_t &chan1_out, int16_t &chan2_out);
