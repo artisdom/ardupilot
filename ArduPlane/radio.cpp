@@ -49,7 +49,7 @@ namespace {
    float mixer_in_throttle = 0.f;
 
    // not correct really we need some failsafe mixer inputs if we are to do this
-   void setup_failsafe_mixer_inputs()
+   void setup_failsafe()
    {
       mixer_in_pitch = 0.f;
       mixer_in_roll = 0.f;
@@ -80,7 +80,7 @@ void Plane::init_rc_out()
 {
    set_control_surfaces_centre();
 
-   setup_failsafe_mixer_inputs();
+   setup_failsafe();
 
    // prob dont need this here
    // or set the output funs to no null
@@ -229,7 +229,13 @@ void Plane::read_radio()
     } else {
         channel_roll.set_pwm(pwm_roll);
         channel_pitch.set_pwm(pwm_pitch);
+        // rudder ?
     }
+
+//###################################################
+    // at this point channel_pitch and channel_roll
+    // have radio_in and control_in are set to the relevant stick inputs
+    // note that we could just read the stick inputs direct since they are asynchronous
 
     control_failsafe();
 
@@ -264,19 +270,17 @@ void Plane::control_failsafe()
    // check for no rcin fro some time or throttle failsafe
    if (failsafe_state_detected()) {
       // we do not have valid RC input or throttle failsafe is on
-     //  Set all primary channel
-      // control inputs to the trim value and throttle to min
-      channel_roll.set_radio_in(channel_roll.get_radio_trim());
-      channel_roll.set_control_in(0);
-      channel_pitch.set_radio_in(channel_pitch.get_radio_trim());
-      channel_pitch.set_control_in(0);
-      channel_rudder.set_radio_in(channel_rudder.get_radio_trim());
-      channel_rudder.set_control_in(0);
+     //  Set all primary control inputs to the trim value
+      channel_roll.set_pwm(channel_roll.get_radio_trim());
+      channel_pitch.set_pwm(channel_pitch.get_radio_trim());
+      channel_rudder.set_pwm(channel_rudder.get_radio_trim());
+
+      // FIXME! Solution is just to read rcin for throttle not the RC_Channel value?
       // note that we don't set channel_throttle.radio_in to radio_trim,
       // as that would cause throttle failsafe to not activate
       // see Plane::failsafe_state_detected which checks that throttle.get_radio_in is below some value
       // mismatch between radio_in and control in for throttle here
-      channel_throttle.set_control_in(0);
+      channel_throttle.failsafe_set_control_in(0);
       // we detect a failsafe from radio or
       // throttle has dropped below the mark
       failsafe.ch3_counter++;
