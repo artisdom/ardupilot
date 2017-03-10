@@ -454,7 +454,7 @@ private:
     int32_t nav_pitch_cd;
 
     // we separate out rudder input to allow for RUDDER_ONLY=1
-    int16_t rudder_input;
+  //  int16_t rudder_input;
 
     // the aerodymamic load factor. This is calculated from the demanded
     // roll before the roll is clipped, using 1/sqrt(cos(nav_roll))
@@ -748,7 +748,7 @@ private:
     void init_rc_out();
     void rudder_arm_disarm_check();
     void read_radio();
-    void control_failsafe(uint16_t pwm);
+    void control_failsafe();
     void trim_control_surfaces();
     void trim_radio();
     bool rc_failsafe_active(void);
