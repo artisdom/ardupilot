@@ -67,11 +67,13 @@ namespace {
 
 void Plane::throttle_off()
 {
-   channel_throttle.set_pwm(throttle_min());
+   channel_throttle.set_servo_out(0);
+   channel_throttle.calc_pwm();  
 }
 
 void Plane::set_control_surfaces_centre()
 {
+   // sets radio_in and control_in
    channel_roll.set_pwm(channel_roll.get_radio_trim());
    channel_pitch.set_pwm(channel_pitch.get_radio_trim());
    channel_rudder.set_pwm(channel_rudder.get_radio_trim());
@@ -170,7 +172,13 @@ void Plane::rudder_arm_disarm_check()
 void Plane::read_radio()
 {
     if (!hal.rcin->new_input()) {
-        control_failsafe(channel_throttle.get_radio_in());
+        // could use the raw rcin channel here
+        // the throttle radio_in values
+        // was set last loop by Plane::set_servos
+        // by calling channel_throttle.calc_pwm() 
+        // actually the throttle value doesnt appear to be used
+        // in control_failsafe function
+        control_failsafe();
         return;
     }
     
@@ -230,7 +238,7 @@ void Plane::read_radio()
         channel_pitch.set_pwm(pwm_pitch);
     }
 
-    control_failsafe(channel_throttle.get_radio_in());
+    control_failsafe();
 
     channel_throttle.set_servo_out(channel_throttle.get_control_in());
 
@@ -250,9 +258,12 @@ void Plane::read_radio()
     channel_rudder.set_servo_out(channel_rudder.get_control_in());
     
 }
-
-void Plane::control_failsafe(uint16_t pwm)
+/*
+called in the main loop if there is no new rc input this loop
+*/
+void Plane::control_failsafe()
 {
+    unsigned int const throttle_pwm = channel_throttle.get_radio_in();
     if (millis() - failsafe.last_valid_rc_ms > 1000 || rc_failsafe_active()) {
         // we do not have valid RC input. Set all primary channel
         // control inputs to the trim value and throttle to min
@@ -275,11 +286,12 @@ void Plane::control_failsafe(uint16_t pwm)
 
     if (g.throttle_fs_enabled) {
         if (rc_failsafe_active()) {
+            
             // we detect a failsafe from radio
             // throttle has dropped below the mark
             failsafe.ch3_counter++;
             if (failsafe.ch3_counter == 10) {
-                gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS ON %u", (unsigned)pwm);
+                gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS ON %u", throttle_pwm);
                 failsafe.ch3_failsafe = true;
                 AP_Notify::flags.failsafe_radio = true;
             }
@@ -295,7 +307,7 @@ void Plane::control_failsafe(uint16_t pwm)
                 failsafe.ch3_counter = 3;
             }
             if (failsafe.ch3_counter == 1) {
-                gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS OFF %u", (unsigned)pwm);
+                gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS OFF %u", throttle_pwm);
             } else if(failsafe.ch3_counter == 0) {
                 failsafe.ch3_failsafe = false;
                 AP_Notify::flags.failsafe_radio = false;
