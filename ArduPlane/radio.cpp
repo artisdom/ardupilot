@@ -14,18 +14,10 @@ void Plane::set_control_channels(void)
 /*
   allow for runtime change of control channel ordering
  */
-    channel_roll.set_angle();
-    channel_pitch.set_angle();
-    channel_rudder.set_angle();
-    channel_throttle.set_range();
-
-    if (!arming.is_armed() && arming.arming_required() == AP_Arming::YES_MIN_PWM) {
-        hal.rcout->set_safety_pwm(1UL<<(rcmap.throttle()-1), throttle_min());
-    }
-
-    // setup correct scaling for ESCs like the UAVCAN PX4ESC which
-    // take a proportion of speed
-    hal.rcout->set_esc_scaling(channel_throttle.get_radio_min(), channel_throttle.get_radio_max());
+//    channel_roll.set_angle();
+//    channel_pitch.set_angle();
+//    channel_rudder.set_angle();
+//    channel_throttle.set_range();
 }
 
 /*
