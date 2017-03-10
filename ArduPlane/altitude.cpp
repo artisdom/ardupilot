@@ -104,7 +104,7 @@ void Plane::setup_glide_slope(void)
 /*
   return RTL altitude as AMSL altitude
  */
-int32_t Plane::get_RTL_altitude()
+int32_t Plane::get_RTL_altitude()const
 {
     if (g.RTL_altitude_cm < 0) {
         return current_loc.alt;
@@ -116,7 +116,7 @@ int32_t Plane::get_RTL_altitude()
 /*
   return relative altitude in meters (relative to home)
  */
-float Plane::relative_altitude(void)
+float Plane::relative_altitude(void)const
 {
     return (current_loc.alt - home.alt) * 0.01f;
 }
@@ -124,7 +124,7 @@ float Plane::relative_altitude(void)
 /*
   return relative altitude in centimeters, absolute value
  */
-int32_t Plane::relative_altitude_abs_cm(void)
+int32_t Plane::relative_altitude_abs_cm(void)const
 {
     return labs(current_loc.alt - home.alt);
 }
