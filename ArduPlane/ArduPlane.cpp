@@ -501,6 +501,8 @@ void Plane::handle_auto_mode(void)
 
 /*
   main flight mode dependent update code 
+  updates nav_roll_cd and nav_pitch_cd
+  and updates throttle directly
  */
 void Plane::update_flight_mode(void)
 {

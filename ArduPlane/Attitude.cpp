@@ -644,47 +644,6 @@ bool Plane::suppress_throttle(void)
     return true;
 }
 
-/*
-  setup servos for idle mode
-  Idle mode is used during balloon launch to keep servos still, apart
-  from occasional wiggle to prevent freezing up
- */
-//void Plane::set_servos_idle(void)
-//{
-//   // RC_Channel_aux::output_ch_all();
-//    if (auto_state.idle_wiggle_stage == 0) {
-//         throttle_off();
-//         set_control_surfaces_centre();
-//        //RC_Channel::output_trim_all();
-//        
-//        return;
-//    }
-//    int16_t servo_value = 0;
-//    // move over full range for 2 seconds
-//    auto_state.idle_wiggle_stage += 2;
-//    if (auto_state.idle_wiggle_stage < 50) {
-//        servo_value = auto_state.idle_wiggle_stage * (4500 / 50);
-//    } else if (auto_state.idle_wiggle_stage < 100) {
-//        servo_value = (100 - auto_state.idle_wiggle_stage) * (4500 / 50);        
-//    } else if (auto_state.idle_wiggle_stage < 150) {
-//        servo_value = (100 - auto_state.idle_wiggle_stage) * (4500 / 50);        
-//    } else if (auto_state.idle_wiggle_stage < 200) {
-//        servo_value = (auto_state.idle_wiggle_stage-200) * (4500 / 50);        
-//    } else {
-//        auto_state.idle_wiggle_stage = 0;
-//    }
-//    channel_roll.set_servo_out(servo_value);
-//    channel_pitch.set_servo_out(servo_value);
-//    channel_rudder.set_servo_out (servo_value);
-//    channel_roll.calc_pwm();
-//    channel_pitch.calc_pwm();
-//    channel_rudder.calc_pwm();
-//    channel_roll.output();
-//    channel_pitch.output();
-//    channel_throttle.output();
-//    channel_rudder.output();
-//    channel_throttle.output_trim();
-//}
 
 /*
   return minimum throttle, taking account of throttle reversal
@@ -702,41 +661,17 @@ void Plane::set_servos(void)
 {
     int16_t last_throttle = channel_throttle.get_radio_out();
 
-//    if (control_mode == AUTO && auto_state.idle_mode) {
-//        // special handling for balloon launch
-//        set_servos_idle();
-//        return;
-//    }
-
-    /*
-      see if we are doing ground steering.
-     */
-//    if (!steering_control.ground_steering) {
-//        // we are not at an altitude for ground steering. Set the nose
-//        // wheel to the rudder just in case the barometer has drifted
-//        // a lot
-//        steering_control.steering = steering_control.rudder;
-//    } else  {
-//        // we are within the ground steering altitude but don't have a
-//        // dedicated steering channel. Set the rudder to the ground
-//        // steering output
-//        steering_control.rudder = steering_control.steering;
-//    }
-
- //   channel_rudder.set_servo_out(steering_control.rudder);
-
-    // clear ground_steering to ensure manual control if the yaw stabilizer doesn't run
-//    steering_control.ground_steering = false;
-
     if (control_mode == MANUAL) {
         // do a direct pass through of radio values
-        channel_roll.set_radio_out(channel_roll.get_radio_in());
-        channel_pitch.set_radio_out(channel_pitch.get_radio_in());
-        channel_throttle.set_radio_out(channel_throttle.get_radio_in());
-        channel_rudder.set_radio_out(channel_rudder.get_radio_in());
+        channel_roll.set_radio_out(channel_roll.get_radio_in());  // can conv
+        channel_pitch.set_radio_out(channel_pitch.get_radio_in()); //can conv
+        channel_throttle.set_radio_out(channel_throttle.get_radio_in()); //can conv
+        channel_rudder.set_radio_out(channel_rudder.get_radio_in()); // can conv
 
     } else {
 
+        // for this function the value rc_channel.get_servo_out is converted and put to radio_out 
+        // so essentially get_servo out is the autopilots input?
         channel_roll.calc_pwm();
         channel_pitch.calc_pwm();
         channel_rudder.calc_pwm();
@@ -755,6 +690,8 @@ void Plane::set_servos(void)
                 max_throttle = aparm.throttle_max;
             }
         }
+
+        // This is set in case throttle.cac_pwm is called
         channel_throttle.set_servo_out(constrain_int16(channel_throttle.get_servo_out(), 
                                                       min_throttle,
                                                       max_throttle));
@@ -842,6 +779,7 @@ void Plane::set_servos(void)
     }
 #endif
 
+  // call mix here 
     channel_roll.output();
     channel_pitch.output();
     channel_throttle.output();
