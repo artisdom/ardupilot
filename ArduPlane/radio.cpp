@@ -251,61 +251,61 @@ void Plane::read_radio()
     channel_rudder.set_servo_out(channel_rudder.get_control_in());
     
 }
+
 /*
 called in the main loop to check for failsafe
+ Logic here is wrong. 2 type of failsafe
+ throttle below some min and no rc input
+  Seem to be confused below
 */
 void Plane::control_failsafe()
 {
-    unsigned int const throttle_pwm = channel_throttle.get_radio_in();
-
-    // check for no rcin fro some time
-    if (millis() - failsafe.last_valid_rc_ms > 1000 || failsafe_state_detected()) {
-        // we do not have valid RC input. Set all primary channel
-        // control inputs to the trim value and throttle to min
-        channel_roll.set_radio_in(channel_roll.get_radio_trim());
-        channel_pitch.set_radio_in(channel_pitch.get_radio_trim());
-        channel_rudder.set_radio_in(channel_rudder.get_radio_trim());
-        // note that we don't set channel_throttle.radio_in to radio_trim,
-        // as that would cause throttle failsafe to not activate
-        // see Plane::failsafe_state_detected which checks that throttle.get_radio_in is below some value
-
-        channel_roll.set_control_in(0);
-        channel_pitch.set_control_in(0);
-        channel_rudder.set_control_in(0);
-        // mismatch between radio_in and control in for throttle here
-        channel_throttle.set_control_in(0);
-    }
-
-    if (g.throttle_fs_enabled) {
-        if (failsafe_state_detected()) {
-            
-            // we detect a failsafe from radio or
-            // throttle has dropped below the mark
-            failsafe.ch3_counter++;
-            if (failsafe.ch3_counter == 10) {
-                gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS ON %u", throttle_pwm);
-                failsafe.ch3_failsafe = true;
-                AP_Notify::flags.failsafe_radio = true;
-            }
-            if (failsafe.ch3_counter > 10) {
-                failsafe.ch3_counter = 10;
-            }
-
-        }else if(failsafe.ch3_counter > 0) {
-            // we are no longer in failsafe condition
-            // but we need to recover quickly
-            failsafe.ch3_counter--;
-            if (failsafe.ch3_counter > 3) {
-                failsafe.ch3_counter = 3;
-            }
-            if (failsafe.ch3_counter == 1) {
-                gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS OFF %u", throttle_pwm);
-            } else if(failsafe.ch3_counter == 0) {
-                failsafe.ch3_failsafe = false;
-                AP_Notify::flags.failsafe_radio = false;
-            }
-        }
-    }
+   unsigned int const throttle_pwm = channel_throttle.get_radio_in();
+   // check for no rcin fro some time or throttle failsafe
+   if (failsafe_state_detected()) {
+      // we do not have valid RC input or throttle failsafe is on
+     //  Set all primary channel
+      // control inputs to the trim value and throttle to min
+      channel_roll.set_radio_in(channel_roll.get_radio_trim());
+      channel_roll.set_control_in(0);
+      channel_pitch.set_radio_in(channel_pitch.get_radio_trim());
+      channel_pitch.set_control_in(0);
+      channel_rudder.set_radio_in(channel_rudder.get_radio_trim());
+      channel_rudder.set_control_in(0);
+      // note that we don't set channel_throttle.radio_in to radio_trim,
+      // as that would cause throttle failsafe to not activate
+      // see Plane::failsafe_state_detected which checks that throttle.get_radio_in is below some value
+      // mismatch between radio_in and control in for throttle here
+      channel_throttle.set_control_in(0);
+      // we detect a failsafe from radio or
+      // throttle has dropped below the mark
+      failsafe.ch3_counter++;
+      if (failsafe.ch3_counter == 10) {
+         // n.b that throttle may be irrelevant if no rc input
+         gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS ON %u", throttle_pwm);
+         failsafe.ch3_failsafe = true;
+         AP_Notify::flags.failsafe_radio = true;
+      }
+      if (failsafe.ch3_counter > 10) {
+         failsafe.ch3_counter = 10;
+      }
+   }else {
+      if(failsafe.ch3_counter > 0) {
+         // we are no longer in failsafe condition
+         // but we need to recover quickly
+         failsafe.ch3_counter--;
+         if (failsafe.ch3_counter > 3) {
+            failsafe.ch3_counter = 3;
+         }
+         if (failsafe.ch3_counter == 1) {
+            // n.b that throttle is be irrelevant if no rc input
+            gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS OFF %u", throttle_pwm);
+         } else if(failsafe.ch3_counter == 0) {
+            failsafe.ch3_failsafe = false;
+            AP_Notify::flags.failsafe_radio = false;
+         }
+      }
+   }
 }
 
 void Plane::trim_control_surfaces()
@@ -324,6 +324,7 @@ void Plane::trim_control_surfaces()
       return;
    }
 
+   
    if (channel_roll.get_radio_in() != 0) {
       channel_roll.set_radio_trim(channel_roll.get_radio_in());
    }
@@ -350,6 +351,24 @@ void Plane::trim_radio()
     trim_control_surfaces();
 }
 
+bool Plane::throttle_failsafe_state_detected()const
+{
+   if (g.throttle_fs_enabled) {
+      if (channel_throttle.get_reverse()) {
+         return channel_throttle.get_radio_in() >= g.throttle_fs_value;
+      }else{
+         return channel_throttle.get_radio_in() <= g.throttle_fs_value;
+      }
+   }else{
+      return false;
+   }
+}
+
+bool Plane::rcin_failsafe_state_detected() const
+{
+   return (millis() - failsafe.last_valid_rc_ms > 1000);
+}
+
 /*
   return true if throttle level is below throttle failsafe threshold
   or RC input is invalid
@@ -358,16 +377,5 @@ void Plane::trim_radio()
  */
 bool Plane::failsafe_state_detected(void)
 {
-    // should go after ?
-    if (!g.throttle_fs_enabled) {
-        return false;
-    }
-    if (millis() - failsafe.last_valid_rc_ms > 1000) {
-        // we haven't had a valid RC frame for 1 seconds
-        return true;
-    }
-    if (channel_throttle.get_reverse()) {
-        return channel_throttle.get_radio_in() >= g.throttle_fs_value;
-    }
-    return channel_throttle.get_radio_in() <= g.throttle_fs_value;
+   return rcin_failsafe_state_detected() || throttle_failsafe_state_detected();
 }
