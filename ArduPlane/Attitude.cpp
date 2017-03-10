@@ -99,7 +99,7 @@ void Plane::stabilize_roll(float speed_scaler)
  */
 void Plane::stabilize_pitch(float speed_scaler)
 {
-    int8_t force_elevator = takeoff_tail_hold();
+    int8_t const force_elevator = takeoff_tail_hold();
     if (force_elevator != 0) {
         // we are holding the tail down during takeoff. Just covert
         // from a percentage to a -4500..4500 centidegree angle
@@ -116,35 +116,6 @@ void Plane::stabilize_pitch(float speed_scaler)
                                                              disable_integrator) );
 }
 
-#if 0
-///*
-//  perform stick mixing on one channel
-//  This type of stick mixing reduces the influence of the auto
-//  controller as it increases the influence of the users stick input,
-//  allowing the user full deflection if needed
-// */
-//void Plane::stick_mix_channel(RC_Channel *channel, int16_t &servo_out)
-//{
-//    float ch_inf;
-//      
-// // user stick position in  usec pwm
-// // abs
-//    ch_inf = (float)channel->radio_in - (float)channel->radio_trim;
-//    ch_inf = fabsf(ch_inf);
-//#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-//#ifdef min
-//#undef min
-//#endif
-//    ch_inf = quan::min(ch_inf, 400.0f);
-//#else
-//    ch_inf = min(ch_inf, 400.0f);
-//#endif
-//    ch_inf = ((400.0f - ch_inf) / 400.0f);
-//    servo_out *= ch_inf;
-//    servo_out += channel->pwm_to_angle();
-//}
-#else
-
 namespace {
 
    // ouch o only for pitch and roll
@@ -158,26 +129,25 @@ namespace {
    }
 }
 
-#endif
-
 /*
   this gives the user control of the aircraft in stabilization modes
  */
 void Plane::stabilize_stick_mixing_direct()
 {
-    if (!stick_mixing_enabled() ||
-        control_mode == ACRO ||
-        control_mode == FLY_BY_WIRE_A ||
-        control_mode == AUTOTUNE ||
-        control_mode == FLY_BY_WIRE_B ||
-        control_mode == CRUISE ||
-        control_mode == TRAINING) {
-        return;
+    if ( stick_mixing_enabled()  &&  
+         !(
+           control_mode == ACRO ||
+           control_mode == FLY_BY_WIRE_A ||
+           control_mode == AUTOTUNE ||
+           control_mode == FLY_BY_WIRE_B ||
+           control_mode == CRUISE ||
+           control_mode == TRAINING
+         )
+       }
+    {
+      stick_mix_channel(channel_roll);
+      stick_mix_channel(channel_pitch);
     }
-    stick_mix_channel(channel_roll);
-    stick_mix_channel(channel_pitch);
-    //stick_mix_channel(channel_roll, channel_roll.servo_out);
-   // stick_mix_channel(channel_pitch, channel_pitch.servo_out);
 }
 
 /*
@@ -226,53 +196,6 @@ void Plane::stabilize_stick_mixing_fbw()
     nav_pitch_cd = constrain_int32(nav_pitch_cd, pitch_limit_min_cd, aparm.pitch_limit_max_cd.get());
 }
 
-
-/*
-  stabilize the yaw axis. There are 3 modes of operation:
-
-    - hold a specific heading with ground steering
-    - rate controlled with ground steering
-    - yaw control for coordinated flight    
- */
-//void Plane::stabilize_yaw(float speed_scaler)
-//{
-////    if (control_mode == AUTO && flight_stage == AP_SpdHgtControl::FLIGHT_LAND_FINAL) {
-////        // in land final setup for ground steering
-////        steering_control.ground_steering = true;
-////    } else {
-////        // otherwise use ground steering when no input control and we
-////        // are below the GROUND_STEER_ALT
-////        steering_control.ground_steering = (channel_roll.control_in == 0 && 
-////                                            fabsf(relative_altitude()) < g.ground_steer_alt);
-////
-////        if (control_mode == AUTO && flight_stage == AP_SpdHgtControl::FLIGHT_LAND_APPROACH) {
-////            // don't use ground steering on landing approach
-////            steering_control.ground_steering = false;
-////        }
-////    }
-//
-//
-//    /*
-//      first calculate steering_control.steering for a nose or tail
-//      wheel.
-//      We use "course hold" mode for the rudder when either in the
-//      final stage of landing (when the wings are help level) or when
-//      in course hold in FBWA mode (when we are below GROUND_STEER_ALT)
-//     */
-////    if ((control_mode == AUTO && flight_stage == AP_SpdHgtControl::FLIGHT_LAND_FINAL) ||
-////        (steer_state.hold_course_cd != -1 && steering_control.ground_steering)) {
-////        calc_nav_yaw_course();
-////    } else if (steering_control.ground_steering) {
-////        calc_nav_yaw_ground();
-////    }
-//
-//    /*
-//      now calculate steering_control.rudder for the rudder
-//     */
-//    calc_nav_yaw_coordinated(speed_scaler);
-//}
-
-
 /*
   a special stabilization function for training mode
  */
@@ -300,8 +223,6 @@ void Plane::stabilize_training(float speed_scaler)
             channel_pitch.set_servo_out(channel_pitch.get_control_in());            
         }
     }
-
-    //stabilize_yaw(speed_scaler);
 }
 
 
@@ -541,7 +462,10 @@ void Plane::calc_nav_roll()
 /*****************************************
 * Throttle slew limit
 *****************************************/
-void Plane::throttle_slew_limit(int16_t last_throttle)
+namespace {
+   int16_t last_throttle = 0;
+}
+void Plane::throttle_slew_limit()
 {
     uint8_t slewrate = aparm.throttle_slewrate;
     if (control_mode==AUTO && auto_state.takeoff_complete == false && g.takeoff_throttle_slewrate != 0) {
@@ -559,6 +483,7 @@ void Plane::throttle_slew_limit(int16_t last_throttle)
             constrain_int16(channel_throttle.get_radio_out(), last_throttle - temp, last_throttle + temp)
         );
     }
+    last_throttle = channel_throttle.get_radio_out();
 }
 
 /* We want to suppress the throttle if we think we are on the ground and in an autopilot controlled throttle mode.
@@ -659,8 +584,6 @@ uint16_t Plane::throttle_min(void) const
 *****************************************/
 void Plane::set_servos(void)
 {
-    int16_t last_throttle = channel_throttle.get_radio_out();
-
     if (control_mode == MANUAL) {
         // do a direct pass through of radio values
         channel_roll.set_radio_out(channel_roll.get_radio_in());  // can conv
@@ -731,7 +654,7 @@ void Plane::set_servos(void)
     if (control_mode >= FLY_BY_WIRE_B) {
         /* only do throttle slew limiting in modes where throttle
          *  control is automatic */
-        throttle_slew_limit(last_throttle);
+        throttle_slew_limit();
     }
 
     if (control_mode == TRAINING) {
@@ -805,6 +728,7 @@ void Plane::demo_servos(uint8_t i)
         i--;
     }
     channel_roll.set_radio_out(save_channel_roll_radio_out);
+    channel_roll.output();
 }
 
 /*
