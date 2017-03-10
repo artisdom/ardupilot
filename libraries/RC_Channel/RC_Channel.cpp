@@ -84,19 +84,6 @@ const AP_Param::GroupInfo RC_Channel::var_info[] = {
     AP_GROUPEND
 };
 
-// setup the control preferences
-void
-RC_Channel::set_range()
-{
-    _type = channel_type::range;
-}
-
-void
-RC_Channel::set_angle()
-{
-    _type = channel_type::angle;
-}
-
 void
 RC_Channel::set_default_dead_zone()
 {
@@ -120,7 +107,7 @@ RC_Channel::set_pwm(int16_t pwm)
 {
     set_radio_in(pwm);
 
-    if (_type == channel_type::range) {
+    if (m_channel_type == channel_type::range) {
         set_control_in( pwm_to_range());
     } else {
         set_control_in(pwm_to_angle());
@@ -132,7 +119,7 @@ RC_Channel::set_pwm_no_deadzone(int16_t pwm)
 {
     set_radio_in(pwm);
 
-    if (_type == channel_type::range) {
+    if (m_channel_type == channel_type::range) {
         set_control_in(pwm_to_range_dz(0));
     } else {
         set_control_in(pwm_to_angle_dz(0));
@@ -167,7 +154,7 @@ void
 RC_Channel::calc_pwm(void)
 {
     int16_t radio_out = 0;
-    if(_type == channel_type::range) {
+    if(m_channel_type == channel_type::range) {
        int16_t const pwm_out         = range_to_pwm();
        radio_out = (_reverse >= 0) ? (get_radio_min() + pwm_out) : (get_radio_max() - pwm_out);
 

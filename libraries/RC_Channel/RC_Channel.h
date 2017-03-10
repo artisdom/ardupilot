@@ -21,12 +21,12 @@ public:
     ///
     enum class channel_type : bool { angle,range };
 
-    RC_Channel(uint8_t ch_in, uint8_t ch_out) :
+    RC_Channel(uint8_t ch_in, uint8_t ch_out, channel_type type_in) :
         m_radio_in{0} // stick units usec
         ,m_control_in{0} // angle or range units
         ,m_servo_out{0}  // degrees * 100 or 0 to 100
         ,m_radio_out{0}  // raw pwm
-        ,_type{channel_type::angle}
+        ,m_channel_type{type_in}
         ,m_rcin_idx{ch_in} 
         ,m_rcout_idx{ch_out}
     {
@@ -38,15 +38,11 @@ public:
     void        save_eeprom(void);
     void        save_trim(void);
 
-    // setup the control preferences
-    void        set_range();
-    void        set_angle();
+    // This should apply to the input surely?
     bool        get_reverse(void) const;
   
-    
-    // read input from APM_RC - create a control_in value
     void        set_pwm(int16_t pwm);
- //   static void set_pwm_all(void);
+
     void        set_pwm_no_deadzone(int16_t pwm);
 
     // generate PWM from servo_out value
@@ -139,7 +135,7 @@ private:
 
     int16_t         m_radio_out;
 
-    channel_type    _type;
+    channel_type const    m_channel_type;
 
     // where to get input from
     uint8_t const         m_rcin_idx;
