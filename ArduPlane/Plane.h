@@ -655,9 +655,9 @@ private:
     void load_parameters(void);
     void adjust_altitude_target();
     void setup_glide_slope(void);
-    int32_t get_RTL_altitude();
-    float relative_altitude(void);
-    int32_t relative_altitude_abs_cm(void);
+    int32_t get_RTL_altitude()const;
+    float relative_altitude(void)const;
+    int32_t relative_altitude_abs_cm(void)const;
     void set_target_altitude_current(void);
     void set_target_altitude_current_adjusted(void);
     void set_target_altitude_location(const Location &loc);
@@ -752,6 +752,8 @@ private:
     void trim_control_surfaces();
     void trim_radio();
     bool failsafe_state_detected(void);
+    bool throttle_failsafe_state_detected()const;
+    bool rcin_failsafe_state_detected() const;
     void init_barometer(void);
     void init_rangefinder(void);
     void read_rangefinder(void);
