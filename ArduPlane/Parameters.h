@@ -471,10 +471,10 @@ public:
     AP_Int16 gcs_pid_mask;
 
     // RC channels
-    RC_Channel rc_1;
-    RC_Channel rc_2;
-    RC_Channel rc_3;
-    RC_Channel rc_4;
+  //  RC_Channel rc_1;
+   // RC_Channel rc_2;
+   // RC_Channel rc_3;
+   // RC_Channel rc_4;
 //    RC_Channel_aux rc_5;
 //    RC_Channel_aux rc_6;
 //    RC_Channel_aux rc_7;
@@ -484,15 +484,15 @@ public:
     Parameters() :
         // variable				default
         //----------------------------------------
-        rc_1                                    (CH_1),
-        rc_2                                    (CH_2),
-        rc_3                                    (CH_3),
-        rc_4                                    (CH_4),
+      //  rc_1                                    (CH_1),
+      //  rc_2                                    (CH_2),
+      //  rc_3                                    (CH_3),
+       // rc_4                                    (CH_4),
 //        rc_5                                    (CH_5),
 //        rc_6                                    (CH_6),
 //        rc_7                                    (CH_7),
 //        rc_8                                    (CH_8),
-        _dummy(0)
+        _dummy{0}
         {}
 };
 

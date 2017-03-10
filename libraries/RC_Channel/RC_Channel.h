@@ -19,14 +19,16 @@ public:
     /// @param key      EEPROM storage key for the channel trim parameters.
     /// @param name     Optional name for the group.
     ///
+    enum class channel_type : bool { angle,range };
 
-    RC_Channel(uint8_t ch_out) :
+    RC_Channel(uint8_t ch_in, uint8_t ch_out) :
         m_radio_in{0} // stick units usec
         ,m_control_in{0} // angle or range units
         ,m_servo_out{0}  // degrees * 100 or 0 to 100
         ,m_radio_out{0}  // raw pwm
         ,_type{channel_type::angle}
-        ,_ch_out{ch_out} 
+        ,m_rcin_idx{ch_in} 
+        ,m_rcout_idx{ch_out}
     {
         AP_Param::setup_object_defaults(this, var_info);
     }
@@ -54,7 +56,7 @@ public:
       return a normalised input for a channel, in range -1 to 1,
       centered around the channel trim. Ignore deadzone.
      */
-    float       norm_input();
+    float       norm_input()const;
 
     /*
       return a normalised input for a channel, in range -1 to 1,
@@ -65,14 +67,9 @@ public:
     //send values to the PWM timers for output
     void       output() const;
     void       output_trim() const;
-  //  static void                                     output_trim_all();
-   // static void                                     setup_failsafe_trim_all();
-    // reads rcin
     uint16_t   read() const;
-    void       enable_out();
-    void       disable_out();
-
-  //  static RC_Channel *rc_channel(uint8_t i);
+    void       enable_out()const;
+    void       disable_out()const;
     static const struct AP_Param::GroupInfo         var_info[];
 
     // radio_out is in same units as rcin e.g raw pwm units approx 1000 to 2000 us
@@ -84,12 +81,6 @@ public:
     
     // 0 to 100 for throttle
     int16_t get_servo_out() const { return m_servo_out;}
-
-    //{
-    // looks like these 2 are onlu called in Plane::control_failsafe
-    void set_radio_in(int16_t v) {m_radio_in = v;}
-    void set_control_in( int16_t v) { m_control_in = v;}
-    // }
 
     int16_t get_control_in()const { return m_control_in;}
 
@@ -109,8 +100,11 @@ public:
     int16_t     pwm_to_angle()const;
 
     void        set_default_dead_zone();
+    // only used for throttle in failsafe
+    void failsafe_set_control_in(int16_t v) { set_control_in(v);}
 private:
-    
+    void set_radio_in(int16_t v) {m_radio_in = v;}
+    void set_control_in( int16_t v) { m_control_in = v;}
     int16_t     pwm_to_angle_dz(uint16_t dead_zone)const;
     int16_t     pwm_to_range_dz(uint16_t dead_zone)const;
     int16_t     angle_to_pwm()const;
@@ -131,7 +125,7 @@ private:
     // eeprom value never appears to be used, just has default updated in init_rc_in
     AP_Int16        _dead_zone;
 
-     // pwm is stored here direct stick input I think e.g approx 1000 to 2000 us;
+    //direct stick input I think e.g approx 1000 to 2000 us;
     // looks to be same units as Read()
     int16_t         m_radio_in;
 
@@ -139,21 +133,18 @@ private:
     //in the angle or range units,?
     // This is usually a function of radio_in above
     // the exception is when Plane::control_failsafe is called
-    // 
     int16_t         m_control_in;
     // servo_out looks to be same units as control_in
     int16_t         m_servo_out;
 
-    // 
     int16_t         m_radio_out;
 
-    enum class channel_type : bool { angle,range };
     channel_type    _type;
 
-    // channel index for rc input?
-    // nope used by both :(
-    // add a  _ch_in ?
-    uint8_t const         _ch_out;
+    // where to get input from
+    uint8_t const         m_rcin_idx;
+    // where to send output to
+    uint8_t const         m_rcout_idx;
 };
 
 #endif

@@ -88,13 +88,13 @@ const AP_Param::GroupInfo RC_Channel::var_info[] = {
 void
 RC_Channel::set_range()
 {
-    _type   = channel_type::range;
+    _type = channel_type::range;
 }
 
 void
 RC_Channel::set_angle()
 {
-    _type  = channel_type::angle;
+    _type = channel_type::angle;
 }
 
 void
@@ -123,7 +123,6 @@ RC_Channel::set_pwm(int16_t pwm)
     if (_type == channel_type::range) {
         set_control_in( pwm_to_range());
     } else {
-        //channel_type::angle
         set_control_in(pwm_to_angle());
     }
 }
@@ -136,11 +135,9 @@ RC_Channel::set_pwm_no_deadzone(int16_t pwm)
     if (_type == channel_type::range) {
         set_control_in(pwm_to_range_dz(0));
     } else {
-        //angle
         set_control_in(pwm_to_angle_dz(0));
     }
 }
-
 
 // private
 // in angle mode
@@ -155,16 +152,15 @@ RC_Channel::angle_to_pwm()const
     }
 }
 // private
-// only called if type is range
+// in range mode
 int16_t
 RC_Channel::range_to_pwm()const
 {
-
     return ((int32_t)(this->get_servo_out() - range_low) * (int32_t)(get_radio_max() - get_radio_min())) / (int32_t)(range_high - range_low);
 }
 
 /*
-   calculate the pwm from the servo_out value
+   calculate the radio_out value from the servo_out value
    The servo out value being in either centidegrees or percent for throttle
 */
 void
@@ -183,25 +179,7 @@ RC_Channel::calc_pwm(void)
     this->set_radio_out( constrain_int16(radio_out, this->get_radio_min(), this->get_radio_max()));
 }
 
-void
-RC_Channel::load_eeprom(void)
-{
-    m_radio_min.load();
-    m_radio_trim.load();
-    m_radio_max.load();
-    _reverse.load();
-    _dead_zone.load();
-}
 
-void
-RC_Channel::save_eeprom(void)
-{
-    m_radio_min.save();
-    m_radio_trim.save();
-    m_radio_max.save();
-    _reverse.save();
-    _dead_zone.save();
-}
 
 /*
   private
@@ -241,7 +219,6 @@ RC_Channel::pwm_to_angle()const
 }
 
 
-
 /*
   private
   convert a pulse width modulation value to a value in the configured
@@ -278,13 +255,10 @@ RC_Channel::pwm_to_range()const
     return pwm_to_range_dz(_dead_zone);
 }
 
-
-
-
 // ------------------------------------------
-
+// convert radio_in to a value in range -1 to 1
 float
-RC_Channel::norm_input()
+RC_Channel::norm_input()const
 {
     float ret;
     int16_t reverse_mul = (_reverse==-1?-1:1);
@@ -318,60 +292,50 @@ RC_Channel::norm_output()const
     return ret;
 }
 
-//
 void RC_Channel::output() const
 {
-    hal.rcout->write(_ch_out, this->get_radio_out());
+    hal.rcout->write(m_rcout_idx, this->get_radio_out());
 }
-
-void RC_Channel::output_trim() const
-{
-    hal.rcout->write(_ch_out, get_radio_trim());
-}
-
-//void RC_Channel::output_trim_all()
-//{
-//    for (uint8_t i=0; i<max_channels; i++) {
-//        if (rc_ch[i] != NULL) {
-//            rc_ch[i]->output_trim();
-//        }
-//    }
-//}
-
-/*
-  setup the failsafe value to the trim value for all channels
- */
-//void RC_Channel::setup_failsafe_trim_all()
-//{
-//    for (uint8_t i=0; i<max_channels; i++) {
-//        if (rc_ch[i] != NULL) {
-//            hal.rcout->set_failsafe_pwm(1U<<i, rc_ch[i]->get_radio_trim());
-//        }
-//    }
-//}
 
 uint16_t
 RC_Channel::read() const
 {
-    return hal.rcin->read(_ch_out);
+    return hal.rcin->read(m_rcin_idx);
+}
+
+void RC_Channel::output_trim() const
+{
+    hal.rcout->write(m_rcout_idx, get_radio_trim());
 }
 
 void
-RC_Channel::enable_out()
+RC_Channel::enable_out()const
 {
-    hal.rcout->enable_ch(_ch_out);
+    hal.rcout->enable_ch(m_rcout_idx);
 }
 
 void
-RC_Channel::disable_out()
+RC_Channel::disable_out()const
 {
-    hal.rcout->disable_ch(_ch_out);
+    hal.rcout->disable_ch(m_rcout_idx);
 }
 
-//RC_Channel *RC_Channel::rc_channel(uint8_t i)
-//{
-//    if (i >= max_channels) {
-//        return NULL;
-//    }
-//    return rc_ch[i];
-//}
+void
+RC_Channel::load_eeprom(void)
+{
+    m_radio_min.load();
+    m_radio_trim.load();
+    m_radio_max.load();
+    _reverse.load();
+    _dead_zone.load();
+}
+
+void
+RC_Channel::save_eeprom(void)
+{
+    m_radio_min.save();
+    m_radio_trim.save();
+    m_radio_max.save();
+    _reverse.save();
+    _dead_zone.save();
+}
