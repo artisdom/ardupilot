@@ -48,7 +48,7 @@ bool Plane::stick_mixing_enabled(void)
         if (g.stick_mixing != STICK_MIXING_DISABLED &&
             geofence_stickmixing() &&
             failsafe.state == FAILSAFE_NONE &&
-            !rc_failsafe_active()) {
+            !failsafe_state_detected()) {
             // we're in an auto mode, and haven't triggered failsafe
             return true;
         } else {

@@ -751,7 +751,7 @@ private:
     void control_failsafe();
     void trim_control_surfaces();
     void trim_radio();
-    bool rc_failsafe_active(void);
+    bool failsafe_state_detected(void);
     void init_barometer(void);
     void init_rangefinder(void);
     void read_rangefinder(void);
