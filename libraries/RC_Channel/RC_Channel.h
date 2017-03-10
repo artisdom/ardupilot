@@ -144,12 +144,7 @@ private:
     // servo_out looks to be same units as control_in
     int16_t         m_servo_out;
 
-    // logical actuator output
-    // current values to the servos - degrees * 100 (approx assuming servo is -45 to 45 degrees except [3] is 0 to 100
-    // This is written by the various pitch/roll yaw controllers
-    // for pitch and roll one way this is set is is by assign from RC_Channel::pwm_to_angle;
-    // same units as control_in
-    // is in same units as rcin e.g raw pwm units
+    // 
     int16_t         m_radio_out;
 
     enum class channel_type : bool { angle,range };
