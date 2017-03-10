@@ -141,6 +141,32 @@ RC_Channel::set_pwm_no_deadzone(int16_t pwm)
     }
 }
 
+
+// private
+// in angle mode
+int16_t
+RC_Channel::angle_to_pwm()const
+{
+    int16_t reverse_mul = (_reverse==-1?-1:1);
+    if((this->get_servo_out() * reverse_mul) > 0) {
+        return reverse_mul * ((int32_t)this->get_servo_out() * (int32_t)(get_radio_max() - get_radio_trim())) / (int32_t)angle_min_max;
+    } else {
+        return reverse_mul * ((int32_t)this->get_servo_out() * (int32_t)(get_radio_trim() - get_radio_min())) / (int32_t)angle_min_max;
+    }
+}
+// private
+// only called if type is range
+int16_t
+RC_Channel::range_to_pwm()const
+{
+
+    return ((int32_t)(this->get_servo_out() - range_low) * (int32_t)(get_radio_max() - get_radio_min())) / (int32_t)(range_high - range_low);
+}
+
+/*
+   calculate the pwm from the servo_out value
+   The servo out value being in either centidegrees or percent for throttle
+*/
 void
 RC_Channel::calc_pwm(void)
 {
@@ -214,18 +240,7 @@ RC_Channel::pwm_to_angle()const
 	return pwm_to_angle_dz(_dead_zone);
 }
 
-// private
-// in angle mode
-int16_t
-RC_Channel::angle_to_pwm()const
-{
-    int16_t reverse_mul = (_reverse==-1?-1:1);
-    if((this->get_servo_out() * reverse_mul) > 0) {
-        return reverse_mul * ((int32_t)this->get_servo_out() * (int32_t)(get_radio_max() - get_radio_trim())) / (int32_t)angle_min_max;
-    } else {
-        return reverse_mul * ((int32_t)this->get_servo_out() * (int32_t)(get_radio_trim() - get_radio_min())) / (int32_t)angle_min_max;
-    }
-}
+
 
 /*
   private
@@ -264,14 +279,7 @@ RC_Channel::pwm_to_range()const
 }
 
 
-// private fyun
-// only called if type is range
-int16_t
-RC_Channel::range_to_pwm()const
-{
 
-    return ((int32_t)(this->get_servo_out() - range_low) * (int32_t)(get_radio_max() - get_radio_min())) / (int32_t)(range_high - range_low);
-}
 
 // ------------------------------------------
 
