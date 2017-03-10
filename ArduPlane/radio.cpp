@@ -8,12 +8,12 @@
 //Function that will read the radio data, limit servos and trigger a failsafe
 // ----------------------------------------------------------------------------
 
+
+void Plane::set_control_channels(void)
+{
 /*
   allow for runtime change of control channel ordering
  */
-void Plane::set_control_channels(void)
-{
-
     channel_roll.set_angle();
     channel_pitch.set_angle();
     channel_rudder.set_angle();
