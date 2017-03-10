@@ -164,7 +164,7 @@ int8_t Plane::test_failsafe(uint8_t argc, const Menu::arg *argv)
             fail_test++;
         }
 
-        if(rc_failsafe_active()) {
+        if(failsafe_state_detected()) {
             cliSerial->printf("THROTTLE FAILSAFE ACTIVATED: %d, ", (int)channel_throttle.get_radio_in());
             print_flight_mode(cliSerial, readSwitch());
             cliSerial->println();
