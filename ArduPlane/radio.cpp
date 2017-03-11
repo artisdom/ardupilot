@@ -229,7 +229,6 @@ called in the main loop to check for failsafe
 */
 void Plane::control_failsafe()
 {
-   unsigned int const throttle_pwm = channel_throttle.get_radio_in();
    // check for no rcin fro some time or throttle failsafe
    if (failsafe_state_detected()) {
       // we do not have valid RC input or throttle failsafe is on
@@ -237,13 +236,14 @@ void Plane::control_failsafe()
       channel_roll.set_pwm(channel_roll.get_radio_trim());
       channel_pitch.set_pwm(channel_pitch.get_radio_trim());
       channel_rudder.set_pwm(channel_rudder.get_radio_trim());
-
-      channel_throttle.failsafe_set_control_in(0);
+// todo reverse throttle etc
+      channel_throttle.set_pwm(channel_throttle.get_radio_min());
       // we detect a failsafe from radio or
       // throttle has dropped below the mark
       failsafe.ch3_counter++;
       if (failsafe.ch3_counter == 10) {
          // n.b that throttle may be irrelevant if no rc input
+         unsigned int const throttle_pwm = channel_throttle.read();
          gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS ON %u", throttle_pwm);
          failsafe.ch3_failsafe = true;
          AP_Notify::flags.failsafe_radio = true;
@@ -261,6 +261,7 @@ void Plane::control_failsafe()
          }
          if (failsafe.ch3_counter == 1) {
             // n.b that throttle is be irrelevant if no rc input
+            unsigned int const throttle_pwm = channel_throttle.read();
             gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS OFF %u", throttle_pwm);
          } else if(failsafe.ch3_counter == 0) {
             failsafe.ch3_failsafe = false;
@@ -270,6 +271,7 @@ void Plane::control_failsafe()
    }
 }
 
+// 
 void Plane::trim_control_surfaces()
 {
 #if 0
