@@ -84,11 +84,6 @@ const AP_Param::GroupInfo RC_Channel::var_info[] = {
     AP_GROUPEND
 };
 #endif
-//void
-//RC_Channel::set_default_dead_zone()
-//{
-//    _dead_zone.set_default(default_dead_zone);
-//}
 
 // TODO for input only
 bool
@@ -114,18 +109,6 @@ RC_Channel::set_pwm(int16_t pwm)
         set_control_in(pwm_to_angle());
     }
 }
-
-//void
-//RC_Channel::set_pwm_no_deadzone(int16_t pwm)
-//{
-//    set_radio_in(pwm);
-//
-//    if (m_channel_type == channel_type::range) {
-//        set_control_in(pwm_to_range_dz(0));
-//    } else {
-//        set_control_in(pwm_to_angle_dz(0));
-//    }
-//}
 
 // private
 // in angle mode
@@ -167,34 +150,6 @@ RC_Channel::calc_pwm(void)
     this->set_radio_out( constrain_int16(radio_out, this->get_radio_min(), this->get_radio_max()));
 }
 
-
-
-/*
-  private
-  return an "angle in centidegrees" (normally -4500 to 4500) from
-  the current radio_in value using the specified dead_zone
-  channel is in angle mode
- */
-//int16_t
-//RC_Channel::pwm_to_angle_dz(uint16_t dead_zone)const
-//{
-//    int16_t radio_trim_high = get_radio_trim() + dead_zone;
-//    int16_t radio_trim_low  = get_radio_trim() - dead_zone;
-//
-//    // prevent div by 0
-//    if ((radio_trim_low - get_radio_min()) == 0 || (get_radio_max() - radio_trim_high) == 0)
-//        return 0;
-//
-//    int16_t reverse_mul = (m_reverse==-1?-1:1);
-//    if(get_radio_in() > radio_trim_high) {
-//        return reverse_mul * ((int32_t)angle_min_max * (int32_t)(get_radio_in() - radio_trim_high)) / (int32_t)(get_radio_max()  - radio_trim_high);
-//    }else if(get_radio_in() < radio_trim_low) {
-//        return reverse_mul * ((int32_t)angle_min_max * (int32_t)(get_radio_in() - radio_trim_low)) / (int32_t)(radio_trim_low - get_radio_min());
-//    }else{
-//        return 0;
-//    }
-//}
-
 /*
   used by stick mixing
   return an "angle in centidegrees" (normally -4500 to 4500) from
@@ -232,31 +187,6 @@ RC_Channel::pwm_to_angle()const
 /*
   private
   convert a pulse width modulation value to a value in the configured
-  range, using the specified deadzone
- channel is in range mode
- */
-//int16_t
-//RC_Channel::pwm_to_range_dz(uint16_t dead_zone)const
-//{
-//    int16_t r_in = constrain_int16(get_radio_in(), get_radio_min(), get_radio_max());
-//
-//    if (m_reverse == -1) {
-//	    r_in = get_radio_max() - (r_in - get_radio_min());
-//    }
-//
-//    int16_t radio_trim_low  = get_radio_min() + dead_zone;
-//
-//    if (r_in > radio_trim_low)
-//        return (range_low + ((int32_t)(range_high - range_low) * (int32_t)(r_in - radio_trim_low)) / (int32_t)(get_radio_max() - radio_trim_low));
-//    else if (dead_zone > 0)
-//        return 0;
-//    else
-//        return range_low;
-//}
-
-/*
-  private
-  convert a pulse width modulation value to a value in the configured
   range
  */
 int16_t
@@ -286,6 +216,7 @@ RC_Channel::pwm_to_range()const
 
 // ------------------------------------------
 // convert radio_in to a value in range -1 to 1
+// assumes its an angle type
 float
 RC_Channel::norm_input()const
 {
@@ -299,7 +230,10 @@ RC_Channel::norm_input()const
     return constrain_float(ret, -1.0f, 1.0f);
 }
 
+/*
+only used by non essential functions
 
+*/
 float
 RC_Channel::norm_output()const
 {
@@ -332,10 +266,10 @@ RC_Channel::read() const
     return hal.rcin->read(m_rcin_idx);
 }
 
-void RC_Channel::output_trim() const
-{
-    hal.rcout->write(m_rcout_idx, get_radio_trim());
-}
+//void RC_Channel::output_trim() const
+//{
+//    hal.rcout->write(m_rcout_idx, get_radio_trim());
+//}
 
 void
 RC_Channel::enable_out()const
