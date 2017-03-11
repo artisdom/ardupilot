@@ -484,7 +484,7 @@ void Plane::handle_auto_mode(void)
         if (auto_state.land_complete) {
             // we are in the final stage of a landing - force
             // zero throttle
-            channel_throttle.set_servo_out(0);
+            channel_thrust.set_servo_out(0);
         }
     } else {
         // we are doing normal AUTO flight, the special cases
@@ -592,7 +592,7 @@ void Plane::update_flight_mode(void)
             // FBWA failsafe glide
             nav_roll_cd = 0;
             nav_pitch_cd = 0;
-            channel_throttle.set_servo_out(0);
+            channel_thrust.set_servo_out(0);
         }
         if (g.fbwa_tdrag_chan > 0) {
             // check for the user enabling FBWA taildrag takeoff mode
@@ -812,7 +812,7 @@ void Plane::update_flight_stage(void)
                 set_flight_stage(AP_SpdHgtControl::FLIGHT_TAKEOFF);
             } else if (mission.get_current_nav_cmd().id == MAV_CMD_NAV_LAND) {
 
-                if ((g.land_abort_throttle_enable && channel_throttle.get_control_in() > 95) ||
+                if ((g.land_abort_throttle_enable && channel_thrust.get_control_in() > 95) ||
                         flight_stage == AP_SpdHgtControl::FLIGHT_LAND_ABORT){
                     // abort mode is sticky, it must complete while executing NAV_LAND
                     set_flight_stage(AP_SpdHgtControl::FLIGHT_LAND_ABORT);

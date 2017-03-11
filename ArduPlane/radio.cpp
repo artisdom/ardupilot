@@ -17,7 +17,7 @@ void Plane::set_control_channels(void)
 //    channel_roll.set_angle();
 //    channel_pitch.set_angle();
 //    channel_yaw.set_angle();
-//    channel_throttle.set_range();
+//    channel_thrust.set_range();
 }
 
 /*
@@ -30,7 +30,7 @@ void Plane::init_rc_in()
 //    channel_roll.set_default_dead_zone();
 //    channel_pitch.set_default_dead_zone();
 //    channel_yaw.set_default_dead_zone();
-//    channel_throttle.set_default_dead_zone();
+//    channel_thrust.set_default_dead_zone();
 }
 
 namespace {
@@ -52,8 +52,8 @@ namespace {
 
 void Plane::throttle_off()
 {
-   channel_throttle.set_servo_out(0);
-   channel_throttle.calc_pwm();  
+   channel_thrust.set_servo_out(0);
+   channel_thrust.calc_pwm();  
 }
 
 void Plane::set_control_surfaces_centre()
@@ -82,7 +82,7 @@ void Plane::init_rc_out()
    channel_yaw.enable_out();
 
    if (arming.arming_required() != AP_Arming::YES_ZERO_PWM) {
-     channel_throttle.enable_out();
+     channel_thrust.enable_out();
    }
 }
 
@@ -99,7 +99,7 @@ void Plane::rudder_arm_disarm_check()
     }
 
     // if throttle is not down, then pilot cannot rudder arm/disarm
-    if (channel_throttle.get_control_in() > 0) {
+    if (channel_thrust.get_control_in() > 0) {
         rudder_arm_timer = 0;
         return;
     }
@@ -192,14 +192,14 @@ void Plane::read_radio()
    channel_roll.read_joystick();
    channel_pitch.read_joystick();
    channel_yaw.read_joystick();
-   channel_throttle.read_joystick();
+   channel_thrust.read_joystick();
 
    control_failsafe();
 
-   channel_throttle.set_servo_out(channel_throttle.get_control_in());
+   channel_thrust.set_servo_out(channel_thrust.get_control_in());
 
-   if (g.throttle_nudge && channel_throttle.get_servo_out() > 50) {
-      float nudge = (channel_throttle.get_servo_out() - 50) * 0.02f;
+   if (g.throttle_nudge && channel_thrust.get_servo_out() > 50) {
+      float nudge = (channel_thrust.get_servo_out() - 50) * 0.02f;
       if (ahrs.airspeed_sensor_enabled()) {
          airspeed_nudge_cm = (aparm.airspeed_max * 100 - g.airspeed_cruise_cm) * nudge;
       } else {
@@ -227,13 +227,13 @@ void Plane::control_failsafe()
       // we do not have valid RC input or throttle failsafe is on
      //  Set all primary control inputs to the trim value
       set_control_surfaces_centre();
-      channel_throttle.set_joystick_min();
+      channel_thrust.set_joystick_min();
       // we detect a failsafe from radio or
       // throttle has dropped below the mark
       failsafe.ch3_counter++;
       if (failsafe.ch3_counter == 10) {
          // n.b that throttle may be irrelevant if no rc input
-         unsigned int const throttle_pwm = channel_throttle.read();
+         unsigned int const throttle_pwm = channel_thrust.read();
          gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS ON %u", throttle_pwm);
          failsafe.ch3_failsafe = true;
          AP_Notify::flags.failsafe_radio = true;
@@ -251,7 +251,7 @@ void Plane::control_failsafe()
          }
          if (failsafe.ch3_counter == 1) {
             // n.b that throttle is be irrelevant if no rc input
-            unsigned int const throttle_pwm = channel_throttle.read();
+            unsigned int const throttle_pwm = channel_thrust.read();
             gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS OFF %u", throttle_pwm);
          } else if(failsafe.ch3_counter == 0) {
             failsafe.ch3_failsafe = false;
@@ -310,8 +310,8 @@ void Plane::trim_radio()
 bool Plane::throttle_failsafe_state_detected()const
 {
    if (g.throttle_fs_enabled) {
-      int16_t const throttle_joystick_input = channel_throttle.read();
-      if (channel_throttle.get_reverse()) {
+      int16_t const throttle_joystick_input = channel_thrust.read();
+      if (channel_thrust.get_reverse()) {
          return  throttle_joystick_input >= g.throttle_fs_value;
       }else{
          return throttle_joystick_input <= g.throttle_fs_value;
