@@ -27,10 +27,10 @@ void Plane::set_control_channels(void)
 void Plane::init_rc_in()
 {
     // set rc dead zones
-    channel_roll.set_default_dead_zone();
-    channel_pitch.set_default_dead_zone();
-    channel_rudder.set_default_dead_zone();
-    channel_throttle.set_default_dead_zone();
+//    channel_roll.set_default_dead_zone();
+//    channel_pitch.set_default_dead_zone();
+//    channel_rudder.set_default_dead_zone();
+//    channel_throttle.set_default_dead_zone();
 }
 
 namespace {
@@ -155,13 +155,13 @@ void Plane::rudder_arm_disarm_check()
 
 void Plane::read_radio()
 {
-    if (!hal.rcin->new_input()) {
-        control_failsafe();
-        return;
-    }
-    
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-  // update rc to osd
+   if (!hal.rcin->new_input()) {
+      control_failsafe();
+      return;
+   }
+
+   #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+   // update rc to osd
    uint8_t const num_channels = hal.rcin->num_channels();
    uint16_t chan_ar[6];
    if ( num_channels > 12){
@@ -178,58 +178,40 @@ void Plane::read_radio()
       }
       AP_OSD::enqueue::rc_inputs_6_to_11(chan_ar,6);
    }
-   if ( num_channels > 0){;
+   if ( num_channels > 0){
       for(uint8_t i = 0; i < 6; ++i){
          chan_ar[i] = (i < num_channels)? hal.rcin->read(i) :0;
       }
       AP_OSD::enqueue::rc_inputs_0_to_5(chan_ar,6);
    }
-      
-#endif
 
-    failsafe.last_valid_rc_ms = millis();
-    // these are just the raw rc_in reading
-    // for the hal.rcin with same as the rc_channel
-  //  uint16_t const pwm_roll = channel_roll.read();
-  //  uint16_t const pwm_pitch = channel_pitch.read();
+   #endif
 
-/*
-   set_pwm sets the radio_in value to the pwm value
-   and sets the control_in value to the pwm value converted to the angle or range units
-*/
-    if (control_mode == TRAINING) {
-        // in training mode we don't want to use a deadzone, as we
-        // want manual pass through when not exceeding attitude limits
-        channel_roll.set_pwm_no_deadzone(channel_roll.read());
-        channel_pitch.set_pwm_no_deadzone(channel_pitch.read());
-        channel_throttle.set_pwm_no_deadzone(channel_throttle.read());
-        channel_rudder.set_pwm_no_deadzone(channel_rudder.read());
-    } else {
-        channel_roll.set_pwm(channel_roll.read());
-        channel_pitch.set_pwm(channel_pitch.read());
-        channel_throttle.set_pwm(channel_throttle.read());
-        channel_rudder.set_pwm(channel_rudder.read());
-    }
+   failsafe.last_valid_rc_ms = millis();
 
-    control_failsafe();
+   channel_roll.set_pwm(channel_roll.read());
+   channel_pitch.set_pwm(channel_pitch.read());
+   channel_throttle.set_pwm(channel_throttle.read());
+   channel_rudder.set_pwm(channel_rudder.read());
 
-    channel_throttle.set_servo_out(channel_throttle.get_control_in());
+   control_failsafe();
 
-    if (g.throttle_nudge && channel_throttle.get_servo_out() > 50) {
-        float nudge = (channel_throttle.get_servo_out() - 50) * 0.02f;
-        if (ahrs.airspeed_sensor_enabled()) {
-            airspeed_nudge_cm = (aparm.airspeed_max * 100 - g.airspeed_cruise_cm) * nudge;
-        } else {
-            throttle_nudge = (aparm.throttle_max - aparm.throttle_cruise) * nudge;
-        }
-    } else {
-        airspeed_nudge_cm = 0;
-        throttle_nudge = 0;
-    }
+   channel_throttle.set_servo_out(channel_throttle.get_control_in());
 
-    rudder_arm_disarm_check();
-    channel_rudder.set_servo_out(channel_rudder.get_control_in());
-    
+   if (g.throttle_nudge && channel_throttle.get_servo_out() > 50) {
+      float nudge = (channel_throttle.get_servo_out() - 50) * 0.02f;
+      if (ahrs.airspeed_sensor_enabled()) {
+         airspeed_nudge_cm = (aparm.airspeed_max * 100 - g.airspeed_cruise_cm) * nudge;
+      } else {
+         throttle_nudge = (aparm.throttle_max - aparm.throttle_cruise) * nudge;
+      }
+   } else {
+      airspeed_nudge_cm = 0;
+      throttle_nudge = 0;
+   }
+
+   rudder_arm_disarm_check();
+   channel_rudder.set_servo_out(channel_rudder.get_control_in());
 }
 
 /*
@@ -283,6 +265,7 @@ void Plane::control_failsafe()
 
 void Plane::trim_control_surfaces()
 {
+#if 0
    read_radio();
    int16_t trim_roll_range = (channel_roll.get_radio_max() - channel_roll.get_radio_min())/5;
    int16_t trim_pitch_range = (channel_pitch.get_radio_max() - channel_pitch.get_radio_min())/5;
@@ -314,6 +297,7 @@ void Plane::trim_control_surfaces()
    channel_roll.save_eeprom();
    channel_pitch.save_eeprom();
    channel_rudder.save_eeprom();
+#endif
 }
 
 void Plane::trim_radio()
