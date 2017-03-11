@@ -25,7 +25,7 @@ public:
         m_radio_in{init_value} // stick units usec
         ,m_control_in{0} // angle or range units
         ,m_servo_out{0}  // degrees * 100 or 0 to 100
-        ,m_radio_out{init_value}  // raw pwm
+        ,m_output{init_value}  // raw pwm
         ,m_channel_type{type_in}
         ,m_rcin_idx{ch_in} 
         ,m_rcout_idx{ch_out}
@@ -69,8 +69,8 @@ public:
     static const struct AP_Param::GroupInfo         var_info[];
 
     // radio_out is in same units as rcin e.g raw pwm units approx 1000 to 2000 us
-    void set_radio_out(int16_t v) { m_radio_out = v;}
-    int16_t get_radio_out()const{ return m_radio_out;}
+    void set_radio_out(int16_t v) { m_output = v;}
+    int16_t get_radio_out()const{ return m_output;}
 
     // in the units either angle or throttle range
     void set_servo_out(int16_t v) { m_servo_out = v;}
@@ -140,7 +140,7 @@ private:
     // servo_out looks to be same units as control_in
     int16_t         m_servo_out;
 
-    int16_t         m_radio_out;
+    int16_t         m_output;
 
     channel_type const    m_channel_type;
 
