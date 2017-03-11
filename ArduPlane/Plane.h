@@ -102,8 +102,7 @@ private:
     RCMapper rcmap;
 
     // primary control channels
-    // dynamics inertia
-    // dynamics_channel<Roll>
+    // dynamic_channel<Roll>
     RC_Channel channel_roll{0,0,RC_Channel::channel_type::angle,1500};
     RC_Channel channel_pitch{1,1,RC_Channel::channel_type::angle,1500};
     RC_Channel channel_yaw{3,3,RC_Channel::channel_type::angle,1500};
