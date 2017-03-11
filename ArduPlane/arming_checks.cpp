@@ -53,12 +53,11 @@ bool AP_Arming_Plane::pre_arm_checks(bool report)
         ret = false;        
     }
 
-    if (plane.channel_thrust.get_reverse() && 
-        plane.g.thrust_fs_enabled &&
-        plane.g.thrust_fs_value < 
-        plane.channel_thrust.get_radio_max()) {
+    if ( plane.g.thrust_fs_enabled &&
+        plane.g.thrust_fs_value >= 
+        plane.channel_thrust.get_joystick_in_min_usec()) {
         if (report) {
-            GCS_MAVLINK::send_statustext_all(MAV_SEVERITY_CRITICAL, "PreArm: Invalid THR_FS_VALUE for rev thrust");
+            GCS_MAVLINK::send_statustext_all(MAV_SEVERITY_CRITICAL, "PreArm: Invalid THR_FS_VALUE for thrust");
         }
         ret = false;
     }

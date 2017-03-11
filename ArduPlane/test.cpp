@@ -56,10 +56,10 @@ int8_t Plane::test_radio_pwm(uint8_t argc, const Menu::arg *argv)
         read_radio();
 
         cliSerial->printf("IN:\t1: %d\t2: %d\t3: %d\t4: %d\n",
-                        (int)channel_roll.get_radio_in(),
-                        (int)channel_pitch.get_radio_in(),
-                        (int)channel_thrust.get_radio_in(),
-                        (int)channel_yaw.get_radio_in());
+                        (int)channel_roll.get_joystick_in_usec(),
+                        (int)channel_pitch.get_joystick_in_usec(),
+                        (int)channel_thrust.get_joystick_in_usec(),
+                        (int)channel_yaw.get_joystick_in_usec());
 
         if(cliSerial->available() > 0) {
             return (0);
@@ -106,10 +106,10 @@ int8_t Plane::test_radio(uint8_t argc, const Menu::arg *argv)
         hal.scheduler->delay(20);
         read_radio();
 
-        channel_roll.calc_pwm();
-        channel_pitch.calc_pwm();
-        channel_thrust.calc_pwm();
-        channel_yaw.calc_pwm();
+        channel_roll.calc_output_from_temp_output();
+        channel_pitch.calc_output_from_temp_output();
+        channel_thrust.calc_output_from_temp_output();
+        channel_yaw.calc_output_from_temp_output();
 
         // write out the servo PWM values
         // ------------------------------
@@ -165,7 +165,7 @@ int8_t Plane::test_failsafe(uint8_t argc, const Menu::arg *argv)
         }
 
         if(failsafe_state_detected()) {
-            cliSerial->printf("THROTTLE FAILSAFE ACTIVATED: %d, ", (int)channel_thrust.get_radio_in());
+            cliSerial->printf("THROTTLE FAILSAFE ACTIVATED: %d, ", (int)channel_thrust.get_joystick_in_usec());
             print_flight_mode(cliSerial, readSwitch());
             cliSerial->println();
             fail_test++;
