@@ -21,16 +21,16 @@ public:
     ///
     enum class channel_type : bool { angle,range };
 
-    RC_Channel(uint8_t ch_in, uint8_t ch_out, channel_type type_in) :
-        m_radio_in{0} // stick units usec
+    RC_Channel(uint8_t ch_in, uint8_t ch_out, channel_type type_in, int16_t init_value) :
+        m_radio_in{init_value} // stick units usec
         ,m_control_in{0} // angle or range units
         ,m_servo_out{0}  // degrees * 100 or 0 to 100
-        ,m_radio_out{0}  // raw pwm
+        ,m_radio_out{init_value}  // raw pwm
         ,m_channel_type{type_in}
         ,m_rcin_idx{ch_in} 
         ,m_rcout_idx{ch_out}
     {
-        AP_Param::setup_object_defaults(this, var_info);
+       // AP_Param::setup_object_defaults(this, var_info);
     }
 
     // startup
@@ -43,7 +43,7 @@ public:
   
     void        set_pwm(int16_t pwm);
 
-    void        set_pwm_no_deadzone(int16_t pwm);
+   // void        set_pwm_no_deadzone(int16_t pwm);
 
     // generate PWM from servo_out value
     void        calc_pwm(void);
@@ -83,19 +83,19 @@ public:
     int16_t get_radio_in()const {return m_radio_in;}
 
 
-    int16_t get_radio_min()const {return m_radio_min.get();}
-    void set_radio_min(int16_t v) {m_radio_min.set(v);}
+    int16_t get_radio_min()const {return m_radio_min;}
+  //  void set_radio_min(int16_t v) {m_radio_min = v;}
 
-    int16_t get_radio_max()const {return m_radio_max.get();}
-    void set_radio_max(int16_t v) {m_radio_max.set(v);}
+    int16_t get_radio_max()const {return m_radio_max;}
+   // void set_radio_max(int16_t v) {m_radio_max = v;}
 
-    int16_t get_radio_trim()const {return m_radio_trim.get();}
-    void set_radio_trim(int16_t v) {m_radio_trim.set(v);}
+    int16_t get_radio_trim()const {return m_radio_trim;}
+   // void set_radio_trim(int16_t v) {m_radio_trim = v;}
     
     // used externally by stick_mix_channel atm
     int16_t     pwm_to_angle()const;
 
-    void        set_default_dead_zone();
+   // void        set_default_dead_zone();
     // only used for throttle in failsafe
     void failsafe_set_control_in(int16_t v) { set_control_in(v);}
 
@@ -103,8 +103,8 @@ public:
 private:
     void set_radio_in(int16_t v) {m_radio_in = v;}
     void set_control_in( int16_t v) { m_control_in = v;}
-    int16_t     pwm_to_angle_dz(uint16_t dead_zone)const;
-    int16_t     pwm_to_range_dz(uint16_t dead_zone)const;
+   // int16_t     pwm_to_angle_dz(uint16_t dead_zone)const;
+   // int16_t     pwm_to_range_dz(uint16_t dead_zone)const;
     int16_t     angle_to_pwm()const;
     int16_t     pwm_to_range()const;
 
@@ -116,12 +116,17 @@ private:
     static constexpr int16_t range_low = 0;
 
     //radio_min, radio_max , radio_trim in usec units
-    AP_Int16        m_radio_min;
-    AP_Int16        m_radio_trim;
-    AP_Int16        m_radio_max;
-    AP_Int8         _reverse;
+//    AP_Int16        m_radio_min;
+//    AP_Int16        m_radio_trim;
+//    AP_Int16        m_radio_max;
+//    AP_Int8         _reverse;
+     static constexpr int16_t m_radio_min = 1000;
+     static constexpr int16_t m_radio_max = 2000;
+     static constexpr int16_t m_radio_trim = (m_radio_max + m_radio_min)/ 2; 
     // eeprom value never appears to be used, just has default updated in init_rc_in
-    AP_Int16        _dead_zone;
+     // 1 for forawrd -1 for reverse
+     static constexpr int8_t m_reverse = 1;
+  //  AP_Int16        _dead_zone;
 
     //direct stick input I think e.g approx 1000 to 2000 us;
     // looks to be same units as read()

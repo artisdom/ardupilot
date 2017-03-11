@@ -32,7 +32,7 @@ extern const AP_HAL::HAL& hal;
 /// global array with pointers to all APM RC channels, will be used by AP_Mount
 /// and AP_Camera classes / It points to RC input channels.
 //RC_Channel *RC_Channel::rc_ch[RC_Channel::max_channels];
-
+#if 0
 const AP_Param::GroupInfo RC_Channel::var_info[] = {
     // @Param: MIN
     // @DisplayName: RC min PWM
@@ -66,7 +66,7 @@ const AP_Param::GroupInfo RC_Channel::var_info[] = {
     // @Description: Reverse servo operation. Set to 1 for normal (forward) operation. Set to -1 to reverse this channel.
     // @Values: -1:Reversed,1:Normal
     // @User: Advanced
-    AP_GROUPINFO("REV",  3, RC_Channel, _reverse, 1),
+    AP_GROUPINFO("REV",  3, RC_Channel, m_reverse, 1),
 
     // Note: index 4 was used by the previous _dead_zone value. We
     // changed it to 5 as dead zone values had previously been
@@ -79,21 +79,22 @@ const AP_Param::GroupInfo RC_Channel::var_info[] = {
     // @Units: pwm
     // @Range: 0 200
     // @User: Advanced
-    AP_GROUPINFO("DZ",   5, RC_Channel, _dead_zone, 0),
+   // AP_GROUPINFO("DZ",   5, RC_Channel, _dead_zone, 0),
 
     AP_GROUPEND
 };
+#endif
+//void
+//RC_Channel::set_default_dead_zone()
+//{
+//    _dead_zone.set_default(default_dead_zone);
+//}
 
-void
-RC_Channel::set_default_dead_zone()
-{
-    _dead_zone.set_default(default_dead_zone);
-}
-
+// TODO for input only
 bool
 RC_Channel::get_reverse(void) const
 {
-    if (_reverse == -1) {
+    if (m_reverse == -1) {
         return true;
     }
     return false;
@@ -114,24 +115,24 @@ RC_Channel::set_pwm(int16_t pwm)
     }
 }
 
-void
-RC_Channel::set_pwm_no_deadzone(int16_t pwm)
-{
-    set_radio_in(pwm);
-
-    if (m_channel_type == channel_type::range) {
-        set_control_in(pwm_to_range_dz(0));
-    } else {
-        set_control_in(pwm_to_angle_dz(0));
-    }
-}
+//void
+//RC_Channel::set_pwm_no_deadzone(int16_t pwm)
+//{
+//    set_radio_in(pwm);
+//
+//    if (m_channel_type == channel_type::range) {
+//        set_control_in(pwm_to_range_dz(0));
+//    } else {
+//        set_control_in(pwm_to_angle_dz(0));
+//    }
+//}
 
 // private
 // in angle mode
 int16_t
 RC_Channel::angle_to_pwm()const
 {
-    int16_t reverse_mul = (_reverse==-1?-1:1);
+    int16_t reverse_mul = (m_reverse==-1?-1:1);
     if((this->get_servo_out() * reverse_mul) > 0) {
         return reverse_mul * ((int32_t)this->get_servo_out() * (int32_t)(get_radio_max() - get_radio_trim())) / (int32_t)angle_min_max;
     } else {
@@ -156,7 +157,7 @@ RC_Channel::calc_pwm(void)
     int16_t radio_out = 0;
     if(m_channel_type == channel_type::range) {
        int16_t const pwm_out         = range_to_pwm();
-       radio_out = (_reverse >= 0) ? (get_radio_min() + pwm_out) : (get_radio_max() - pwm_out);
+       radio_out = (m_reverse >= 0) ? (get_radio_min() + pwm_out) : (get_radio_max() - pwm_out);
 
     }else{     // channel_type::angle
         int16_t const pwm_out         = angle_to_pwm();
@@ -174,25 +175,25 @@ RC_Channel::calc_pwm(void)
   the current radio_in value using the specified dead_zone
   channel is in angle mode
  */
-int16_t
-RC_Channel::pwm_to_angle_dz(uint16_t dead_zone)const
-{
-    int16_t radio_trim_high = get_radio_trim() + dead_zone;
-    int16_t radio_trim_low  = get_radio_trim() - dead_zone;
-
-    // prevent div by 0
-    if ((radio_trim_low - get_radio_min()) == 0 || (get_radio_max() - radio_trim_high) == 0)
-        return 0;
-
-    int16_t reverse_mul = (_reverse==-1?-1:1);
-    if(get_radio_in() > radio_trim_high) {
-        return reverse_mul * ((int32_t)angle_min_max * (int32_t)(get_radio_in() - radio_trim_high)) / (int32_t)(get_radio_max()  - radio_trim_high);
-    }else if(get_radio_in() < radio_trim_low) {
-        return reverse_mul * ((int32_t)angle_min_max * (int32_t)(get_radio_in() - radio_trim_low)) / (int32_t)(radio_trim_low - get_radio_min());
-    }else{
-        return 0;
-    }
-}
+//int16_t
+//RC_Channel::pwm_to_angle_dz(uint16_t dead_zone)const
+//{
+//    int16_t radio_trim_high = get_radio_trim() + dead_zone;
+//    int16_t radio_trim_low  = get_radio_trim() - dead_zone;
+//
+//    // prevent div by 0
+//    if ((radio_trim_low - get_radio_min()) == 0 || (get_radio_max() - radio_trim_high) == 0)
+//        return 0;
+//
+//    int16_t reverse_mul = (m_reverse==-1?-1:1);
+//    if(get_radio_in() > radio_trim_high) {
+//        return reverse_mul * ((int32_t)angle_min_max * (int32_t)(get_radio_in() - radio_trim_high)) / (int32_t)(get_radio_max()  - radio_trim_high);
+//    }else if(get_radio_in() < radio_trim_low) {
+//        return reverse_mul * ((int32_t)angle_min_max * (int32_t)(get_radio_in() - radio_trim_low)) / (int32_t)(radio_trim_low - get_radio_min());
+//    }else{
+//        return 0;
+//    }
+//}
 
 /*
   used by stick mixing
@@ -202,7 +203,29 @@ RC_Channel::pwm_to_angle_dz(uint16_t dead_zone)const
 int16_t
 RC_Channel::pwm_to_angle()const
 {
-	return pwm_to_angle_dz(_dead_zone);
+   //return pwm_to_angle_dz(_dead_zone);
+   int16_t const radio_trim = get_radio_trim();
+   int16_t const radio_in = get_radio_in();
+   int16_t reverse_mul = (m_reverse==-1?-1:1);
+   if(radio_in > radio_trim) {
+      int32_t const diff_max_trim = get_radio_max() - radio_trim;
+      if ( diff_max_trim == 0){
+         return 0;
+      }else{
+         return reverse_mul * ((int32_t)angle_min_max * (int32_t)(radio_in - radio_trim)) / diff_max_trim;
+      }
+   }else {
+      if(radio_in < radio_trim) {
+         int32_t const diff_trim_min = radio_trim - get_radio_min();
+         if(diff_trim_min == 0){
+            return 0;
+         }else{
+            return reverse_mul * ((int32_t)angle_min_max * (int32_t)(get_radio_in() - radio_trim)) / diff_trim_min;
+         }
+      }else{ 
+         return 0;
+      }
+   }
 }
 
 
@@ -212,24 +235,24 @@ RC_Channel::pwm_to_angle()const
   range, using the specified deadzone
  channel is in range mode
  */
-int16_t
-RC_Channel::pwm_to_range_dz(uint16_t dead_zone)const
-{
-    int16_t r_in = constrain_int16(get_radio_in(), get_radio_min(), get_radio_max());
-
-    if (_reverse == -1) {
-	    r_in = get_radio_max() - (r_in - get_radio_min());
-    }
-
-    int16_t radio_trim_low  = get_radio_min() + dead_zone;
-
-    if (r_in > radio_trim_low)
-        return (range_low + ((int32_t)(range_high - range_low) * (int32_t)(r_in - radio_trim_low)) / (int32_t)(get_radio_max() - radio_trim_low));
-    else if (dead_zone > 0)
-        return 0;
-    else
-        return range_low;
-}
+//int16_t
+//RC_Channel::pwm_to_range_dz(uint16_t dead_zone)const
+//{
+//    int16_t r_in = constrain_int16(get_radio_in(), get_radio_min(), get_radio_max());
+//
+//    if (m_reverse == -1) {
+//	    r_in = get_radio_max() - (r_in - get_radio_min());
+//    }
+//
+//    int16_t radio_trim_low  = get_radio_min() + dead_zone;
+//
+//    if (r_in > radio_trim_low)
+//        return (range_low + ((int32_t)(range_high - range_low) * (int32_t)(r_in - radio_trim_low)) / (int32_t)(get_radio_max() - radio_trim_low));
+//    else if (dead_zone > 0)
+//        return 0;
+//    else
+//        return range_low;
+//}
 
 /*
   private
@@ -239,7 +262,26 @@ RC_Channel::pwm_to_range_dz(uint16_t dead_zone)const
 int16_t
 RC_Channel::pwm_to_range()const
 {
-    return pwm_to_range_dz(_dead_zone);
+   // return pwm_to_range_dz(_dead_zone);
+    int16_t const radio_min = get_radio_min() ;
+    int16_t const radio_max = get_radio_max();
+     
+    int16_t r_in = constrain_int16(get_radio_in(), radio_min, radio_max);
+
+    if (m_reverse == -1) {
+	    r_in = radio_max - (r_in - radio_min);
+    }
+
+    if (r_in > radio_min){
+        int32_t const diff_max_min = (int32_t)(radio_max - radio_min);
+        if ( diff_max_min == 0){
+           return 0;
+        }else{
+         return (range_low + ((int32_t)(range_high - range_low) * (int32_t)(r_in - radio_min)) / diff_max_min);
+        }
+    }else{
+        return range_low;
+    }
 }
 
 // ------------------------------------------
@@ -248,7 +290,7 @@ float
 RC_Channel::norm_input()const
 {
     float ret;
-    int16_t reverse_mul = (_reverse==-1?-1:1);
+    int16_t reverse_mul = (m_reverse==-1?-1:1);
     if (get_radio_in() < get_radio_trim()) {
         ret = reverse_mul * (float)(get_radio_in() - get_radio_trim()) / (float)(get_radio_trim() - get_radio_min());
     } else {
@@ -273,7 +315,7 @@ RC_Channel::norm_output()const
     } else {
         ret = 0;
     }
-    if (_reverse == -1) {
+    if (m_reverse == -1) {
 	    ret = -ret;
     }
     return ret;
@@ -310,19 +352,19 @@ RC_Channel::disable_out()const
 void
 RC_Channel::load_eeprom(void)
 {
-    m_radio_min.load();
-    m_radio_trim.load();
-    m_radio_max.load();
-    _reverse.load();
-    _dead_zone.load();
+//    m_radio_min.load();
+//    m_radio_trim.load();
+//    m_radio_max.load();
+//    m_reverse.load();
+//    _dead_zone.load();
 }
 
 void
 RC_Channel::save_eeprom(void)
 {
-    m_radio_min.save();
-    m_radio_trim.save();
-    m_radio_max.save();
-    _reverse.save();
-    _dead_zone.save();
+//    m_radio_min.save();
+//    m_radio_trim.save();
+//    m_radio_max.save();
+//    m_reverse.save();
+  //  _dead_zone.save();
 }
