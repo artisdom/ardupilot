@@ -67,7 +67,7 @@ void Plane::failsafe_check(void)
         channel_roll.set_radio_out(channel_roll.read());
         channel_pitch.set_radio_out(channel_pitch.read());
         if (hal.util->get_soft_armed()) {
-            channel_throttle.set_radio_out(channel_throttle.read());
+            channel_thrust.set_radio_out(channel_thrust.read());
         }
         channel_yaw.set_radio_out(channel_yaw.read());
 
@@ -82,7 +82,7 @@ void Plane::failsafe_check(void)
             channel_roll.output();
             channel_pitch.output();
         }
-        channel_throttle.output();
+        channel_thrust.output();
         channel_yaw.output();
     }
 }

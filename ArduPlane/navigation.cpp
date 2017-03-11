@@ -85,7 +85,7 @@ void Plane::calc_airspeed_errors()
         control_mode == CRUISE) {
         target_airspeed_cm = ((int32_t)(aparm.airspeed_max -
                                         aparm.airspeed_min) *
-                              channel_throttle.get_control_in()) +
+                              channel_thrust.get_control_in()) +
                              ((int32_t)aparm.airspeed_min * 100);
     }
 

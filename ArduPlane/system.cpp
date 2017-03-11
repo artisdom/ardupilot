@@ -733,7 +733,7 @@ uint8_t Plane::throttle_percentage(void)
 {
     // to get the real throttle we need to use norm_output() which
     // returns a number from -1 to 1.
-    return constrain_int16(50*(channel_throttle.norm_output()+1), 0, 100);
+    return constrain_int16(50*(channel_thrust.norm_output()+1), 0, 100);
 }
 
 /*
@@ -756,7 +756,7 @@ bool Plane::arm_motors(AP_Arming::ArmingMethod method)
     }
 
     // only log if arming was successful
-    channel_throttle.enable_out();
+    channel_thrust.enable_out();
 
     change_arm_state();
     return true;
@@ -771,7 +771,7 @@ bool Plane::disarm_motors(void)
         return false;
     }
     if (arming.arming_required() == AP_Arming::YES_ZERO_PWM) {
-        channel_throttle.disable_out();  
+        channel_thrust.disable_out();  
     }
     if (control_mode != AUTO) {
         // reset the mission on disarm if we are not in auto

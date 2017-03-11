@@ -25,9 +25,9 @@ float Plane::get_speed_scaler(void)
         }
         speed_scaler = constrain_float(speed_scaler, 0.5f, 2.0f);
     } else {
-        if (channel_throttle.get_servo_out() > 0) {
+        if (channel_thrust.get_servo_out() > 0) {
             // THROTTLE_CRUISE is a percentage between 0 - to 100
-            speed_scaler = 0.5f + ((float)THROTTLE_CRUISE / channel_throttle.get_servo_out() / 2.0f); 
+            speed_scaler = 0.5f + ((float)THROTTLE_CRUISE / channel_thrust.get_servo_out() / 2.0f); 
             // First order taylor expansion of square root
             // Should maybe be to the 2/7 power, but we aren't goint to implement that...
         }else{
@@ -98,7 +98,7 @@ void Plane::stabilize_pitch(float speed_scaler)
         channel_pitch.set_servo_out( 45*force_elevator);
         return;
     }
-    int32_t demanded_pitch = nav_pitch_cd + g.pitch_trim_cd + channel_throttle.get_servo_out() * g.kff_throttle_to_pitch;
+    int32_t demanded_pitch = nav_pitch_cd + g.pitch_trim_cd + channel_thrust.get_servo_out() * g.kff_throttle_to_pitch;
     bool disable_integrator = false;
     if (control_mode == STABILIZE && channel_pitch.get_control_in() != 0) {
         disable_integrator = true;
@@ -317,7 +317,7 @@ void Plane::stabilize()
     /*
       see if we should zero the attitude controller integrators. 
      */
-    if (channel_throttle.get_control_in() == 0 &&
+    if (channel_thrust.get_control_in() == 0 &&
         relative_altitude_abs_cm() < 500 && 
         fabsf(barometer.get_climb_rate()) < 0.5f &&
         gps.ground_speed() < 3) {
@@ -339,11 +339,11 @@ void Plane::stabilize()
 void Plane::calc_throttle()
 {
     if (aparm.throttle_cruise <= 1) {
-        channel_throttle.set_servo_out(0);
+        channel_thrust.set_servo_out(0);
         return;
     }
 
-    channel_throttle.set_servo_out(SpdHgt_Controller->get_throttle_demand());
+    channel_thrust.set_servo_out(SpdHgt_Controller->get_throttle_demand());
 }
 
 /*****************************************
@@ -389,7 +389,7 @@ void Plane::calc_throttle()
 //void Plane::calc_nav_yaw_ground(void)
 //{
 //    if (gps.ground_speed() < 1 && 
-//        channel_throttle.control_in == 0 &&
+//        channel_thrust.control_in == 0 &&
 //        flight_stage != AP_SpdHgtControl::FLIGHT_TAKEOFF &&
 //        flight_stage != AP_SpdHgtControl::FLIGHT_LAND_ABORT) {
 //        // manual rudder control while still
@@ -466,16 +466,16 @@ void Plane::throttle_slew_limit()
     // if slew limit rate is set to zero then do not slew limit
     if (slewrate) {                   
         // limit throttle change by the given percentage per second
-        float temp = slewrate * G_Dt * 0.01f * fabsf(channel_throttle.get_radio_max() - channel_throttle.get_radio_min());
+        float temp = slewrate * G_Dt * 0.01f * fabsf(channel_thrust.get_radio_max() - channel_thrust.get_radio_min());
         // allow a minimum change of 1 PWM per cycle
         if (temp < 1) {
             temp = 1;
         }
-        channel_throttle.set_radio_out(
-            constrain_int16(channel_throttle.get_radio_out(), last_throttle - temp, last_throttle + temp)
+        channel_thrust.set_radio_out(
+            constrain_int16(channel_thrust.get_radio_out(), last_throttle - temp, last_throttle + temp)
         );
     }
-    last_throttle = channel_throttle.get_radio_out();
+    last_throttle = channel_thrust.get_radio_out();
 }
 
 /* We want to suppress the throttle if we think we are on the ground and in an autopilot controlled throttle mode.
@@ -567,7 +567,7 @@ bool Plane::suppress_throttle(void)
  */
 uint16_t Plane::throttle_min(void) const
 {
-    return channel_throttle.get_reverse() ? channel_throttle.get_radio_max() : channel_throttle.get_radio_min();
+    return channel_thrust.get_reverse() ? channel_thrust.get_radio_max() : channel_thrust.get_radio_min();
 };
 
 
@@ -580,7 +580,7 @@ void Plane::set_servos(void)
         // do a direct pass through of radio values
         channel_roll.set_radio_out(channel_roll.get_radio_in());  // can conv
         channel_pitch.set_radio_out(channel_pitch.get_radio_in()); //can conv
-        channel_throttle.set_radio_out(channel_throttle.get_radio_in()); //can conv
+        channel_thrust.set_radio_out(channel_thrust.get_radio_in()); //can conv
         channel_yaw.set_radio_out(channel_yaw.get_radio_in()); // can conv
 
     } else {
@@ -607,21 +607,21 @@ void Plane::set_servos(void)
         }
 
         // This is set in case throttle.calc_pwm is called
-        channel_throttle.set_servo_out(constrain_int16(channel_throttle.get_servo_out(), 
+        channel_thrust.set_servo_out(constrain_int16(channel_thrust.get_servo_out(), 
                                                       min_throttle,
                                                       max_throttle));
 
         if (!hal.util->get_soft_armed()) {
-            channel_throttle.set_servo_out(0);
-            channel_throttle.calc_pwm();                
+            channel_thrust.set_servo_out(0);
+            channel_thrust.calc_pwm();                
         } else if (suppress_throttle()) {
             // throttle is suppressed in auto mode
-            channel_throttle.set_servo_out(0);
+            channel_thrust.set_servo_out(0);
             if (g.throttle_suppress_manual) {
                 // manual pass through of throttle while throttle is suppressed
-                channel_throttle.set_radio_out(channel_throttle.get_radio_in());
+                channel_thrust.set_radio_out(channel_thrust.get_radio_in());
             } else {
-                channel_throttle.calc_pwm();                
+                channel_thrust.calc_pwm();                
             }
         } else if (g.throttle_passthru_stabilize && 
                    (control_mode == STABILIZE || 
@@ -631,14 +631,14 @@ void Plane::set_servos(void)
                     control_mode == AUTOTUNE)) {
             // manual pass through of throttle while in FBWA or
             // STABILIZE mode with THR_PASS_STAB set
-            channel_throttle.set_radio_out(channel_throttle.get_radio_in());
+            channel_thrust.set_radio_out(channel_thrust.get_radio_in());
         } else if (control_mode == GUIDED && 
                    guided_throttle_passthru) {
             // manual pass through of throttle while in GUIDED
-            channel_throttle.set_radio_out(channel_throttle.get_radio_in());
+            channel_thrust.set_radio_out(channel_thrust.get_radio_in());
         } else {
             // normal throttle calculation based on servo_out
-            channel_throttle.calc_pwm();
+            channel_thrust.calc_pwm();
         }
 
     }
@@ -664,12 +664,12 @@ void Plane::set_servos(void)
             break;
 
         case AP_Arming::YES_ZERO_PWM:
-            channel_throttle.set_radio_out(0);
+            channel_thrust.set_radio_out(0);
             break;
 
         case AP_Arming::YES_MIN_PWM:
         default:
-            channel_throttle.set_radio_out(throttle_min());
+            channel_thrust.set_radio_out(throttle_min());
             break;
         }
     }
@@ -697,7 +697,7 @@ void Plane::set_servos(void)
   // call mix here 
     channel_roll.output();
     channel_pitch.output();
-    channel_throttle.output();
+    channel_thrust.output();
     channel_yaw.output();
 }
 
