@@ -112,6 +112,8 @@ namespace {
 
    // ouch o only for pitch and roll
    // servo_out has been set by ? and manual is mixed in
+
+  
    void stick_mix_channel(RC_Channel &channel)
    {
       float const user_stick_move = quan::min(std::abs(channel.get_radio_in() - channel.get_radio_trim()),400);
