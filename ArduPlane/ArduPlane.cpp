@@ -622,7 +622,7 @@ void Plane::update_flight_mode(void)
           any aileron or rudder input
         */
         if ((channel_roll.get_control_in() != 0 ||
-             channel_rudder.get_control_in() != 0)) {                
+             channel_yaw.get_control_in() != 0)) {                
             cruise_state.locked_heading = false;
             cruise_state.lock_timer_ms = 0;
         }                 
@@ -659,7 +659,7 @@ void Plane::update_flight_mode(void)
         // ---------------------------------
         channel_roll.set_servo_out(channel_roll.pwm_to_angle());
         channel_pitch.set_servo_out(channel_pitch.pwm_to_angle());
-        channel_rudder.set_servo_out(channel_rudder.pwm_to_angle());
+        channel_yaw.set_servo_out(channel_yaw.pwm_to_angle());
         break;
         //roll: -13788.000,  pitch: -13698.000,   thr: 0.000, rud: -13742.000
         

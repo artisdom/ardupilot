@@ -251,7 +251,7 @@ void Plane::Log_Write_Control_Tuning()
         nav_pitch_cd    : (int16_t)nav_pitch_cd,
         pitch           : (int16_t)ahrs.pitch_sensor,
         throttle_out    : (int16_t)channel_throttle.servo_out,
-        rudder_out      : (int16_t)channel_rudder.servo_out,
+        rudder_out      : (int16_t)channel_yaw.servo_out,
         accel_y         : accel.y
     };
     DataFlash.WriteBlock(&pkt, sizeof(pkt));

@@ -581,7 +581,7 @@ void Plane::set_servos(void)
         channel_roll.set_radio_out(channel_roll.get_radio_in());  // can conv
         channel_pitch.set_radio_out(channel_pitch.get_radio_in()); //can conv
         channel_throttle.set_radio_out(channel_throttle.get_radio_in()); //can conv
-        channel_rudder.set_radio_out(channel_rudder.get_radio_in()); // can conv
+        channel_yaw.set_radio_out(channel_yaw.get_radio_in()); // can conv
 
     } else {
 
@@ -589,7 +589,7 @@ void Plane::set_servos(void)
         // so essentially get_servo out is the autopilots input?
         channel_roll.calc_pwm();
         channel_pitch.calc_pwm();
-        channel_rudder.calc_pwm();
+        channel_yaw.calc_pwm();
 
         // convert 0 to 100% into PWM
         uint8_t min_throttle = aparm.throttle_min.get();
@@ -651,7 +651,7 @@ void Plane::set_servos(void)
 
     if (control_mode == TRAINING) {
         // copy rudder in training mode
-        channel_rudder.set_radio_out(channel_rudder.get_radio_in());
+        channel_yaw.set_radio_out(channel_yaw.get_radio_in());
     }
 
     if (!arming.is_armed()) {
@@ -698,7 +698,7 @@ void Plane::set_servos(void)
     channel_roll.output();
     channel_pitch.output();
     channel_throttle.output();
-    channel_rudder.output();
+    channel_yaw.output();
 }
 
 void Plane::demo_servos(uint8_t i) 
