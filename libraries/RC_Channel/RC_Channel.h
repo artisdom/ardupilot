@@ -97,7 +97,7 @@ public:
 
    // void        set_default_dead_zone();
     // only used for throttle in failsafe
-    void failsafe_set_control_in(int16_t v) { set_control_in(v);}
+   // void failsafe_set_control_in(int16_t v) { set_control_in(v);}
 
     uint8_t get_rcin_index() const { return m_rcin_idx;}
 private:
