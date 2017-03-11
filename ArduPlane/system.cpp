@@ -373,66 +373,66 @@ void Plane::set_mode(enum FlightMode mode)
     switch(control_mode)
     {
     case INITIALISING:
-        auto_throttle_mode = true;
+        auto_thrust_mode = true;
         break;
 
     case MANUAL:
     case STABILIZE:
     case TRAINING:
     case FLY_BY_WIRE_A:
-        auto_throttle_mode = false;
+        auto_thrust_mode = false;
         break;
 
     case AUTOTUNE:
-        auto_throttle_mode = false;
+        auto_thrust_mode = false;
         autotune_start();
         break;
 
     case ACRO:
-        auto_throttle_mode = false;
+        auto_thrust_mode = false;
         acro_state.locked_roll = false;
         acro_state.locked_pitch = false;
         break;
 
     case CRUISE:
-        auto_throttle_mode = true;
+        auto_thrust_mode = true;
         cruise_state.locked_heading = false;
         cruise_state.lock_timer_ms = 0;
         set_target_altitude_current();
         break;
 
     case FLY_BY_WIRE_B:
-        auto_throttle_mode = true;
+        auto_thrust_mode = true;
         set_target_altitude_current();
         break;
 
     case CIRCLE:
         // the altitude to circle at is taken from the current altitude
-        auto_throttle_mode = true;
+        auto_thrust_mode = true;
         next_WP_loc.alt = current_loc.alt;
         break;
 
     case AUTO:
-        auto_throttle_mode = true;
+        auto_thrust_mode = true;
         next_WP_loc = prev_WP_loc = current_loc;
         // start or resume the mission, based on MIS_AUTORESET
         mission.start_or_resume();
         break;
 
     case RTL:
-        auto_throttle_mode = true;
+        auto_thrust_mode = true;
         prev_WP_loc = current_loc;
         do_RTL();
         break;
 
     case LOITER:
-        auto_throttle_mode = true;
+        auto_thrust_mode = true;
         do_loiter_at_location();
         break;
 
     case GUIDED:
-        auto_throttle_mode = true;
-        guided_throttle_passthru = false;
+        auto_thrust_mode = true;
+        guided_thrust_passthru = false;
         /*
           when entering guided mode we set the target as the current
           location. This matches the behaviour of the copter code
@@ -445,8 +445,8 @@ void Plane::set_mode(enum FlightMode mode)
     AP_OSD::enqueue::control_mode(mode);
 #endif 
 
-    // start with throttle suppressed in auto_throttle modes
-    throttle_suppressed = auto_throttle_mode;
+    // start with thrust suppressed in auto_thrust modes
+    thrust_suppressed = auto_thrust_mode;
 
     if (should_log(MASK_LOG_MODE)){
         DataFlash.Log_Write_Mode(control_mode);
@@ -727,11 +727,11 @@ void Plane::frsky_telemetry_send(void)
 
 
 /*
-  return throttle percentage from 0 to 100
+  return thrust percentage from 0 to 100
  */
-uint8_t Plane::throttle_percentage(void)
+uint8_t Plane::thrust_percentage(void)
 {
-    // to get the real throttle we need to use norm_output() which
+    // to get the real thrust we need to use norm_output() which
     // returns a number from -1 to 1.
     return constrain_int16(50*(channel_thrust.norm_output()+1), 0, 100);
 }
@@ -778,8 +778,8 @@ bool Plane::disarm_motors(void)
         mission.reset();
     }
 
-    // suppress the throttle in auto-throttle modes
-    throttle_suppressed = auto_throttle_mode;
+    // suppress the thrust in auto-thrust modes
+    thrust_suppressed = auto_thrust_mode;
     
     //only log if disarming was successful
     change_arm_state();

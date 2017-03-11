@@ -182,9 +182,9 @@ void Plane::ahrs_update()
  */
 void Plane::update_speed_height(void)
 {
-    if (auto_throttle_mode) {
+    if (auto_thrust_mode) {
 	    // Call TECS 50Hz update. Note that we call this regardless of
-	    // throttle suppressed, as this needs to be running for
+	    // thrust suppressed, as this needs to be running for
 	    // takeoff detection
         SpdHgt_Controller->update_50hz(tecs_hgt_afe());
     }
@@ -469,7 +469,7 @@ void Plane::handle_auto_mode(void)
         (nav_cmd_id == MAV_CMD_NAV_LAND && flight_stage == AP_SpdHgtControl::FLIGHT_LAND_ABORT)) {
         takeoff_calc_roll();
         takeoff_calc_pitch();
-        calc_throttle();
+        calc_thrust();
     } else if (nav_cmd_id == MAV_CMD_NAV_LAND) {
         calc_nav_roll();
         calc_nav_pitch();
@@ -479,11 +479,11 @@ void Plane::handle_auto_mode(void)
             // allowed for level flight
             nav_roll_cd = constrain_int32(nav_roll_cd, -g.level_roll_limit*100UL, g.level_roll_limit*100UL);
         }
-        calc_throttle();
+        calc_thrust();
         
         if (auto_state.land_complete) {
             // we are in the final stage of a landing - force
-            // zero throttle
+            // zero thrust
             channel_thrust.set_servo_out(0);
         }
     } else {
@@ -495,14 +495,14 @@ void Plane::handle_auto_mode(void)
         auto_state.land_complete = false;
         calc_nav_roll();
         calc_nav_pitch();
-        calc_throttle();
+        calc_thrust();
     }
 }
 
 /*
   main flight mode dependent update code 
   updates nav_roll_cd and nav_pitch_cd
-  and updates throttle directly
+  and updates thrust directly
  */
 void Plane::update_flight_mode(void)
 {
@@ -526,7 +526,7 @@ void Plane::update_flight_mode(void)
     case GUIDED:
         calc_nav_roll();
         calc_nav_pitch();
-        calc_throttle();
+        calc_thrust();
         break;
         
     case TRAINING: {
@@ -585,7 +585,7 @@ void Plane::update_flight_mode(void)
         } else {
             nav_pitch_cd = -(pitch_input * pitch_limit_min_cd);
         }
-        adjust_nav_pitch_throttle();
+        adjust_nav_pitch_thrust();
         nav_pitch_cd = constrain_int32(nav_pitch_cd, pitch_limit_min_cd, aparm.pitch_limit_max_cd.get());
 
         if (failsafe.ch3_failsafe && g.short_fs_action == 2) {
@@ -640,7 +640,7 @@ void Plane::update_flight_mode(void)
     case STABILIZE:
         nav_roll_cd        = 0;
         nav_pitch_cd       = 0;
-        // throttle is passthrough
+        // thrust is passthrough
         break;
         
     case CIRCLE:
@@ -651,7 +651,7 @@ void Plane::update_flight_mode(void)
         nav_roll_cd  = roll_limit_cd / 3;
         update_load_factor();
         calc_nav_pitch();
-        calc_throttle();
+        calc_thrust();
         break;
 
     case MANUAL:
@@ -761,7 +761,7 @@ void Plane::set_flight_stage(AP_SpdHgtControl::FlightStage fs)
         break;
 
     case AP_SpdHgtControl::FLIGHT_LAND_ABORT:
-        gcs_send_text_fmt(MAV_SEVERITY_NOTICE, "Landing aborted via throttle. Climbing to %dm", auto_state.takeoff_altitude_rel_cm/100);
+        gcs_send_text_fmt(MAV_SEVERITY_NOTICE, "Landing aborted via thrust. Climbing to %dm", auto_state.takeoff_altitude_rel_cm/100);
         break;
 
     case AP_SpdHgtControl::FLIGHT_LAND_FINAL:
@@ -806,13 +806,13 @@ void Plane::update_alt()
 void Plane::update_flight_stage(void)
 {
     // Update the speed & height controller states
-    if (auto_throttle_mode && !throttle_suppressed) {        
+    if (auto_thrust_mode && !thrust_suppressed) {        
         if (control_mode==AUTO) {
             if (auto_state.takeoff_complete == false) {
                 set_flight_stage(AP_SpdHgtControl::FLIGHT_TAKEOFF);
             } else if (mission.get_current_nav_cmd().id == MAV_CMD_NAV_LAND) {
 
-                if ((g.land_abort_throttle_enable && channel_thrust.get_control_in() > 95) ||
+                if ((g.land_abort_thrust_enable && channel_thrust.get_control_in() > 95) ||
                         flight_stage == AP_SpdHgtControl::FLIGHT_LAND_ABORT){
                     // abort mode is sticky, it must complete while executing NAV_LAND
                     set_flight_stage(AP_SpdHgtControl::FLIGHT_LAND_ABORT);
@@ -836,11 +836,11 @@ void Plane::update_flight_stage(void)
             set_flight_stage(AP_SpdHgtControl::FLIGHT_NORMAL);
         }
 
-        SpdHgt_Controller->update_pitch_throttle(relative_target_altitude_cm(),
+        SpdHgt_Controller->update_pitch_thrust(relative_target_altitude_cm(),
                                                  target_airspeed_cm,
                                                  flight_stage,
                                                  auto_state.takeoff_pitch_cd,
-                                                 throttle_nudge,
+                                                 thrust_nudge,
                                                  tecs_hgt_afe(),
                                                  aerodynamic_load_factor);
         if (should_log(MASK_LOG_TECS)) {

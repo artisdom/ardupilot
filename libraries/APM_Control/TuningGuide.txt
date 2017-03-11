@@ -54,10 +54,10 @@ not, then get someone who can to help you.
 Initial assessment
 ------------------
 
-1) Takeoff in manual and adjust the trims and throttle to a cruise
+1) Takeoff in manual and adjust the trims and thrust to a cruise
    position so that the plane flies straight and level at a speed that
    you are comfortable with. This will normally be somewhere between
-   30 and 60% throttle depending on how overpowered your model is.
+   30 and 60% thrust depending on how overpowered your model is.
 
 2) With the plane flying away from you switch to FBW-A. It should
    continue to fly wings level and at a fairly constant height (it
@@ -151,7 +151,7 @@ users familiar with tuning the old PID controller gains, the K_P, K_I
 and K_D gains in this controller have the same effect, but there are some 
 additional values that anbe set by more advanced users.
 
-1) With the model in FBW-A mode and the throttle at the cruise
+1) With the model in FBW-A mode and the thrust at the cruise
    position, put in a pitch angle demand, hold it and release. Do the
    same in the other direction. You want the model to pitch smoothly
    to the new pitch angle and back again without overshoot or
@@ -171,7 +171,7 @@ additional values that anbe set by more advanced users.
 3) Now roll the model to maximum bank in each direction. The nose
    should stay fairly level during the turns without significant gain
    or loss of altitude. Some loss of altitude during sustained turns
-   at constant throttle is expected, because the extra drag of turning
+   at constant thrust is expected, because the extra drag of turning
    slows the model down which will cause a mild descent. If the model
    gains height during the turns then you need to reduce the
    CTL_PTCH_K_RLL by small increments of 0.01 from the default value

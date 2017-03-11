@@ -38,7 +38,7 @@ namespace {
    float mixer_in_pitch = 0.f;
    float mixer_in_roll = 0.f;
    float mixer_in_yaw = 0.f;
-   float mixer_in_throttle = 0.f;
+   float mixer_in_thrust = 0.f;
 
    // not correct really we need some failsafe mixer inputs if we are to do this
    void setup_failsafe()
@@ -46,11 +46,11 @@ namespace {
       mixer_in_pitch = 0.f;
       mixer_in_roll = 0.f;
       mixer_in_yaw = 0.f;
-      mixer_in_throttle = -1.f; // 0 or -1 ?
+      mixer_in_thrust = -1.f; // 0 or -1 ?
    }
 }
 
-void Plane::throttle_off()
+void Plane::thrust_off()
 {
    channel_thrust.set_servo_out(0);
    channel_thrust.calc_pwm();  
@@ -69,7 +69,7 @@ void Plane::set_control_surfaces_centre()
  */
 void Plane::init_rc_out()
 {
-   throttle_off();
+   thrust_off();
    set_control_surfaces_centre();
 
    setup_failsafe();
@@ -98,14 +98,14 @@ void Plane::rudder_arm_disarm_check()
         return;
     }
 
-    // if throttle is not down, then pilot cannot rudder arm/disarm
+    // if thrust is not down, then pilot cannot rudder arm/disarm
     if (channel_thrust.get_control_in() > 0) {
         rudder_arm_timer = 0;
         return;
     }
 
-    // if not in a manual throttle mode then disallow rudder arming/disarming
-    if (auto_throttle_mode ) {
+    // if not in a manual thrust mode then disallow rudder arming/disarming
+    if (auto_thrust_mode ) {
         rudder_arm_timer = 0;
         return;      
     }
@@ -198,16 +198,16 @@ void Plane::read_radio()
 
    channel_thrust.set_servo_out(channel_thrust.get_control_in());
 
-   if (g.throttle_nudge && channel_thrust.get_servo_out() > 50) {
+   if (g.thrust_nudge && channel_thrust.get_servo_out() > 50) {
       float nudge = (channel_thrust.get_servo_out() - 50) * 0.02f;
       if (ahrs.airspeed_sensor_enabled()) {
          airspeed_nudge_cm = (aparm.airspeed_max * 100 - g.airspeed_cruise_cm) * nudge;
       } else {
-         throttle_nudge = (aparm.throttle_max - aparm.throttle_cruise) * nudge;
+         thrust_nudge = (aparm.thrust_max - aparm.thrust_cruise) * nudge;
       }
    } else {
       airspeed_nudge_cm = 0;
-      throttle_nudge = 0;
+      thrust_nudge = 0;
    }
 
    rudder_arm_disarm_check();
@@ -217,24 +217,24 @@ void Plane::read_radio()
 /*
 called in the main loop to check for failsafe
  Logic here is wrong. 2 type of failsafe
- throttle below some min and no rc input
+ thrust below some min and no rc input
   Seem to be confused below
 */
 void Plane::control_failsafe()
 {
-   // check for no rcin fro some time or throttle failsafe
+   // check for no rcin fro some time or thrust failsafe
    if (failsafe_state_detected()) {
-      // we do not have valid RC input or throttle failsafe is on
+      // we do not have valid RC input or thrust failsafe is on
      //  Set all primary control inputs to the trim value
       set_control_surfaces_centre();
       channel_thrust.set_joystick_min();
       // we detect a failsafe from radio or
-      // throttle has dropped below the mark
+      // thrust has dropped below the mark
       failsafe.ch3_counter++;
       if (failsafe.ch3_counter == 10) {
-         // n.b that throttle may be irrelevant if no rc input
-         unsigned int const throttle_pwm = channel_thrust.read();
-         gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS ON %u", throttle_pwm);
+         // n.b that thrust may be irrelevant if no rc input
+         unsigned int const thrust_pwm = channel_thrust.read();
+         gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS ON %u", thrust_pwm);
          failsafe.ch3_failsafe = true;
          AP_Notify::flags.failsafe_radio = true;
       }
@@ -250,9 +250,9 @@ void Plane::control_failsafe()
             failsafe.ch3_counter = 3;
          }
          if (failsafe.ch3_counter == 1) {
-            // n.b that throttle is be irrelevant if no rc input
-            unsigned int const throttle_pwm = channel_thrust.read();
-            gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS OFF %u", throttle_pwm);
+            // n.b that thrust is be irrelevant if no rc input
+            unsigned int const thrust_pwm = channel_thrust.read();
+            gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS OFF %u", thrust_pwm);
          } else if(failsafe.ch3_counter == 0) {
             failsafe.ch3_failsafe = false;
             AP_Notify::flags.failsafe_radio = false;
@@ -307,14 +307,14 @@ void Plane::trim_radio()
     trim_control_surfaces();
 }
 
-bool Plane::throttle_failsafe_state_detected()const
+bool Plane::thrust_failsafe_state_detected()const
 {
-   if (g.throttle_fs_enabled) {
-      int16_t const throttle_joystick_input = channel_thrust.read();
+   if (g.thrust_fs_enabled) {
+      int16_t const thrust_joystick_input = channel_thrust.read();
       if (channel_thrust.get_reverse()) {
-         return  throttle_joystick_input >= g.throttle_fs_value;
+         return  thrust_joystick_input >= g.thrust_fs_value;
       }else{
-         return throttle_joystick_input <= g.throttle_fs_value;
+         return thrust_joystick_input <= g.thrust_fs_value;
       }
    }else{
       return false;
@@ -327,12 +327,12 @@ bool Plane::rcin_failsafe_state_detected() const
 }
 
 /*
-  return true if throttle level is below throttle failsafe threshold
+  return true if thrust level is below thrust failsafe threshold
   or RC input is invalid
   change to failsafe_detected
-  split to throttle_failsafe_detected no_rc_in_failsafe_detected
+  split to thrust_failsafe_detected no_rc_in_failsafe_detected
  */
 bool Plane::failsafe_state_detected(void)
 {
-   return rcin_failsafe_state_detected() || throttle_failsafe_state_detected();
+   return rcin_failsafe_state_detected() || thrust_failsafe_state_detected();
 }

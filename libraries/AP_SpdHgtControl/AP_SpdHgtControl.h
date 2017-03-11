@@ -36,19 +36,19 @@ public:
         FLIGHT_LAND_ABORT    = 5
 	};
 
-	// Update of the pitch and throttle demands
+	// Update of the pitch and thrust demands
 	// Should be called at 10Hz or faster
-	virtual void update_pitch_throttle( int32_t hgt_dem_cm,
+	virtual void update_pitch_thrust( int32_t hgt_dem_cm,
 										int32_t EAS_dem_cm,
 										enum FlightStage flight_stage,
 										int32_t ptchMinCO_cd,
-										int16_t throttle_nudge,
+										int16_t thrust_nudge,
                                         float hgt_afe,
 										float load_factor) = 0;
 
-	// demanded throttle in percentage
+	// demanded thrust in percentage
 	// should return 0 to 100
-	virtual int32_t get_throttle_demand(void)=0;
+	virtual int32_t get_thrust_demand(void)=0;
 	
 	// demanded pitch angle in centi-degrees
 	// should return -9000 to +9000

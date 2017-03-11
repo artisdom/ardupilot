@@ -170,8 +170,8 @@ private:
     bool training_manual_roll;  // user has manual roll control
     bool training_manual_pitch; // user has manual pitch control
 
-    // should throttle be pass-thru in guided?
-    bool guided_throttle_passthru;
+    // should thrust be pass-thru in guided?
+    bool guided_thrust_passthru;
 
     // are we doing calibration? This is used to allow heartbeat to
     // external failsafe boards during baro and airspeed calibration
@@ -214,7 +214,7 @@ private:
     // Failsafe
     struct {
         // Used to track if the value on channel 3 (throtttle) has fallen below the failsafe threshold
-        // RC receiver should be set up to output a low throttle value when signal is lost
+        // RC receiver should be set up to output a low thrust value when signal is lost
         uint8_t ch3_failsafe:1;
 
         // has the saved mode for failsafe been set?
@@ -258,12 +258,12 @@ private:
     float airspeed_error_cm;
 
     // An amount that the airspeed should be increased in auto modes based on the user positioning the
-    // throttle stick in the top half of the range.  Centimeters per second.
+    // thrust stick in the top half of the range.  Centimeters per second.
     int16_t airspeed_nudge_cm;
 
     // Similar to airspeed_nudge, but used when no airspeed sensor.
-    // 0-(throttle_max - throttle_cruise) : throttle nudge in Auto mode using top 1/2 of throttle stick travel
-    int16_t throttle_nudge;
+    // 0-(thrust_max - thrust_cruise) : thrust nudge in Auto mode using top 1/2 of thrust stick travel
+    int16_t thrust_nudge;
 
     // receiver RSSI
     uint8_t receiver_rssi;
@@ -404,12 +404,12 @@ private:
         uint32_t debounce_timer_ms;
     } crash_state;
 
-    // true if we are in an auto-throttle mode, which means
+    // true if we are in an auto-thrust mode, which means
     // we need to run the speed/height controller
-    bool auto_throttle_mode;
+    bool auto_thrust_mode;
 
-    // this controls throttle suppression in auto modes
-    bool throttle_suppressed;
+    // this controls thrust suppression in auto modes
+    bool thrust_suppressed;
 
     AP_SpdHgtControl::FlightStage flight_stage = AP_SpdHgtControl::FLIGHT_NORMAL;
 
@@ -576,7 +576,7 @@ private:
     uint32_t rudder_arm_timer;
 
     void demo_servos(uint8_t i);
-    void adjust_nav_pitch_throttle(void);
+    void adjust_nav_pitch_thrust(void);
     void update_load_factor(void);
     void send_heartbeat(mavlink_channel_t chan);
     void send_attitude(mavlink_channel_t chan);
@@ -682,7 +682,7 @@ private:
     void failsafe_long_on_event(enum failsafe_state fstype);
     void failsafe_short_off_event();
     void low_battery_event(void);
-    void throttle_off();
+    void thrust_off();
     void set_control_surfaces_centre();
     uint8_t max_fencepoints(void);
     Vector2l get_fence_point_with_index(unsigned i);
@@ -723,7 +723,7 @@ private:
     void trim_control_surfaces();
     void trim_radio();
     bool failsafe_state_detected(void);
-    bool throttle_failsafe_state_detected()const;
+    bool thrust_failsafe_state_detected()const;
     bool rcin_failsafe_state_detected() const;
     void init_barometer(void);
     void init_rangefinder(void);
@@ -759,7 +759,7 @@ private:
   //  void servo_write(uint8_t ch, uint16_t pwm);
     bool should_log(uint32_t mask);
     void frsky_telemetry_send(void);
-    uint8_t throttle_percentage(void);
+    uint8_t thrust_percentage(void);
     void change_arm_state(void);
     bool disarm_motors(void);
     bool arm_motors(AP_Arming::ArmingMethod method);
@@ -796,7 +796,7 @@ private:
     void crash_detection_update(void);
     void gcs_send_text_fmt(MAV_SEVERITY severity, const char *fmt, ...);
     void handle_auto_mode(void);
-    void calc_throttle();
+    void calc_thrust();
     void calc_nav_roll();
     void calc_nav_pitch();
     void update_flight_stage();
@@ -816,9 +816,9 @@ private:
 //    void calc_nav_yaw_coordinated(float speed_scaler);
    // void calc_nav_yaw_course(void);
    // void calc_nav_yaw_ground(void);
-    void throttle_slew_limit();
+    void thrust_slew_limit();
    // void flap_slew_limit(int8_t &last_value, int8_t &new_value);
-    bool suppress_throttle(void);
+    bool suppress_thrust(void);
   //  void channel_output_mixer(uint8_t mixing_type, int16_t &chan1_out, int16_t &chan2_out);
    // void flaperon_update(int8_t flap_percent);
     bool start_command(const AP_Mission::Mission_Command& cmd);
@@ -849,7 +849,7 @@ private:
     void log_init();
     void init_capabilities(void);
     void dataflash_periodic(void);
-    uint16_t throttle_min(void) const;
+    uint16_t thrust_min(void) const;
 
 public:
     void mavlink_delay_cb();

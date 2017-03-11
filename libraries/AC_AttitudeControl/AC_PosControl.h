@@ -15,7 +15,7 @@
 
 
 // position controller default definitions
-#define POSCONTROL_THROTTLE_HOVER               500.0f  // default throttle required to maintain hover
+#define POSCONTROL_THROTTLE_HOVER               500.0f  // default thrust required to maintain hover
 #define POSCONTROL_ACCELERATION_MIN             50.0f   // minimum horizontal acceleration in cm/s/s - used for sanity checking acceleration in leash length calculation
 #define POSCONTROL_ACCEL_XY                     100.0f  // default horizontal acceleration in cm/s/s.  This is overwritten by waypoint and loiter controllers
 #define POSCONTROL_ACCEL_XY_MAX                 980.0f  // max horizontal acceleration in cm/s/s that the position velocity controller will ask from the lower accel controller
@@ -109,8 +109,8 @@ public:
     ///     called by pos_to_rate_z if z-axis speed or accelerations are changed
     void calc_leash_length_z();
 
-    /// set_throttle_hover - update estimated throttle required to maintain hover
-    void set_throttle_hover(float throttle) { _throttle_hover = throttle; }
+    /// set_thrust_hover - update estimated thrust required to maintain hover
+    void set_thrust_hover(float thrust) { _thrust_hover = thrust; }
 
     /// set_alt_target - set altitude target in cm above home
     void set_alt_target(float alt_cm) { _pos_target.z = alt_cm; }
@@ -144,9 +144,9 @@ public:
     void set_alt_target_to_current_alt() { _pos_target.z = _inav.get_altitude(); }
 
     /// relax_alt_hold_controllers - set all desired and targets to measured
-    void relax_alt_hold_controllers(float throttle_setting);
+    void relax_alt_hold_controllers(float thrust_setting);
 
-    /// get_alt_target, get_desired_alt - get desired altitude (in cm above home) from loiter or wp controller which should be fed into throttle controller
+    /// get_alt_target, get_desired_alt - get desired altitude (in cm above home) from loiter or wp controller which should be fed into thrust controller
     /// To-Do: remove one of the two functions below
     float get_alt_target() const { return _pos_target.z; }
 
@@ -261,7 +261,7 @@ public:
     /// update_velocity_controller_xyz - run the velocity controller - should be called at 100hz or higher
     ///     velocity targets should we set using set_desired_velocity_xyz() method
     ///     callers should use get_roll() and get_pitch() methods and sent to the attitude controller
-    ///     throttle targets will be sent directly to the motors
+    ///     thrust targets will be sent directly to the motors
     void update_vel_controller_xyz(float ekfNavVelGainScaler);
 
     /// get desired roll, pitch which should be fed into stabilize controllers
@@ -296,7 +296,7 @@ private:
             uint16_t reset_rate_to_accel_xy     : 1;    // 1 if we should reset the rate_to_accel_xy step
             uint16_t reset_accel_to_lean_xy     : 1;    // 1 if we should reset the accel to lean angle step
             uint16_t reset_rate_to_accel_z      : 1;    // 1 if we should reset the rate_to_accel_z step
-            uint16_t reset_accel_to_throttle    : 1;    // 1 if we should reset the accel_to_throttle step of the z-axis controller
+            uint16_t reset_accel_to_thrust    : 1;    // 1 if we should reset the accel_to_thrust step of the z-axis controller
             uint16_t freeze_ff_xy       : 1;    // 1 use to freeze feed forward during step updates
             uint16_t freeze_ff_z        : 1;    // 1 used to freeze velocity to accel feed forward for one iteration
             uint16_t use_desvel_ff_z    : 1;    // 1 to use z-axis desired velocity as feed forward into velocity step
@@ -325,8 +325,8 @@ private:
     // rate_to_accel_z - calculates desired accel required to achieve the velocity target
     void rate_to_accel_z();
 
-    // accel_to_throttle - alt hold's acceleration controller
-    void accel_to_throttle(float accel_target_z);
+    // accel_to_thrust - alt hold's acceleration controller
+    void accel_to_thrust(float accel_target_z);
 
     ///
     /// xy controller private methods
@@ -374,7 +374,7 @@ private:
     float       _dt_xy;                 // time difference (in seconds) between update_xy_controller and update_vel_controller_xyz calls
     uint32_t    _last_update_xy_ms;     // system time of last update_xy_controller call
     uint32_t    _last_update_z_ms;      // system time of last update_z_controller call
-    float       _throttle_hover;        // estimated throttle required to maintain a level hover
+    float       _thrust_hover;        // estimated thrust required to maintain a level hover
     float       _speed_down_cms;        // max descent rate in cm/s
     float       _speed_up_cms;          // max climb rate in cm/s
     float       _speed_cms;             // max horizontal speed in cm/s

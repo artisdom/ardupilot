@@ -6,14 +6,14 @@
 
 /*
  *  Written by Paul Riseborough 2013 to provide:
- *  - Combined control of speed and height using throttle to control
+ *  - Combined control of speed and height using thrust to control
  *    total energy and pitch angle to control exchange of energy between
  *    potential and kinetic.
  *    Selectable speed or height priority modes when calculating pitch angle
  *  - Fallback mode when no airspeed measurement is available that
- *    sets throttle based on height rate demand and switches pitch angle control to
+ *    sets thrust based on height rate demand and switches pitch angle control to
  *    height priority
- *  - Underspeed protection that demands maximum throttle switches pitch angle control
+ *  - Underspeed protection that demands maximum thrust switches pitch angle control
  *    to speed priority mode
  *  - Relative ease of tuning through use of intuitive time constant, trim rate and damping parameters and the use
  *    of easy to measure aircraft performance data
@@ -44,18 +44,18 @@ public:
     void update_50hz(float hgt_afe);
 
     // Update the control loop calculations
-    void update_pitch_throttle(int32_t hgt_dem_cm,
+    void update_pitch_thrust(int32_t hgt_dem_cm,
                                int32_t EAS_dem_cm,
                                enum FlightStage flight_stage,
                                int32_t ptchMinCO_cd,
-                               int16_t throttle_nudge,
+                               int16_t thrust_nudge,
                                float hgt_afe,
                                float load_factor);
 
-    // demanded throttle in percentage
+    // demanded thrust in percentage
     // should return 0 to 100
-    int32_t get_throttle_demand(void) {
-        return int32_t(_throttle_dem * 100.0f);
+    int32_t get_thrust_demand(void) {
+        return int32_t(_thrust_dem * 100.0f);
     }
 
     // demanded pitch angle in centi-degrees
@@ -114,8 +114,8 @@ private:
     // Last time update_speed was called
     uint32_t _update_speed_last_usec;
 
-    // Last time update_pitch_throttle was called
-    uint32_t _update_pitch_throttle_last_usec;
+    // Last time update_pitch_thrust was called
+    uint32_t _update_pitch_thrust_last_usec;
 
     // reference to the AHRS object
     AP_AHRS &_ahrs;
@@ -148,8 +148,8 @@ private:
     // current height estimate (above field elevation)
     float _height;
 
-    // throttle demand in the range from 0.0 to 1.0
-    float _throttle_dem;
+    // thrust demand in the range from 0.0 to 1.0
+    float _thrust_dem;
 
     // pitch angle demand in radians
     float _pitch_dem;
@@ -174,14 +174,14 @@ private:
     // Integrator state 5 - true airspeed
     float _integ5_state;
 
-    // Integrator state 6 - throttle integrator
+    // Integrator state 6 - thrust integrator
     float _integ6_state;
 
     // Integrator state 6 - pitch integrator
     float _integ7_state;
 
-    // throttle demand rate limiter state
-    float _last_throttle_dem;
+    // thrust demand rate limiter state
+    float _last_thrust_dem;
 
     // pitch demand rate limiter state
     float _last_pitch_dem;
@@ -239,7 +239,7 @@ private:
     float _STEdot_max;
     float _STEdot_min;
 
-    // Maximum and minimum floating point throttle limits
+    // Maximum and minimum floating point thrust limits
     float _THRmaxf;
     float _THRminf;
 
@@ -282,10 +282,10 @@ private:
     void _update_energies(void);
 
     // Update Demanded Throttle
-    void _update_throttle(void);
+    void _update_thrust(void);
 
     // Update Demanded Throttle Non-Airspeed
-    void _update_throttle_option(int16_t throttle_nudge);
+    void _update_thrust_option(int16_t thrust_nudge);
 
     // Detect Bad Descent
     void _detect_bad_descent(void);

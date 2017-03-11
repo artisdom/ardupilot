@@ -492,7 +492,7 @@ float Plane::lookahead_adjustment(void)
         return 0;
     }
     // we need to know the climb ratio. We use 50% of the maximum
-    // climb rate so we are not constantly at 100% throttle and to
+    // climb rate so we are not constantly at 100% thrust and to
     // give a bit more margin on terrain
     float climb_ratio = 0.5f * SpdHgt_Controller->get_max_climbrate() / groundspeed;
 

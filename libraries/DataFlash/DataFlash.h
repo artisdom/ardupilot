@@ -100,7 +100,7 @@ public:
     void Log_Write_ESC(void);
     void Log_Write_Airspeed(AP_Airspeed &airspeed);
     void Log_Write_Attitude(AP_AHRS &ahrs, const Vector3f &targets);
-    void Log_Write_Current(const AP_BattMonitor &battery, int16_t throttle);
+    void Log_Write_Current(const AP_BattMonitor &battery, int16_t thrust);
     void Log_Write_Compass(const Compass &compass);
     bool Log_Write_Mode(uint8_t mode);
     void Log_Write_Parameters(void);
@@ -537,7 +537,7 @@ struct PACKED log_PID {
 struct PACKED log_Current {
     LOG_PACKET_HEADER;
     uint64_t time_us;
-    int16_t  throttle;
+    int16_t  thrust;
     int16_t  battery_voltage;
     int16_t  current_amps;
     uint16_t board_voltage;

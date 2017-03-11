@@ -124,10 +124,10 @@ namespace {
 //         ccer.cc4e =  false; // disable ch4
          rcout_1to4_timer::get()->ccer.set(ccer.value);
       }
-      // set all ccr regs to center except throttle set low
+      // set all ccr regs to center except thrust set low
       rcout_1to4_timer::get()->ccr1 = 1500;
       rcout_1to4_timer::get()->ccr2 = 1500;
-      rcout_1to4_timer::get()->ccr3 = 900;  // throttle
+      rcout_1to4_timer::get()->ccr3 = 900;  // thrust
       rcout_1to4_timer::get()->ccr4 = 1500;
       // set the ocpe (preload) bits in ccmr1 , ccmr2 
       rcout_1to4_timer::get()->ccmr1 |= ((1 << 3) | (1 << 11));

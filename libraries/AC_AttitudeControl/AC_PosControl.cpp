@@ -41,7 +41,7 @@ AC_PosControl::AC_PosControl(const AP_AHRS& ahrs, const AP_InertialNav& inav,
     _dt_xy(POSCONTROL_DT_50HZ),
     _last_update_xy_ms(0),
     _last_update_z_ms(0),
-    _throttle_hover(POSCONTROL_THROTTLE_HOVER),
+    _thrust_hover(POSCONTROL_THROTTLE_HOVER),
     _speed_down_cms(POSCONTROL_SPEED_DOWN),
     _speed_up_cms(POSCONTROL_SPEED_UP),
     _speed_cms(POSCONTROL_SPEED),
@@ -68,7 +68,7 @@ AC_PosControl::AC_PosControl(const AP_AHRS& ahrs, const AP_InertialNav& inav,
     _flags.reset_rate_to_accel_xy = true;
     _flags.reset_accel_to_lean_xy = true;
     _flags.reset_rate_to_accel_z = true;
-    _flags.reset_accel_to_throttle = true;
+    _flags.reset_accel_to_thrust = true;
     _flags.freeze_ff_xy = true;
     _flags.freeze_ff_z = true;
     _flags.use_desvel_ff_z = true;
@@ -143,7 +143,7 @@ void AC_PosControl::set_alt_target_with_slew(float alt_cm, float dt)
     _vel_desired.z = 0.0f;
 
     // adjust desired alt if motors have not hit their limits
-    if ((alt_change<0 && !_motors.limit.throttle_lower) || (alt_change>0 && !_motors.limit.throttle_upper)) {
+    if ((alt_change<0 && !_motors.limit.thrust_lower) || (alt_change>0 && !_motors.limit.thrust_upper)) {
         _pos_target.z += constrain_float(alt_change, _speed_down_cms*dt, _speed_up_cms*dt);
     }
 
@@ -161,7 +161,7 @@ void AC_PosControl::set_alt_target_from_climb_rate(float climb_rate_cms, float d
 {
     // adjust desired alt if motors have not hit their limits
     // To-Do: add check of _limit.pos_down?
-    if ((climb_rate_cms<0 && (!_motors.limit.throttle_lower || force_descend)) || (climb_rate_cms>0 && !_motors.limit.throttle_upper && !_limit.pos_up)) {
+    if ((climb_rate_cms<0 && (!_motors.limit.thrust_lower || force_descend)) || (climb_rate_cms>0 && !_motors.limit.thrust_upper && !_limit.pos_up)) {
         _pos_target.z += climb_rate_cms * dt;
     }
 
@@ -208,7 +208,7 @@ void AC_PosControl::set_alt_target_from_climb_rate_ff(float climb_rate_cms, floa
 
     // adjust desired alt if motors have not hit their limits
     // To-Do: add check of _limit.pos_down?
-    if ((_vel_desired.z<0 && (!_motors.limit.throttle_lower || force_descend)) || (_vel_desired.z>0 && !_motors.limit.throttle_upper && !_limit.pos_up)) {
+    if ((_vel_desired.z<0 && (!_motors.limit.thrust_lower || force_descend)) || (_vel_desired.z>0 && !_motors.limit.thrust_upper && !_limit.pos_up)) {
         _pos_target.z += _vel_desired.z * dt;
     }
 
@@ -230,7 +230,7 @@ void AC_PosControl::add_takeoff_climb_rate(float climb_rate_cms, float dt)
 }
 
 /// relax_alt_hold_controllers - set all desired and targets to measured
-void AC_PosControl::relax_alt_hold_controllers(float throttle_setting)
+void AC_PosControl::relax_alt_hold_controllers(float thrust_setting)
 {
     _pos_target.z = _inav.get_altitude();
     _vel_desired.z = 0.0f;
@@ -240,8 +240,8 @@ void AC_PosControl::relax_alt_hold_controllers(float throttle_setting)
     _accel_feedforward.z = 0.0f;
     _accel_last_z_cms = 0.0f;
     _accel_target.z = -(_ahrs.get_accel_ef_blended().z + GRAVITY_MSS) * 100.0f;
-    _flags.reset_accel_to_throttle = true;
-    _pid_accel_z.set_integrator(throttle_setting);
+    _flags.reset_accel_to_thrust = true;
+    _pid_accel_z.set_integrator(thrust_setting);
 }
 
 // get_alt_error - returns altitude error in cm
@@ -303,8 +303,8 @@ void AC_PosControl::init_takeoff()
     // freeze feedforward to avoid jump
     freeze_ff_z();
 
-    // shift difference between last motor out and hover throttle into accelerometer I
-    _pid_accel_z.set_integrator(_motors.get_throttle()-_throttle_hover);
+    // shift difference between last motor out and hover thrust into accelerometer I
+    _pid_accel_z.set_integrator(_motors.get_thrust()-_thrust_hover);
 }
 
 // is_active_z - returns true if the z-axis position controller has been run very recently
@@ -320,7 +320,7 @@ void AC_PosControl::update_z_controller()
     uint32_t now = AP_HAL::millis();
     if (now - _last_update_z_ms > POSCONTROL_ACTIVE_TIMEOUT_MS) {
         _flags.reset_rate_to_accel_z = true;
-        _flags.reset_accel_to_throttle = true;
+        _flags.reset_accel_to_thrust = true;
     }
     _last_update_z_ms = now;
 
@@ -389,12 +389,12 @@ void AC_PosControl::pos_to_rate_z()
         _vel_target.z += _vel_desired.z;
     }
 
-    // call rate based throttle controller which will update accel based throttle controller targets
+    // call rate based thrust controller which will update accel based thrust controller targets
     rate_to_accel_z();
 }
 
 // rate_to_accel_z - calculates desired accel required to achieve the velocity target
-// calculates desired acceleration and calls accel throttle controller
+// calculates desired acceleration and calls accel thrust controller
 void AC_PosControl::rate_to_accel_z()
 {
     const Vector3f& curr_vel = _inav.get_velocity();
@@ -437,13 +437,13 @@ void AC_PosControl::rate_to_accel_z()
     // consolidate and constrain target acceleration
     _accel_target.z = _accel_feedforward.z + p;
 
-    // set target for accel based throttle controller
-    accel_to_throttle(_accel_target.z);
+    // set target for accel based thrust controller
+    accel_to_thrust(_accel_target.z);
 }
 
-// accel_to_throttle - alt hold's acceleration controller
-// calculates a desired throttle which is sent directly to the motors
-void AC_PosControl::accel_to_throttle(float accel_target_z)
+// accel_to_thrust - alt hold's acceleration controller
+// calculates a desired thrust which is sent directly to the motors
+void AC_PosControl::accel_to_thrust(float accel_target_z)
 {
     float z_accel_meas;         // actual acceleration
     float p,i,d;              // used to capture pid values for logging
@@ -452,10 +452,10 @@ void AC_PosControl::accel_to_throttle(float accel_target_z)
     z_accel_meas = -(_ahrs.get_accel_ef_blended().z + GRAVITY_MSS) * 100.0f;
 
     // reset target altitude if this controller has just been engaged
-    if (_flags.reset_accel_to_throttle) {
+    if (_flags.reset_accel_to_thrust) {
         // Reset Filter
         _accel_error.z = 0;
-        _flags.reset_accel_to_throttle = false;
+        _flags.reset_accel_to_thrust = false;
     } else {
         // calculate accel error
         _accel_error.z = accel_target_z - z_accel_meas;
@@ -473,17 +473,17 @@ void AC_PosControl::accel_to_throttle(float accel_target_z)
 
     // update i term as long as we haven't breached the limits or the I term will certainly reduce
     // To-Do: should this be replaced with limits check from attitude_controller?
-    if ((!_motors.limit.throttle_lower && !_motors.limit.throttle_upper) || (i>0&&_accel_error.z<0) || (i<0&&_accel_error.z>0)) {
+    if ((!_motors.limit.thrust_lower && !_motors.limit.thrust_upper) || (i>0&&_accel_error.z<0) || (i<0&&_accel_error.z>0)) {
         i = _pid_accel_z.get_i();
     }
 
     // get d term
     d = _pid_accel_z.get_d();
 
-    float thr_out = p+i+d+_throttle_hover;
+    float thr_out = p+i+d+_thrust_hover;
 
-    // send throttle to attitude controller with angle boost
-    _attitude_control.set_throttle_out(thr_out, true, POSCONTROL_THROTTLE_CUTOFF_FREQ);
+    // send thrust to attitude controller with angle boost
+    _attitude_control.set_thrust_out(thr_out, true, POSCONTROL_THROTTLE_CUTOFF_FREQ);
 }
 
 ///
@@ -702,7 +702,7 @@ void AC_PosControl::init_vel_controller_xyz()
 /// update_velocity_controller_xyz - run the velocity controller - should be called at 100hz or higher
 ///     velocity targets should we set using set_desired_velocity_xyz() method
 ///     callers should use get_roll() and get_pitch() methods and sent to the attitude controller
-///     throttle targets will be sent directly to the motors
+///     thrust targets will be sent directly to the motors
 void AC_PosControl::update_vel_controller_xyz(float ekfNavVelGainScaler)
 {
     // capture time since last iteration
@@ -892,8 +892,8 @@ void AC_PosControl::rate_to_accel_xy(float dt, float ekfNavVelGainScaler)
     // get p
     vel_xy_p = _pi_vel_xy.get_p();
 
-    // update i term if we have not hit the accel or throttle limits OR the i term will reduce
-    if ((!_limit.accel_xy && !_motors.limit.throttle_upper)) {
+    // update i term if we have not hit the accel or thrust limits OR the i term will reduce
+    if ((!_limit.accel_xy && !_motors.limit.thrust_upper)) {
         vel_xy_i = _pi_vel_xy.get_i();
     } else {
         vel_xy_i = _pi_vel_xy.get_i_shrink();

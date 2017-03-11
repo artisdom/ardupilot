@@ -142,7 +142,7 @@ int8_t Plane::test_failsafe(uint8_t argc, const Menu::arg *argv)
 
     oldSwitchPosition = readSwitch();
 
-    cliSerial->printf("Unplug battery, throttle in neutral, turn off radio.\n");
+    cliSerial->printf("Unplug battery, thrust in neutral, turn off radio.\n");
     while(channel_thrust.get_control_in() > 0) {
         hal.scheduler->delay(20);
         read_radio();

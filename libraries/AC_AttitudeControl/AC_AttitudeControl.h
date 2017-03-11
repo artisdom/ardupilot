@@ -41,7 +41,7 @@
 
 #define AC_ATTITUDE_CONTROL_RATE_BF_FF_DEFAULT          1       // body-frame rate feedforward enabled by default
 
-#define AC_ATTITUDE_CONTROL_ALTHOLD_LEANANGLE_FILT_HZ   1.0f    // filter (in hz) of throttle filter used to limit lean angle so that vehicle does not lose altitude
+#define AC_ATTITUDE_CONTROL_ALTHOLD_LEANANGLE_FILT_HZ   1.0f    // filter (in hz) of thrust filter used to limit lean angle so that vehicle does not lose altitude
 
 class AC_AttitudeControl {
 public:
@@ -63,7 +63,7 @@ public:
         _dt(AC_ATTITUDE_100HZ_DT),
         _angle_boost(0),
         _acro_angle_switch(0),
-	    _throttle_in_filt(AC_ATTITUDE_CONTROL_ALTHOLD_LEANANGLE_FILT_HZ)
+	    _thrust_in_filt(AC_ATTITUDE_CONTROL_ALTHOLD_LEANANGLE_FILT_HZ)
 		{
 			AP_Param::setup_object_defaults(this, var_info);
 
@@ -202,14 +202,14 @@ public:
     void accel_limiting(bool enable_or_disable);
 
     //
-    // throttle functions
+    // thrust functions
     //
 
-     // set_throttle_out - to be called by upper throttle controllers when they wish to provide throttle output directly to motors
-     void set_throttle_out(float throttle_in, bool apply_angle_boost, float filt_cutoff);
+     // set_thrust_out - to be called by upper thrust controllers when they wish to provide thrust output directly to motors
+     void set_thrust_out(float thrust_in, bool apply_angle_boost, float filt_cutoff);
 
-     // outputs a throttle to all motors evenly with no stabilization
-     void set_throttle_out_unstabilized(float throttle_in, bool reset_attitude_control, float filt_cutoff);
+     // outputs a thrust to all motors evenly with no stabilization
+     void set_thrust_out_unstabilized(float thrust_in, bool reset_attitude_control, float filt_cutoff);
 
      // angle_boost - accessor for angle boost so it can be logged
      int16_t angle_boost() const { return _angle_boost; }
@@ -265,11 +265,11 @@ protected:
     virtual float rate_bf_to_motor_yaw(float rate_target_cds);
 
     //
-    // throttle methods
+    // thrust methods
     //
 
-    // calculate total body frame throttle required to produce the given earth frame throttle
-    virtual float get_boosted_throttle(float throttle_in) = 0;
+    // calculate total body frame thrust required to produce the given earth frame thrust
+    virtual float get_boosted_thrust(float thrust_in) = 0;
 
     // get_roll_trim - angle in centi-degrees to be added to roll angle. Used by helicopter to counter tail rotor thrust in hover
     // Overloaded by AC_Attitude_Heli to return angle.  Should be left to return zero for multirotors.
@@ -304,8 +304,8 @@ protected:
     int16_t             _angle_boost;           // used only for logging
     int16_t             _acro_angle_switch;           // used only for logging
 
-    // throttle based angle limits
-    LowPassFilterFloat  _throttle_in_filt;      // throttle input from pilot or alt hold controller
+    // thrust based angle limits
+    LowPassFilterFloat  _thrust_in_filt;      // thrust input from pilot or alt hold controller
 };
 
 #define AC_ATTITUDE_CONTROL_LOG_FORMAT(msg) { msg, sizeof(AC_AttitudeControl::log_Attitude),	\

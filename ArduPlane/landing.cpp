@@ -29,7 +29,7 @@ bool Plane::verify_land()
     // the altitude has been reached, restart the landing sequence
     if (flight_stage == AP_SpdHgtControl::FLIGHT_LAND_ABORT) {
 
-        throttle_suppressed = false;
+        thrust_suppressed = false;
         auto_state.land_complete = false;
         nav_controller->update_heading_hold(get_bearing_cd(prev_WP_loc, next_WP_loc));
 
@@ -58,7 +58,7 @@ bool Plane::verify_land()
        2) we are within LAND_FLARE_SEC of the landing point vertically
           by the calculated sink rate (if LAND_FLARE_SEC != 0)
        3) we have gone past the landing point and don't have
-          rangefinder data (to prevent us keeping throttle on 
+          rangefinder data (to prevent us keeping thrust on 
           after landing if we've had positive baro drift)
     */
 #if RANGEFINDER_ENABLED == ENABLED
@@ -91,7 +91,7 @@ bool Plane::verify_land()
             // target speeds too early.
             g.airspeed_cruise_cm.load();
             g.min_gndspeed_cm.load();
-            aparm.throttle_cruise.load();
+            aparm.thrust_cruise.load();
         }
     }
 

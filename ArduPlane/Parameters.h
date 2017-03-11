@@ -75,11 +75,11 @@ public:
         k_param_land_flare_sec,
         k_param_crosstrack_min_distance, // unused
         k_param_rudder_steer, // unused
-        k_param_throttle_nudge,
+        k_param_thrust_nudge,
         k_param_alt_offset,
         k_param_ins,                // libraries/AP_InertialSensor variables
-        k_param_takeoff_throttle_min_speed,
-        k_param_takeoff_throttle_min_accel,
+        k_param_takeoff_thrust_min_speed,
+        k_param_takeoff_thrust_min_accel,
         k_param_takeoff_heading_hold, // unused
         k_param_level_roll_limit,
         k_param_hil_servos,
@@ -90,7 +90,7 @@ public:
         k_param_mixing_gain,
         k_param_scheduler,
         k_param_relay,
-        k_param_takeoff_throttle_delay,
+        k_param_takeoff_thrust_delay,
         k_param_skip_gyro_cal, // unused
         k_param_auto_fbw_steer,
         k_param_waypoint_max_radius,
@@ -113,8 +113,8 @@ public:
         k_param_takeoff_tdrag_elevator,
         k_param_takeoff_tdrag_speed1,
         k_param_takeoff_rotate_speed,
-        k_param_takeoff_throttle_slewrate,
-        k_param_takeoff_throttle_max,
+        k_param_takeoff_thrust_slewrate,
+        k_param_takeoff_thrust_max,
         k_param_rangefinder,
         k_param_terrain,
         k_param_terrain_follow,
@@ -140,7 +140,7 @@ public:
         k_param_gcs3,            // 93
         k_param_gcs_pid_mask,
         k_param_crash_detection_enable,
-        k_param_land_abort_throttle_enable,
+        k_param_land_abort_thrust_enable,
         k_param_rssi = 97,
         k_param_rpm_sensor,
         k_param_arming = 100,
@@ -243,18 +243,18 @@ public:
         k_param_rc_10,
         k_param_rc_11,
 
-        k_param_throttle_min,
-        k_param_throttle_max,
-        k_param_throttle_fs_enabled,
-        k_param_throttle_fs_value,
-        k_param_throttle_cruise,
+        k_param_thrust_min,
+        k_param_thrust_max,
+        k_param_thrust_fs_enabled,
+        k_param_thrust_fs_value,
+        k_param_thrust_cruise,
 
         k_param_short_fs_action,
         k_param_long_fs_action,
         k_param_gcs_heartbeat_fs_enabled,
-        k_param_throttle_slewrate,
-        k_param_throttle_suppress_manual,
-        k_param_throttle_passthru_stabilize,
+        k_param_thrust_slewrate,
+        k_param_thrust_suppress_manual,
+        k_param_thrust_passthru_stabilize,
         k_param_rc_12,
         k_param_fs_batt_voltage,
         k_param_fs_batt_mah,
@@ -268,8 +268,8 @@ public:
         //
         k_param_kff_pitch_compensation = 200, // unused
         k_param_kff_rudder_mix,
-        k_param_kff_pitch_to_throttle, // unused
-        k_param_kff_throttle_to_pitch,
+        k_param_kff_pitch_to_thrust, // unused
+        k_param_kff_thrust_to_pitch,
         k_param_scaling_speed,
 
         //
@@ -346,8 +346,8 @@ public:
     // Feed-forward gains
     //
     AP_Float kff_rudder_mix;
-    AP_Float kff_pitch_to_throttle;
-    AP_Float kff_throttle_to_pitch;
+    AP_Float kff_pitch_to_thrust;
+    AP_Float kff_thrust_to_pitch;
     AP_Float ground_steer_alt;
     AP_Int16 ground_steer_dps;
     AP_Float stab_pitch_down;
@@ -393,11 +393,11 @@ public:
 
     // Throttle
     //
-    AP_Int8 throttle_suppress_manual;
-    AP_Int8 throttle_passthru_stabilize;
-    AP_Int8 throttle_fs_enabled;
-    AP_Int16 throttle_fs_value;
-    AP_Int8 throttle_nudge;
+    AP_Int8 thrust_suppress_manual;
+    AP_Int8 thrust_passthru_stabilize;
+    AP_Int8 thrust_fs_enabled;
+    AP_Int16 thrust_fs_value;
+    AP_Int8 thrust_nudge;
 
     // Failsafe
     AP_Int8 short_fs_action;
@@ -438,7 +438,7 @@ public:
     AP_Int32 RTL_altitude_cm;
     AP_Float land_flare_alt;
     AP_Int8 land_disarm_delay;
-    AP_Int8 land_abort_throttle_enable;
+    AP_Int8 land_abort_thrust_enable;
     AP_Int32 min_gndspeed_cm;
     AP_Int16 pitch_trim_cd;
     AP_Int16 FBWB_min_altitude_cm;
@@ -449,13 +449,13 @@ public:
 
     AP_Int8 compass_enabled;
     AP_Int8 stick_mixing;
-    AP_Float takeoff_throttle_min_speed;
-    AP_Float takeoff_throttle_min_accel;
-    AP_Int8 takeoff_throttle_delay;
+    AP_Float takeoff_thrust_min_speed;
+    AP_Float takeoff_thrust_min_accel;
+    AP_Int8 takeoff_thrust_delay;
     AP_Int8 takeoff_tdrag_elevator;
     AP_Float takeoff_tdrag_speed1;
     AP_Float takeoff_rotate_speed;
-    AP_Int8 takeoff_throttle_slewrate;
+    AP_Int8 takeoff_thrust_slewrate;
     AP_Int8 level_roll_limit;
    // AP_Int8 flapin_channel;
   //  AP_Int8 flaperon_output;

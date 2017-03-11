@@ -72,10 +72,10 @@ public:
     void set_radio_out(int16_t v) { m_output = v;}
     int16_t get_radio_out()const{ return m_output;}
 
-    // in the units either angle or throttle range
+    // in the units either angle or thrust range
     void set_servo_out(int16_t v) { m_servo_out = v;}
     
-    // 0 to 100 for throttle
+    // 0 to 100 for thrust
     int16_t get_servo_out() const { return m_servo_out;}
 
     int16_t get_control_in()const { return m_control_in;}
