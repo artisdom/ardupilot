@@ -58,10 +58,9 @@ void Plane::throttle_off()
 
 void Plane::set_control_surfaces_centre()
 {
-   // sets radio_in and control_in
-   channel_roll.set_pwm(channel_roll.get_radio_trim());
-   channel_pitch.set_pwm(channel_pitch.get_radio_trim());
-   channel_rudder.set_pwm(channel_rudder.get_radio_trim());
+   channel_roll.set_joystick_centre();
+   channel_pitch.set_joystick_centre();
+   channel_rudder.set_joystick_centre();
 }
 
 /*
@@ -189,10 +188,11 @@ void Plane::read_radio()
 
    failsafe.last_valid_rc_ms = millis();
 
-   channel_roll.set_pwm(channel_roll.read());
-   channel_pitch.set_pwm(channel_pitch.read());
-   channel_throttle.set_pwm(channel_throttle.read());
-   channel_rudder.set_pwm(channel_rudder.read());
+   // sets up stick inputs to dynamic_channel inputs
+   channel_roll.read_joystick();
+   channel_pitch.read_joystick();
+   channel_rudder.read_joystick();
+   channel_throttle.read_joystick();
 
    control_failsafe();
 
@@ -226,11 +226,8 @@ void Plane::control_failsafe()
    if (failsafe_state_detected()) {
       // we do not have valid RC input or throttle failsafe is on
      //  Set all primary control inputs to the trim value
-      channel_roll.set_pwm(channel_roll.get_radio_trim());
-      channel_pitch.set_pwm(channel_pitch.get_radio_trim());
-      channel_rudder.set_pwm(channel_rudder.get_radio_trim());
-// todo reverse throttle etc
-      channel_throttle.set_pwm(channel_throttle.get_radio_min());
+      set_control_surfaces_centre();
+      channel_throttle.set_joystick_min();
       // we detect a failsafe from radio or
       // throttle has dropped below the mark
       failsafe.ch3_counter++;

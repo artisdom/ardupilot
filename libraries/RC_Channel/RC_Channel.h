@@ -41,9 +41,9 @@ public:
     // This should apply to the input surely?
     bool        get_reverse(void) const;
   
-    void        set_pwm(int16_t pwm);
-
-   // void        set_pwm_no_deadzone(int16_t pwm);
+    void        read_joystick() { this->set_pwm(this->read());}
+    void        set_joystick_centre() { this->set_pwm(this->get_radio_trim());}
+    void        set_joystick_min() { this->set_pwm(this->get_radio_min());}
 
     // generate PWM from servo_out value
     void        calc_pwm(void);
@@ -62,7 +62,7 @@ public:
 
     //send values to the PWM timers for output
     void       output() const;
-    void       output_trim() const;
+ //   void       output_trim() const;
     uint16_t   read() const;
     void       enable_out()const;
     void       disable_out()const;
@@ -95,20 +95,17 @@ public:
     // used externally by stick_mix_channel atm
     int16_t     pwm_to_angle()const;
 
-   // void        set_default_dead_zone();
-    // only used for throttle in failsafe
-   // void failsafe_set_control_in(int16_t v) { set_control_in(v);}
-
     uint8_t get_rcin_index() const { return m_rcin_idx;}
 private:
-    void set_radio_in(int16_t v) {m_radio_in = v;}
-    void set_control_in( int16_t v) { m_control_in = v;}
+    void       set_pwm(int16_t pwm);
+    void       set_radio_in(int16_t v) {m_radio_in = v;}
+    void       set_control_in( int16_t v) { m_control_in = v;}
    // int16_t     pwm_to_angle_dz(uint16_t dead_zone)const;
    // int16_t     pwm_to_range_dz(uint16_t dead_zone)const;
-    int16_t     angle_to_pwm()const;
-    int16_t     pwm_to_range()const;
+    int16_t    angle_to_pwm()const;
+    int16_t    pwm_to_range()const;
 
-    int16_t     range_to_pwm()const;
+    int16_t    range_to_pwm()const;
 
     static constexpr int16_t default_dead_zone = 30;
     static constexpr int16_t angle_min_max = 4500;
