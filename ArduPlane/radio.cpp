@@ -52,15 +52,15 @@ namespace {
 
 void Plane::thrust_off()
 {
-   channel_thrust.set_servo_out(0);
-   channel_thrust.calc_pwm();  
+   channel_thrust.set_temp_out(0);
+   channel_thrust.calc_output_from_temp_output();  
 }
 
 void Plane::set_control_surfaces_centre()
 {
-   channel_roll.set_joystick_centre();
-   channel_pitch.set_joystick_centre();
-   channel_yaw.set_joystick_centre();
+   channel_roll.set_joystick_input_centre();
+   channel_pitch.set_joystick_input_centre();
+   channel_yaw.set_joystick_input_centre();
 }
 
 /*
@@ -189,17 +189,17 @@ void Plane::read_radio()
    failsafe.last_valid_rc_ms = millis();
 
    // sets up stick inputs to dynamic_channel inputs
-   channel_roll.read_joystick();
-   channel_pitch.read_joystick();
-   channel_yaw.read_joystick();
-   channel_thrust.read_joystick();
+   channel_roll.read_joystick_input();
+   channel_pitch.read_joystick_input();
+   channel_yaw.read_joystick_input();
+   channel_thrust.read_joystick_input();
 
    control_failsafe();
 
-   channel_thrust.set_servo_out(channel_thrust.get_control_in());
+   channel_thrust.set_temp_out(channel_thrust.get_control_in());
 
-   if (g.thrust_nudge && channel_thrust.get_servo_out() > 50) {
-      float nudge = (channel_thrust.get_servo_out() - 50) * 0.02f;
+   if (g.thrust_nudge && channel_thrust.get_temp_out() > 50) {
+      float nudge = (channel_thrust.get_temp_out() - 50) * 0.02f;
       if (ahrs.airspeed_sensor_enabled()) {
          airspeed_nudge_cm = (aparm.airspeed_max * 100 - g.airspeed_cruise_cm) * nudge;
       } else {
@@ -211,7 +211,7 @@ void Plane::read_radio()
    }
 
    rudder_arm_disarm_check();
-   channel_yaw.set_servo_out(channel_yaw.get_control_in());
+   channel_yaw.set_temp_out(channel_yaw.get_control_in());
 }
 
 /*
@@ -227,13 +227,13 @@ void Plane::control_failsafe()
       // we do not have valid RC input or thrust failsafe is on
      //  Set all primary control inputs to the trim value
       set_control_surfaces_centre();
-      channel_thrust.set_joystick_min();
+      channel_thrust.set_joystick_input_min();
       // we detect a failsafe from radio or
       // thrust has dropped below the mark
       failsafe.ch3_counter++;
       if (failsafe.ch3_counter == 10) {
          // n.b that thrust may be irrelevant if no rc input
-         unsigned int const thrust_pwm = channel_thrust.read();
+         unsigned int const thrust_pwm = channel_thrust.read_joystick_usec();
          gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS ON %u", thrust_pwm);
          failsafe.ch3_failsafe = true;
          AP_Notify::flags.failsafe_radio = true;
@@ -251,7 +251,7 @@ void Plane::control_failsafe()
          }
          if (failsafe.ch3_counter == 1) {
             // n.b that thrust is be irrelevant if no rc input
-            unsigned int const thrust_pwm = channel_thrust.read();
+            unsigned int const thrust_pwm = channel_thrust.read_joystick_usec();
             gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS OFF %u", thrust_pwm);
          } else if(failsafe.ch3_counter == 0) {
             failsafe.ch3_failsafe = false;
@@ -266,12 +266,12 @@ void Plane::trim_control_surfaces()
 {
 #if 0
    read_radio();
-   int16_t trim_roll_range = (channel_roll.get_radio_max() - channel_roll.get_radio_min())/5;
-   int16_t trim_pitch_range = (channel_pitch.get_radio_max() - channel_pitch.get_radio_min())/5;
-   if (channel_roll.get_radio_in() < channel_roll.get_radio_min()+trim_roll_range ||
-      channel_roll.get_radio_in() > channel_roll.get_radio_max()-trim_roll_range ||
-      channel_pitch.get_radio_in() < channel_pitch.get_radio_min()+trim_pitch_range ||
-      channel_pitch.get_radio_in() > channel_pitch.get_radio_max()-trim_pitch_range) {
+   int16_t trim_roll_range = (channel_roll.get_joystick_in_max_usec() - channel_roll.get_radio_min())/5;
+   int16_t trim_pitch_range = (channel_pitch.get_joystick_in_max_usec() - channel_pitch.get_radio_min())/5;
+   if (channel_roll.get_joystick_in_usec() < channel_roll.get_joystick_in_min_usec()+trim_roll_range ||
+      channel_roll.get_joystick_in_usec() > channel_roll.get_joystick_in_max_usec()-trim_roll_range ||
+      channel_pitch.get_joystick_in_usec() < channel_pitch.get_joystick_in_min_usec()+trim_pitch_range ||
+      channel_pitch.get_joystick_in_usec() > channel_pitch.get_joystick_in_max_usec()-trim_pitch_range) {
       // don't trim for extreme values - if we attempt to trim so
       // there is less than 20 percent range left then assume the
       // sticks are not properly centered. This also prevents
@@ -280,15 +280,15 @@ void Plane::trim_control_surfaces()
    }
 
    
-   if (channel_roll.get_radio_in() != 0) {
-      channel_roll.set_radio_trim(channel_roll.get_radio_in());
+   if (channel_roll.get_joystick_in_usec() != 0) {
+      channel_roll.set_radio_trim(channel_roll.get_joystick_in_usec());
    }
-   if (channel_pitch.get_radio_in() != 0) {
-      channel_pitch.set_radio_trim(channel_pitch.get_radio_in());
+   if (channel_pitch.get_joystick_in_usec() != 0) {
+      channel_pitch.set_radio_trim(channel_pitch.get_joystick_in_usec());
    }
 
-   if (channel_yaw.get_radio_in() != 0) {
-      channel_yaw.set_radio_trim(channel_yaw.get_radio_in());
+   if (channel_yaw.get_joystick_in_usec() != 0) {
+      channel_yaw.set_radio_trim(channel_yaw.get_joystick_in_usec());
    }
 
    // done for in air restart?
@@ -309,16 +309,7 @@ void Plane::trim_radio()
 
 bool Plane::thrust_failsafe_state_detected()const
 {
-   if (g.thrust_fs_enabled) {
-      int16_t const thrust_joystick_input = channel_thrust.read();
-      if (channel_thrust.get_reverse()) {
-         return  thrust_joystick_input >= g.thrust_fs_value;
-      }else{
-         return thrust_joystick_input <= g.thrust_fs_value;
-      }
-   }else{
-      return false;
-   }
+   return (g.thrust_fs_enabled) && channel_thrust.read_joystick_usec() <= g.thrust_fs_value;
 }
 
 bool Plane::rcin_failsafe_state_detected() const

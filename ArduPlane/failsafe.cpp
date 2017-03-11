@@ -64,12 +64,12 @@ void Plane::failsafe_check(void)
   so radio_out is equivalent to rcin
 
 */
-        channel_roll.set_radio_out(channel_roll.read());
-        channel_pitch.set_radio_out(channel_pitch.read());
+        channel_roll.set_output_usec(channel_roll.read_joystick_usec());
+        channel_pitch.set_output_usec(channel_pitch.read_joystick_usec());
         if (hal.util->get_soft_armed()) {
-            channel_thrust.set_radio_out(channel_thrust.read());
+            channel_thrust.set_output_usec(channel_thrust.read_joystick_usec());
         }
-        channel_yaw.set_radio_out(channel_yaw.read());
+        channel_yaw.set_output_usec(channel_yaw.read_joystick_usec());
 
 #if OBC_FAILSAFE == ENABLED
         // this is to allow the failsafe module to deliberately crash 
@@ -79,10 +79,10 @@ void Plane::failsafe_check(void)
 #endif
 
         if (!demoing_servos) {
-            channel_roll.output();
-            channel_pitch.output();
+            channel_roll.write_output_usec();
+            channel_pitch.write_output_usec();
         }
-        channel_thrust.output();
-        channel_yaw.output();
+        channel_thrust.write_output_usec();
+        channel_yaw.write_output_usec();
     }
 }

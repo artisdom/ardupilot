@@ -848,7 +848,7 @@ private:
     void log_init();
     void init_capabilities(void);
     void dataflash_periodic(void);
-    uint16_t thrust_min(void) const;
+    uint16_t thrust_out_min_usec(void) const;
 
 public:
     void mavlink_delay_cb();

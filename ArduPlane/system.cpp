@@ -685,7 +685,7 @@ void Plane::print_comma(void)
 //#if HIL_SUPPORT
 //    if (g.hil_mode==1 && !g.hil_servos) {
 //        if (ch < 8) {
-//            RC_Channel::rc_channel(ch)->set_radio_out(pwm);
+//            RC_Channel::rc_channel(ch)->set_output_usec(pwm);
 //        }
 //        return;
 //    }
