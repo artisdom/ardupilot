@@ -157,7 +157,7 @@ void Plane::update_cruise()
 {
     if (!cruise_state.locked_heading &&
         channel_roll.get_control_in() == 0 &&
-        channel_rudder.get_control_in() == 0 &&
+        channel_yaw.get_control_in() == 0 &&
         gps.status() >= AP_GPS::GPS_OK_FIX_2D &&
         gps.ground_speed() >= 3 &&
         cruise_state.lock_timer_ms == 0) {

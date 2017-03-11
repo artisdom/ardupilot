@@ -59,7 +59,7 @@ int8_t Plane::test_radio_pwm(uint8_t argc, const Menu::arg *argv)
                         (int)channel_roll.get_radio_in(),
                         (int)channel_pitch.get_radio_in(),
                         (int)channel_throttle.get_radio_in(),
-                        (int)channel_rudder.get_radio_in());
+                        (int)channel_yaw.get_radio_in());
 
         if(cliSerial->available() > 0) {
             return (0);
@@ -109,7 +109,7 @@ int8_t Plane::test_radio(uint8_t argc, const Menu::arg *argv)
         channel_roll.calc_pwm();
         channel_pitch.calc_pwm();
         channel_throttle.calc_pwm();
-        channel_rudder.calc_pwm();
+        channel_yaw.calc_pwm();
 
         // write out the servo PWM values
         // ------------------------------
@@ -119,7 +119,7 @@ int8_t Plane::test_radio(uint8_t argc, const Menu::arg *argv)
                         (int)channel_roll.get_control_in(),
                         (int)channel_pitch.get_control_in(),
                         (int)channel_throttle.get_control_in(),
-                        (int)channel_rudder.get_control_in());
+                        (int)channel_yaw.get_control_in());
 
         if(cliSerial->available() > 0) {
             return (0);

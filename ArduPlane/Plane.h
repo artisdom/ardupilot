@@ -106,7 +106,7 @@ private:
     // dynamics_channel<Roll>
     RC_Channel channel_roll{0,0,RC_Channel::channel_type::angle,1500};
     RC_Channel channel_pitch{1,1,RC_Channel::channel_type::angle,1500};
-    RC_Channel channel_rudder{3,3,RC_Channel::channel_type::angle,1500};
+    RC_Channel channel_yaw{3,3,RC_Channel::channel_type::angle,1500};
     RC_Channel channel_throttle{2,2,RC_Channel::channel_type::range,1000};
     
     // notification object for LEDs, buzzers etc (parameter set to false disables external leds)

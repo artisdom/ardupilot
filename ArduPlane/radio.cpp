@@ -16,7 +16,7 @@ void Plane::set_control_channels(void)
  */
 //    channel_roll.set_angle();
 //    channel_pitch.set_angle();
-//    channel_rudder.set_angle();
+//    channel_yaw.set_angle();
 //    channel_throttle.set_range();
 }
 
@@ -67,7 +67,7 @@ void Plane::set_control_surfaces_centre()
 {
    channel_roll.set_joystick_centre();
    channel_pitch.set_joystick_centre();
-   channel_rudder.set_joystick_centre();
+   channel_yaw.set_joystick_centre();
 }
 
 /*
@@ -86,7 +86,7 @@ void Plane::init_rc_out()
    // enable_actuators() etc;
    channel_roll.enable_out();
    channel_pitch.enable_out();
-   channel_rudder.enable_out();
+   channel_yaw.enable_out();
 
    if (arming.arming_required() != AP_Arming::YES_ZERO_PWM) {
      channel_throttle.enable_out();
@@ -119,7 +119,7 @@ void Plane::rudder_arm_disarm_check()
 
 	if (!arming.is_armed()) {
 		// when not armed, full right rudder starts arming counter
-		if (channel_rudder.get_control_in() > 4000) {
+		if (channel_yaw.get_control_in() > 4000) {
 			uint32_t now = millis();
 
 			if (rudder_arm_timer == 0 ||
@@ -139,7 +139,7 @@ void Plane::rudder_arm_disarm_check()
 		}
 	} else if (arming_rudder == AP_Arming::ARMING_RUDDER_ARMDISARM && !is_flying()) {
 		// when armed and not flying, full left rudder starts disarming counter
-		if (channel_rudder.get_control_in() < -4000) {
+		if (channel_yaw.get_control_in() < -4000) {
 			uint32_t now = millis();
 
 			if (rudder_arm_timer == 0 ||
@@ -198,7 +198,7 @@ void Plane::read_radio()
    // sets up stick inputs to dynamic_channel inputs
    channel_roll.read_joystick();
    channel_pitch.read_joystick();
-   channel_rudder.read_joystick();
+   channel_yaw.read_joystick();
    channel_throttle.read_joystick();
 
    control_failsafe();
@@ -218,7 +218,7 @@ void Plane::read_radio()
    }
 
    rudder_arm_disarm_check();
-   channel_rudder.set_servo_out(channel_rudder.get_control_in());
+   channel_yaw.set_servo_out(channel_yaw.get_control_in());
 }
 
 /*
@@ -294,15 +294,15 @@ void Plane::trim_control_surfaces()
       channel_pitch.set_radio_trim(channel_pitch.get_radio_in());
    }
 
-   if (channel_rudder.get_radio_in() != 0) {
-      channel_rudder.set_radio_trim(channel_rudder.get_radio_in());
+   if (channel_yaw.get_radio_in() != 0) {
+      channel_yaw.set_radio_trim(channel_yaw.get_radio_in());
    }
 
    // done for in air restart?
    // prob ignore this since eeprom takes 10 secs !
    channel_roll.save_eeprom();
    channel_pitch.save_eeprom();
-   channel_rudder.save_eeprom();
+   channel_yaw.save_eeprom();
 #endif
 }
 

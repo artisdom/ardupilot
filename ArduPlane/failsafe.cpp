@@ -69,7 +69,7 @@ void Plane::failsafe_check(void)
         if (hal.util->get_soft_armed()) {
             channel_throttle.set_radio_out(channel_throttle.read());
         }
-        channel_rudder.set_radio_out(channel_rudder.read());
+        channel_yaw.set_radio_out(channel_yaw.read());
 
 #if OBC_FAILSAFE == ENABLED
         // this is to allow the failsafe module to deliberately crash 
@@ -83,6 +83,6 @@ void Plane::failsafe_check(void)
             channel_pitch.output();
         }
         channel_throttle.output();
-        channel_rudder.output();
+        channel_yaw.output();
     }
 }
