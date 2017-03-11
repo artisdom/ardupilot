@@ -26,8 +26,9 @@ float Plane::get_speed_scaler(void)
         speed_scaler = constrain_float(speed_scaler, 0.5f, 2.0f);
     } else {
         if (channel_throttle.get_servo_out() > 0) {
-            // THROTTLE_CRUISE is a perentage between 0 - to 100
-            speed_scaler = 0.5f + ((float)THROTTLE_CRUISE / channel_throttle.get_servo_out() / 2.0f);                 // First order taylor expansion of square root
+            // THROTTLE_CRUISE is a percentage between 0 - to 100
+            speed_scaler = 0.5f + ((float)THROTTLE_CRUISE / channel_throttle.get_servo_out() / 2.0f); 
+            // First order taylor expansion of square root
             // Should maybe be to the 2/7 power, but we aren't goint to implement that...
         }else{
             speed_scaler = 1.67f;
@@ -73,15 +74,6 @@ bool Plane::stick_mixing_enabled(void)
  */
 void Plane::stabilize_roll(float speed_scaler)
 {
-    if (fly_inverted()) {
-        // we want to fly upside down. We need to cope with wrap of
-        // the roll_sensor interfering with wrap of nav_roll, which
-        // would really confuse the PID code. The easiest way to
-        // handle this is to ensure both go in the same direction from
-        // zero
-        nav_roll_cd += 18000;
-        if (ahrs.roll_sensor < 0) nav_roll_cd -= 36000;
-    }
 
     bool disable_integrator = false;
     if (control_mode == STABILIZE && channel_roll.get_control_in() != 0) {
@@ -143,7 +135,7 @@ void Plane::stabilize_stick_mixing_direct()
            control_mode == CRUISE ||
            control_mode == TRAINING
          )
-       }
+    )
     {
       stick_mix_channel(channel_roll);
       stick_mix_channel(channel_pitch);
@@ -185,9 +177,7 @@ void Plane::stabilize_stick_mixing_fbw()
     if (fabsf(pitch_input) > 0.5f) {
         pitch_input = (3*pitch_input - 1);
     }
-    if (fly_inverted()) {
-        pitch_input = -pitch_input;
-    }
+
     if (pitch_input > 0) {
         nav_pitch_cd += pitch_input * aparm.pitch_limit_max_cd;
     } else {
@@ -763,10 +753,6 @@ void Plane::update_load_factor(void)
 
     if (!aparm.stall_prevention) {
         // stall prevention is disabled
-        return;
-    }
-    if (fly_inverted()) {
-        // no roll limits when inverted
         return;
     }
 

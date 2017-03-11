@@ -103,11 +103,3 @@ void Plane::autotune_enable(bool enable)
         autotune_restore();
     }
 }
-
-/*
-  are we flying inverted?
- */
-bool Plane::fly_inverted(void)
-{
-    return false;
-}

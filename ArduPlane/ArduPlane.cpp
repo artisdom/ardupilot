@@ -516,8 +516,7 @@ void Plane::update_flight_mode(void)
         steer_state.hold_course_cd = -1;
     }
 
-    switch (effective_mode) 
-    {
+    switch (effective_mode)  {
     case AUTO:
         handle_auto_mode();
         break;
@@ -556,9 +555,6 @@ void Plane::update_flight_mode(void)
             training_manual_pitch = true;
             nav_pitch_cd = 0;
         }
-        if (fly_inverted()) {
-            nav_pitch_cd = -nav_pitch_cd;
-        }
         break;
     }
 
@@ -591,9 +587,7 @@ void Plane::update_flight_mode(void)
         }
         adjust_nav_pitch_throttle();
         nav_pitch_cd = constrain_int32(nav_pitch_cd, pitch_limit_min_cd, aparm.pitch_limit_max_cd.get());
-        if (fly_inverted()) {
-            nav_pitch_cd = -nav_pitch_cd;
-        }
+
         if (failsafe.ch3_failsafe && g.short_fs_action == 2) {
             // FBWA failsafe glide
             nav_roll_cd = 0;

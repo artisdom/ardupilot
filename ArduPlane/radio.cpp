@@ -77,6 +77,7 @@ void Plane::set_control_surfaces_centre()
  */
 void Plane::init_rc_out()
 {
+   throttle_off();
    set_control_surfaces_centre();
 
    setup_failsafe();
@@ -87,8 +88,6 @@ void Plane::init_rc_out()
    channel_roll.enable_out();
    channel_pitch.enable_out();
    channel_rudder.enable_out();
-
-   throttle_off();
 
    if (arming.arming_required() != AP_Arming::YES_ZERO_PWM) {
      channel_throttle.enable_out();
@@ -164,12 +163,6 @@ void Plane::rudder_arm_disarm_check()
 void Plane::read_radio()
 {
     if (!hal.rcin->new_input()) {
-        // could use the raw rcin channel here
-        // the throttle radio_in values
-        // was set last loop by Plane::set_servos
-        // by calling channel_throttle.calc_pwm() 
-        // actually the throttle value doesnt appear to be used
-        // in control_failsafe function
         control_failsafe();
         return;
     }
@@ -204,16 +197,9 @@ void Plane::read_radio()
     failsafe.last_valid_rc_ms = millis();
     // these are just the raw rc_in reading
     // for the hal.rcin with same as the rc_channel
-    uint16_t const pwm_roll = channel_roll.read();
-    uint16_t const pwm_pitch = channel_pitch.read();
+  //  uint16_t const pwm_roll = channel_roll.read();
+  //  uint16_t const pwm_pitch = channel_pitch.read();
 
-    // in fact with no aux channels this is not necessary
-    // set the radio_in value to the rcin value for all channels
-    // set the control_in value (the value united to 4500 or 0 to 100 for throttle)
-    // for all channels
-    // works for passthrough?
-    //RC_Channel::set_pwm_all();
-    
 /*
    set_pwm sets the radio_in value to the pwm value
    and sets the control_in value to the pwm value converted to the angle or range units
@@ -221,20 +207,16 @@ void Plane::read_radio()
     if (control_mode == TRAINING) {
         // in training mode we don't want to use a deadzone, as we
         // want manual pass through when not exceeding attitude limits
-        channel_roll.set_pwm_no_deadzone(pwm_roll);
-        channel_pitch.set_pwm_no_deadzone(pwm_pitch);
+        channel_roll.set_pwm_no_deadzone(channel_roll.read());
+        channel_pitch.set_pwm_no_deadzone(channel_pitch.read());
         channel_throttle.set_pwm_no_deadzone(channel_throttle.read());
         channel_rudder.set_pwm_no_deadzone(channel_rudder.read());
     } else {
-        channel_roll.set_pwm(pwm_roll);
-        channel_pitch.set_pwm(pwm_pitch);
-        // rudder ?
+        channel_roll.set_pwm(channel_roll.read());
+        channel_pitch.set_pwm(channel_pitch.read());
+        channel_throttle.set_pwm(channel_throttle.read());
+        channel_rudder.set_pwm(channel_rudder.read());
     }
-
-//###################################################
-    // at this point channel_pitch and channel_roll
-    // have radio_in and control_in are set to the relevant stick inputs
-    // note that we could just read the stick inputs direct since they are asynchronous
 
     control_failsafe();
 
@@ -274,11 +256,6 @@ void Plane::control_failsafe()
       channel_pitch.set_pwm(channel_pitch.get_radio_trim());
       channel_rudder.set_pwm(channel_rudder.get_radio_trim());
 
-      // FIXME! Solution is just to read rcin for throttle not the RC_Channel value?
-      // note that we don't set channel_throttle.radio_in to radio_trim,
-      // as that would cause throttle failsafe to not activate
-      // see Plane::failsafe_state_detected which checks that throttle.get_radio_in is below some value
-      // mismatch between radio_in and control in for throttle here
       channel_throttle.failsafe_set_control_in(0);
       // we detect a failsafe from radio or
       // throttle has dropped below the mark
@@ -357,10 +334,11 @@ void Plane::trim_radio()
 bool Plane::throttle_failsafe_state_detected()const
 {
    if (g.throttle_fs_enabled) {
+      int16_t const throttle_joystick_input = channel_throttle.read();
       if (channel_throttle.get_reverse()) {
-         return channel_throttle.get_radio_in() >= g.throttle_fs_value;
+         return  throttle_joystick_input >= g.throttle_fs_value;
       }else{
-         return channel_throttle.get_radio_in() <= g.throttle_fs_value;
+         return throttle_joystick_input <= g.throttle_fs_value;
       }
    }else{
       return false;
