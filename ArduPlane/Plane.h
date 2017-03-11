@@ -31,8 +31,6 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Menu/AP_Menu.h>
 #include <AP_AHRS/AP_AHRS_DCM.h>    
-//#include <AP_Relay/AP_Relay.h>     
-//#include <AP_ServoRelayEvents/AP_ServoRelayEvents.h>
 #include <AP_Rally/AP_Rally.h>
 #include <GCS_MAVLink/GCS.h>
 #include <APM_Control/APM_Control.h>
@@ -52,7 +50,6 @@
 #include <SITL/SITL.h>
 #endif
 
-//class RC_Channel;
 /*
   a plane specific arming class
  */
@@ -171,16 +168,6 @@ private:
     bool training_manual_roll;  // user has manual roll control
     bool training_manual_pitch; // user has manual pitch control
 
-    /*
-      keep steering and rudder control separated until we update servos,
-      to allow for a separate wheel servo from rudder servo
-    */
-//    struct {
-//        bool ground_steering; // are we doing ground steering?
-//        int16_t steering; // value for nose/tail wheel
-//        int16_t rudder;   // value for rudder
-//    } steering_control;
-
     // should throttle be pass-thru in guided?
     bool guided_throttle_passthru;
 
@@ -200,26 +187,14 @@ private:
     // selected navigation controller
     AP_SpdHgtControl *SpdHgt_Controller = &TECS_controller;
 
-    // Relay
-//    AP_Relay relay;
-
-    // handle servo and relay events
- //   AP_ServoRelayEvents ServoRelayEvents {relay};
-
-    // Camera
 #if CAMERA == ENABLED
     AP_Camera camera {&relay};
 #endif
 
 #if OPTFLOW == ENABLED
-    // Optical flow sensor
     OpticalFlow optflow;
 #endif
-
-    // Rally Ponints
     AP_Rally rally {ahrs};
-    
-    // RSSI 
     AP_RSSI rssi;      
 
     // remember if USB is connected, so we can adjust baud rate
@@ -449,12 +424,8 @@ private:
     // Navigation control variables
     // The instantaneous desired bank angle.  Hundredths of a degree
     int32_t nav_roll_cd;
-
     // The instantaneous desired pitch angle.  Hundredths of a degree
     int32_t nav_pitch_cd;
-
-    // we separate out rudder input to allow for RUDDER_ONLY=1
-  //  int16_t rudder_input;
 
     // the aerodymamic load factor. This is calculated from the demanded
     // roll before the roll is clipped, using 1/sqrt(cos(nav_roll))
@@ -705,14 +676,12 @@ private:
     void autotune_start(void);
     void autotune_restore(void);
     void autotune_enable(bool enable);
-    bool fly_inverted(void);
     void failsafe_short_on_event(enum failsafe_state fstype);
     void failsafe_long_on_event(enum failsafe_state fstype);
     void failsafe_short_off_event();
     void low_battery_event(void);
     void throttle_off();
     void set_control_surfaces_centre();
-  //  void update_events(void);
     uint8_t max_fencepoints(void);
     Vector2l get_fence_point_with_index(unsigned i);
     void set_fence_point_with_index(Vector2l &point, unsigned i);

@@ -92,12 +92,14 @@ public:
     int16_t get_radio_trim()const {return m_radio_trim.get();}
     void set_radio_trim(int16_t v) {m_radio_trim.set(v);}
     
-// used externally by stick_mix_channel atm
+    // used externally by stick_mix_channel atm
     int16_t     pwm_to_angle()const;
 
     void        set_default_dead_zone();
     // only used for throttle in failsafe
     void failsafe_set_control_in(int16_t v) { set_control_in(v);}
+
+    uint8_t get_rcin_index() const { return m_rcin_idx;}
 private:
     void set_radio_in(int16_t v) {m_radio_in = v;}
     void set_control_in( int16_t v) { m_control_in = v;}
@@ -122,14 +124,17 @@ private:
     AP_Int16        _dead_zone;
 
     //direct stick input I think e.g approx 1000 to 2000 us;
-    // looks to be same units as Read()
+    // looks to be same units as read()
+    //{
     int16_t         m_radio_in;
 
-    // The user stick input ?
-    //in the angle or range units,?
-    // This is usually a function of radio_in above
-    // the exception is when Plane::control_failsafe is called
+    // now just the m_radio_in value converted to the cdeg units
+    // however see the failsafe_set_control_in
+    // which is used in failsafe (TODO
+    // change functionlaity so this is not necessary by using rc_in direct)
     int16_t         m_control_in;
+    //}
+
     // servo_out looks to be same units as control_in
     int16_t         m_servo_out;
 
