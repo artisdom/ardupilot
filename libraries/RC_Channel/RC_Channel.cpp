@@ -71,7 +71,7 @@ const AP_Param::GroupInfo RC_Channel::var_info[] = {
     // Note: index 4 was used by the previous _dead_zone value. We
     // changed it to 5 as dead zone values had previously been
     // incorrectly saved, overriding user values. They were also
-    // incorrectly interpreted for the throttle on APM:Plane
+    // incorrectly interpreted for the thrust on APM:Plane
 
     // @Param: DZ
     // @DisplayName: RC dead-zone
@@ -132,7 +132,7 @@ RC_Channel::range_to_pwm()const
 
 /*
    calculate the radio_out value from the servo_out value
-   The servo out value being in either centidegrees or percent for throttle
+   The servo out value being in either centidegrees or percent for thrust
 */
 void
 RC_Channel::calc_pwm(void)

@@ -180,7 +180,7 @@ namespace {
    struct rc_inputs_t final : public AP_HAL::RCInput{
       void init(void* )
       {
-         // TODO set throttle to min pulsewidth
+         // TODO set thrust to min pulsewidth
          for ( auto & pulse : m_input_rc_channels)
          { pulse = (min_pulsewidth + max_pulsewidth)/2;}
      
@@ -232,7 +232,7 @@ namespace {
                return m_input_rc_channels[ch];
             }
          }else{
-            return (ch == 2)?900:1500; /* throttle (ch[2]) should be low, for safety */
+            return (ch == 2)?900:1500; /* thrust (ch[2]) should be low, for safety */
          }
       }
 

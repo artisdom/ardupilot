@@ -100,11 +100,11 @@ private:
     virtual float rate_bf_to_motor_yaw(float rate_yaw_cds);
 
     //
-    // throttle methods
+    // thrust methods
     //
 
-    // calculate total body frame throttle required to produce the given earth frame throttle
-    float get_boosted_throttle(float throttle_in);
+    // calculate total body frame thrust required to produce the given earth frame thrust
+    float get_boosted_thrust(float thrust_in);
     
     // pass through for roll and pitch
     int16_t _passthrough_roll;

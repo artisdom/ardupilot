@@ -12,7 +12,7 @@ const AP_Param::GroupInfo AP_Arming_Plane::var_info[] = {
     // @DisplayName: Rudder Arming
     // @Description: Control arm/disarm by rudder input. 
     // When enabled arming is done with right rudder, disarming with left rudder. 
-    // Rudder arming only works in manual throttle modes with throttle at zero
+    // Rudder arming only works in manual thrust modes with thrust at zero
     // @Values: 0:Disabled,1:ArmingOnly,2:ArmOrDisarm
     // @User: Advanced
     AP_GROUPINFO("RUDDER",       3,     AP_Arming_Plane,  rudder_arming_value,     ARMING_RUDDER_ARMONLY),
@@ -54,11 +54,11 @@ bool AP_Arming_Plane::pre_arm_checks(bool report)
     }
 
     if (plane.channel_thrust.get_reverse() && 
-        plane.g.throttle_fs_enabled &&
-        plane.g.throttle_fs_value < 
+        plane.g.thrust_fs_enabled &&
+        plane.g.thrust_fs_value < 
         plane.channel_thrust.get_radio_max()) {
         if (report) {
-            GCS_MAVLINK::send_statustext_all(MAV_SEVERITY_CRITICAL, "PreArm: Invalid THR_FS_VALUE for rev throttle");
+            GCS_MAVLINK::send_statustext_all(MAV_SEVERITY_CRITICAL, "PreArm: Invalid THR_FS_VALUE for rev thrust");
         }
         ret = false;
     }

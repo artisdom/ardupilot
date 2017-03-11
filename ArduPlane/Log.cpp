@@ -234,7 +234,7 @@ struct PACKED log_Control_Tuning {
     int16_t roll;
     int16_t nav_pitch_cd;
     int16_t pitch;
-    int16_t throttle_out;
+    int16_t thrust_out;
     int16_t rudder_out;
     float   accel_y;
 };
@@ -250,7 +250,7 @@ void Plane::Log_Write_Control_Tuning()
         roll            : (int16_t)ahrs.roll_sensor,
         nav_pitch_cd    : (int16_t)nav_pitch_cd,
         pitch           : (int16_t)ahrs.pitch_sensor,
-        throttle_out    : (int16_t)channel_thrust.servo_out,
+        thrust_out    : (int16_t)channel_thrust.servo_out,
         rudder_out      : (int16_t)channel_yaw.servo_out,
         accel_y         : accel.y
     };
@@ -330,7 +330,7 @@ struct PACKED log_Sonar {
     float voltage;
     float baro_alt;
     float groundspeed;
-    uint8_t throttle;
+    uint8_t thrust;
     uint8_t count;
     float correction;
 };
@@ -351,7 +351,7 @@ void Plane::Log_Write_Sonar()
         voltage     : rangefinder.voltage_mv()*0.001f,
         baro_alt    : barometer.get_altitude(),
         groundspeed : gps.ground_speed(),
-        throttle    : (uint8_t)(100 * channel_thrust.norm_output()),
+        thrust    : (uint8_t)(100 * channel_thrust.norm_output()),
         count       : rangefinder_state.in_range_count,
         correction  : rangefinder_state.correction
     };

@@ -17,7 +17,7 @@ bool Plane::start_command(const AP_Mission::Mission_Command& cmd)
 
     // special handling for nav vs non-nav commands
     if (AP_Mission::is_nav_cmd(cmd)) {
-        // set land_complete to false to stop us zeroing the throttle
+        // set land_complete to false to stop us zeroing the thrust
         auto_state.land_complete = false;
         auto_state.sink_rate = 0;
 
@@ -326,7 +326,7 @@ void Plane::do_takeoff(const AP_Mission::Mission_Command& cmd)
 {
     prev_WP_loc = current_loc;
     set_next_WP(cmd.content.location);
-    // pitch in deg, airspeed  m/s, throttle %, track WP 1 or 0
+    // pitch in deg, airspeed  m/s, thrust %, track WP 1 or 0
     auto_state.takeoff_pitch_cd        = (int16_t)cmd.p1 * 100;
     if (auto_state.takeoff_pitch_cd <= 0) {
         // if the mission doesn't specify a pitch use 4 degrees
@@ -337,7 +337,7 @@ void Plane::do_takeoff(const AP_Mission::Mission_Command& cmd)
     next_WP_loc.lng = home.lng + 10;
     auto_state.takeoff_speed_time_ms = 0;
     auto_state.takeoff_complete = false;                            // set flag to use gps ground course during TO.  IMU will be doing yaw drift correction
-    // Flag also used to override "on the ground" throttle disable
+    // Flag also used to override "on the ground" thrust disable
 
     // zero locked course
     steer_state.locked_course_err = 0;
@@ -863,9 +863,9 @@ void Plane::do_change_speed(const AP_Mission::Mission_Command& cmd)
         break;
     }
 
-    if (cmd.content.speed.throttle_pct > 0 && cmd.content.speed.throttle_pct <= 100) {
-        gcs_send_text_fmt(MAV_SEVERITY_INFO, "Set throttle %u", (unsigned)cmd.content.speed.throttle_pct);
-        aparm.throttle_cruise.set(cmd.content.speed.throttle_pct);
+    if (cmd.content.speed.thrust_pct > 0 && cmd.content.speed.thrust_pct <= 100) {
+        gcs_send_text_fmt(MAV_SEVERITY_INFO, "Set thrust %u", (unsigned)cmd.content.speed.thrust_pct);
+        aparm.thrust_cruise.set(cmd.content.speed.thrust_pct);
     }
 }
 

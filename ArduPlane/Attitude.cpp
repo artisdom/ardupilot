@@ -44,7 +44,7 @@ float Plane::get_speed_scaler(void)
  */
 bool Plane::stick_mixing_enabled(void)
 {
-    if (auto_throttle_mode) {
+    if (auto_thrust_mode) {
         // we're in an auto mode. Check the stick mixing flag
         if (g.stick_mixing != STICK_MIXING_DISABLED &&
             geofence_stickmixing() &&
@@ -98,7 +98,7 @@ void Plane::stabilize_pitch(float speed_scaler)
         channel_pitch.set_servo_out( 45*force_elevator);
         return;
     }
-    int32_t demanded_pitch = nav_pitch_cd + g.pitch_trim_cd + channel_thrust.get_servo_out() * g.kff_throttle_to_pitch;
+    int32_t demanded_pitch = nav_pitch_cd + g.pitch_trim_cd + channel_thrust.get_servo_out() * g.kff_thrust_to_pitch;
     bool disable_integrator = false;
     if (control_mode == STABILIZE && channel_pitch.get_control_in() != 0) {
         disable_integrator = true;
@@ -321,7 +321,7 @@ void Plane::stabilize()
         relative_altitude_abs_cm() < 500 && 
         fabsf(barometer.get_climb_rate()) < 0.5f &&
         gps.ground_speed() < 3) {
-        // we are low, with no climb rate, and zero throttle, and very
+        // we are low, with no climb rate, and zero thrust, and very
         // low ground speed. Zero the attitude controller
         // integrators. This prevents integrator buildup pre-takeoff.
         rollController.reset_I();
@@ -336,14 +336,14 @@ void Plane::stabilize()
 }
 
 
-void Plane::calc_throttle()
+void Plane::calc_thrust()
 {
-    if (aparm.throttle_cruise <= 1) {
+    if (aparm.thrust_cruise <= 1) {
         channel_thrust.set_servo_out(0);
         return;
     }
 
-    channel_thrust.set_servo_out(SpdHgt_Controller->get_throttle_demand());
+    channel_thrust.set_servo_out(SpdHgt_Controller->get_thrust_demand());
 }
 
 /*****************************************
@@ -455,32 +455,32 @@ void Plane::calc_nav_roll()
 * Throttle slew limit
 *****************************************/
 namespace {
-   int16_t last_throttle = 0;
+   int16_t last_thrust = 0;
 }
-void Plane::throttle_slew_limit()
+void Plane::thrust_slew_limit()
 {
-    uint8_t slewrate = aparm.throttle_slewrate;
-    if (control_mode==AUTO && auto_state.takeoff_complete == false && g.takeoff_throttle_slewrate != 0) {
-        slewrate = g.takeoff_throttle_slewrate;
+    uint8_t slewrate = aparm.thrust_slewrate;
+    if (control_mode==AUTO && auto_state.takeoff_complete == false && g.takeoff_thrust_slewrate != 0) {
+        slewrate = g.takeoff_thrust_slewrate;
     }
     // if slew limit rate is set to zero then do not slew limit
     if (slewrate) {                   
-        // limit throttle change by the given percentage per second
+        // limit thrust change by the given percentage per second
         float temp = slewrate * G_Dt * 0.01f * fabsf(channel_thrust.get_radio_max() - channel_thrust.get_radio_min());
         // allow a minimum change of 1 PWM per cycle
         if (temp < 1) {
             temp = 1;
         }
         channel_thrust.set_radio_out(
-            constrain_int16(channel_thrust.get_radio_out(), last_throttle - temp, last_throttle + temp)
+            constrain_int16(channel_thrust.get_radio_out(), last_thrust - temp, last_thrust + temp)
         );
     }
-    last_throttle = channel_thrust.get_radio_out();
+    last_thrust = channel_thrust.get_radio_out();
 }
 
-/* We want to suppress the throttle if we think we are on the ground and in an autopilot controlled throttle mode.
+/* We want to suppress the thrust if we think we are on the ground and in an autopilot controlled thrust mode.
 
-   Disable throttle if following conditions are met:
+   Disable thrust if following conditions are met:
    *       1 - We are in Circle mode (which we use for short term failsafe), or in FBW-B or higher
    *       AND
    *       2 - Our reported altitude is within 10 meters of the home altitude.
@@ -489,20 +489,20 @@ void Plane::throttle_slew_limit()
    *       OR
    *       5 - Home location is not set
 */
-bool Plane::suppress_throttle(void)
+bool Plane::suppress_thrust(void)
 {    
-    if (!throttle_suppressed) {
-        // we've previously met a condition for unsupressing the throttle
+    if (!thrust_suppressed) {
+        // we've previously met a condition for unsupressing the thrust
         return false;
     }
-    if (!auto_throttle_mode) {
-        // the user controls the throttle
-        throttle_suppressed = false;
+    if (!auto_thrust_mode) {
+        // the user controls the thrust
+        thrust_suppressed = false;
         return false;
     }
 
     if (control_mode==AUTO && g.auto_fbw_steer) {
-        // user has throttle control
+        // user has thrust control
         return false;
     }
 
@@ -513,31 +513,31 @@ bool Plane::suppress_throttle(void)
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
    using quan::max;
 #endif
-        uint32_t launch_duration_ms = ((int32_t)g.takeoff_throttle_delay)*100 + 2000;
+        uint32_t launch_duration_ms = ((int32_t)g.takeoff_thrust_delay)*100 + 2000;
         if (is_flying() &&
             millis() - started_flying_ms > max(launch_duration_ms,5000U) && // been flying >5s in any mode
             adjusted_relative_altitude_cm() > 500 && // are >5m above AGL/home
             labs(ahrs.pitch_sensor) < 3000 && // not high pitch, which happens when held before launch
             gps_movement) { // definate gps movement
-            // we're already flying, do not suppress the throttle. We can get
+            // we're already flying, do not suppress the thrust. We can get
             // stuck in this condition if we reset a mission and cmd 1 is takeoff
             // but we're currently flying around below the takeoff altitude
-            throttle_suppressed = false;
+            thrust_suppressed = false;
             return false;
         }
         if (auto_takeoff_check()) {
             // we're in auto takeoff 
-            throttle_suppressed = false;
+            thrust_suppressed = false;
             auto_state.baro_takeoff_alt = barometer.get_altitude();
             return false;
         }
-        // keep throttle suppressed
+        // keep thrust suppressed
         return true;
     }
     
     if (relative_altitude_abs_cm() >= 1000) {
         // we're more than 10m from the home altitude
-        throttle_suppressed = false;
+        thrust_suppressed = false;
         gcs_send_text_fmt(MAV_SEVERITY_INFO, "Throttle enabled. Altitude %.2f",
                           (double)(relative_altitude_abs_cm()*0.01f));
         return false;
@@ -545,27 +545,27 @@ bool Plane::suppress_throttle(void)
 
     if (gps_movement) {
         // if we have an airspeed sensor, then check it too, and
-        // require 5m/s. This prevents throttle up due to spiky GPS
+        // require 5m/s. This prevents thrust up due to spiky GPS
         // groundspeed with bad GPS reception
         if ((!ahrs.airspeed_sensor_enabled()) || airspeed.get_airspeed() >= 5) {
             // we're moving at more than 5 m/s
             gcs_send_text_fmt(MAV_SEVERITY_INFO, "Throttle enabled. Speed %.2f airspeed %.2f",
                               (double)gps.ground_speed(),
                               (double)airspeed.get_airspeed());
-            throttle_suppressed = false;
+            thrust_suppressed = false;
             return false;        
         }
     }
 
-    // throttle remains suppressed
+    // thrust remains suppressed
     return true;
 }
 
 
 /*
-  return minimum throttle, taking account of throttle reversal
+  return minimum thrust, taking account of thrust reversal
  */
-uint16_t Plane::throttle_min(void) const
+uint16_t Plane::thrust_min(void) const
 {
     return channel_thrust.get_reverse() ? channel_thrust.get_radio_max() : channel_thrust.get_radio_min();
 };
@@ -592,61 +592,61 @@ void Plane::set_servos(void)
         channel_yaw.calc_pwm();
 
         // convert 0 to 100% into PWM
-        uint8_t min_throttle = aparm.throttle_min.get();
-        uint8_t max_throttle = aparm.throttle_max.get();
+        uint8_t min_thrust = aparm.thrust_min.get();
+        uint8_t max_thrust = aparm.thrust_max.get();
         if (control_mode == AUTO && flight_stage == AP_SpdHgtControl::FLIGHT_LAND_FINAL) {
-            min_throttle = 0;
+            min_thrust = 0;
         }
         if (control_mode == AUTO &&
             (flight_stage == AP_SpdHgtControl::FLIGHT_TAKEOFF || flight_stage == AP_SpdHgtControl::FLIGHT_LAND_ABORT)) {
-            if(aparm.takeoff_throttle_max != 0) {
-                max_throttle = aparm.takeoff_throttle_max;
+            if(aparm.takeoff_thrust_max != 0) {
+                max_thrust = aparm.takeoff_thrust_max;
             } else {
-                max_throttle = aparm.throttle_max;
+                max_thrust = aparm.thrust_max;
             }
         }
 
-        // This is set in case throttle.calc_pwm is called
+        // This is set in case thrust.calc_pwm is called
         channel_thrust.set_servo_out(constrain_int16(channel_thrust.get_servo_out(), 
-                                                      min_throttle,
-                                                      max_throttle));
+                                                      min_thrust,
+                                                      max_thrust));
 
         if (!hal.util->get_soft_armed()) {
             channel_thrust.set_servo_out(0);
             channel_thrust.calc_pwm();                
-        } else if (suppress_throttle()) {
-            // throttle is suppressed in auto mode
+        } else if (suppress_thrust()) {
+            // thrust is suppressed in auto mode
             channel_thrust.set_servo_out(0);
-            if (g.throttle_suppress_manual) {
-                // manual pass through of throttle while throttle is suppressed
+            if (g.thrust_suppress_manual) {
+                // manual pass through of thrust while thrust is suppressed
                 channel_thrust.set_radio_out(channel_thrust.get_radio_in());
             } else {
                 channel_thrust.calc_pwm();                
             }
-        } else if (g.throttle_passthru_stabilize && 
+        } else if (g.thrust_passthru_stabilize && 
                    (control_mode == STABILIZE || 
                     control_mode == TRAINING ||
                     control_mode == ACRO ||
                     control_mode == FLY_BY_WIRE_A ||
                     control_mode == AUTOTUNE)) {
-            // manual pass through of throttle while in FBWA or
+            // manual pass through of thrust while in FBWA or
             // STABILIZE mode with THR_PASS_STAB set
             channel_thrust.set_radio_out(channel_thrust.get_radio_in());
         } else if (control_mode == GUIDED && 
-                   guided_throttle_passthru) {
-            // manual pass through of throttle while in GUIDED
+                   guided_thrust_passthru) {
+            // manual pass through of thrust while in GUIDED
             channel_thrust.set_radio_out(channel_thrust.get_radio_in());
         } else {
-            // normal throttle calculation based on servo_out
+            // normal thrust calculation based on servo_out
             channel_thrust.calc_pwm();
         }
 
     }
 
     if (control_mode >= FLY_BY_WIRE_B) {
-        /* only do throttle slew limiting in modes where throttle
+        /* only do thrust slew limiting in modes where thrust
          *  control is automatic */
-        throttle_slew_limit();
+        thrust_slew_limit();
     }
 
     if (control_mode == TRAINING) {
@@ -660,7 +660,7 @@ void Plane::set_servos(void)
         switch (arming.arming_required()) { 
         case AP_Arming::NO:
             //keep existing behavior: do nothing to radio_out
-            //(don't disarm throttle channel even if AP_Arming class is)
+            //(don't disarm thrust channel even if AP_Arming class is)
             break;
 
         case AP_Arming::YES_ZERO_PWM:
@@ -669,7 +669,7 @@ void Plane::set_servos(void)
 
         case AP_Arming::YES_MIN_PWM:
         default:
-            channel_thrust.set_radio_out(throttle_min());
+            channel_thrust.set_radio_out(thrust_min());
             break;
         }
     }
@@ -726,14 +726,14 @@ void Plane::demo_servos(uint8_t i)
 /*
   adjust nav_pitch_cd for STAB_PITCH_DOWN_CD. This is used to make
   keeping up good airspeed in FBWA mode easier, as the plane will
-  automatically pitch down a little when at low throttle. It makes
+  automatically pitch down a little when at low thrust. It makes
   FBWA landings without stalling much easier.
  */
-void Plane::adjust_nav_pitch_throttle(void)
+void Plane::adjust_nav_pitch_thrust(void)
 {
-    uint8_t throttle = throttle_percentage();
-    if (throttle < aparm.throttle_cruise) {
-        float p = (aparm.throttle_cruise - throttle) / (float)aparm.throttle_cruise;
+    uint8_t thrust = thrust_percentage();
+    if (thrust < aparm.thrust_cruise) {
+        float p = (aparm.thrust_cruise - thrust) / (float)aparm.thrust_cruise;
         nav_pitch_cd -= g.stab_pitch_down * 100.0f * p;
     }
 }

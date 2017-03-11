@@ -98,7 +98,7 @@ void Plane::calc_airspeed_errors()
             target_airspeed_cm = min_gnd_target_airspeed;
     }
 
-    // Bump up the target airspeed based on throttle nudging
+    // Bump up the target airspeed based on thrust nudging
     if (control_mode >= AUTO && airspeed_nudge_cm > 0) {
         target_airspeed_cm += airspeed_nudge_cm;
     }
@@ -187,7 +187,7 @@ void Plane::update_cruise()
 /*
   handle speed and height control in FBWB or CRUISE mode. 
   In this mode the elevator is used to change target altitude. The
-  throttle is used to change target airspeed or throttle
+  thrust is used to change target airspeed or thrust
  */
 void Plane::update_fbwb_speed_height(void)
 {
@@ -213,7 +213,7 @@ void Plane::update_fbwb_speed_height(void)
     
     last_elevator_input = elevator_input;
     
-    calc_throttle();
+    calc_thrust();
     calc_nav_pitch();
 }
 

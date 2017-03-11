@@ -49,9 +49,9 @@ void Plane::update_is_flying_5Hz(void)
             {
             case AP_SpdHgtControl::FLIGHT_TAKEOFF:
                 // while on the ground, an uncalibrated airspeed sensor can drift to 7m/s so
-                // ensure we aren't showing a false positive. If the throttle is suppressed
+                // ensure we aren't showing a false positive. If the thrust is suppressed
                 // we are definitely not flying, or at least for not much longer!
-                if (throttle_suppressed) {
+                if (thrust_suppressed) {
                     is_flying_bool = false;
                     crash_state.is_crashed = false;
                 }
@@ -158,7 +158,7 @@ void Plane::crash_detection_update(void)
         switch (flight_stage)
         {
         case AP_SpdHgtControl::FLIGHT_TAKEOFF:
-            auto_launch_detected = !throttle_suppressed && (g.takeoff_throttle_min_accel > 0);
+            auto_launch_detected = !thrust_suppressed && (g.takeoff_thrust_min_accel > 0);
 
             if (been_auto_flying || // failed hand launch
                 auto_launch_detected) { // threshold of been_auto_flying may not be met on auto-launches

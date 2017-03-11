@@ -49,7 +49,7 @@
 // servo angle | microseconds
 // voltage     | volts
 // times       | seconds
-// throttle    | percent
+// thrust    | percent
 //
 
 //////////////////////////////////////////////////////////////////////////////
@@ -262,9 +262,9 @@
 //                  |
 //  STABILIZE       | Tries to maintain level flight, but can be overridden with radio control inputs.
 //                  |
-//  FLY_BY_WIRE_A   | Autopilot style control via user input, with manual throttle.
+//  FLY_BY_WIRE_A   | Autopilot style control via user input, with manual thrust.
 //                  |
-//  FLY_BY_WIRE_B   | Autopilot style control via user input, aispeed controlled with throttle.
+//  FLY_BY_WIRE_B   | Autopilot style control via user input, aispeed controlled with thrust.
 //                  |
 //  RTL             | Returns to the Home location and then LOITERs at a safe altitude.
 //                  |
@@ -304,7 +304,7 @@
 // then the flap position shall be 0%.  If the speed setpoint is between flap_1_speed and flap_2_speed
 // then the flap position shall be flap_1_percent.  If the speed setpoint is below flap_2_speed
 // then the flap position shall be flap_2_percent.  Speed setpoint is the current value of 
-// airspeed_cruise (if airspeed sensor enabled) or throttle_cruise (if no airspeed sensor)
+// airspeed_cruise (if airspeed sensor enabled) or thrust_cruise (if no airspeed sensor)
 
 // FLAP_1_PERCENT							OPTIONAL
 // FLAP_1_SPEED								OPTIONAL
@@ -316,27 +316,27 @@
 // THROTTLE_FAILSAFE                        OPTIONAL
 // THROTTLE_FS_VALUE                        OPTIONAL
 //
-// The throttle failsafe allows you to configure a software failsafe activated
-// by a setting on the throttle input channel (channel 3).  Enabling this failsafe
+// The thrust failsafe allows you to configure a software failsafe activated
+// by a setting on the thrust input channel (channel 3).  Enabling this failsafe
 // also enables "short failsafe" conditions (see below) based on loss of 
 // rc override control from the GCS
 //
 // This can be used to achieve a failsafe override on loss of radio control
 // without having to sacrifice one of your FLIGHT_MODE settings, as the
-// throttle failsafe overrides the switch-selected mode.
+// thrust failsafe overrides the switch-selected mode.
 //
 // Throttle failsafe is enabled by setting THROTTLE_FAILSAFE to 1.  The default
 // is for it to be enabled.
 //
-// If the throttle failsafe is enabled, THROTTLE_FS_VALUE sets the channel value
+// If the thrust failsafe is enabled, THROTTLE_FS_VALUE sets the channel value
 // below which the failsafe engages.  The default is 975ms, which is a very low
-// throttle setting.  Most transmitters will let you trim the manual throttle
+// thrust setting.  Most transmitters will let you trim the manual thrust
 // position up so that you cannot engage the failsafe with a regular stick movement.
 //
-// Configure your receiver's failsafe setting for the throttle channel to the
+// Configure your receiver's failsafe setting for the thrust channel to the
 // absolute minimum, and use the ArduPilotMega_demo program to check that
-// you cannot reach that value with the throttle control.  Leave a margin of
-// at least 50 microseconds between the lowest throttle setting and
+// you cannot reach that value with the thrust control.  Leave a margin of
+// at least 50 microseconds between the lowest thrust setting and
 // THROTTLE_FS_VALUE.
 //
 //#define THROTTLE_FAILSAFE   ENABLED
@@ -401,9 +401,9 @@
 //////////////////////////////////////////////////////////////////////////////
 // THROTTLE_REVERSE                         OPTIONAL
 //
-// A few speed controls require the throttle servo signal be reversed.  Setting
-// this to ENABLED will reverse the throttle output signal.  Ensure that your
-// throttle needs to be reversed by using the hardware failsafe and the
+// A few speed controls require the thrust servo signal be reversed.  Setting
+// this to ENABLED will reverse the thrust output signal.  Ensure that your
+// thrust needs to be reversed by using the hardware failsafe and the
 // ArduPilotMega_demo program before setting this option.
 //
 // The default is to not reverse the signal.
@@ -426,10 +426,10 @@
 //////////////////////////////////////////////////////////////////////////////
 // THROTTLE_OUT                             DEBUG
 //
-// When debugging, it can be useful to disable the throttle output.  Set
-// this option to DISABLED to disable throttle output signals.
+// When debugging, it can be useful to disable the thrust output.  Set
+// this option to DISABLED to disable thrust output signals.
 //
-// The default is to not disable throttle output.
+// The default is to not disable thrust output.
 //
 //#define THROTTLE_OUT        ENABLED
 //
@@ -522,16 +522,16 @@
 //
 
 //////////////////////////////////////////////////////////////////////////////
-// FLY_BY_WIRE_B airspeed control (also used for throttle "nudging" in AUTO)
+// FLY_BY_WIRE_B airspeed control (also used for thrust "nudging" in AUTO)
 //
 // AIRSPEED_FBW_MIN                         OPTIONAL
 // AIRSPEED_FBW_MAX                         OPTIONAL
 //
-// Airspeed corresponding to minimum and maximum throttle in Fly By Wire B mode.
+// Airspeed corresponding to minimum and maximum thrust in Fly By Wire B mode.
 // The defaults are 6 and 30 metres per second.
 //
 // AIRSPEED_FBW_MAX also sets the maximum airspeed that the cruise airspeed can be "nudged" to in AUTO mode when ENABLE_STICK_MIXING is set.
-// In AUTO the cruise airspeed can be increased between AIRSPEED_CRUISE and AIRSPEED_FBW_MAX by positioning the throttle
+// In AUTO the cruise airspeed can be increased between AIRSPEED_CRUISE and AIRSPEED_FBW_MAX by positioning the thrust
 // stick in the top 1/2 of its range.  Throttle stick in the bottom 1/2 provide regular AUTO control.
 //
 //#define AIRSPEED_FBW_MIN    6
@@ -543,22 +543,22 @@
 //
 // THROTTLE_MIN                             OPTIONAL
 //
-// The minimum throttle setting to which the autopilot will reduce the
-// throttle while descending.  The default is zero, which is
+// The minimum thrust setting to which the autopilot will reduce the
+// thrust while descending.  The default is zero, which is
 // suitable for aircraft with a steady power-off glide.  Increase this
-// value if your aircraft needs throttle to maintain a stable descent in
+// value if your aircraft needs thrust to maintain a stable descent in
 // level flight.
 //
 // THROTTLE_CRUISE                          OPTIONAL
 //
-// The approximate throttle setting to achieve AIRSPEED_CRUISE in level flight.
+// The approximate thrust setting to achieve AIRSPEED_CRUISE in level flight.
 // The default is 45%, which is reasonable for a modestly powered aircraft.
 //
 // THROTTLE_MAX                             OPTIONAL
 //
-// The maximum throttle setting the autopilot will apply.  The default is 75%.
+// The maximum thrust setting the autopilot will apply.  The default is 75%.
 // Reduce this value if your aicraft is overpowered, or has complex flight
-// characteristics at high throttle settings.
+// characteristics at high thrust settings.
 //
 //#define THROTTLE_MIN			0 // percent
 //#define THROTTLE_CRUISE		45
@@ -761,10 +761,10 @@
 //////////////////////////////////////////////////////////////////////////////
 // Energy/Altitude control gains
 //
-// The Energy/altitude control system uses throttle input to control aircraft
+// The Energy/altitude control system uses thrust input to control aircraft
 // altitude.
 //
-// The P term is the primary tuning value.  This determines how the throttle
+// The P term is the primary tuning value.  This determines how the thrust
 // setting varies in proportion to the required correction.
 //
 // The I term is used to compensate for small offsets.
@@ -778,26 +778,26 @@
 // THROTTLE_TE_I                            OPTIONAL
 // THROTTLE_TE_D                            OPTIONAL
 //
-// P, I and D terms for throttle adjustments made to control altitude.
+// P, I and D terms for thrust adjustments made to control altitude.
 // Defaults are 0.5, 0, 0.
 //
 // THROTTLE_TE_INT_MAX                      OPTIONAL
 //
-// Maximum throttle input due to the integral term.  This limits the
-// throttle from being overdriven due to a persistent offset (e.g.
+// Maximum thrust input due to the integral term.  This limits the
+// thrust from being overdriven due to a persistent offset (e.g.
 // inability to maintain the programmed altitude).
 // Default is 20%.
 //
 // THROTTLE_SLEW_LIMIT                      OPTIONAL
 //
-// Limits the slew rate of the throttle, in percent per second.  Helps
-// avoid sudden throttle changes, which can destabilise the aircraft.
+// Limits the slew rate of the thrust, in percent per second.  Helps
+// avoid sudden thrust changes, which can destabilise the aircraft.
 // A setting of zero disables the feature.  Range 1 to 100.
 // Default is zero (disabled).
 //
 // P_TO_T                                   OPTIONAL
 //
-// Pitch to throttle feed-forward gain.  Default is 0.
+// Pitch to thrust feed-forward gain.  Default is 0.
 //
 // T_TO_P                                   OPTIONAL
 //

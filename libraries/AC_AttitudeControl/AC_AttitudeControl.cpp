@@ -430,7 +430,7 @@ void AC_AttitudeControl::rate_controller_run()
 {
     // call rate controllers and send output to motors object
     // To-Do: should the outputs from get_rate_roll, pitch, yaw be int16_t which is the input to the motors library?
-    // To-Do: skip this step if the throttle out is zero?
+    // To-Do: skip this step if the thrust out is zero?
     _motors.set_roll(rate_bf_to_motor_roll(_rate_bf_target.x));
     _motors.set_pitch(rate_bf_to_motor_pitch(_rate_bf_target.y));
     _motors.set_yaw(rate_bf_to_motor_yaw(_rate_bf_target.z));
@@ -706,36 +706,36 @@ void AC_AttitudeControl::accel_limiting(bool enable_limits)
 }
 
 //
-// throttle functions
+// thrust functions
 //
 
- // set_throttle_out - to be called by upper throttle controllers when they wish to provide throttle output directly to motors
+ // set_thrust_out - to be called by upper thrust controllers when they wish to provide thrust output directly to motors
  // provide 0 to cut motors
-void AC_AttitudeControl::set_throttle_out(float throttle_in, bool apply_angle_boost, float filter_cutoff)
+void AC_AttitudeControl::set_thrust_out(float thrust_in, bool apply_angle_boost, float filter_cutoff)
 {
-    _throttle_in_filt.apply(throttle_in, _dt);
+    _thrust_in_filt.apply(thrust_in, _dt);
     _motors.set_stabilizing(true);
-    _motors.set_throttle_filter_cutoff(filter_cutoff);
+    _motors.set_thrust_filter_cutoff(filter_cutoff);
     if (apply_angle_boost) {
-        _motors.set_throttle(get_boosted_throttle(throttle_in));
+        _motors.set_thrust(get_boosted_thrust(thrust_in));
     }else{
-        _motors.set_throttle(throttle_in);
+        _motors.set_thrust(thrust_in);
         // clear angle_boost for logging purposes
         _angle_boost = 0;
     }
 }
 
-// outputs a throttle to all motors evenly with no attitude stabilization
-void AC_AttitudeControl::set_throttle_out_unstabilized(float throttle_in, bool reset_attitude_control, float filter_cutoff)
+// outputs a thrust to all motors evenly with no attitude stabilization
+void AC_AttitudeControl::set_thrust_out_unstabilized(float thrust_in, bool reset_attitude_control, float filter_cutoff)
 {
-    _throttle_in_filt.apply(throttle_in, _dt);
+    _thrust_in_filt.apply(thrust_in, _dt);
     if (reset_attitude_control) {
         relax_bf_rate_controller();
         set_yaw_target_to_current_heading();
     }
-    _motors.set_throttle_filter_cutoff(filter_cutoff);
+    _motors.set_thrust_filter_cutoff(filter_cutoff);
     _motors.set_stabilizing(false);
-    _motors.set_throttle(throttle_in);
+    _motors.set_thrust(thrust_in);
     _angle_boost = 0;
 }
 

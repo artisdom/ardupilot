@@ -28,11 +28,11 @@ public:
       common parameters for fixed wing aircraft
      */
     struct FixedWing {
-        AP_Int8 throttle_min;
-        AP_Int8 throttle_max;	
-        AP_Int8 throttle_slewrate;
-        AP_Int8 throttle_cruise;
-        AP_Int8 takeoff_throttle_max;
+        AP_Int8 thrust_min;
+        AP_Int8 thrust_max;	
+        AP_Int8 thrust_slewrate;
+        AP_Int8 thrust_cruise;
+        AP_Int8 takeoff_thrust_max;
         AP_Int16 airspeed_min;
         AP_Int16 airspeed_max;
         AP_Int16 pitch_limit_max_cd;

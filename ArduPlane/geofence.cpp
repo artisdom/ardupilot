@@ -413,7 +413,7 @@ void Plane::geofence_check(bool altitude_check_only)
         set_guided_WP();
 
         if (g.fence_action == FENCE_ACTION_GUIDED_THR_PASS) {
-            guided_throttle_passthru = true;
+            guided_thrust_passthru = true;
         }
         break;
     }

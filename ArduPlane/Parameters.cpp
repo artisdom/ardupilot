@@ -98,11 +98,11 @@ const AP_Param::Info Plane::var_info[] = {
     // @Range: 0 5
     // @Increment: 0.01
     // @User: Advanced
-    GSCALAR(kff_throttle_to_pitch,  "KFF_THR2PTCH",   0),
+    GSCALAR(kff_thrust_to_pitch,  "KFF_THR2PTCH",   0),
 
     // @Param: STAB_PITCH_DOWN
-    // @DisplayName: Low throttle pitch down trim 
-    // @Description: This controls the amount of down pitch to add in FBWA and AUTOTUNE modes when at low throttle. No down trim is added when throttle is above TRIM_THROTTLE. Below TRIM_THROTTLE downtrim is added in proportion to the amount the throttle is below TRIM_THROTTLE. At zero throttle the full downpitch specified in this parameter is added. This parameter is meant to help keep airspeed up when flying in FBWA mode with low throttle, such as when on a landing approach, without relying on an airspeed sensor. A value of 2 degrees is good for many planes, although a higher value may be needed for high drag aircraft.
+    // @DisplayName: Low thrust pitch down trim 
+    // @Description: This controls the amount of down pitch to add in FBWA and AUTOTUNE modes when at low thrust. No down trim is added when thrust is above TRIM_THROTTLE. Below TRIM_THROTTLE downtrim is added in proportion to the amount the thrust is below TRIM_THROTTLE. At zero thrust the full downpitch specified in this parameter is added. This parameter is meant to help keep airspeed up when flying in FBWA mode with low thrust, such as when on a landing approach, without relying on an airspeed sensor. A value of 2 degrees is good for many planes, although a higher value may be needed for high drag aircraft.
     // @Range: 0 15
     // @Increment: 0.1
     // @Units: Degrees
@@ -151,8 +151,8 @@ const AP_Param::Info Plane::var_info[] = {
     GSCALAR(auto_fbw_steer,          "AUTO_FBW_STEER",   0),
 
     // @Param: TKOFF_THR_MINSPD
-    // @DisplayName: Takeoff throttle min speed
-    // @Description: Minimum GPS ground speed in m/s used by the speed check that un-suppresses throttle in auto-takeoff. 
+    // @DisplayName: Takeoff thrust min speed
+    // @Description: Minimum GPS ground speed in m/s used by the speed check that un-suppresses thrust in auto-takeoff. 
     // This can be be used for catapult launches where you want the motor to engage only after the plane leaves the catapult, 
     // but it is preferable to use the TKOFF_THR_MINACC and TKOFF_THR_DELAY parameters 
     // for catapult launches due to the errors associated with GPS measurements. 
@@ -164,19 +164,19 @@ const AP_Param::Info Plane::var_info[] = {
     // @Range: 0 30
     // @Increment: 0.1
     // @User: User
-    GSCALAR(takeoff_throttle_min_speed,     "TKOFF_THR_MINSPD",  0),
+    GSCALAR(takeoff_thrust_min_speed,     "TKOFF_THR_MINSPD",  0),
 
     // @Param: TKOFF_THR_MINACC
-    // @DisplayName: Takeoff throttle min acceleration
+    // @DisplayName: Takeoff thrust min acceleration
     // @Description: Minimum forward acceleration in m/s/s before arming the ground speed check in auto-takeoff. This is meant to be used for hand launches. Setting this value to 0 disables the acceleration test which means the ground speed check will always be armed which could allow GPS velocity jumps to start the engine. For hand launches and bungee launches this should be set to around 15.
     // @Units: m/s/s
     // @Range: 0 30
     // @Increment: 0.1
     // @User: User
-    GSCALAR(takeoff_throttle_min_accel,     "TKOFF_THR_MINACC",  0),
+    GSCALAR(takeoff_thrust_min_accel,     "TKOFF_THR_MINACC",  0),
 
     // @Param: TKOFF_THR_DELAY
-    // @DisplayName: Takeoff throttle delay
+    // @DisplayName: Takeoff thrust delay
     // @Description: This parameter sets the time delay (in 1/10ths of a second) that the ground speed check is delayed after 
     // the forward acceleration check controlled by TKOFF_THR_MINACC has passed. 
     // For hand launches with pusher propellers it is essential that this is set to a value of no less 
@@ -187,7 +187,7 @@ const AP_Param::Info Plane::var_info[] = {
     // @Range: 0 127
     // @Increment: 1
     // @User: User
-    GSCALAR(takeoff_throttle_delay,     "TKOFF_THR_DELAY",  2),
+    GSCALAR(takeoff_thrust_delay,     "TKOFF_THR_DELAY",  2),
 
     // @Param: TKOFF_TDRAG_ELEV
     // @DisplayName: Takeoff tail dragger elevator
@@ -228,19 +228,19 @@ const AP_Param::Info Plane::var_info[] = {
     GSCALAR(takeoff_rotate_speed,     "TKOFF_ROTATE_SPD",  0),
 
     // @Param: TKOFF_THR_SLEW
-    // @DisplayName: Takeoff throttle slew rate
-    // @Description: This parameter sets the slew rate for the throttle during auto takeoff. 
+    // @DisplayName: Takeoff thrust slew rate
+    // @Description: This parameter sets the slew rate for the thrust during auto takeoff. 
     // When this is zero the THR_SLEWRATE parameter is used during takeoff. 
     // For rolling takeoffs it can be a good idea to set a lower slewrate for takeoff 
     // to give a slower acceleration which can improve ground steering control. 
-    // The value is a percentage throttle change per second, so a value of 20 means 
-    // to advance the throttle over 5 seconds on takeoff. 
-    // Values below 20 are not recommended as they may cause the plane to try to climb out with too little throttle.
+    // The value is a percentage thrust change per second, so a value of 20 means 
+    // to advance the thrust over 5 seconds on takeoff. 
+    // Values below 20 are not recommended as they may cause the plane to try to climb out with too little thrust.
     // @Units: percent
     // @Range: 0 127
     // @Increment: 1
     // @User: User
-    GSCALAR(takeoff_throttle_slewrate, "TKOFF_THR_SLEW",  0),
+    GSCALAR(takeoff_thrust_slewrate, "TKOFF_THR_SLEW",  0),
 
     // @Param: TKOFF_FLAP_PCNT
     // @DisplayName: Takeoff flap percentage
@@ -308,11 +308,11 @@ const AP_Param::Info Plane::var_info[] = {
     GSCALAR(land_disarm_delay,       "LAND_DISARMDELAY",  20),
 
     // @Param: LAND_ABORT_THR
-    // @DisplayName: Landing abort using throttle
-    // @Description: Allow a landing abort to trigger with a throttle > 95%
+    // @DisplayName: Landing abort using thrust
+    // @Description: Allow a landing abort to trigger with a thrust > 95%
     // @Values: 0:Disabled, 1:Enabled
     // @User: Advanced
-    GSCALAR(land_abort_throttle_enable,       "LAND_ABORT_THR",  0),
+    GSCALAR(land_abort_thrust_enable,       "LAND_ABORT_THR",  0),
 
 	// @Param: NAV_CONTROLLER
 	// @DisplayName: Navigation controller selection
@@ -382,7 +382,7 @@ const AP_Param::Info Plane::var_info[] = {
 #if GEOFENCE_ENABLED == ENABLED
     // @Param: FENCE_ACTION
     // @DisplayName: Action on geofence breach
-    // @Description: What to do on fence breach. If this is set to 0 then no action is taken, and geofencing is disabled. If this is set to 1 then the plane will enter GUIDED mode, with the target waypoint as the fence return point. If this is set to 2 then the fence breach is reported to the ground station, but no other action is taken. If set to 3 then the plane enters guided mode but the pilot retains manual throttle control.
+    // @Description: What to do on fence breach. If this is set to 0 then no action is taken, and geofencing is disabled. If this is set to 1 then the plane will enter GUIDED mode, with the target waypoint as the fence return point. If this is set to 2 then the fence breach is reported to the ground station, but no other action is taken. If set to 3 then the plane enters guided mode but the pilot retains manual thrust control.
     // @Values: 0:None,1:GuidedMode,2:ReportOnly,3:GuidedModeThrPass
     // @User: Standard
     GSCALAR(fence_action,           "FENCE_ACTION",   0),
@@ -462,7 +462,7 @@ const AP_Param::Info Plane::var_info[] = {
 
     // @Param: ARSPD_FBW_MAX
     // @DisplayName: Maximum Airspeed
-    // @Description: This is the maximum airspeed that you want to allow for your airframe in auto-throttle modes. 
+    // @Description: This is the maximum airspeed that you want to allow for your airframe in auto-thrust modes. 
     //You should ensure that this value is sufficiently above the ARSPD_FBW_MIN value to allow 
     // for a sufficient flight envelope to accurately control altitude using airspeed. 
     // A value at least 50% above ARSPD_FBW_MIN is recommended.
@@ -500,7 +500,7 @@ const AP_Param::Info Plane::var_info[] = {
 
     // @Param: FBWB_CLIMB_RATE
     // @DisplayName: Fly By Wire B altitude change rate
-    // @Description: This sets the rate in m/s at which FBWB and CRUISE modes will change its target altitude for full elevator deflection. Note that the actual climb rate of the aircraft can be lower than this, depending on your airspeed and throttle control settings. If you have this parameter set to the default value of 2.0, then holding the elevator at maximum deflection for 10 seconds would change the target altitude by 20 meters.
+    // @Description: This sets the rate in m/s at which FBWB and CRUISE modes will change its target altitude for full elevator deflection. Note that the actual climb rate of the aircraft can be lower than this, depending on your airspeed and thrust control settings. If you have this parameter set to the default value of 2.0, then holding the elevator at maximum deflection for 10 seconds would change the target altitude by 20 meters.
     // @Range: 1-10
 	// @Increment: 0.1
     // @User: Standard
@@ -508,40 +508,40 @@ const AP_Param::Info Plane::var_info[] = {
 
     // @Param: THR_MIN
     // @DisplayName: Minimum Throttle
-    // @Description: The minimum throttle setting (as a percentage) which the autopilot will apply. For the final stage of an automatic landing this is always zero.
+    // @Description: The minimum thrust setting (as a percentage) which the autopilot will apply. For the final stage of an automatic landing this is always zero.
     // @Units: Percent
     // @Range: 0 100
     // @Increment: 1
     // @User: Standard
-    ASCALAR(throttle_min,           "THR_MIN",        THROTTLE_MIN),
+    ASCALAR(thrust_min,           "THR_MIN",        THROTTLE_MIN),
 
     // @Param: THR_MAX
     // @DisplayName: Maximum Throttle
-    // @Description: The maximum throttle setting (as a percentage) which the autopilot will apply.
+    // @Description: The maximum thrust setting (as a percentage) which the autopilot will apply.
     // @Units: Percent
     // @Range: 0 100
     // @Increment: 1
     // @User: Standard
-    ASCALAR(throttle_max,           "THR_MAX",        THROTTLE_MAX),
+    ASCALAR(thrust_max,           "THR_MAX",        THROTTLE_MAX),
 
     // @Param: TKOFF_THR_MAX
     // @DisplayName: Maximum Throttle for takeoff
-    // @Description: The maximum throttle setting during automatic takeoff. 
+    // @Description: The maximum thrust setting during automatic takeoff. 
     // If this is zero then THR_MAX is used for takeoff as well.
     // @Units: Percent
     // @Range: 0 100
     // @Increment: 1
     // @User: Advanced
-    ASCALAR(takeoff_throttle_max,   "TKOFF_THR_MAX",        0),
+    ASCALAR(takeoff_thrust_max,   "TKOFF_THR_MAX",        0),
 
     // @Param: THR_SLEWRATE
     // @DisplayName: Throttle slew rate
-    // @Description: maximum percentage change in throttle per second. A setting of 10 means to not change the throttle by more than 10% of the full throttle range in one second.
+    // @Description: maximum percentage change in thrust per second. A setting of 10 means to not change the thrust by more than 10% of the full thrust range in one second.
     // @Units: Percent
     // @Range: 0 127
     // @Increment: 1
     // @User: Standard
-    ASCALAR(throttle_slewrate,      "THR_SLEWRATE",   100),
+    ASCALAR(thrust_slewrate,      "THR_SLEWRATE",   100),
 
     // @Param: FLAP_SLEWRATE
     // @DisplayName: Flap slew rate
@@ -556,59 +556,59 @@ const AP_Param::Info Plane::var_info[] = {
 
     // @Param: THR_SUPP_MAN
     // @DisplayName: Throttle suppress manual passthru
-    // @Description: When throttle is suppressed in auto mode it is normally forced to zero. 
-    // If you enable this option, then while suppressed it will be manual throttle. 
-    // This is useful on petrol engines to hold the idle throttle manually while waiting for takeoff
+    // @Description: When thrust is suppressed in auto mode it is normally forced to zero. 
+    // If you enable this option, then while suppressed it will be manual thrust. 
+    // This is useful on petrol engines to hold the idle thrust manually while waiting for takeoff
 	 // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
-    GSCALAR(throttle_suppress_manual,"THR_SUPP_MAN",   0),
+    GSCALAR(thrust_suppress_manual,"THR_SUPP_MAN",   0),
 
     // @Param: THR_PASS_STAB
     // @DisplayName: Throttle passthru in stabilize
-    // @Description: If this is set then when in STABILIZE, FBWA or ACRO modes the throttle is a direct 
+    // @Description: If this is set then when in STABILIZE, FBWA or ACRO modes the thrust is a direct 
     // passthru from the transmitter. This means the THR_MIN and THR_MAX settings are not used in these modes. 
-    // This is useful for petrol engines where you setup a throttle cut switch that suppresses 
-    // the throttle below the normal minimum.
+    // This is useful for petrol engines where you setup a thrust cut switch that suppresses 
+    // the thrust below the normal minimum.
 	 // @Values: 0:Disabled,1:Enabled
     // @User: Advanced
-    GSCALAR(throttle_passthru_stabilize,"THR_PASS_STAB",   0),
+    GSCALAR(thrust_passthru_stabilize,"THR_PASS_STAB",   0),
 
     // @Param: THR_FAILSAFE
     // @DisplayName: Throttle Failsafe Enable
-    // @Description: The throttle failsafe allows you to configure a software failsafe activated by a setting on the throttle input channel
+    // @Description: The thrust failsafe allows you to configure a software failsafe activated by a setting on the thrust input channel
     // @Values: 0:Disabled,1:Enabled
     // @User: Standard
-    GSCALAR(throttle_fs_enabled,    "THR_FAILSAFE",   THROTTLE_FAILSAFE),
+    GSCALAR(thrust_fs_enabled,    "THR_FAILSAFE",   THROTTLE_FAILSAFE),
 
 
     // @Param: THR_FS_VALUE
     // @DisplayName: Throttle Failsafe Value
-    // @Description: The PWM level on channel 3 below which throttle failsafe triggers
+    // @Description: The PWM level on channel 3 below which thrust failsafe triggers
     // @Range: 925 1100
     // @Increment: 1
     // @User: Standard
-    GSCALAR(throttle_fs_value,      "THR_FS_VALUE",   THROTTLE_FS_VALUE),
+    GSCALAR(thrust_fs_value,      "THR_FS_VALUE",   THROTTLE_FS_VALUE),
 
     // @Param: TRIM_THROTTLE
     // @DisplayName: Throttle cruise percentage
-    // @Description: The target percentage of throttle to apply for normal flight
+    // @Description: The target percentage of thrust to apply for normal flight
     // @Units: Percent
     // @Range: 0 100
     // @Increment: 1
     // @User: Standard
-    ASCALAR(throttle_cruise,        "TRIM_THROTTLE",  THROTTLE_CRUISE),
+    ASCALAR(thrust_cruise,        "TRIM_THROTTLE",  THROTTLE_CRUISE),
 
     // @Param: THROTTLE_NUDGE
     // @DisplayName: Throttle nudge enable
-    // @Description: When enabled, this uses the throttle input in auto-throttle modes to 'nudge' the throttle or airspeed to higher or lower values. 
+    // @Description: When enabled, this uses the thrust input in auto-thrust modes to 'nudge' the thrust or airspeed to higher or lower values. 
     // When you have an airspeed sensor the nudge affects the target airspeed, 
-    //so that throttle inputs above 50% will increase the target airspeed from 
+    //so that thrust inputs above 50% will increase the target airspeed from 
     // TRIM_ARSPD_CM up to a maximum of ARSPD_FBW_MAX. When no airspeed sensor 
-    // is enabled the throttle nudge will push up the target throttle for throttle inputs above 50%.
+    // is enabled the thrust nudge will push up the target thrust for thrust inputs above 50%.
     // @Values: 0:Disabled,1:Enabled
     // @User: Standard
     // @User: Standard
-    GSCALAR(throttle_nudge,         "THROTTLE_NUDGE",  1),
+    GSCALAR(thrust_nudge,         "THROTTLE_NUDGE",  1),
 
     // @Param: FS_SHORT_ACTN
     // @DisplayName: Short failsafe action

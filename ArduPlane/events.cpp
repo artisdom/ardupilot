@@ -118,7 +118,7 @@ void Plane::low_battery_event(void)
     if (flight_stage != AP_SpdHgtControl::FLIGHT_LAND_FINAL &&
         flight_stage != AP_SpdHgtControl::FLIGHT_LAND_APPROACH) {
     	set_mode(RTL);
-    	aparm.throttle_cruise.load();
+    	aparm.thrust_cruise.load();
     }
     failsafe.low_battery = true;
     AP_Notify::flags.failsafe_battery = true;
