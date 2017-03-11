@@ -377,7 +377,7 @@ void Plane::calc_throttle()
 //    int32_t bearing_error_cd = nav_controller->bearing_error_cd();
 //    steering_control.steering = steerController.get_steering_out_angle_error(bearing_error_cd);
 //    if (stick_mixing_enabled()) {
-//        stick_mix_channel(channel_rudder, steering_control.steering);
+//        stick_mix_channel(channel_yaw, steering_control.steering);
 //    }
 //    steering_control.steering = constrain_int16(steering_control.steering, -4500, 4500);
 //}
@@ -606,7 +606,7 @@ void Plane::set_servos(void)
             }
         }
 
-        // This is set in case throttle.cac_pwm is called
+        // This is set in case throttle.calc_pwm is called
         channel_throttle.set_servo_out(constrain_int16(channel_throttle.get_servo_out(), 
                                                       min_throttle,
                                                       max_throttle));
