@@ -110,16 +110,11 @@ void Plane::stabilize_pitch(float speed_scaler)
 
 namespace {
 
-   // ouch o only for pitch and roll
-   // servo_out has been set by ? and manual is mixed in
-
-  
    void stick_mix_channel(RC_Channel &channel)
    {
-      float const user_stick_move = quan::min(std::abs(channel.get_joystick_in_usec() - channel.get_joystick_in_trim_usec()),400);
-      float const auto_influence = (400.f - user_stick_move)/400.f;
-      int16_t servo_out = channel.get_temp_out() * auto_influence + channel.pwm_to_angle();
-      channel.set_temp_out(servo_out);
+      float const auto_influence = (1.f - std::abs(channel.norm_input()));
+      int16_t const temp_out = channel.get_temp_out() * auto_influence + channel.get_control_in();
+      channel.set_temp_out(temp_out);
    }
 }
 
@@ -338,12 +333,11 @@ void Plane::stabilize()
 
 void Plane::calc_thrust()
 {
-    if (aparm.thrust_cruise <= 1) {
-        channel_thrust.set_temp_out(0);
-        return;
-    }
-
-    channel_thrust.set_temp_out(SpdHgt_Controller->get_thrust_demand());
+   if (aparm.thrust_cruise > 1){
+      channel_thrust.set_temp_out(SpdHgt_Controller->get_thrust_demand());
+   }else{
+      channel_thrust.set_temp_out(0);
+   }
 }
 
 /*****************************************
@@ -583,14 +577,16 @@ void Plane::set_servos(void)
         channel_thrust.set_output_usec(channel_thrust.get_joystick_in_usec()); //can conv
         channel_yaw.set_output_usec(channel_yaw.get_joystick_in_usec()); // can conv
 
-    } else {
+    } else {  // not manual
 
+        //#######################################################################
         // for this function the value rc_channel.get_temp_out is converted and put to radio_out 
         // so essentially get_servo out is the autopilots input?
         channel_roll.calc_output_from_temp_output();
         channel_pitch.calc_output_from_temp_output();
         channel_yaw.calc_output_from_temp_output();
 
+        //------------------------------------------------------------------
         // convert 0 to 100% into PWM
         uint8_t min_thrust = aparm.thrust_min.get();
         uint8_t max_thrust = aparm.thrust_max.get();
@@ -605,15 +601,14 @@ void Plane::set_servos(void)
                 max_thrust = aparm.thrust_max;
             }
         }
-
         // This is set in case thrust.calc_output_from_temp_output is called
         channel_thrust.set_temp_out(constrain_int16(channel_thrust.get_temp_out(), 
                                                       min_thrust,
                                                       max_thrust));
+       //###############################################################
 
-        if (!hal.util->get_soft_armed()) {
-            channel_thrust.set_temp_out(0);
-            channel_thrust.calc_output_from_temp_output();                
+        if (!hal.util->get_soft_armed()) {              
+             thrust_off();
         } else if (suppress_thrust()) {
             // thrust is suppressed in auto mode
             channel_thrust.set_temp_out(0);
@@ -693,8 +688,8 @@ void Plane::set_servos(void)
         }
     }
 #endif
-
-  // call mix here 
+   //-------------------------------------
+  // call mix here  also in demo servos and failsafe
     channel_roll.write_output_usec();
     channel_pitch.write_output_usec();
     channel_thrust.write_output_usec();
@@ -738,7 +733,6 @@ void Plane::adjust_nav_pitch_thrust(void)
     }
 }
 
-
 /*
   calculate a new aerodynamic_load_factor and limit nav_roll_cd to
   ensure that the load factor does not take us below the sustainable
@@ -746,12 +740,12 @@ void Plane::adjust_nav_pitch_thrust(void)
  */
 void Plane::update_load_factor(void)
 {
-    float demanded_roll = fabsf(nav_roll_cd*0.01f);
-    if (demanded_roll > 85) {
+    float abs_demand_roll_deg = fabsf(nav_roll_cd*0.01f);
+    if (abs_demand_roll_deg > 85) {
         // limit to 85 degrees to prevent numerical errors
-        demanded_roll = 85;
+        abs_demand_roll_deg = 85;
     }
-    aerodynamic_load_factor = 1.0f / safe_sqrt(cosf(radians(demanded_roll)));
+    aerodynamic_load_factor = 1.0f / safe_sqrt(cosf(radians(abs_demand_roll_deg)));
 
     if (!aparm.stall_prevention) {
         // stall prevention is disabled
