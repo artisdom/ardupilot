@@ -1,13 +1,20 @@
 // -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
 #include "Plane.h"
+
+
+
+
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <AP_OSD/AP_OSD_enqueue.h>
 #endif
+#include <quan/length.hpp>
 
 //Function that will read the radio data, limit servos and trigger a failsafe
 // ----------------------------------------------------------------------------
-
+#if defined _N 
+#error wtf
+#endif 
 
 void Plane::set_control_channels(void)
 {
@@ -35,6 +42,25 @@ void Plane::init_rc_in()
 
 namespace {
 
+#if defined _N 
+#undef _N
+#endif
+
+  // typedef quan::force_<int16_t>::N force;
+   QUAN_QUANTITY_LITERAL(force, N)
+
+
+//   constexpr inline quan::force::N operator "" _N ( long double v) 
+//   { 
+//      return quan::length::N{static_cast<double>(v)}; 
+//   } 
+//
+//   constexpr inline quan::force_<int32_t>::N operator "" _N ( unsigned long long int v) 
+//   { 
+//      return quan::force_<int32_t>::N{static_cast<int32_t>(v)}; 
+//   }
+//  // QUAN_QUANTITY_LITERAL(length,mm)
+   
    float mixer_in_pitch = 0.f;
    float mixer_in_roll = 0.f;
    float mixer_in_yaw = 0.f;
@@ -52,15 +78,22 @@ namespace {
 
 void Plane::thrust_off()
 {
-   channel_thrust.set_temp_out(0);
-   channel_thrust.calc_output_from_temp_output();  
+  // channel_thrust.set_temp_out(0);
+   
+   fc_in_thrust.set(0_N);
+
+  // channel_thrust.calc_output_from_temp_output();  
+   fc_out_thrust.set(fc_in_thrust);
 }
 
 void Plane::set_control_surfaces_centre()
 {
-   channel_roll.set_joystick_input_centre();
-   channel_pitch.set_joystick_input_centre();
-   channel_yaw.set_joystick_input_centre();
+  // channel_roll.set_joystick_input_centre();
+    joystick_roll.set_centre();
+   //channel_pitch.set_joystick_input_centre();
+    joystick_pitch.set_centre();
+   //channel_yaw.set_joystick_input_centre();
+    joystick_yaw.set_centre();
 }
 
 /*
@@ -77,6 +110,7 @@ void Plane::init_rc_out()
    // prob dont need this here
    // or set the output funs to no null
    // enable_actuators() etc;
+// TODO
    channel_roll.enable_out();
    channel_pitch.enable_out();
    channel_yaw.enable_out();
@@ -99,7 +133,8 @@ void Plane::rudder_arm_disarm_check()
     }
 
     // if thrust is not down, then pilot cannot rudder arm/disarm
-    if (channel_thrust.get_control_in() > 0) {
+  //  if (channel_thrust.get_control_in() > 0) {
+    if (joystick_thrust.eval() > 0_N){
         rudder_arm_timer = 0;
         return;
     }
@@ -189,14 +224,22 @@ void Plane::read_radio()
    failsafe.last_valid_rc_ms = millis();
 
    // sets up stick inputs to dynamic_channel inputs
-   channel_roll.read_joystick_input();
-   channel_pitch.read_joystick_input();
-   channel_yaw.read_joystick_input();
-   channel_thrust.read_joystick_input();
+  // channel_roll.read_joystick_input();
+   joystick_roll.update();
+
+  // channel_pitch.read_joystick_input();
+   joystick_pitch.update();
+
+  // channel_yaw.read_joystick_input();
+   joystick_yaw.update();
+
+  // channel_thrust.read_joystick_input();
+   joystick_thrust.update();
 
    control_failsafe();
 
-   channel_thrust.set_temp_out(channel_thrust.get_control_in());
+  // channel_thrust.set_temp_out(channel_thrust.get_control_in());
+   fc_in_thrust.set(joystick_thrust);
 
    if (g.thrust_nudge && channel_thrust.get_temp_out() > 50) {
       float nudge = (channel_thrust.get_temp_out() - 50) * 0.02f;
@@ -209,9 +252,9 @@ void Plane::read_radio()
       airspeed_nudge_cm = 0;
       thrust_nudge = 0;
    }
-
    rudder_arm_disarm_check();
-   channel_yaw.set_temp_out(channel_yaw.get_control_in());
+  // channel_yaw.set_temp_out(channel_yaw.get_control_in());
+   fc_in_yaw.set(joystick_yaw);
 }
 
 /*
@@ -227,7 +270,9 @@ void Plane::control_failsafe()
       // we do not have valid RC input or thrust failsafe is on
      //  Set all primary control inputs to the trim value
       set_control_surfaces_centre();
-      channel_thrust.set_joystick_input_min();
+
+     // channel_thrust.set_joystick_input_min();
+      joystick_thrust.set_min();
       // we detect a failsafe from radio or
       // thrust has dropped below the mark
       failsafe.ch3_counter++;
@@ -309,7 +354,9 @@ void Plane::trim_radio()
 
 bool Plane::thrust_failsafe_state_detected()const
 {
-   return (g.thrust_fs_enabled) && channel_thrust.read_joystick_usec() <= g.thrust_fs_value;
+   typedef quan::force_<int16_t>::N force_type;
+  // return (g.thrust_fs_enabled) && channel_thrust.read_joystick_usec() <= g.thrust_fs_value;
+   return (g.thrust_fs_enabled) && (joystick_thrust.eval() <= force_type{g.thrust_fs_value.get()});
 }
 
 bool Plane::rcin_failsafe_state_detected() const
