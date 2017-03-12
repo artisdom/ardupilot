@@ -50,7 +50,6 @@ public:
       centered around the channel trim. Ignore deadzone.
      */
     float       norm_input()const;
-
     /*
       return a normalised input for a channel, in range -1 to 1,
       centered around the channel trim. Take into account the deadzone
@@ -60,6 +59,7 @@ public:
     //send values to the PWM timers for output
     void       write_output_usec() const;
  //   void       output_trim() const;
+    // read from rcin
     uint16_t   read_joystick_usec() const;
     void       enable_out()const;
     void       disable_out()const;
@@ -83,17 +83,14 @@ public:
     int16_t get_joystick_in_min_usec()const {return m_joystick_in_min_usec;}
     int16_t get_joystick_in_max_usec()const {return m_joystick_in_max_usec;}
     int16_t get_joystick_in_trim_usec()const {return m_joystick_in_trim_usec;}
-  //  int16_t get_radio_trim()const {return m_joystick_in_trim_usec;}
-
-    // used externally by stick_mix_channel atm
-    int16_t    pwm_to_angle()const;
-
     uint8_t    get_rcin_index() const { return m_rcin_idx;}
 #if !defined QUAN_PUBLIC_PRIVATE_MEMBERS
 private:
 #else
     void set_reversed (bool b) { m_is_reversed = b;}
 #endif
+        // used externally by stick_mix_channel atm
+    int16_t    pwm_to_angle()const;
         // This should apply to the input surely?
     bool       input_is_reversed(void) const;
     void       set_joystick_input_usec(int16_t pwm);
