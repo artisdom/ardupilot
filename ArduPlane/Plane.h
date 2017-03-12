@@ -42,6 +42,9 @@
 #include <AP_Arming/AP_Arming.h>                
 #include <AP_ADSB/AP_ADSB.h>
 #include <RC_Channel/RC_Channel.h>
+#include <RC_Channel/JoystickInput.h>
+#include <RC_Channel/AngleInput.h>
+#include <RC_Channel/RangeInput.h>
 #include "config.h"
 #include "defines.h"
 #include "Parameters.h"
@@ -101,6 +104,11 @@ private:
     // mapping between input channels
     RCMapper rcmap;
 
+    typedef JoystickInput::usec usec;
+    AngleInput joystick_roll{0};
+    AngleInput joystick_pitch{1};
+    AngleInput joystick_yaw{3};
+    RangeInput joystick_thrust{2};
     // primary control channels
     // dynamic_channel<Roll>
     RC_Channel channel_roll{0,0,RC_Channel::channel_type::angle,1500};
