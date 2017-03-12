@@ -28,23 +28,28 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #include <AP_HAL/AP_HAL.h>
+
 #include <AP_Menu/AP_Menu.h>
-#include <AP_AHRS/AP_AHRS_DCM.h>    
+
+#include <AP_AHRS/AP_AHRS_DCM.h>  
+
 #include <AP_Rally/AP_Rally.h>
 #include <GCS_MAVLink/GCS.h>
 #include <APM_Control/APM_Control.h>
+
 #include <AP_Scheduler/AP_Scheduler.h>     
 #include <AP_L1_Control/AP_L1_Control.h>
 #include <AP_RCMapper/AP_RCMapper.h>        
 #include <AP_TECS/AP_TECS.h>
+
 #include <AP_Notify/AP_Notify.h>      
 #include <AP_Arming/AP_Arming.h>                
 #include <AP_ADSB/AP_ADSB.h>
 #include <RC_Channel/RC_Channel.h>
 #include <RC_Channel/JoystickInput.h>
-#include <RC_Channel/AngleInput.h>
-#include <RC_Channel/RangeInput.h>
+#include <RC_Channel/FlightControl.h>
 #include "config.h"
 #include "defines.h"
 #include "Parameters.h"
@@ -52,6 +57,8 @@
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #include <SITL/SITL.h>
 #endif
+
+
 
 /*
   a plane specific arming class
@@ -104,11 +111,22 @@ private:
     // mapping between input channels
     RCMapper rcmap;
 
-    typedef JoystickInput::usec usec;
-    AngleInput joystick_roll{0};
-    AngleInput joystick_pitch{1};
-    AngleInput joystick_yaw{3};
-    RangeInput joystick_thrust{2};
+    JoystickInput<FlightAxis::Roll>   joystick_roll{0};
+    JoystickInput<FlightAxis::Pitch>  joystick_pitch{1};
+    JoystickInput<FlightAxis::Yaw>    joystick_yaw{3};
+    JoystickInput<FlightAxis::Thrust> joystick_thrust{2};
+
+    FltCtrlInput<FlightAxis::Roll>   fc_in_roll;
+    FltCtrlInput<FlightAxis::Pitch>  fc_in_pitch;
+    FltCtrlInput<FlightAxis::Yaw>    fc_in_yaw;
+    FltCtrlInput<FlightAxis::Thrust> fc_in_thrust;
+
+    FltCtrlOutput<FlightAxis::Roll>   fc_out_roll;
+    FltCtrlOutput<FlightAxis::Pitch>  fc_out_pitch;
+    FltCtrlOutput<FlightAxis::Yaw>    fc_out_yaw;
+    FltCtrlOutput<FlightAxis::Thrust> fc_out_thrust;
+
+    
     // primary control channels
     // dynamic_channel<Roll>
     RC_Channel channel_roll{0,0,RC_Channel::channel_type::angle,1500};

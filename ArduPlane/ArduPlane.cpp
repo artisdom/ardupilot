@@ -659,6 +659,7 @@ void Plane::update_flight_mode(void)
         // ---------------------------------
         channel_roll.set_temp_out(channel_roll.get_control_in());
         channel_pitch.set_temp_out(channel_pitch.get_control_in());
+
         // in fact either this or the same call in  read_radio is not necessary
         channel_yaw.set_temp_out(channel_yaw.get_control_in());
         break;
