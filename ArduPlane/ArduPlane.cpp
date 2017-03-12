@@ -657,11 +657,11 @@ void Plane::update_flight_mode(void)
     case MANUAL:
         // servo_out is for Sim control only
         // ---------------------------------
-        channel_roll.set_temp_out(channel_roll.pwm_to_angle());
-        channel_pitch.set_temp_out(channel_pitch.pwm_to_angle());
-        channel_yaw.set_temp_out(channel_yaw.pwm_to_angle());
+        channel_roll.set_temp_out(channel_roll.get_control_in());
+        channel_pitch.set_temp_out(channel_pitch.get_control_in());
+        // in fact either this or the same call in  read_radio is not necessary
+        channel_yaw.set_temp_out(channel_yaw.get_control_in());
         break;
-        //roll: -13788.000,  pitch: -13698.000,   thr: 0.000, rud: -13742.000
         
     case INITIALISING:
         // handled elsewhere
