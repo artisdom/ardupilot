@@ -12,10 +12,16 @@
  *  passing inputs straight from the RC inputs to RC outputs.
  */
 
+
+namespace {
+   typedef quan::time_<int16_t>::us usec;
+}
+
 /*
- *  this failsafe_check function is called from the core timer interrupt
- *  at 1kHz.
- */
+   in fact this is not called atm
+   Could do in loop
+   return a bool if in failsafe
+*/
 void Plane::failsafe_check(void)
 {
     static uint16_t last_mainLoop_count;
@@ -50,10 +56,10 @@ void Plane::failsafe_check(void)
         }
 #endif
 
-        if (hal.rcin->num_channels() < 5) {
-            // we don't have any RC input to pass through
-            return;
-        }
+//        if (hal.rcin->num_channels() < 5) {
+//            // we don't have any RC input to pass through
+//            return;
+//        }
 
         // pass RC inputs to outputs every 20ms
         hal.rcin->clear_overrides();
@@ -64,25 +70,28 @@ void Plane::failsafe_check(void)
   so radio_out is equivalent to rcin
 
 */
-        channel_roll.set_output_usec(channel_roll.read_joystick_usec());
-        channel_pitch.set_output_usec(channel_pitch.read_joystick_usec());
+        //  channel_roll.set_output_usec(channel_roll.read_joystick_usec());
+        output_roll.set(usec{hal.rcin->read(joystick_roll.get_rcin_index())});
+        //  channel_pitch.set_output_usec(channel_pitch.read_joystick_usec());
+        output_pitch.set(usec{hal.rcin->read(joystick_pitch.get_rcin_index())});
         if (hal.util->get_soft_armed()) {
-            channel_thrust.set_output_usec(channel_thrust.read_joystick_usec());
+           // channel_thrust.set_output_usec(channel_thrust.read_joystick_usec());
+            output_thrust.set(usec{hal.rcin->read(joystick_thrust.get_rcin_index())});
         }
-        channel_yaw.set_output_usec(channel_yaw.read_joystick_usec());
-
+        // channel_yaw.set_output_usec(channel_yaw.read_joystick_usec());
+        output_yaw.set(usec{hal.rcin->read(joystick_yaw.get_rcin_index())});
 #if OBC_FAILSAFE == ENABLED
         // this is to allow the failsafe module to deliberately crash 
         // the plane. Only used in extreme circumstances to meet the
         // OBC rules
         obc.check_crash_plane();
 #endif
-
-        if (!demoing_servos) {
-            channel_roll.write_output_usec();
-            channel_pitch.write_output_usec();
-        }
-        channel_thrust.write_output_usec();
-        channel_yaw.write_output_usec();
+        mix();
+//        if (!demoing_servos) {
+//            channel_roll.write_output_usec();
+//            channel_pitch.write_output_usec();
+//        }
+//        channel_thrust.write_output_usec();
+//        channel_yaw.write_output_usec();
     }
 }

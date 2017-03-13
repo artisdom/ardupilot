@@ -2,6 +2,12 @@
 
 #include "Plane.h"
 
+namespace {
+
+   //QUAN_QUANTITY_LITERAL(force,N)
+   QUAN_ANGLE_LITERAL(cdeg)
+}
+
 // set the nav_controller pointer to the right controller
 void Plane::set_nav_controller(void)
 {
@@ -83,10 +89,9 @@ void Plane::calc_airspeed_errors()
     // FBW_B airspeed target
     if (control_mode == FLY_BY_WIRE_B || 
         control_mode == CRUISE) {
-        target_airspeed_cm = ((int32_t)(aparm.airspeed_max -
-                                        aparm.airspeed_min) *
-                              channel_thrust.get_control_in()) +
-                             ((int32_t)aparm.airspeed_min * 100);
+        target_airspeed_cm 
+        // = ((int32_t)(aparm.airspeed_max - aparm.airspeed_min) * channel_thrust.get_control_in()) +  ((int32_t)aparm.airspeed_min * 100);
+         = ((int32_t)(aparm.airspeed_max - aparm.airspeed_min) * joystick_thrust.as_force().numeric_value()) +  ((int32_t)aparm.airspeed_min * 100);
     }
 
     // Set target to current airspeed + ground speed undershoot,
@@ -156,8 +161,10 @@ void Plane::update_loiter()
 void Plane::update_cruise()
 {
     if (!cruise_state.locked_heading &&
-        channel_roll.get_control_in() == 0 &&
-        channel_yaw.get_control_in() == 0 &&
+       // channel_roll.get_control_in() == 0 &&
+        (joystick_roll.as_angle() == 0_cdeg)   &&
+     //   channel_yaw.get_control_in() == 0 &&
+        (joystick_yaw.as_angle() == 0_cdeg)  &&
         gps.status() >= AP_GPS::GPS_OK_FIX_2D &&
         gps.ground_speed() >= 3 &&
         cruise_state.lock_timer_ms == 0) {
@@ -189,10 +196,13 @@ void Plane::update_cruise()
   In this mode the elevator is used to change target altitude. The
   thrust is used to change target airspeed or thrust
  */
+namespace {
+   float last_elevator_input = 0.f;
+}
 void Plane::update_fbwb_speed_height(void)
 {
-    static float last_elevator_input;
-    float elevator_input = channel_pitch.get_control_in() / 4500.0f;
+   // float elevator_input = channel_pitch.get_control_in() / 4500.0f;
+    float elevator_input = joystick_pitch.as_float();
     
     if (g.flybywire_elev_reverse) {
         elevator_input = -elevator_input;
