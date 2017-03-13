@@ -7,7 +7,8 @@
 
 #include <AP_Param/AP_Param.h>
 #include <quan/time.hpp>
-#include <quan/constrain.hpp>
+
+#include <quan/angle.hpp>
 
 /// @class	JoystickInput
 /// @brief	rcin input buffer and switch abstraction to map an rc channel
@@ -40,15 +41,15 @@ struct JoystickInput_base {
       update from rcin
       reverse the sense of the raw rcin value if input_sense_reversed() is true
     */
-    void        update() 
-    {
-        usec const rcin{hal.rcin->read(m_rcin_idx)};
-        if ( input_sense_reversed()){
-            m_value = (get_min() + get_max()) - rcin ;
-        }else{
-            m_value = rcin;
-        }
-    }
+    void        update() ;
+//    {
+//        usec const rcin{hal.rcin->read(m_rcin_idx)};
+//        if ( input_sense_reversed()){
+//            m_value = (get_min() + get_max()) - rcin ;
+//        }else{
+//            m_value = rcin;
+//        }
+//    }
    /* set the value to centre */
     void        set_centre() { this->m_value = get_trim();}
    /* set the value to min */
@@ -58,15 +59,15 @@ struct JoystickInput_base {
       return a normalised input for a channel, in range -1 to 1,
       centered around the channel trim. 
      */
-    float       get_normalised()const 
-    { 
-      return quan::constrain(
-      (this->m_value - get_trim()) / ((get_max() - get_min())/2.f)
-      ,-1.f, 1.f
-      );
-    }
+    float       as_float()const ;
+//    { 
+//      return quan::constrain(
+//      (this->m_value - get_trim()) / ((get_max() - get_min())/2.f)
+//      ,-1.f, 1.f
+//      );
+//    }
 
-    usec get()const {return m_value;}
+    usec as_usec()const {return m_value;}
 
 private:   
    static constexpr usec m_min{1000};
@@ -83,13 +84,22 @@ private:
     void set_reversed (bool b) { m_is_reversed = b;}
 #endif
    bool       input_sense_reversed(void) const { return m_is_reversed;}
-   void       set_joystick_input_usec(int16_t pwm);
-   void       set_joystick_pwm_usec(int16_t v);
+//   void       set_joystick_input_usec(int16_t pwm);
+//   void       set_joystick_pwm_usec(int16_t v);
    usec           m_value;
    uint8_t const  m_rcin_idx;
    bool           m_is_reversed;
    JoystickInput_base(JoystickInput_base const & ) = delete;
    JoystickInput_base & operator =(JoystickInput_base const & ) = delete; 
+};
+
+struct JoystickInput_angle : JoystickInput_base {
+
+   JoystickInput_angle(uint8_t ch_in) : JoystickInput_base{ch_in,get_trim()}{}
+   typedef quan::angle_<int16_t>::cdeg cdeg;
+
+   cdeg as_angle() const ;
+   
 };
 
 #endif  //AERFLITE_JOYSTICK_INPUT_BASE_HPP_INCLUDED

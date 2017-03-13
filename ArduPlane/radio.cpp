@@ -3,8 +3,6 @@
 #include "Plane.h"
 
 
-
-
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <AP_OSD/AP_OSD_enqueue.h>
 #endif
@@ -12,9 +10,6 @@
 
 //Function that will read the radio data, limit servos and trigger a failsafe
 // ----------------------------------------------------------------------------
-#if defined _N 
-#error wtf
-#endif 
 
 void Plane::set_control_channels(void)
 {
@@ -44,25 +39,9 @@ void Plane::init_rc_in()
 
 namespace {
 
-#if defined _N 
-#undef _N
-#endif
-
-  // typedef quan::force_<int16_t>::N force;
    QUAN_QUANTITY_LITERAL(force, N)
+   QUAN_ANGLE_LITERAL(cdeg)
 
-
-//   constexpr inline quan::force::N operator "" _N ( long double v) 
-//   { 
-//      return quan::length::N{static_cast<double>(v)}; 
-//   } 
-//
-//   constexpr inline quan::force_<int32_t>::N operator "" _N ( unsigned long long int v) 
-//   { 
-//      return quan::force_<int32_t>::N{static_cast<int32_t>(v)}; 
-//   }
-//  // QUAN_QUANTITY_LITERAL(length,mm)
-   
    float mixer_in_pitch = 0.f;
    float mixer_in_roll = 0.f;
    float mixer_in_yaw = 0.f;
@@ -81,11 +60,9 @@ namespace {
 void Plane::thrust_off()
 {
   // channel_thrust.set_temp_out(0);
-   
-   fc_in_thrust.set(0_N);
-
+   autopilot_thrust.set(0_N);
   // channel_thrust.calc_output_from_temp_output();  
-   fc_out_thrust.set(fc_in_thrust);
+   output_thrust.set(autopilot_thrust);
 }
 
 void Plane::set_control_surfaces_centre()
@@ -113,13 +90,15 @@ void Plane::init_rc_out()
    // or set the output funs to no null
    // enable_actuators() etc;
 // TODO
+#if 0
    channel_roll.enable_out();
    channel_pitch.enable_out();
    channel_yaw.enable_out();
-
+#endif
    if (arming.arming_required() != AP_Arming::YES_ZERO_PWM) {
-     channel_thrust.enable_out();
+     output_thrust.enable();
    }
+
 }
 
 /*
@@ -136,7 +115,7 @@ void Plane::rudder_arm_disarm_check()
 
     // if thrust is not down, then pilot cannot rudder arm/disarm
   //  if (channel_thrust.get_control_in() > 0) {
-    if (joystick_thrust.eval() > 0_N){
+    if (joystick_thrust.as_force() > 0_N){
         rudder_arm_timer = 0;
         return;
     }
@@ -149,7 +128,8 @@ void Plane::rudder_arm_disarm_check()
 
 	if (!arming.is_armed()) {
 		// when not armed, full right rudder starts arming counter
-		if (channel_yaw.get_control_in() > 4000) {
+	//	if (channel_yaw.get_control_in() > 4000) {
+      if ( joystick_yaw.as_angle()  > 4000_cdeg){
 			uint32_t now = millis();
 
 			if (rudder_arm_timer == 0 ||
@@ -169,9 +149,9 @@ void Plane::rudder_arm_disarm_check()
 		}
 	} else if (arming_rudder == AP_Arming::ARMING_RUDDER_ARMDISARM && !is_flying()) {
 		// when armed and not flying, full left rudder starts disarming counter
-		if (channel_yaw.get_control_in() < -4000) {
+		//if (channel_yaw.get_control_in() < -4000) {
+      if ( joystick_yaw.as_angle() < -4000_cdeg){
 			uint32_t now = millis();
-
 			if (rudder_arm_timer == 0 ||
 				now - rudder_arm_timer < 3000) {
 				if (rudder_arm_timer == 0) {
@@ -241,10 +221,11 @@ void Plane::read_radio()
    control_failsafe();
 
   // channel_thrust.set_temp_out(channel_thrust.get_control_in());
-   fc_in_thrust.set(joystick_thrust);
+   autopilot_thrust.set(joystick_thrust);
 
-   if (g.thrust_nudge && channel_thrust.get_temp_out() > 50) {
-      float nudge = (channel_thrust.get_temp_out() - 50) * 0.02f;
+  // if (g.thrust_nudge && channel_thrust.get_temp_out() > 50) {
+     if (g.thrust_nudge && autopilot_thrust.get() > 50_N) {
+      float nudge = (autopilot_thrust.get() - 50_N).numeric_value() * 0.02f;
       if (ahrs.airspeed_sensor_enabled()) {
          airspeed_nudge_cm = (aparm.airspeed_max * 100 - g.airspeed_cruise_cm) * nudge;
       } else {
@@ -256,7 +237,7 @@ void Plane::read_radio()
    }
    rudder_arm_disarm_check();
   // channel_yaw.set_temp_out(channel_yaw.get_control_in());
-   fc_in_yaw.set(joystick_yaw);
+   autopilot_yaw.set(joystick_yaw);
 }
 
 /*
@@ -280,7 +261,8 @@ void Plane::control_failsafe()
       failsafe.ch3_counter++;
       if (failsafe.ch3_counter == 10) {
          // n.b that thrust may be irrelevant if no rc input
-         unsigned int const thrust_pwm = channel_thrust.read_joystick_usec();
+       //  unsigned int const thrust_pwm = channel_thrust.read_joystick_usec();
+         unsigned int const thrust_pwm = hal.rcin->read(joystick_thrust.get_rcin_index());  
          gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS ON %u", thrust_pwm);
          failsafe.ch3_failsafe = true;
          AP_Notify::flags.failsafe_radio = true;
@@ -298,7 +280,8 @@ void Plane::control_failsafe()
          }
          if (failsafe.ch3_counter == 1) {
             // n.b that thrust is be irrelevant if no rc input
-            unsigned int const thrust_pwm = channel_thrust.read_joystick_usec();
+           // unsigned int const thrust_pwm = channel_thrust.read_joystick_usec();
+            unsigned int const thrust_pwm = hal.rcin->read(joystick_thrust.get_rcin_index());
             gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS OFF %u", thrust_pwm);
          } else if(failsafe.ch3_counter == 0) {
             failsafe.ch3_failsafe = false;
@@ -312,37 +295,37 @@ void Plane::control_failsafe()
 void Plane::trim_control_surfaces()
 {
 #if 0
-   read_radio();
-   int16_t trim_roll_range = (channel_roll.get_joystick_in_max_usec() - channel_roll.get_radio_min())/5;
-   int16_t trim_pitch_range = (channel_pitch.get_joystick_in_max_usec() - channel_pitch.get_radio_min())/5;
-   if (channel_roll.get_joystick_in_usec() < channel_roll.get_joystick_in_min_usec()+trim_roll_range ||
-      channel_roll.get_joystick_in_usec() > channel_roll.get_joystick_in_max_usec()-trim_roll_range ||
-      channel_pitch.get_joystick_in_usec() < channel_pitch.get_joystick_in_min_usec()+trim_pitch_range ||
-      channel_pitch.get_joystick_in_usec() > channel_pitch.get_joystick_in_max_usec()-trim_pitch_range) {
-      // don't trim for extreme values - if we attempt to trim so
-      // there is less than 20 percent range left then assume the
-      // sticks are not properly centered. This also prevents
-      // problems with starting APM with the TX off
-      return;
-   }
-
-   
-   if (channel_roll.get_joystick_in_usec() != 0) {
-      channel_roll.set_radio_trim(channel_roll.get_joystick_in_usec());
-   }
-   if (channel_pitch.get_joystick_in_usec() != 0) {
-      channel_pitch.set_radio_trim(channel_pitch.get_joystick_in_usec());
-   }
-
-   if (channel_yaw.get_joystick_in_usec() != 0) {
-      channel_yaw.set_radio_trim(channel_yaw.get_joystick_in_usec());
-   }
-
-   // done for in air restart?
-   // prob ignore this since eeprom takes 10 secs !
-   channel_roll.save_eeprom();
-   channel_pitch.save_eeprom();
-   channel_yaw.save_eeprom();
+//   read_radio();
+//   int16_t trim_roll_range = (channel_roll.get_joystick_in_max_usec() - channel_roll.get_radio_min())/5;
+//   int16_t trim_pitch_range = (channel_pitch.get_joystick_in_max_usec() - channel_pitch.get_radio_min())/5;
+//   if (channel_roll.get_joystick_in_usec() < channel_roll.get_joystick_in_min_usec()+trim_roll_range ||
+//      channel_roll.get_joystick_in_usec() > channel_roll.get_joystick_in_max_usec()-trim_roll_range ||
+//      channel_pitch.get_joystick_in_usec() < channel_pitch.get_joystick_in_min_usec()+trim_pitch_range ||
+//      channel_pitch.get_joystick_in_usec() > channel_pitch.get_joystick_in_max_usec()-trim_pitch_range) {
+//      // don't trim for extreme values - if we attempt to trim so
+//      // there is less than 20 percent range left then assume the
+//      // sticks are not properly centered. This also prevents
+//      // problems with starting APM with the TX off
+//      return;
+//   }
+//
+//   
+//   if (channel_roll.get_joystick_in_usec() != 0) {
+//      channel_roll.set_radio_trim(channel_roll.get_joystick_in_usec());
+//   }
+//   if (channel_pitch.get_joystick_in_usec() != 0) {
+//      channel_pitch.set_radio_trim(channel_pitch.get_joystick_in_usec());
+//   }
+//
+//   if (channel_yaw.get_joystick_in_usec() != 0) {
+//      channel_yaw.set_radio_trim(channel_yaw.get_joystick_in_usec());
+//   }
+//
+//   // done for in air restart?
+//   // prob ignore this since eeprom takes 10 secs !
+//   channel_roll.save_eeprom();
+//   channel_pitch.save_eeprom();
+//   channel_yaw.save_eeprom();
 #endif
 }
 
@@ -358,7 +341,7 @@ bool Plane::thrust_failsafe_state_detected()const
 {
    typedef quan::force_<int16_t>::N force_type;
   // return (g.thrust_fs_enabled) && channel_thrust.read_joystick_usec() <= g.thrust_fs_value;
-   return (g.thrust_fs_enabled) && (joystick_thrust.eval() <= force_type{g.thrust_fs_value.get()});
+   return (g.thrust_fs_enabled) && (joystick_thrust.as_force() <= force_type{g.thrust_fs_value.get()});
 }
 
 bool Plane::rcin_failsafe_state_detected() const

@@ -733,7 +733,8 @@ uint8_t Plane::thrust_percentage(void)
 {
     // to get the real thrust we need to use norm_output() which
     // returns a number from -1 to 1.
-    return constrain_int16(50*(channel_thrust.norm_output()+1), 0, 100);
+    //return constrain_int16(50*(channel_thrust.norm_output()+1), 0, 100);
+    return constrain_int16(50*(output_thrust.as_float()+1), 0, 100);
 }
 
 /*
@@ -756,8 +757,8 @@ bool Plane::arm_motors(AP_Arming::ArmingMethod method)
     }
 
     // only log if arming was successful
-    channel_thrust.enable_out();
-
+   // channel_thrust.enable_out();
+    output_thrust.enable();
     change_arm_state();
     return true;
 }
@@ -771,7 +772,8 @@ bool Plane::disarm_motors(void)
         return false;
     }
     if (arming.arming_required() == AP_Arming::YES_ZERO_PWM) {
-        channel_thrust.disable_out();  
+      //  channel_thrust.disable_out(); 
+       output_thrust.disable(); 
     }
     if (control_mode != AUTO) {
         // reset the mission on disarm if we are not in auto

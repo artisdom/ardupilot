@@ -181,6 +181,7 @@ void QuanScheduler::register_io_process(AP_HAL::MemberProc k)
 
 // TODO register a function to call on failsafe ( eg. WDT timeout)
 // and sort failsafe watchdog etc
+// do this asynchronously
 void QuanScheduler::register_timer_failsafe(AP_HAL::Proc, uint32_t period_us)
 {}
 

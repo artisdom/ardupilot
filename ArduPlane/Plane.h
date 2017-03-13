@@ -116,23 +116,23 @@ private:
     JoystickInput<FlightAxis::Yaw>    joystick_yaw{3};
     JoystickInput<FlightAxis::Thrust> joystick_thrust{2};
 
-    FltCtrlInput<FlightAxis::Roll>   fc_in_roll;
-    FltCtrlInput<FlightAxis::Pitch>  fc_in_pitch;
-    FltCtrlInput<FlightAxis::Yaw>    fc_in_yaw;
-    FltCtrlInput<FlightAxis::Thrust> fc_in_thrust;
+    FltCtrlInput<FlightAxis::Roll>   autopilot_roll;
+    FltCtrlInput<FlightAxis::Pitch>  autopilot_pitch;
+    FltCtrlInput<FlightAxis::Yaw>    autopilot_yaw;
+    FltCtrlInput<FlightAxis::Thrust> autopilot_thrust;
 
-    FltCtrlOutput<FlightAxis::Roll>   fc_out_roll;
-    FltCtrlOutput<FlightAxis::Pitch>  fc_out_pitch;
-    FltCtrlOutput<FlightAxis::Yaw>    fc_out_yaw;
-    FltCtrlOutput<FlightAxis::Thrust> fc_out_thrust;
+    FltCtrlOutput<FlightAxis::Roll>   output_roll;
+    FltCtrlOutput<FlightAxis::Pitch>  output_pitch;
+    FltCtrlOutput<FlightAxis::Yaw>    output_yaw;
+    FltCtrlOutput<FlightAxis::Thrust> output_thrust;
 
     
     // primary control channels
     // dynamic_channel<Roll>
-    RC_Channel channel_roll{0,0,RC_Channel::channel_type::angle,1500};
-    RC_Channel channel_pitch{1,1,RC_Channel::channel_type::angle,1500};
-    RC_Channel channel_yaw{3,3,RC_Channel::channel_type::angle,1500};
-    RC_Channel channel_thrust{2,2,RC_Channel::channel_type::range,1000};
+//    RC_Channel channel_roll{0,0,RC_Channel::channel_type::angle,1500};
+//    RC_Channel channel_pitch{1,1,RC_Channel::channel_type::angle,1500};
+//    RC_Channel channel_yaw{3,3,RC_Channel::channel_type::angle,1500};
+//    RC_Channel channel_thrust{2,2,RC_Channel::channel_type::range,1000};
     
     // notification object for LEDs, buzzers etc (parameter set to false disables external leds)
     AP_Notify notify;
@@ -874,8 +874,8 @@ private:
     void log_init();
     void init_capabilities(void);
     void dataflash_periodic(void);
-    uint16_t thrust_out_min_usec(void) const;
-
+  //  uint16_t thrust_out_min_usec(void) const;
+    void mix();
 public:
     void mavlink_delay_cb();
     void failsafe_check(void);

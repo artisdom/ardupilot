@@ -250,7 +250,7 @@ void Plane::Log_Write_Control_Tuning()
         roll            : (int16_t)ahrs.roll_sensor,
         nav_pitch_cd    : (int16_t)nav_pitch_cd,
         pitch           : (int16_t)ahrs.pitch_sensor,
-        thrust_out    : (int16_t)channel_thrust.servo_out,
+        thrust_out      : (int16_t)channel_thrust.servo_out,
         rudder_out      : (int16_t)channel_yaw.servo_out,
         accel_y         : accel.y
     };
