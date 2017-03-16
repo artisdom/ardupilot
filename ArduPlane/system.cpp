@@ -75,10 +75,10 @@ static void mavlink_delay_cb_static()
     plane.mavlink_delay_cb();
 }
 
-static void failsafe_check_static()
-{
-    plane.failsafe_check();
-}
+//static void failsafe_check_static()
+//{
+//    plane.failsafe_check();
+//}
 
 void Plane::init_ardupilot()
 {
@@ -196,8 +196,9 @@ void Plane::init_ardupilot()
     /*
      *  setup the 'main loop is dead' check. Note that this relies on
      *  the RC library being initialised.
+        DONT use this it isnt robust. TODO better mechanism
      */
-    hal.scheduler->register_timer_failsafe(failsafe_check_static, 1000);
+    //hal.scheduler->register_timer_failsafe(failsafe_check_static, 1000);
 
 #if CLI_ENABLED == ENABLED
     if (g.cli_enabled == 1) {
@@ -270,7 +271,11 @@ void Plane::startup_ground(void)
     // read the radio to set trims
     // ---------------------------
     if (g.trim_rc_at_start != 0) {
-        trim_radio();
+      //  trim_radio();
+       bool result = plane.setup_joystick_trims();
+       if (!result){
+          gcs_send_text(MAV_SEVERITY_INFO,"<startup_ground> Setup joystick trims failed");
+       }
     }
 
     // Save the settings for in-air restart
@@ -324,9 +329,12 @@ void Plane::set_mode(enum FlightMode mode)
         return;
     }
 
+/*
+    We should do this on a special command only
     if(g.auto_trim > 0 && control_mode == MANUAL){
         trim_control_surfaces();
     }
+*/
     // perform any cleanup required for prev flight mode
     exit_mode(control_mode);
 
@@ -734,7 +742,7 @@ uint8_t Plane::thrust_percentage(void)
     // to get the real thrust we need to use norm_output() which
     // returns a number from -1 to 1.
     //return constrain_int16(50*(channel_thrust.norm_output()+1), 0, 100);
-    return constrain_int16(50*(output_thrust.as_float()+1), 0, 100);
+    return constrain_int16(50*(output_thrust.get()+1), 0, 100);
 }
 
 /*

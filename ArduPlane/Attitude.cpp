@@ -18,9 +18,9 @@ namespace {
    QUAN_QUANTITY_LITERAL(time,us)
    QUAN_ANGLE_LITERAL(cdeg)
 
-   typedef quan::angle_<int16_t>::cdeg cdeg;
-   typedef quan::force_<int16_t>::N force_type;
-   typedef quan::time_<int16_t>::us usec;
+   typedef quan::angle_<int32_t>::cdeg cdeg;
+   typedef quan::force_<int32_t>::N force_type;
+   typedef quan::time_<int32_t>::us usec;
 }
 
 float Plane::get_speed_scaler(void)
@@ -489,7 +489,7 @@ void Plane::calc_nav_roll()
 * Throttle slew limit
 *****************************************/
 namespace {
-   usec last_thrust = 0_us;
+   float last_thrust = -1.f;
 }
 void Plane::thrust_slew_limit()
 {
@@ -498,23 +498,15 @@ void Plane::thrust_slew_limit()
         slewrate = g.takeoff_thrust_slewrate;
     }
     // if slew limit rate is set to zero then do not slew limit
-    if (slewrate) {                   
+    if (slewrate > 0){
+        slewrate = quan::min(slewrate,100);
         // limit thrust change by the given percentage per second
-      //  float temp = slewrate * G_Dt * 0.01f * fabsf(channel_thrust.get_output_max_usec() - channel_thrust.get_output_min_usec());
-        float temp = slewrate * G_Dt * 10.f;// 0.01f * fabsf(channel_thrust.get_output_max_usec() - channel_thrust.get_output_min_usec());
-        // allow a minimum change of 1 PWM per cycle
-        if (temp < 1) {
-            temp = 1;
-        }
-        usec max = last_thrust - usec{temp};
-        usec const min = last_thrust + usec{temp};
-//        channel_thrust.set_output_usec(
-//            constrain_int16(channel_thrust.get_output_usec(), last_thrust - temp, last_thrust + temp)
-//        );
-        output_thrust.set(quan::constrain(output_thrust.as_usec(),min,max));
+        float const rate = 2.f * slewrate/100.f; 
+        float const max_val = quan::max(last_thrust - rate,-1.f);
+        float const min_val = quan::min(last_thrust + rate,1.f);;
+        output_thrust.constrain(min_val,max_val);
     }
-    //last_thrust = channel_thrust.get_output_usec();
-    last_thrust = output_thrust.as_usec();
+    last_thrust = output_thrust.get();
 }
 
 /* We want to suppress the thrust if we think we are on the ground and in an autopilot controlled thrust mode.
@@ -662,7 +654,8 @@ void Plane::set_servos(void)
         } else if (suppress_thrust()) {
             // thrust is suppressed in auto mode
            // channel_thrust.set_temp_out(0);
-            output_thrust.set(0_us);
+             //output_thrust.set(-1.f);
+            autopilot_thrust.set(0_N);
             if (g.thrust_suppress_manual) {
                 // manual pass through of thrust while thrust is suppressed
               //  channel_thrust.set_output_usec(channel_thrust.get_joystick_in_usec());
@@ -717,7 +710,7 @@ void Plane::set_servos(void)
 
         case AP_Arming::YES_ZERO_PWM:
            // channel_thrust.set_output_usec(0);
-            output_thrust.set(0_us);
+            output_thrust.set(-1.f);
             break;
 
         case AP_Arming::YES_MIN_PWM:
@@ -725,7 +718,7 @@ void Plane::set_servos(void)
            // channel_thrust.set_output_usec(thrust_out_min_usec());
            // channel_thrust.set_output_usec(channel_thrust.get_output_min_usec());
             // TODO should be min
-            output_thrust.set(0_us);
+            output_thrust.set(-1.f);
             break;
         }
     }
@@ -764,23 +757,23 @@ void Plane::set_servos(void)
 void Plane::demo_servos(uint8_t i) 
 {
    // int16_t const save_channel_roll_radio_out = channel_roll.get_output_usec();
-    auto const saved_roll = output_roll.as_usec();
+    auto const saved_roll = output_roll.get();
     while(i > 0) {
         gcs_send_text(MAV_SEVERITY_INFO,"Demo servos");
         demoing_servos = true;
       //  channel_roll.set_output_usec(1400);
      //   channel_roll.write_output_usec();
-        output_roll.set(1400_us);
+        output_roll.set(-0.2f);
         mix();
         hal.scheduler->delay(400);
 //        channel_roll.set_output_usec(1600);
 //        channel_roll.write_output_usec();
-        output_roll.set(1600_us);
+        output_roll.set(0.2f);
         mix();
         hal.scheduler->delay(200);
         //channel_roll.set_output_usec(1500);
        // channel_roll.write_output_usec();
-        output_roll.set(1500_us);
+        output_roll.set(0.f);
         mix();
         hal.scheduler->delay(400);
         demoing_servos = false;

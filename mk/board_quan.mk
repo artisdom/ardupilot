@@ -113,8 +113,11 @@ ifeq ($(AERFLITE),True)
 QUAN_DEFINES += QUAN_AERFLITE_BOARD
 endif
 
+MIXER_LANG_DIR = /home/andy/cpp/projects/mixer_lang
+MIXER_LANG_INCLUDES = $(MIXER_LANG_DIR)/include
+
 QUAN_INCLUDES = $(STM32_INCLUDES) $(QUAN_INCLUDE_PATH) $(QUANTRACKER_ROOT_DIR)include \
-$(RTOS_INCLUDES)
+$(RTOS_INCLUDES) $(MIXER_LANG_INCLUDES)
 
 QUAN_PROCESSOR_FLAGS = -march=armv7e-m -mtune=cortex-m4 -mhard-float -mthumb \
 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mthumb -mfloat-abi=hard
@@ -221,7 +224,8 @@ ifeq ($(QUAN_TARGET_VEHICLE),QUAN_APM_ARDUPLANE)
 LIBS += $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_osd_tx.a
 endif
 LIBS +=  $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_system.a  \
-          $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_graphics_api.a
+          $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_graphics_api.a \
+           $(MIXER_LANG_DIR)/build/mixer_lang_aerflite_stm32.a
 
 endif
 

@@ -38,16 +38,13 @@
 #include <AP_Rally/AP_Rally.h>
 #include <GCS_MAVLink/GCS.h>
 #include <APM_Control/APM_Control.h>
-
 #include <AP_Scheduler/AP_Scheduler.h>     
 #include <AP_L1_Control/AP_L1_Control.h>
 #include <AP_RCMapper/AP_RCMapper.h>        
 #include <AP_TECS/AP_TECS.h>
-
 #include <AP_Notify/AP_Notify.h>      
 #include <AP_Arming/AP_Arming.h>                
 #include <AP_ADSB/AP_ADSB.h>
-#include <RC_Channel/RC_Channel.h>
 #include <RC_Channel/JoystickInput.h>
 #include <RC_Channel/FlightControl.h>
 #include "config.h"
@@ -58,11 +55,6 @@
 #include <SITL/SITL.h>
 #endif
 
-
-
-/*
-  a plane specific arming class
- */
 class AP_Arming_Plane : public AP_Arming
 {
 public:
@@ -79,9 +71,6 @@ protected:
     bool ins_checks(bool report);
 };
 
-/*
-  main APM:Plane class
- */
 class Plane : public AP_HAL::HAL::Callbacks {
 public:
     friend class GCS_MAVLINK;
@@ -111,28 +100,25 @@ private:
     // mapping between input channels
     RCMapper rcmap;
 
+    // control inputs from human operator
     JoystickInput<FlightAxis::Roll>   joystick_roll{0};
     JoystickInput<FlightAxis::Pitch>  joystick_pitch{1};
     JoystickInput<FlightAxis::Yaw>    joystick_yaw{3};
     JoystickInput<FlightAxis::Thrust> joystick_thrust{2};
 
+    // control inputs calculated by the autopilot
     FltCtrlInput<FlightAxis::Roll>   autopilot_roll;
     FltCtrlInput<FlightAxis::Pitch>  autopilot_pitch;
     FltCtrlInput<FlightAxis::Yaw>    autopilot_yaw;
     FltCtrlInput<FlightAxis::Thrust> autopilot_thrust;
 
+    // The resulting mix of autopilot inputs and joystick inputs
+    // As logical Pitch, Roll, Yaw, Thrust outputs
+    // to be sent to the actuator mixer
     FltCtrlOutput<FlightAxis::Roll>   output_roll;
     FltCtrlOutput<FlightAxis::Pitch>  output_pitch;
     FltCtrlOutput<FlightAxis::Yaw>    output_yaw;
     FltCtrlOutput<FlightAxis::Thrust> output_thrust;
-
-    
-    // primary control channels
-    // dynamic_channel<Roll>
-//    RC_Channel channel_roll{0,0,RC_Channel::channel_type::angle,1500};
-//    RC_Channel channel_pitch{1,1,RC_Channel::channel_type::angle,1500};
-//    RC_Channel channel_yaw{3,3,RC_Channel::channel_type::angle,1500};
-//    RC_Channel channel_thrust{2,2,RC_Channel::channel_type::range,1000};
     
     // notification object for LEDs, buzzers etc (parameter set to false disables external leds)
     AP_Notify notify;
@@ -173,8 +159,6 @@ private:
     } rangefinder_state;
 #endif
 
-   // AP_RPM rpm_sensor;
-    
     AP_AHRS_DCM ahrs {ins, barometer, gps};
     AP_L1_Control L1_controller {ahrs};
     AP_TECS TECS_controller {ahrs, aparm};
@@ -183,6 +167,11 @@ private:
     AP_RollController  rollController {ahrs, aparm, DataFlash};
     AP_PitchController pitchController {ahrs, aparm, DataFlash};
     AP_YawController   yawController {ahrs, aparm};
+
+    AP_Navigation *nav_controller = &L1_controller;
+
+    // selected navigation controller
+    AP_SpdHgtControl *SpdHgt_Controller = &TECS_controller;
 
     // used for ground steering only
     AP_SteerController steerController {ahrs};
@@ -202,17 +191,11 @@ private:
     // external failsafe boards during baro and airspeed calibration
     bool in_calibration;
 
-
     // GCS selection
     AP_SerialManager serial_manager;
     const uint8_t num_gcs = MAVLINK_COMM_NUM_BUFFERS;
     GCS_MAVLINK gcs[MAVLINK_COMM_NUM_BUFFERS];
 
-    // selected navigation controller
-    AP_Navigation *nav_controller = &L1_controller;
-
-    // selected navigation controller
-    AP_SpdHgtControl *SpdHgt_Controller = &TECS_controller;
 
 #if CAMERA == ENABLED
     AP_Camera camera {&relay};
@@ -600,6 +583,7 @@ private:
     // time that rudder arming has been running
     uint32_t rudder_arm_timer;
 
+    bool create_mixer();
     void demo_servos(uint8_t i);
     void adjust_nav_pitch_thrust(void);
     void update_load_factor(void);
@@ -745,8 +729,9 @@ private:
     void rudder_arm_disarm_check();
     void read_radio();
     void control_failsafe();
-    void trim_control_surfaces();
-    void trim_radio();
+   // void trim_control_surfaces();
+   // void trim_radio();
+    bool setup_joystick_trims();
     bool failsafe_state_detected(void);
     bool thrust_failsafe_state_detected()const;
     bool rcin_failsafe_state_detected() const;
@@ -878,7 +863,7 @@ private:
     void mix();
 public:
     void mavlink_delay_cb();
-    void failsafe_check(void);
+   // void failsafe_check(void);
     bool print_log_menu(void);
     int8_t dump_log(uint8_t argc, const Menu::arg *argv);
     int8_t erase_logs(uint8_t argc, const Menu::arg *argv);

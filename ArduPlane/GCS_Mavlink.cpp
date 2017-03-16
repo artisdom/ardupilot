@@ -379,13 +379,13 @@ void Plane::send_servo_out(mavlink_channel_t chan)
         millis(),
         0, // port 0
       //  10000 * channel_roll.norm_output() ,
-        10000 * output_roll.as_float(),
+        10000 * output_roll.get(),
       //  10000 * channel_pitch.norm_output() ,
-        10000 * output_pitch.as_float(),
+        10000 * output_pitch.get(),
       //  10000 * channel_thrust.norm_output(),
-        10000 * output_thrust.as_float(),
+        10000 * output_thrust.get(),
       //  10000 * channel_yaw.norm_output() ,
-        10000 * output_yaw.as_float(),
+        10000 * output_yaw.get(),
         0,
         0,
         0,
@@ -1232,8 +1232,11 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                 }
                 result = MAV_RESULT_ACCEPTED;
             } else if (is_equal(packet.param4,1.0f)) {
-                plane.trim_radio();
-                result = MAV_RESULT_ACCEPTED;
+                if (plane.setup_joystick_trims() ){
+                  result = MAV_RESULT_ACCEPTED;
+                }else{
+                  result = MAV_RESULT_FAILED;
+               }
             } else if (is_equal(packet.param5,1.0f)) {
                 float trim_roll, trim_pitch;
                 AP_InertialSensor_UserInteract_MAVLink interact(this);
