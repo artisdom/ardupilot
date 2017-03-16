@@ -104,8 +104,10 @@ int8_t Plane::test_radio(uint8_t argc, const Menu::arg *argv)
 
     // read the radio to set trims
     // ---------------------------
-    trim_radio();
-
+   // trim_radio();
+    if (!setup_joystick_trims()){
+         cliSerial->printf("failed to set joystick trims\n");
+    }
     while(1) {
         cliSerial->printf("TODO\n");
         hal.scheduler->delay(200);
@@ -147,7 +149,11 @@ int8_t Plane::test_failsafe(uint8_t argc, const Menu::arg *argv)
 
     // read the radio to set trims
     // ---------------------------
-    trim_radio();
+  //  trim_radio();
+
+    if (!setup_joystick_trims()){
+         cliSerial->printf("failed to set joystick trims\n");
+    }
 
     oldSwitchPosition = readSwitch();
 

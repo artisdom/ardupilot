@@ -144,11 +144,6 @@ void Plane::loop()
     scheduler.run(remaining);
 }
 
-void Plane::mix()
-{
-
-}
-
 // update AHRS system
 void Plane::ahrs_update()
 {
@@ -721,7 +716,6 @@ void Plane::update_navigation()
             auto_state.checked_for_autoland = true;
         }
         // fall through to LOITER
-
     case LOITER:
     case GUIDED:
         // allow loiter direction to be changed in flight
@@ -788,8 +782,6 @@ void Plane::set_flight_stage(AP_SpdHgtControl::FlightStage fs)
     case AP_SpdHgtControl::FLIGHT_TAKEOFF:
         break;
     }
-    
-
     flight_stage = fs;
 }
 
@@ -832,7 +824,7 @@ void Plane::update_flight_stage(void)
             } else if (mission.get_current_nav_cmd().id == MAV_CMD_NAV_LAND) {
 
              //   if ((g.land_abort_thrust_enable && channel_thrust.get_control_in() > 95) ||
-                    if ((g.land_abort_thrust_enable && joystick_thrust.as_force() > 95_N) ||
+                if ((g.land_abort_thrust_enable && joystick_thrust.as_force() > 95_N) ||
                         flight_stage == AP_SpdHgtControl::FLIGHT_LAND_ABORT){
                     // abort mode is sticky, it must complete while executing NAV_LAND
                     set_flight_stage(AP_SpdHgtControl::FLIGHT_LAND_ABORT);
@@ -867,13 +859,9 @@ void Plane::update_flight_stage(void)
             Log_Write_TECS_Tuning();
         }
     }
-
     // tell AHRS the airspeed to true airspeed ratio
     airspeed.set_EAS2TAS(barometer.get_EAS2TAS());
 }
-
-
-
 
 #if OPTFLOW == ENABLED
 // called at 50hz

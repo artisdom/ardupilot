@@ -15,6 +15,7 @@ void Plane::set_control_channels(void)
 {
 /*
   allow for runtime change of control channel ordering
+   should do if ( get_joystick_channel !=
  */
 //    channel_roll.set_angle();
 //    channel_pitch.set_angle();
@@ -40,20 +41,24 @@ void Plane::init_rc_in()
 namespace {
 
    QUAN_QUANTITY_LITERAL(force, N)
+   QUAN_QUANTITY_LITERAL(time, us)
    QUAN_ANGLE_LITERAL(cdeg)
 
-   float mixer_in_pitch = 0.f;
-   float mixer_in_roll = 0.f;
-   float mixer_in_yaw = 0.f;
-   float mixer_in_thrust = 0.f;
+   typedef quan::angle_<int32_t>::cdeg cdeg;
+   typedef quan::time_<int32_t>::us usec;
+
+//   float mixer_in_pitch = 0.f;
+//   float mixer_in_roll = 0.f;
+//   float mixer_in_yaw = 0.f;
+//   float mixer_in_thrust = 0.f;
 
    // not correct really we need some failsafe mixer inputs if we are to do this
    void setup_failsafe()
    {
-      mixer_in_pitch = 0.f;
-      mixer_in_roll = 0.f;
-      mixer_in_yaw = 0.f;
-      mixer_in_thrust = -1.f; // 0 or -1 ?
+//      mixer_in_pitch = 0.f;
+//      mixer_in_roll = 0.f;
+//      mixer_in_yaw = 0.f;
+//      mixer_in_thrust = -1.f; // 0 or -1 ?
    }
 }
 
@@ -83,22 +88,10 @@ void Plane::init_rc_out()
 {
    thrust_off();
    set_control_surfaces_centre();
-
    setup_failsafe();
-
-   // prob dont need this here
-   // or set the output funs to no null
-   // enable_actuators() etc;
-// TODO
-#if 0
-   channel_roll.enable_out();
-   channel_pitch.enable_out();
-   channel_yaw.enable_out();
-#endif
    if (arming.arming_required() != AP_Arming::YES_ZERO_PWM) {
      output_thrust.enable();
    }
-
 }
 
 /*
@@ -129,15 +122,13 @@ void Plane::rudder_arm_disarm_check()
 	if (!arming.is_armed()) {
 		// when not armed, full right rudder starts arming counter
 	//	if (channel_yaw.get_control_in() > 4000) {
-      if ( joystick_yaw.as_angle()  > 4000_cdeg){
+      if ( joystick_yaw.as_angle() > 4000_cdeg){
 			uint32_t now = millis();
-
 			if (rudder_arm_timer == 0 ||
 				now - rudder_arm_timer < 3000) {
-
 				if (rudder_arm_timer == 0) {
-                    rudder_arm_timer = now;
-                }
+                rudder_arm_timer = now;
+            }
 			} else {
 				//time to arm!
 				arm_motors(AP_Arming::RUDDER);
@@ -155,8 +146,8 @@ void Plane::rudder_arm_disarm_check()
 			if (rudder_arm_timer == 0 ||
 				now - rudder_arm_timer < 3000) {
 				if (rudder_arm_timer == 0) {
-                    rudder_arm_timer = now;
-                }
+               rudder_arm_timer = now;
+            }
 			} else {
 				//time to disarm!
 				disarm_motors();
@@ -224,14 +215,14 @@ void Plane::read_radio()
    autopilot_thrust.set(joystick_thrust);
 
   // if (g.thrust_nudge && channel_thrust.get_temp_out() > 50) {
-     if (g.thrust_nudge && autopilot_thrust.get() > 50_N) {
+   if (g.thrust_nudge && (autopilot_thrust.get() > 50_N)) {
       float nudge = (autopilot_thrust.get() - 50_N).numeric_value() * 0.02f;
       if (ahrs.airspeed_sensor_enabled()) {
          airspeed_nudge_cm = (aparm.airspeed_max * 100 - g.airspeed_cruise_cm) * nudge;
       } else {
          thrust_nudge = (aparm.thrust_max - aparm.thrust_cruise) * nudge;
       }
-   } else {
+   }else{
       airspeed_nudge_cm = 0;
       thrust_nudge = 0;
    }
@@ -248,7 +239,7 @@ called in the main loop to check for failsafe
 */
 void Plane::control_failsafe()
 {
-   // check for no rcin fro some time or thrust failsafe
+   // check for no rcin for some time or thrust failsafe
    if (failsafe_state_detected()) {
       // we do not have valid RC input or thrust failsafe is on
      //  Set all primary control inputs to the trim value
@@ -256,6 +247,7 @@ void Plane::control_failsafe()
 
      // channel_thrust.set_joystick_input_min();
       joystick_thrust.set_min();
+
       // we detect a failsafe from radio or
       // thrust has dropped below the mark
       failsafe.ch3_counter++;
@@ -291,57 +283,84 @@ void Plane::control_failsafe()
    }
 }
 
-// 
-void Plane::trim_control_surfaces()
-{
-#if 0
-//   read_radio();
-//   int16_t trim_roll_range = (channel_roll.get_joystick_in_max_usec() - channel_roll.get_radio_min())/5;
-//   int16_t trim_pitch_range = (channel_pitch.get_joystick_in_max_usec() - channel_pitch.get_radio_min())/5;
-//   if (channel_roll.get_joystick_in_usec() < channel_roll.get_joystick_in_min_usec()+trim_roll_range ||
-//      channel_roll.get_joystick_in_usec() > channel_roll.get_joystick_in_max_usec()-trim_roll_range ||
-//      channel_pitch.get_joystick_in_usec() < channel_pitch.get_joystick_in_min_usec()+trim_pitch_range ||
-//      channel_pitch.get_joystick_in_usec() > channel_pitch.get_joystick_in_max_usec()-trim_pitch_range) {
-//      // don't trim for extreme values - if we attempt to trim so
-//      // there is less than 20 percent range left then assume the
-//      // sticks are not properly centered. This also prevents
-//      // problems with starting APM with the TX off
-//      return;
-//   }
-//
-//   
-//   if (channel_roll.get_joystick_in_usec() != 0) {
-//      channel_roll.set_radio_trim(channel_roll.get_joystick_in_usec());
-//   }
-//   if (channel_pitch.get_joystick_in_usec() != 0) {
-//      channel_pitch.set_radio_trim(channel_pitch.get_joystick_in_usec());
-//   }
-//
-//   if (channel_yaw.get_joystick_in_usec() != 0) {
-//      channel_yaw.set_radio_trim(channel_yaw.get_joystick_in_usec());
-//   }
-//
-//   // done for in air restart?
-//   // prob ignore this since eeprom takes 10 secs !
-//   channel_roll.save_eeprom();
-//   channel_pitch.save_eeprom();
-//   channel_yaw.save_eeprom();
-#endif
-}
+/*
+Called in startup ground only. We could do in air trim, but only if specifically commanded by user
 
-void Plane::trim_radio()
+  On entry. Assume that the joystick inputs are at neutral trim for flying
+   On first read check that the pitch roll and yaw inputs are within a limit
+   Say 10 % of centre
+    Then read the inputs for some time
+   Check they arent moving after the first read ( so they are the same same within some range)
+   If they have moved significantly then fail. The user is probably unaware that trimming is in progress
+   Prob need a message
+*/
+
+bool Plane::setup_joystick_trims()
 {
-    for (uint8_t y = 0; y < 30; y++) {
-        read_radio();
-    }
-    trim_control_surfaces();
+   read_radio();
+
+   usec const init_trim_pitch = joystick_pitch.as_usec();
+   usec const init_trim_roll  = joystick_roll.as_usec();
+   usec const init_trim_yaw   = joystick_yaw.as_usec();
+
+   constexpr usec max_trim_offset = 50_us;
+
+   if ( abs(init_trim_pitch) >= max_trim_offset ){
+      hal.console->printf("Trim pitch out of range\n");
+      return false;
+   }
+
+   if ( abs( init_trim_roll) >= max_trim_offset ){
+      hal.console->printf("Trim roll out of range\n");
+      return false;
+   }
+
+   if ( abs( init_trim_yaw) >= max_trim_offset ){
+      hal.console->printf("Trim yaw out of range\n");
+      return false;
+   }
+
+   usec constexpr max_error = 10_us;  // max error +- 1% of range approx
+
+   usec pitch_sum = init_trim_pitch;
+   usec roll_sum = init_trim_roll;
+   usec yaw_sum = init_trim_yaw;
+
+   int count = 1;
+   auto now = millis();
+   while (( millis() - now ) < 1000){
+
+       hal.scheduler->delay(20); 
+       read_radio();
+
+       usec const pitch = joystick_pitch.as_usec();
+       usec const yaw   = joystick_yaw.as_usec();
+       usec const roll  = joystick_roll.as_usec();
+
+       if ( (abs(pitch - init_trim_pitch) > max_error) ||
+            (abs(roll  - init_trim_roll) > max_error)  ||
+            (abs(yaw   - init_trim_yaw) > max_error) ){
+
+          hal.console->printf("detected too much movement while setting trims\n");
+          return false;
+       }
+
+       pitch_sum += pitch;
+       yaw_sum  += yaw;
+       roll_sum += roll;
+       ++count;
+   }
+   joystick_pitch.set_trim(pitch_sum/count);
+   joystick_roll.set_trim(roll_sum/count);
+   joystick_pitch.set_trim(yaw_sum/count);
+   return true;
+
 }
 
 bool Plane::thrust_failsafe_state_detected()const
 {
-   typedef quan::force_<int16_t>::N force_type;
   // return (g.thrust_fs_enabled) && channel_thrust.read_joystick_usec() <= g.thrust_fs_value;
-   return (g.thrust_fs_enabled) && (joystick_thrust.as_force() <= force_type{g.thrust_fs_value.get()});
+   return (g.thrust_fs_enabled) && (joystick_thrust.as_usec() <= usec{g.thrust_fs_value.get()});
 }
 
 bool Plane::rcin_failsafe_state_detected() const
