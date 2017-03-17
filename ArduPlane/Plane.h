@@ -83,6 +83,11 @@ public:
     void setup() override;
     void loop() override;
 
+    float get_airspeed() const { return this->airspeed.get_airspeed();}
+    float get_pitch_demand()const { return output_pitch.get();}
+    float get_roll_demand()const { return output_roll.get();}
+    float get_yaw_demand()const { return output_yaw.get();}
+    float get_thrust_demand()const { return output_thrust.get();}
 private:
     // key aircraft parameters passed to multiple libraries
     AP_Vehicle::FixedWing aparm;

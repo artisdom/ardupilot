@@ -111,6 +111,11 @@ void Plane::setup()
 
     AP_Param::setup_sketch_defaults();
 
+    if (! create_mixer()){
+      cliSerial->printf("create mixer failed\n");
+      while (1) {asm volatile ("nop":::);}
+    }
+
     AP_Notify::flags.failsafe_battery = false;
 
     notify.init(false);
