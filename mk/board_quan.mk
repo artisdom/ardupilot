@@ -225,7 +225,7 @@ LIBS += $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_osd_tx.a
 endif
 LIBS +=  $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_system.a  \
           $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_graphics_api.a \
-           $(MIXER_LANG_DIR)/build/mixer_lang_aerflite_stm32.a
+           $(MIXER_LANG_DIR)/build/stm32f405/mixer_lang.a
 
 endif
 
