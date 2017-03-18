@@ -1,39 +1,79 @@
 
-#include "Plane.h"
+#include <cstring>
 #include <mixer_lang.hpp>
 #include <mixer_lang_cstrstream.hpp>
+#include "Plane.h"
 
 extern const AP_HAL::HAL& hal;
+// avoid c style functions that use malloc
+// TODO allocate a large block once, store the strings there
+// and then free the entire block once when done
+// to avoid small bits and pieces
+// maybe count allocs and free when all deallocated
+// freeing more is then  an error
+char * apm_mix::duplicate_string(const char *str)
+{
+    if (str == nullptr){
+       hal.console->printf("duplicate_string() : arg is nullptr\n");
+       for(;;){ asm volatile("nop":::);}
+    }
+    // could use strnlen_s but n/a on gnu-arm-none-eabi afaics
+    uint32_t alloc_length = 0U;
+    uint32_t constexpr maxlen = 100U; // TODO can get from mixer_lang lib
+    for ( uint32_t i = 0U; i < maxlen; ++i){
+      if (str[i] == '\0'){
+         alloc_length = i + 1U;
+         break;
+      }
+    }
+    if ( alloc_length == 0U){
+       hal.console->printf("duplicate_string() : string too long\n");
+       for(;;){ asm volatile("nop":::);}
+    }
+    char* dupstr = new char[alloc_length];
+    if ( dupstr == nullptr){
+       hal.console->printf("duplicate_string() : out of memory\n");
+       for(;;){ asm volatile("nop":::);}
+    }
+    return strcpy(dupstr,str);
+}
+
+void apm_mix::delete_string(const char* s)
+{
+   delete [] s;
+}
+
+bool apm_mix::yyerror(const char* str )
+{
+   hal.console->printf("line %i , error : %s\n", apm_lexer::get_line_number(),str);
+   return false;
+}
 
 namespace {
-
-   // This value simulates the airspeed sensor reading
-   // TODO make a way to vary it when running for sim ... prob
-   // more suitable for a GUI version
-   apm_mix::float_t airspeed_m_per_s = 0.0; //
 
    // true simulates a possible sensor failure 
    // which may mean (for example) airspeed reading is no good
    bool in_failsafe = false;  //
    
-  // apm_mix::float_t get_airspeed(){ return plane.get_airspeed();}
+   // TODO
    bool failsafe_on() { return in_failsafe;}
 
    apm_mix::float_t dummy() { return 0.f;}
 
-   apm_mix::input_pair inputs[] = { 
-      apm_mix::input_pair{"Pitch", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_pitch_demand();})},
-      apm_mix::input_pair{"Yaw",  static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_yaw_demand();})},
-      apm_mix::input_pair{"Roll", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_roll_demand();})},
-      apm_mix::input_pair{"Throttle", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_thrust_demand();})},
-      apm_mix::input_pair{"Flap", dummy},
-      apm_mix::input_pair{"Airspeed", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_airspeed();})},
-      apm_mix::input_pair{"ControlMode",dummy},
-
-      apm_mix::input_pair{"ARSPD_MIN", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return 10.0;})},
-      apm_mix::input_pair{"ARSPD_CRUISE",static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return 12.0;})},
-      apm_mix::input_pair{"ARSPD_MAX", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return 20.0;})},
-      apm_mix::input_pair{"FAILSAFE_ON", failsafe_on},
+   apm_mix::input_pair 
+   inputs[] = { 
+       {"Pitch", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_pitch_demand();})}
+      ,{"Yaw",  static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_yaw_demand();})}
+      ,{"Roll", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_roll_demand();})}
+      ,{"Throttle", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_thrust_demand();})}
+      ,{"Flap", dummy} //TODO
+      ,{"Airspeed", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_airspeed();})}
+      ,{"ControlMode", dummy}
+      ,{"ARSPD_MIN", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_airspeed_min();})}
+      ,{"ARSPD_CRUISE",static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_airspeed_cruise();})}
+      ,{"ARSPD_MAX", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_airspeed_max();})}
+      ,{"FAILSAFE_ON", failsafe_on}
+      ,{"DUMMY_INT", static_cast<apm_mix::int_t(*)()>([]()->apm_mix::int_t{return 1000;})}
    };
 
 // convert the -1 to +1 value to a pwm output
@@ -47,15 +87,16 @@ namespace {
 
    // Outputs are passed as an array to the mixer constructor
    // only float are allowed here
-   apm_mix::abc_expr* outputs[] = {
-       new apm_mix::output<apm_mix::float_t>{output_action<0>}
-     , new apm_mix::output<apm_mix::float_t>{output_action<1>}
-     , new apm_mix::output<apm_mix::float_t>{output_action<2>}
-     , new apm_mix::output<apm_mix::float_t>{output_action<3>}
-     , new apm_mix::output<apm_mix::float_t>{output_action<4>}
-     , new apm_mix::output<apm_mix::float_t>{output_action<5>}
-     , new apm_mix::output<apm_mix::float_t>{output_action<6>}
-     , new apm_mix::output<apm_mix::float_t>{output_action<7>}
+   apm_mix::output<apm_mix::float_t> 
+   outputs[] = {
+      {output_action<0>}
+     ,{output_action<1>}
+     ,{output_action<2>}
+     ,{output_action<3>}
+     ,{output_action<4>}
+     ,{output_action<5>}
+     ,{output_action<6>}
+     ,{output_action<7>}
    };
 
    const char mixer_string [] = 
@@ -72,33 +113,16 @@ namespace {
       "}\n";
 }
 
-void delete_outputs()
-{
-   for ( auto* p : outputs){
-      delete p;
-   }
-}
-
-bool apm_mix::yyerror(const char* str )
-{
-   hal.console->printf( "line %i , error : %s\n", apm_lexer::get_line_number(),str);
-   return false;
-}
-
 bool Plane::create_mixer()
 {
+   apm_lexer::cstrstream_t stream{mixer_string,500}; 
 
-   auto* pstream = new apm_lexer::cstrstream_t{mixer_string,500}; // new apm_lexer::filestream_t{argv[1]};
-
-   return ( apm_mix::mixer_create(
-          pstream
-         ,inputs, sizeof(inputs)/sizeof(inputs[0])
-         ,outputs, sizeof(outputs)/sizeof(outputs[0])
-      )); //{
-
+   return apm_mix::mixer_create(
+      &stream
+      ,inputs, sizeof(inputs)/sizeof(inputs[0])
+      ,outputs, sizeof(outputs)/sizeof(outputs[0])
+   ); 
 }
-
-
 
 void Plane::mix()
 {
