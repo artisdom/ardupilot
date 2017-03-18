@@ -88,7 +88,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 //    SCHED_TASK(update_logging1,         5,   1700),
 //    SCHED_TASK(update_logging2,         5,   1700),
 #if FRSKY_TELEM_ENABLED == ENABLED
-    SCHED_TASK(frsky_telemetry_send,   10,    100),
+//    SCHED_TASK(frsky_telemetry_send,   10,    100),
 #endif
    // SCHED_TASK(terrain_update,          5,    500),
     SCHED_TASK(update_is_flying_5Hz,   10,    100),
@@ -443,12 +443,7 @@ void Plane::update_GPS_10Hz(void)
 
         // see if we've breached the geo-fence
         geofence_check(false);
-
-#if CAMERA == ENABLED
-        if (camera.update_location(current_loc) == true) {
-            do_take_picture();
-        }
-#endif        
+     
         if (!hal.util->get_soft_armed()) {
             update_home();
         }

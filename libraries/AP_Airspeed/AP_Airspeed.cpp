@@ -136,7 +136,7 @@ void AP_Airspeed::init()
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     m_backend.init();
 #else
-    analog.init();
+   // analog.init();
     digital.init();
 #endif
 }
@@ -159,7 +159,7 @@ float AP_Airspeed::get_pressure(void)
     if (_pin == AP_AIRSPEED_I2C_PIN) {
         _healthy = digital.get_differential_pressure(pressure);
     } else {
-      _healthy = analog.get_differential_pressure(pressure);
+//      _healthy = analog.get_differential_pressure(pressure);
     }
 #endif
     return pressure;

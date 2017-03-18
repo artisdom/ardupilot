@@ -66,18 +66,15 @@ Vector2<T> &Vector2<T>::operator -=(const Vector2<T> &v)
 template <typename T>
 bool Vector2<T>::is_nan(void) const
 {
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     using std::isnan;
-#endif
+
     return isnan(x) || isnan(y);
 }
 
 template <typename T>
 bool Vector2<T>::is_inf(void) const
 {
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     using std::isinf;
-#endif
     return isinf(x) || isinf(y);
 }
 

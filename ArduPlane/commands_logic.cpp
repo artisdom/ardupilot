@@ -161,49 +161,6 @@ bool Plane::start_command(const AP_Mission::Mission_Command& cmd)
         autotune_enable(cmd.p1);
         break;
 
-#if CAMERA == ENABLED
-    case MAV_CMD_DO_CONTROL_VIDEO:                      // Control on-board camera capturing. |Camera ID (-1 for all)| Transmission: 0: disabled, 1: enabled compressed, 2: enabled raw| Transmission mode: 0: video stream, >0: single images every n seconds (decimal)| Recording: 0: disabled, 1: enabled compressed, 2: enabled raw| Empty| Empty| Empty|
-        break;
-
-    case MAV_CMD_DO_DIGICAM_CONFIGURE:                  // Mission command to configure an on-board camera controller system. |Modes: P, TV, AV, M, Etc| Shutter speed: Divisor number for one second| Aperture: F stop number| ISO number e.g. 80, 100, 200, Etc| Exposure type enumerator| Command Identity| Main engine cut-off time before camera trigger in seconds/10 (0 means no cut-off)|
-        do_digicam_configure(cmd);
-        break;
-
-    case MAV_CMD_DO_DIGICAM_CONTROL:                    // Mission command to control an on-board camera controller system. |Session control e.g. show/hide lens| Zoom's absolute position| Zooming step value to offset zoom from the current position| Focus Locking, Unlocking or Re-locking| Shooting Command| Command Identity| Empty|
-        // do_digicam_control Send Digicam Control message with the camera library
-        do_digicam_control(cmd);
-        break;
-
-    case MAV_CMD_DO_SET_CAM_TRIGG_DIST:
-        camera.set_trigger_distance(cmd.content.cam_trigg_dist.meters);
-        break;
-#endif
-
-#if MOUNT == ENABLED
-    // Sets the region of interest (ROI) for a sensor set or the
-    // vehicle itself. This can then be used by the vehicles control
-    // system to control the vehicle attitude and the attitude of various
-    // devices such as cameras.
-    //    |Region of interest mode. (see MAV_ROI enum)| Waypoint index/ target ID. (see MAV_ROI enum)| ROI index (allows a vehicle to manage multiple cameras etc.)| Empty| x the location of the fixed ROI (see MAV_FRAME)| y| z|
-    case MAV_CMD_DO_SET_ROI:
-        if (cmd.content.location.alt == 0 && cmd.content.location.lat == 0 && cmd.content.location.lng == 0) {
-            // switch off the camera tracking if enabled
-            if (camera_mount.get_mode() == MAV_MOUNT_MODE_GPS_POINT) {
-                camera_mount.set_mode_to_default();
-            }
-        } else {
-            // set mount's target location
-            camera_mount.set_roi_target(cmd.content.location);
-        }
-        break;
-
-    case MAV_CMD_DO_MOUNT_CONTROL:          // 205
-        // point the camera to a specified angle
-        camera_mount.set_angle_targets(cmd.content.mount_control.roll, 
-                                       cmd.content.mount_control.pitch, 
-                                       cmd.content.mount_control.yaw);
-        break;
-#endif
      default:
         break;
     }
@@ -684,11 +641,7 @@ bool Plane::verify_loiter_to_alt()
 bool Plane::verify_RTL()
 {
     update_loiter();
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
    if (auto_state.wp_distance <= (uint32_t)quan::max(static_cast<uint32_t>(g.waypoint_radius),0U) ||
-#else
-	if (auto_state.wp_distance <= (uint32_t)max(g.waypoint_radius,0) || 
-#endif
         nav_controller->reached_loiter_target()) {
 			gcs_send_text(MAV_SEVERITY_INFO,"Reached HOME");
 			return true;
@@ -888,49 +841,25 @@ void Plane::do_set_home(const AP_Mission::Mission_Command& cmd)
 // do_digicam_configure Send Digicam Configure message with the camera library
 void Plane::do_digicam_configure(const AP_Mission::Mission_Command& cmd)
 {
-#if CAMERA == ENABLED
-    camera.configure(cmd.content.digicam_configure.shooting_mode,
-                     cmd.content.digicam_configure.shutter_speed,
-                     cmd.content.digicam_configure.aperture,
-                     cmd.content.digicam_configure.ISO,
-                     cmd.content.digicam_configure.exposure_type,
-                     cmd.content.digicam_configure.cmd_id,
-                     cmd.content.digicam_configure.engine_cutoff_time);
-#endif
+
 }
 
 // do_digicam_control Send Digicam Control message with the camera library
 void Plane::do_digicam_control(const AP_Mission::Mission_Command& cmd)
 {
-#if CAMERA == ENABLED
-    camera.control(cmd.content.digicam_control.session,
-                   cmd.content.digicam_control.zoom_pos,
-                   cmd.content.digicam_control.zoom_step,
-                   cmd.content.digicam_control.focus_lock,
-                   cmd.content.digicam_control.shooting_cmd,
-                   cmd.content.digicam_control.cmd_id);
-    log_picture();
-#endif
+
 }
 
 // do_take_picture - take a picture with the camera library
 void Plane::do_take_picture()
 {
-#if CAMERA == ENABLED
-    camera.trigger_pic(true);
-    log_picture();
-#endif
+
 }
 
 // log_picture - log picture taken and send feedback to GCS
 void Plane::log_picture()
 {
-#if CAMERA == ENABLED
-    gcs_send_message(MSG_CAMERA_FEEDBACK);
-    if (should_log(MASK_LOG_CAMERA)) {
-        DataFlash.Log_Write_Camera(ahrs, gps, current_loc);
-    }
-#endif
+
 }
 
 // start_command_callback - callback function called from ap-mission when it begins a new mission command

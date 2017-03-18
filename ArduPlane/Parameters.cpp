@@ -1092,11 +1092,7 @@ const AP_Param::Info Plane::var_info[] = {
     // @Path: ../libraries/AP_GPS/AP_GPS.cpp
     GOBJECT(gps, "GPS_", AP_GPS),
 
-#if CAMERA == ENABLED
-    // @Group: CAM_
-    // @Path: ../libraries/AP_Camera/AP_Camera.cpp
-    GOBJECT(camera,                  "CAM_", AP_Camera),
-#endif
+
 
     // @Group: ARMING_
     // @Path: arming_checks.cpp,../libraries/AP_Arming/AP_Arming.cpp
@@ -1229,11 +1225,6 @@ const AP_Param::Info Plane::var_info[] = {
     // @Path: ../libraries/AP_TECS/AP_TECS.cpp
     GOBJECT(TECS_controller,         "TECS_",   AP_TECS),
 
-#if MOUNT == ENABLED
-    // @Group: MNT
-    // @Path: ../libraries/AP_Mount/AP_Mount.cpp
-    GOBJECT(camera_mount,           "MNT",  AP_Mount),
-#endif
 
     // @Group: BATT
     // @Path: ../libraries/AP_BattMonitor/AP_BattMonitor.cpp
@@ -1249,11 +1240,6 @@ const AP_Param::Info Plane::var_info[] = {
     GOBJECT(sitl, "SIM_", SITL::SITL),
 #endif
 
-#if OBC_FAILSAFE == ENABLED
-    // @Group: AFS_
-    // @Path: ../libraries/APM_OBC/APM_OBC.cpp
-    GOBJECT(obc,  "AFS_", APM_OBC),
-#endif
 
 #if OPTFLOW == ENABLED
     // @Group: FLOW

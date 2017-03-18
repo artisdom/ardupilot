@@ -56,7 +56,7 @@ public:
         _last_saved_ratio(0.0f),
         _counter(0)
 #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
-       ,analog(_pin)
+//       ,analog(_pin)
 #endif
     {
 		AP_Param::setup_object_defaults(this, var_info);

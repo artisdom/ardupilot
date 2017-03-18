@@ -35,7 +35,9 @@
  # define HAL_GPIO_LED_ON           HIGH
  # define HAL_GPIO_LED_OFF          LOW
 #else
+#if CONFIG_HAL_BOARD != HAL_BOARD_SITL
 #error "Unknown board type in AP_Notify"
+#endif
 #endif
 
 class AP_BoardLED: public NotifyDevice

@@ -113,10 +113,8 @@ void AP_RangeFinder_analog::update(void)
         }
         dist_m = scaling / (v - offset);
 
-    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-   // using std::isnan;
-    using std::isinf;
-    #endif
+         using std::isinf;
+
         if (isinf(dist_m) || dist_m > max_distance_cm * 0.01f) {
             dist_m = max_distance_cm * 0.01f;
         }

@@ -133,9 +133,6 @@ void Plane::init_ardupilot()
    }
 
     // setup frsky
-#if FRSKY_TELEM_ENABLED == ENABLED
-    frsky_telemetry.init(serial_manager);
-#endif
 
     mavlink_system.sysid = g.sysid_this_mav;
 
@@ -183,10 +180,7 @@ void Plane::init_ardupilot()
 
 //    relay.init();
 
-#if MOUNT == ENABLED
-    // initialise camera mount
-    camera_mount.init(serial_manager);
-#endif
+
 
 #if FENCE_TRIGGERED_PIN > 0
     hal.gpio->pinMode(FENCE_TRIGGERED_PIN, HAL_GPIO_OUTPUT);
@@ -726,12 +720,7 @@ bool Plane::should_log(uint32_t mask)
 /*
   send FrSky telemetry. Should be called at 5Hz by scheduler
  */
-#if FRSKY_TELEM_ENABLED == ENABLED
-void Plane::frsky_telemetry_send(void)
-{
-    frsky_telemetry.send_frames((uint8_t)control_mode);
-}
-#endif
+
 
 
 /*

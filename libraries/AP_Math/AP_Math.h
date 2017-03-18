@@ -223,18 +223,18 @@ static inline float pythagorous3(float a, float b, float c) {
 #error "Build is including Arduino base headers"
 #endif
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+//#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <quan/min.hpp>
 #include <quan/max.hpp>
 
 using quan::min;
 using quan::max;
-#else
-/* The following three functions used to be arduino core macros */
-#define max(a,b) ((a)>(b)?(a):(b))
-#define min(a,b) ((a)<(b)?(a):(b))
-
-#endif
+//#else
+///* The following three functions used to be arduino core macros */
+//#define max(a,b) ((a)>(b)?(a):(b))
+//#define min(a,b) ((a)<(b)?(a):(b))
+//
+//#endif
 
 static inline float maxf(float a, float b)
 {
