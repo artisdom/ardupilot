@@ -69,8 +69,11 @@ public:
         void (*_setup)(void);
         void (*_loop)(void);
     };
-
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     virtual void run(void* params) const = 0;
+#else
+    virtual void run(int argc, char * const argv[], Callbacks* callbacks) const =0;
+#endif
 
     AP_HAL::UARTDriver* uartA;
     AP_HAL::UARTDriver* uartB;

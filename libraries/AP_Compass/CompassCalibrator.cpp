@@ -152,10 +152,7 @@ void CompassCalibrator::update(bool &failure) {
         return;
     }
 
-    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     using std::isnan;
-   // using std::isinf;
-    #endif
 
     if(_status == COMPASS_CAL_RUNNING_STEP_ONE) {
         if (_fit_step >= 10) {
@@ -315,11 +312,10 @@ bool CompassCalibrator::set_status(compass_cal_status_t status) {
             return false;
     };
 }
-    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-    using std::isnan;
-   // using std::isinf;
-    #endif
+
+
 bool CompassCalibrator::fit_acceptable() {
+    using std::isnan;
     if( !isnan(_fitness) &&
         _params.radius > 150 && _params.radius < 950 && //Earth's magnetic field strength range: 250-850mG
         fabsf(_params.offset.x) < 1000 &&
@@ -529,7 +525,7 @@ void CompassCalibrator::run_sphere_fit()
         fitness = fit1;
     }
     //--------------------Levenberg-Marquardt-part-ends-here--------------------------------//
-
+    using std::isnan;
     if(!isnan(fitness) && fitness < _fitness) {
         _fitness = fitness;
         _params = fit1_params;

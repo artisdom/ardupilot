@@ -1405,10 +1405,9 @@ void AP_Param::convert_old_parameters(const struct ConversionInfo *conversion_ta
  */
 void AP_Param::set_float(float value, enum ap_var_type var_type)
 {
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
     using std::isnan;
     using std::isinf;
-#endif
 
     if (isnan(value) || isinf(value)) {
         return;

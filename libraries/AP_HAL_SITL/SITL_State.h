@@ -9,6 +9,7 @@
 #include "AP_HAL_SITL.h"
 #include "AP_HAL_SITL_Namespace.h"
 #include "HAL_SITL_Class.h"
+#include <AP_Math/vectorN.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>

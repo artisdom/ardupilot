@@ -17,6 +17,14 @@
 
 #include "AP_Notify.h"
 
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+#define HAL_GPIO_A_LED_PIN        61
+#define HAL_GPIO_B_LED_PIN        48
+#define HAL_GPIO_C_LED_PIN        117
+#define HAL_GPIO_LED_ON           LOW
+#define HAL_GPIO_LED_OFF          HIGH
+#endif
+
 extern const AP_HAL::HAL& hal;
 
 bool AP_BoardLED::init(void)

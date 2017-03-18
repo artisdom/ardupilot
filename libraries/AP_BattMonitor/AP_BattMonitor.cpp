@@ -163,11 +163,11 @@ AP_BattMonitor::init()
                 drivers[instance] = new AP_BattMonitor_Analog(*this, instance, state[instance]);
                 _num_instances++;
                 break;
-            case BattMonitor_TYPE_SMBUS:
-                state[instance].instance = instance;
-                drivers[instance] = new AP_BattMonitor_SMBus_I2C(*this, instance, state[instance]);
-                _num_instances++;
-                break;
+//            case BattMonitor_TYPE_SMBUS:
+//                state[instance].instance = instance;
+//                drivers[instance] = new AP_BattMonitor_SMBus_I2C(*this, instance, state[instance]);
+//                _num_instances++;
+//                break;
             case BattMonitor_TYPE_BEBOP:
 #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP
                 state[instance].instance = instance;

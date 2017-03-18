@@ -361,10 +361,9 @@ void AP_Baro::update(void)
         sensors[i].healthy = (now - sensors[i].last_update_ms < 500) && !is_zero(sensors[i].pressure);
     }
 
-    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     using std::isnan;
     using std::isinf;
-    #endif
+
     for (uint8_t i=0; i<_num_sensors; i++) {
         if (sensors[i].healthy) {
             // update altitude calculation

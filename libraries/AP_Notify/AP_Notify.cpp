@@ -20,11 +20,11 @@
 struct AP_Notify::notify_flags_type AP_Notify::flags;
 struct AP_Notify::notify_events_type AP_Notify::events;
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#if (CONFIG_HAL_BOARD == HAL_BOARD_QUAN) || (CONFIG_HAL_BOARD == HAL_BOARD_SITL)
    AP_BoardLED boardled;
    NotifyDevice *AP_Notify::_devices[] = {&boardled}; 
 #else
-   #error board not defined in AP_Notify
+  #error board not defined in AP_Notify
 #endif
 
 #define CONFIG_NOTIFY_DEVICES_COUNT (ARRAY_SIZE(AP_Notify::_devices))

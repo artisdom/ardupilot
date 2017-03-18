@@ -723,12 +723,6 @@ void Plane::set_servos(void)
         }
     }
 
-#if OBC_FAILSAFE == ENABLED
-    // this is to allow the failsafe module to deliberately crash 
-    // the plane. Only used in extreme circumstances to meet the
-    // OBC rules
-    obc.check_crash_plane();
-#endif
 
 #if HIL_SUPPORT
     if (g.hil_mode == 1) {

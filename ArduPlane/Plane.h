@@ -208,11 +208,11 @@ private:
 
 
 #if CAMERA == ENABLED
-    AP_Camera camera {&relay};
+  //  AP_Camera camera {&relay};
 #endif
 
 #if OPTFLOW == ENABLED
-    OpticalFlow optflow;
+  //  OpticalFlow optflow;
 #endif
     AP_Rally rally {ahrs};
     AP_RSSI rssi;      
@@ -298,7 +298,7 @@ private:
 
 #if FRSKY_TELEM_ENABLED == ENABLED
     // FrSky telemetry support
-    AP_Frsky_Telem frsky_telemetry {ahrs, battery};
+//    AP_Frsky_Telem frsky_telemetry {ahrs, battery};
 #endif
 
     // Airspeed Sensors

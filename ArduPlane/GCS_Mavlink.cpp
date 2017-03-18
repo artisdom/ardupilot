@@ -758,10 +758,7 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         break;
 
     case MSG_CAMERA_FEEDBACK:
-#if CAMERA == ENABLED
-        CHECK_PAYLOAD_SIZE(CAMERA_FEEDBACK);
-        plane.camera.send_feedback(chan, plane.gps, plane.ahrs, plane.current_loc);
-#endif
+
         break;
 
     case MSG_BATTERY2:
@@ -775,17 +772,11 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         break;
 
     case MSG_MOUNT_STATUS:
-#if MOUNT == ENABLED
-        CHECK_PAYLOAD_SIZE(MOUNT_STATUS);
-        plane.camera_mount.status_msg(chan);
-#endif // MOUNT == ENABLED
+
         break;
 
     case MSG_OPTICAL_FLOW:
-#if OPTFLOW == ENABLED
-        CHECK_PAYLOAD_SIZE(OPTICAL_FLOW);
-        plane.gcs[chan-MAVLINK_COMM_0].send_opticalflow(plane.ahrs, plane.optflow);
-#endif
+
         break;
 
     case MSG_EKF_STATUS_REPORT:
@@ -794,10 +785,7 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         break;
 
     case MSG_GIMBAL_REPORT:
-#if MOUNT == ENABLED
-        CHECK_PAYLOAD_SIZE(GIMBAL_REPORT);
-        plane.camera_mount.send_gimbal_report(chan);
-#endif
+
         break;
 
     case MSG_RETRY_DEFERRED:
@@ -1155,59 +1143,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
             result = MAV_RESULT_ACCEPTED;
             break;
 
-#if MOUNT == ENABLED
-        // Sets the region of interest (ROI) for the camera
-        case MAV_CMD_DO_SET_ROI:
-            // sanity check location
-            if (fabsf(packet.param5) > 90.0f || fabsf(packet.param6) > 180.0f) {
-                break;
-            }
-            Location roi_loc;
-            roi_loc.lat = (int32_t)(packet.param5 * 1.0e7f);
-            roi_loc.lng = (int32_t)(packet.param6 * 1.0e7f);
-            roi_loc.alt = (int32_t)(packet.param7 * 100.0f);
-            if (roi_loc.lat == 0 && roi_loc.lng == 0 && roi_loc.alt == 0) {
-                // switch off the camera tracking if enabled
-                if (plane.camera_mount.get_mode() == MAV_MOUNT_MODE_GPS_POINT) {
-                    plane.camera_mount.set_mode_to_default();
-                }
-            } else {
-                // send the command to the camera mount
-                plane.camera_mount.set_roi_target(roi_loc);
-            }
-            result = MAV_RESULT_ACCEPTED;
-            break;
-#endif
-
-#if CAMERA == ENABLED
-        case MAV_CMD_DO_DIGICAM_CONFIGURE:
-            plane.camera.configure(packet.param1,
-                                   packet.param2,
-                                   packet.param3,
-                                   packet.param4,
-                                   packet.param5,
-                                   packet.param6,
-                                   packet.param7);
-
-            result = MAV_RESULT_ACCEPTED;
-            break;
-
-        case MAV_CMD_DO_DIGICAM_CONTROL:
-            plane.camera.control(packet.param1,
-                                 packet.param2,
-                                 packet.param3,
-                                 packet.param4,
-                                 packet.param5,
-                                 packet.param6);
-
-            result = MAV_RESULT_ACCEPTED;
-            break;
-#endif // CAMERA == ENABLED
-
         case MAV_CMD_DO_MOUNT_CONTROL:
-#if MOUNT == ENABLED
-            plane.camera_mount.control(packet.param1, packet.param2, packet.param3, (MAV_MOUNT_MODE) packet.param7);
-#endif
+
             break;
 
         case MAV_CMD_MISSION_START:
@@ -1669,9 +1606,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
     case MAVLINK_MSG_ID_GIMBAL_REPORT:
     {
-#if MOUNT == ENABLED
-        handle_gimbal_report(plane.camera_mount, msg);
-#endif
+
         break;
     }
 
@@ -1769,38 +1704,6 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 #endif
         break;
     }
-
-#if CAMERA == ENABLED
-    //deprecated. Use MAV_CMD_DO_DIGICAM_CONFIGURE
-    case MAVLINK_MSG_ID_DIGICAM_CONFIGURE:
-    {
-        break;
-    }
-
-    //deprecated. Use MAV_CMD_DO_DIGICAM_CONTROL
-    case MAVLINK_MSG_ID_DIGICAM_CONTROL:
-    {
-        plane.camera.control_msg(msg);
-        plane.log_picture();
-        break;
-    }
-#endif // CAMERA == ENABLED
-
-#if MOUNT == ENABLED
-    //deprecated. Use MAV_CMD_DO_MOUNT_CONFIGURE
-    case MAVLINK_MSG_ID_MOUNT_CONFIGURE:
-    {
-        plane.camera_mount.configure_msg(msg);
-        break;
-    }
-
-    //deprecated. Use MAV_CMD_DO_MOUNT_CONTROL
-    case MAVLINK_MSG_ID_MOUNT_CONTROL:
-    {
-        plane.camera_mount.control_msg(msg);
-        break;
-    }
-#endif // MOUNT == ENABLED
 
     case MAVLINK_MSG_ID_RADIO:
     case MAVLINK_MSG_ID_RADIO_STATUS:
