@@ -88,6 +88,11 @@ public:
     float get_roll_demand()const { return output_roll.get();}
     float get_yaw_demand()const { return output_yaw.get();}
     float get_thrust_demand()const { return output_thrust.get();}
+
+    float get_airspeed_min() const { return static_cast<float>(aparm.airspeed_min);}
+    float get_airspeed_max() const { return static_cast<float>(aparm.airspeed_max);}
+    // weight towards min whatever
+    float get_airspeed_cruise() const { return (aparm.airspeed_min * 3 + aparm.airspeed_max *2)/5.f;}
 private:
     // key aircraft parameters passed to multiple libraries
     AP_Vehicle::FixedWing aparm;
