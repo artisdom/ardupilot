@@ -78,7 +78,9 @@ private:
     // Receive buffer
     union {
         diyd_mtk_msg msg;
-        uint8_t bytes[];
+       // uint8_t bytes[];
+       inline uint8_t &operator[](size_t i) { return reinterpret_cast<uint8_t *>(this)[i]; }          
+       inline uint8_t operator[](size_t i) const { return reinterpret_cast<const uint8_t *>(this)[i]; }
     } _buffer;
 };
 
