@@ -127,7 +127,7 @@ QUAN_CFLAGS  = -Wall -Werror -Wdouble-promotion -std=gnu++11 -fno-rtti -fno-exce
  $(CFLAG_EXTRAS) -fno-math-errno -Wl,-u,vsprintf -lm -fdata-sections -ffunction-sections\
 -Wno-unused-local-typedefs
 
-QUAN_LINKER_FLAGS  = -T$(LINKER_SCRIPT) -$(OPTIMISATION_LEVEL) -nostartfiles -nodefaultlibs \
+QUAN_LINKER_FLAGS  = -T$(LINKER_SCRIPT) -$(OPTIMISATION_LEVEL)  -nodefaultlibs \
  $(QUAN_PROCESSOR_FLAGS) --specs=nano.specs $(CFLAG_EXTRAS) -Wl,--gc-sections 
 
 #QUAN_LINKER_FLAGS  = -T$(LINKER_SCRIPT) -$(OPTIMISATION_LEVEL)  \
@@ -286,11 +286,11 @@ print-%:
 
 # Link the final object
 #$(SKETCHELF): $(SKETCHOBJS) $(LIBOBJS) $(BUILDROOT)/fonts.o
-#$(v)$(LD) $(LDFLAGS) -o $@ $(INIT_LIBS)  $(SKETCHOBJS) $(LIBOBJS) $(LIBS) $(BUILDROOT)/fonts.o
+#$(v)$(LD) $(LDFLAGS) -o $@   $(SKETCHOBJS) $(LIBOBJS) $(LIBS) $(BUILDROOT)/fonts.o
 $(SKETCHELF): $(SKETCHOBJS) $(LIBOBJS) 
 	@echo "Building $(SKETCHELF)"
 	$(RULEHDR)
-	$(v)$(LD) $(LDFLAGS) -o $@ $(INIT_LIBS)  $(SKETCHOBJS) $(LIBOBJS) $(LIBS)
+	$(v)$(LD) $(LDFLAGS) -o $@   $(SKETCHOBJS) $(LIBOBJS) $(LIBS)
 	$(v)cp $(SKETCHELF) .
 	@echo "Firmware is in $(BUILDELF)"
 	$(QUAN_ARM_OBJCOPY) -Obinary $(SKETCHELF) $(QUANSKETCHBIN)
