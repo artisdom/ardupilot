@@ -465,7 +465,7 @@ void AP_Frsky_Telem::calc_baro_alt()
       inertial nav estimate of altitude above home.
     */
     _baro_alt_meters = (int16_t)baro_alt;
-    _baro_alt_cm = (baro_alt - abs(_baro_alt_meters)) * 100;
+    _baro_alt_cm = (baro_alt - static_cast<float>(abs(_baro_alt_meters))) * 100;
 }
 
 /**
@@ -506,7 +506,7 @@ void AP_Frsky_Telem::calc_gps_position()
         
         alt = loc.alt * 0.01f;
         _alt_gps_meters = (int16_t)alt;
-        _alt_gps_cm = (alt - abs(_alt_gps_meters)) * 100;
+        _alt_gps_cm = (alt - static_cast<float>(abs(_alt_gps_meters))) * 100;
         
         speed = gps.ground_speed();
         _speed_in_meter = speed;

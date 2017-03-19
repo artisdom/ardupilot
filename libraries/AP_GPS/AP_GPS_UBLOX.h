@@ -327,7 +327,9 @@ private:
         ubx_rxm_rawx rxm_rawx;
 #endif
         ubx_ack_ack ack;
-        uint8_t bytes[];
+       // uint8_t bytes[];
+       inline uint8_t &operator[](size_t i) { return reinterpret_cast<uint8_t *>(this)[i]; }          
+       inline uint8_t operator[](size_t i) const { return reinterpret_cast<const uint8_t *>(this)[i]; }
     } _buffer;
 
     enum ubs_protocol_bytes {
