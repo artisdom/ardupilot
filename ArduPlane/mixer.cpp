@@ -100,16 +100,15 @@ namespace {
    };
 
    const char mixer_string [] = 
-      "throttle_sign = -1.0;\n"
-      "roll_sign=-1.0;\n"
-      "pitch_sign = -1.0;\n"
-      "yaw_sign = -1.0;\n"
+      "roll_gain = 0.5;\n"
+      "pitch_gain = 0.5;\n"
       "\n"
       "mixer(){\n"
-      "  output[0] = input{Roll} * roll_sign;\n"
-      "  output[1] = input{Pitch} * pitch_sign;\n"
-      "  output[2] = input{Throttle} * throttle_sign;\n"
-      "  output[3] = input{Yaw} * yaw_sign;\n"
+      "roll = input{Roll} * roll_gain;\n"
+      "pitch = input{Pitch} * pitch_gain;\n"
+      "output[0] = roll + pitch;\n"
+      "output[1] = roll - pitch;\n"
+      "output[2] = input{Throttle};\n"
       "}\n";
 }
 
