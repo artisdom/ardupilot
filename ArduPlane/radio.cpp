@@ -51,13 +51,13 @@ namespace {
 //   float mixer_in_thrust = 0.f;
 
    // not correct really we need some failsafe mixer inputs if we are to do this
-   void setup_failsafe()
-   {
-//      mixer_in_pitch = 0.f;
-//      mixer_in_roll = 0.f;
-//      mixer_in_yaw = 0.f;
-//      mixer_in_thrust = -1.f; // 0 or -1 ?
-   }
+//   void setup_failsafe()
+//   {
+////      mixer_in_pitch = 0.f;
+////      mixer_in_roll = 0.f;
+////      mixer_in_yaw = 0.f;
+////      mixer_in_thrust = -1.f; // 0 or -1 ?
+//   }
 }
 
 void Plane::thrust_off()
@@ -86,7 +86,11 @@ void Plane::init_rc_out()
 {
    thrust_off();
    set_control_surfaces_centre();
-   setup_failsafe();
+
+   for ( uint8_t i = 0; i < 7; ++i){
+      hal.rcout->enable_ch(i);
+   }
+   //setup_failsafe();
    if (arming.arming_required() != AP_Arming::YES_ZERO_PWM) {
      output_thrust.enable();
    }
