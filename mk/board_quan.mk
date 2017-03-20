@@ -41,10 +41,6 @@ ifeq ($(TOOLCHAIN_PREFIX), )
 $(error "TOOLCHAIN_PREFIX must be defined to the path to the gcc-arm compiler - see README.")
 endif
 
-ifeq ($(TOOLCHAIN_GCC_VERSION), )
-$(error "TOOLCHAIN_GCC_VERSION must be defined to the gcc-arm compiler version - see README.")
-endif
-
 ifeq ($(QUAN_INCLUDE_PATH), )
 $(error "QUAN_INCLUDE_PATH must be defined to the path to the quan library - see README.")
 endif
@@ -57,9 +53,9 @@ ifeq ($(STM32_STD_PERIPH_LIB_DIR), )
 $(error "STM32_STD_PERIPH_LIB_DIR must be defined to the path to the STM32 Std peripherals library - see README.")
 endif
 
-#ifeq ($(MAVLINK_INCLUDE_PATH), )
-#$(error "MAVLINK_INCLUDE_PATH must be defined to the path to the MAVlink library - see README.")
-#endif
+ifeq  ($(MIXER_LANG_PATH), )
+$(error "MIXER_LANG_PATH - must be defined to path to mixer_lang - see README.")
+endif
 
 TOOLCHAIN = QUAN_ARM
 
@@ -71,11 +67,6 @@ RTOS_INCLUDES = \
 $(FREE_RTOS_DIR)Source/include \
 $(FREE_RTOS_DIR)Source/portable/GCC/ARM_CM4F \
 $(QUANTRACKER_ROOT_DIR)air/osd
-
-INIT_LIB_PREFIX = $(TOOLCHAIN_PREFIX)/lib/gcc/arm-none-eabi/$(TOOLCHAIN_GCC_VERSION)/armv7e-m/fpu/
-INIT_LIBS = $(INIT_LIB_PREFIX)crti.o $(INIT_LIB_PREFIX)crtn.o 
-
-STATIC_LIBRARY_PATH = $(QUANTRACKER_ROOT_DIR)lib/osd/
 
 ifeq ($(OPTIMISATION_LEVEL), )
 OPTIMISATION_LEVEL = O3
@@ -105,7 +96,6 @@ ifeq ($(QUAN_TARGET_VEHICLE),QUAN_APM_ANTENNATRACKER)
 TELEMETRY_DIRECTION = QUAN_OSD_TELEM_RECEIVER
 endif
 
-
 # specific flags for stm32f4
 QUAN_DEFINES = QUAN_STM32F4 QUAN_FREERTOS $(TELEMETRY_DIRECTION) STM32F40_41xxx \
 QUAN_OSD_SOFTWARE_SYNCSEP HSE_VALUE=8000000 QUAN_OSD_BOARD_TYPE=4 QUAN_CUSTOM_AP_PARAMS
@@ -113,8 +103,7 @@ ifeq ($(AERFLITE),True)
 QUAN_DEFINES += QUAN_AERFLITE_BOARD
 endif
 
-MIXER_LANG_DIR = /home/andy/cpp/projects/mixer_lang
-MIXER_LANG_INCLUDES = $(MIXER_LANG_DIR)/include
+MIXER_LANG_INCLUDES = $(MIXER_LANG_PATH)/include
 
 QUAN_INCLUDES = $(STM32_INCLUDES) $(QUAN_INCLUDE_PATH) $(QUANTRACKER_ROOT_DIR)include \
 $(RTOS_INCLUDES) $(MIXER_LANG_INCLUDES)
@@ -129,9 +118,6 @@ QUAN_CFLAGS  = -Wall -Werror -Wdouble-promotion -std=gnu++11 -fno-rtti -fno-exce
 
 QUAN_LINKER_FLAGS  = -T$(LINKER_SCRIPT) -$(OPTIMISATION_LEVEL)  -nodefaultlibs \
  $(QUAN_PROCESSOR_FLAGS) --specs=nano.specs $(CFLAG_EXTRAS) -Wl,--gc-sections 
-
-#QUAN_LINKER_FLAGS  = -T$(LINKER_SCRIPT) -$(OPTIMISATION_LEVEL)  \
-# $(QUAN_PROCESSOR_FLAGS) --specs=nano.specs $(CFLAG_EXTRAS) -Wl,--gc-sections 
 
 #------------------------------------------- ardupilot stuff --------
 
@@ -225,7 +211,7 @@ LIBS += $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_osd_tx.a
 endif
 LIBS +=  $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_system.a  \
           $(QUANTRACKER_ROOT_DIR)lib/osd/aerflite_graphics_api.a \
-           $(MIXER_LANG_DIR)/build/stm32f405/mixer_lang.a
+           $(MIXER_LANG_PATH)/build/stm32f405/mixer_lang.a
 
 endif
 
