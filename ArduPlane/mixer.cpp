@@ -100,8 +100,8 @@ namespace {
    };
 
    const char mixer_string [] = 
-      "roll_gain = 0.5;\n"
-      "pitch_gain = 0.5;\n"
+      "roll_gain = -0.5;\n"
+      "pitch_gain = -0.5;\n"
       "\n"
       "mixer(){\n"
       "roll = input{Roll} * roll_gain;\n"
