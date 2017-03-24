@@ -6,11 +6,14 @@
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
 #include "AP_HAL_SITL.h"
 
+#include <quan/joystick.hpp>
+
 class HALSITL::SITLRCInput : public AP_HAL::RCInput {
 public:
-    SITLRCInput(SITL_State *sitlState) {
+    SITLRCInput(SITL_State *sitlState) : m_joystick{nullptr} {
         _sitlState = sitlState;
     }
+    ~SITLRCInput(){ delete m_joystick;}
     void init(void* machtnichts);
     bool  new_input();
     uint8_t num_channels() {
@@ -29,6 +32,8 @@ private:
 
     /* override state */
     uint16_t _override[8];
+
+    quan::joystick * m_joystick;
 };
 
 #endif

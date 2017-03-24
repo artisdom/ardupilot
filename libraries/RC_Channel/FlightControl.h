@@ -5,6 +5,8 @@
 #include <quan/constrain.hpp>
 #include <quan/time.hpp>
 
+
+
 template <typename FlightAxisT>
 struct FltCtrlInput{
    typedef quan::angle_<int32_t>::cdeg cdeg;
@@ -22,7 +24,7 @@ template <>
 struct FltCtrlInput<FlightAxis::Thrust>{
    typedef quan::force_<int32_t>::N force_type;
    void set(JoystickInput<FlightAxis::Thrust> const & in){ this->set(in.as_force());}
-   void set(force_type const & in) {m_value = in;}
+   void set(force_type const & in) ;
    void constrain(force_type const & min_in,force_type const &  max_in) { m_value = quan::constrain(m_value,min_in,max_in);}
    force_type get() const {return m_value;}
    FltCtrlInput() : m_value{force_type{0}}{}
@@ -75,10 +77,8 @@ struct FltCtrlOutput<FlightAxis::Thrust> : FltCtrlOutput_base{
       this->set( (in.as_force().numeric_value()/ 50.f)-1.f); 
    }
 
-   void set(FltCtrlInput<FlightAxis::Thrust> const & in)
-   {
-      this->set((in.get().numeric_value()/ 50.f)-1.f); 
-   }
+   void set(FltCtrlInput<FlightAxis::Thrust> const & in);
+
    void enable(){}
    void disable(){}
    bool is_enabled() const {return false;}

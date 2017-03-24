@@ -13,7 +13,7 @@
 #else
 #include "AP_Airspeed_Backend.h"
 #include "AP_Airspeed_analog.h"
-#include "AP_Airspeed_I2C.h"
+//#include "AP_Airspeed_I2C.h"
 #endif
 
 class Airspeed_Calibration {
@@ -56,7 +56,7 @@ public:
         _last_saved_ratio(0.0f),
         _counter(0)
 #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
-//       ,analog(_pin)
+       ,m_backend(_pin)
 #endif
     {
 		AP_Param::setup_object_defaults(this, var_info);
@@ -193,16 +193,13 @@ private:
     float get_pressure(void);
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-    AP_Airspeed_Quan m_backend;
+    AP_Airspeed_Quan   m_backend;
 #else
-    AP_Airspeed_I2C    digital;
+    AP_Airspeed_Analog  m_backend;
 #endif
 };
 
-#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
-// the virtual pin for digital airspeed sensors
-#define AP_AIRSPEED_I2C_PIN 65
-#endif
+
 
 #endif // __AP_AIRSPEED_H__
 

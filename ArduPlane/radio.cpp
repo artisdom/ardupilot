@@ -34,6 +34,9 @@ void Plane::init_rc_in()
 //    channel_pitch.set_default_dead_zone();
 //    channel_yaw.set_default_dead_zone();
 //    channel_thrust.set_default_dead_zone();
+     joystick_yaw.set_reversed(true);
+     joystick_roll.set_reversed(false);
+     joystick_pitch.set_reversed(false);
 }
 
 namespace {
@@ -64,6 +67,7 @@ void Plane::thrust_off()
 {
   // channel_thrust.set_temp_out(0);
    autopilot_thrust.set(0_N);
+   hal.console->printf("thrust off : output_thrust ->  0N (autopilot thrust)\n");
   // channel_thrust.calc_output_from_temp_output();  
    output_thrust.set(autopilot_thrust);
 }
@@ -169,6 +173,8 @@ void Plane::read_radio()
       return;
    }
 
+   
+
    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
    // update rc to osd
    uint8_t const num_channels = hal.rcin->num_channels();
@@ -211,6 +217,7 @@ void Plane::read_radio()
   // channel_thrust.read_joystick_input();
    joystick_thrust.update();
 
+
    control_failsafe();
 
   // channel_thrust.set_temp_out(channel_thrust.get_control_in());
@@ -248,6 +255,7 @@ void Plane::control_failsafe()
       set_control_surfaces_centre();
 
      // channel_thrust.set_joystick_input_min();
+      hal.console->printf("control_failsafe : set thrust to min\n");
       joystick_thrust.set_min();
 
       // we detect a failsafe from radio or

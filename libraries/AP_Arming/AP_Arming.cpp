@@ -32,7 +32,7 @@ const AP_Param::GroupInfo AP_Arming::var_info[] = {
     // @Description: Arming disabled until some requirements are met. If 0, there are no requirements (arm immediately).  If 1, require rudder stick or GCS arming before arming motors and send THR_MIN PWM to throttle channel when disarmed.  If 2, require rudder stick or GCS arming and send 0 PWM to throttle channel when disarmed. See the ARMING_CHECK_* parameters to see what checks are done before arming. Note, if setting this parameter to 0 a reboot is required to arm the plane.  Also note, even with this parameter at 0, if ARMING_CHECK parameter is not also zero the plane may fail to arm throttle at boot due to a pre-arm check failure.
     // @Values: 0:Disabled,1:THR_MIN PWM when disarmed,2:0 PWM when disarmed
     // @User: Advanced
-    AP_GROUPINFO("REQUIRE",     0,      AP_Arming,  require,                 1),
+    AP_GROUPINFO("REQUIRE",     0,      AP_Arming,  require,                 0),
 
     // @Param: CHECK
     // @DisplayName: Arm Checks to Peform (bitmask)
@@ -40,7 +40,7 @@ const AP_Param::GroupInfo AP_Arming::var_info[] = {
     // @Values: 0:None,1:All,2:Barometer,4:Compass,8:GPS,16:INS(INertial Sensors - accels & gyros),32:Parameters(unused),64:RC Failsafe,128:Board voltage,256:Battery Level,512:Airspeed,1024:LoggingAvailable
     // @Bitmask: 0:All,1:Barometer,2:Compass,3:GPS,4:INS,5:Parameters,6:RC,7:Board voltage,8:Battery Level,9:Airspeed,10:Logging Available
     // @User: Standard
-    AP_GROUPINFO("CHECK",        2,     AP_Arming,  checks_to_perform,       ARMING_CHECK_ALL),
+    AP_GROUPINFO("CHECK",        2,     AP_Arming,  checks_to_perform,       ARMING_CHECK_NONE),
 
     AP_GROUPEND
 };
