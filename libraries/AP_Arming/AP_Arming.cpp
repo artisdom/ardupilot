@@ -40,7 +40,7 @@ const AP_Param::GroupInfo AP_Arming::var_info[] = {
     // @Values: 0:None,1:All,2:Barometer,4:Compass,8:GPS,16:INS(INertial Sensors - accels & gyros),32:Parameters(unused),64:RC Failsafe,128:Board voltage,256:Battery Level,512:Airspeed,1024:LoggingAvailable
     // @Bitmask: 0:All,1:Barometer,2:Compass,3:GPS,4:INS,5:Parameters,6:RC,7:Board voltage,8:Battery Level,9:Airspeed,10:Logging Available
     // @User: Standard
-    AP_GROUPINFO("CHECK",        2,     AP_Arming,  checks_to_perform,      ARMING_CHECK_NONE),
+    AP_GROUPINFO("CHECK",        2,     AP_Arming,  checks_to_perform,       ARMING_CHECK_NONE),
 
     AP_GROUPEND
 };

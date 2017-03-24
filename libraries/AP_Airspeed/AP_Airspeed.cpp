@@ -133,12 +133,7 @@ void AP_Airspeed::init()
     _last_saved_ratio = _ratio;
     _counter = 0;
     
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     m_backend.init();
-#else
-   // analog.init();
-    digital.init();
-#endif
 }
 
 // read the airspeed sensor
@@ -152,31 +147,23 @@ float AP_Airspeed::get_pressure(void)
         return _hil_pressure;
     }
     float pressure = 0;
- 
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
      _healthy = m_backend.get_differential_pressure(pressure);
-#else
-    if (_pin == AP_AIRSPEED_I2C_PIN) {
-        _healthy = digital.get_differential_pressure(pressure);
-    } else {
-//      _healthy = analog.get_differential_pressure(pressure);
-    }
-#endif
+
+
     return pressure;
 }
 
 // get a temperature reading if possible
 bool AP_Airspeed::get_temperature(float &temperature)
 {
-#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+
     if (!_enable) {
         return false;
     }
-    if (_pin == AP_AIRSPEED_I2C_PIN) {
-        return digital.get_temperature(temperature);
-    }
-#endif
-    return false;
+
+    return m_backend.get_temperature(temperature);
+
 }
 
 // calibrate the airspeed. This must be called at least once before

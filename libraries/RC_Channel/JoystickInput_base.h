@@ -69,10 +69,9 @@ public:
     static constexpr usec get_range(){return get_max() - get_min();}
    // static constexpr usec get_defualt_trim() {return m_default_trim;}
     uint8_t get_rcin_index() const { return m_rcin_idx;}
+    void set_reversed (bool b) { m_is_reversed = b;}
 #if !defined QUAN_PUBLIC_PRIVATE_MEMBERS
 private:
-#else
-    void set_reversed (bool b) { m_is_reversed = b;}
 #endif
    bool       input_sense_reversed(void) const { return m_is_reversed;}
    usec           m_value;

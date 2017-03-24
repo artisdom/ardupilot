@@ -1,8 +1,26 @@
 #include "JoystickInput.h"
+#include "FlightControl.h"
 #include <quan/constrain.hpp>
+#include <AP_HAL/HAL.h>
 
 constexpr JoystickInput_base::usec JoystickInput_base::m_min;
 constexpr JoystickInput_base::usec JoystickInput_base::m_max;
+
+
+extern const AP_HAL::HAL& hal ;
+
+void FltCtrlInput<FlightAxis::Thrust>::set(force_type const & in) 
+{
+    int32_t n = in.numeric_value();
+
+    m_value = in;
+}
+
+void FltCtrlOutput<FlightAxis::Thrust>::set(FltCtrlInput<FlightAxis::Thrust> const & in)
+{
+  // hal.console->printf("FlghtCtrlOutput thrust set to %d\n",in.get().numeric_value());
+   this->set((in.get().numeric_value()/ 50.f)-1.f); 
+}
 
 void JoystickInput_base::update() 
 {
