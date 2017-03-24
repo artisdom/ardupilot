@@ -29,14 +29,10 @@ void Plane::set_control_channels(void)
  */
 void Plane::init_rc_in()
 {
-    // set rc dead zones
-//    channel_roll.set_default_dead_zone();
-//    channel_pitch.set_default_dead_zone();
-//    channel_yaw.set_default_dead_zone();
-//    channel_thrust.set_default_dead_zone();
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    // required for sitl in JSBSIM
      joystick_yaw.set_reversed(true);
-     joystick_roll.set_reversed(false);
-     joystick_pitch.set_reversed(false);
+#endif
 }
 
 namespace {
@@ -67,7 +63,8 @@ void Plane::thrust_off()
 {
   // channel_thrust.set_temp_out(0);
    autopilot_thrust.set(0_N);
-   hal.console->printf("thrust off : output_thrust ->  0N (autopilot thrust)\n");
+   
+ //  hal.console->printf("thrust off : output_thrust ->  0N (autopilot thrust)\n");
   // channel_thrust.calc_output_from_temp_output();  
    output_thrust.set(autopilot_thrust);
 }
@@ -96,6 +93,7 @@ void Plane::init_rc_out()
    }
    //setup_failsafe();
    if (arming.arming_required() != AP_Arming::YES_ZERO_PWM) {
+     //NOTE: This does nothing atm
      output_thrust.enable();
    }
 }
@@ -255,7 +253,7 @@ void Plane::control_failsafe()
       set_control_surfaces_centre();
 
      // channel_thrust.set_joystick_input_min();
-      hal.console->printf("control_failsafe : set thrust to min\n");
+   //   hal.console->printf("control_failsafe : set thrust to min\n");
       joystick_thrust.set_min();
 
       // we detect a failsafe from radio or

@@ -85,18 +85,6 @@ namespace {
        hal.rcout->write(N,out);
    }
 
-   template<>
-   void output_action<2>(apm_mix::float_t const & v)
-   {
-       
-       float const v1 = (((v + 1.f)/2.f) + 1.f) * 1000.f;
-       uint16_t const out = quan::constrain(static_cast<uint16_t>(v1),static_cast<uint16_t>(1000U),static_cast<uint16_t>(2000U));
-//       if (out  != 1000){
-//        // hal.console->printf("thrust out = %u\n",out);
-//       }
-       hal.rcout->write(2,out);
-   }
-
    // Outputs are passed as an array to the mixer constructor
    // only float are allowed here
    apm_mix::output<apm_mix::float_t> 
@@ -120,9 +108,7 @@ namespace {
       "   output[2] = input{Throttle};\n"
       "   output[3] = input{Yaw} ;\n"
       "}\n"; 
-
 #else
-#error stuff
    const char mixer_string [] = 
       "roll_gain = -0.5;\n"
       "pitch_gain = -0.5;\n"
@@ -134,7 +120,6 @@ namespace {
       "output[1] = roll - pitch;\n"
       "output[2] = input{Throttle};\n"
       "}\n"; 
-
 #endif
 }
 

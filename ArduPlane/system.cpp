@@ -379,7 +379,7 @@ void Plane::set_mode(enum FlightMode mode)
         break;
 
     case MANUAL:
-            hal.console->printf("Manual activated\n");
+       //     hal.console->printf("Manual activated\n");
     case STABILIZE:
     case TRAINING:
     case FLY_BY_WIRE_A:
@@ -416,10 +416,7 @@ void Plane::set_mode(enum FlightMode mode)
         break;
 
     case AUTO:
-
-  
-        hal.console->printf("Auto activated\n");
-   
+     //   hal.console->printf("Auto activated\n");
         auto_thrust_mode = true;
         next_WP_loc = prev_WP_loc = current_loc;
         // start or resume the mission, based on MIS_AUTORESET
@@ -427,7 +424,7 @@ void Plane::set_mode(enum FlightMode mode)
         break;
 
     case RTL:
-         hal.console->printf("RTL activated\n");
+        // hal.console->printf("RTL activated\n");
         auto_thrust_mode = true;
         prev_WP_loc = current_loc;
         do_RTL();
