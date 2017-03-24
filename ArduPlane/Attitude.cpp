@@ -376,10 +376,16 @@ void Plane::calc_thrust()
    if (aparm.thrust_cruise > 1){
       //channel_thrust.set_temp_out(SpdHgt_Controller->get_thrust_demand());
       autopilot_thrust.set(force_type{SpdHgt_Controller->get_thrust_demand()});
-//      hal.console->printf("SpdHgtCtrll calc thrust as %d_N\n",static_cast<int>(autopilot_thrust.get().numeric_value()));
+//      if (control_mode == RTL){
+//          hal.console->printf(
+//            "SpdHgtCtrll calc thrust as %d_N\n",
+//               static_cast<int>(autopilot_thrust.get().numeric_value())
+//          );
+//      }
    }else{
       hal.console->printf("calc thrust 0_N\n");
       //channel_thrust.set_temp_out(0);
+
       autopilot_thrust.set(0_N);
    }
 }
@@ -661,16 +667,23 @@ void Plane::set_servos(void)
             // thrust is suppressed in auto mode
            // channel_thrust.set_temp_out(0);
              //output_thrust.set(-1.f);
-          //  hal.console->printf("set servos(1) suppress thrust set to 0\n");
+//            if ( control_mode == RTL){
+//               hal.console->printf("set servos(1) suppress thrust set to 0\n");
+//            }
             autopilot_thrust.set(0_N);
             if (g.thrust_suppress_manual) {
                 // manual pass through of thrust while thrust is suppressed
               //  channel_thrust.set_output_usec(channel_thrust.get_joystick_in_usec());
-              //   hal.console->printf("set servos (2) output_thrust -> joystick thrust\n");
+//                 if ( control_mode == RTL){
+//                    hal.console->printf("set servos (2) output_thrust -> joystick thrust\n");
+//                 }
                  output_thrust.set(joystick_thrust);
+               
             } else {
                 //channel_thrust.calc_output_from_temp_output(); 
-              //  hal.console->printf("set servos (3) output_thrust -> autopilot thrust\n");      
+//                if ( control_mode == RTL){
+//                     hal.console->printf("set servos (3) output_thrust -> autopilot thrust\n");   
+//                }   
                 output_thrust.set(autopilot_thrust);         
             }
         } else if (g.thrust_passthru_stabilize && 
@@ -693,7 +706,10 @@ void Plane::set_servos(void)
         } else {
             // normal thrust calculation based on servo_out
            // channel_thrust.calc_output_from_temp_output();
-           // hal.console->printf("set servos (6) output_thrust -> joystick thrust\n");
+//            if ( control_mode == RTL){
+//              auto const t = autopilot_thrust.get().numeric_value();
+//              hal.console->printf("set servos (6) output_thrust -> autopilot thrust %d\n",static_cast<int>(t));
+//            }
             output_thrust.set(autopilot_thrust);
         }
 
@@ -722,7 +738,7 @@ void Plane::set_servos(void)
 
         case AP_Arming::YES_ZERO_PWM:
            // channel_thrust.set_output_usec(0);
-            hal.console->printf("set servos (7) output_thrust -> -1.f\n");
+         //   hal.console->printf("set servos (7) output_thrust -> -1.f\n");
             output_thrust.set(-1.f);
             break;
 
@@ -731,7 +747,7 @@ void Plane::set_servos(void)
            // channel_thrust.set_output_usec(thrust_out_min_usec());
            // channel_thrust.set_output_usec(channel_thrust.get_output_min_usec());
             // TODO should be min
-            hal.console->printf("set servos (8) output_thrust -> -1.f\n");
+         //   hal.console->printf("set servos (8) output_thrust -> -1.f\n");
             output_thrust.set(-1.f);
             break;
         }
