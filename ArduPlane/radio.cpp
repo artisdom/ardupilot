@@ -31,7 +31,7 @@ void Plane::init_rc_in()
 {
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     // required for sitl in JSBSIM
-     joystick_yaw.set_reversed(true);
+     joystick_pitch.set_reversed(true);
 #endif
 }
 
