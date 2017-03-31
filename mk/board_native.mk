@@ -8,7 +8,7 @@ include $(MK_DIR)/find_tools.mk
 DEFINES         =   -DF_CPU=$(F_CPU)
 DEFINES        +=   -DSKETCH=\"$(SKETCH)\" -DSKETCHNAME="\"$(SKETCH)\"" -DSKETCHBOOK="\"$(SKETCHBOOK)\"" -DAPM_BUILD_DIRECTORY=APM_BUILD_$(SKETCH)
 DEFINES        +=   $(EXTRAFLAGS)
-DEFINES        +=   -DCONFIG_HAL_BOARD=$(HAL_BOARD) -DCONFIG_HAL_BOARD_SUBTYPE=$(HAL_BOARD_SUBTYPE)
+DEFINES        +=   -DCONFIG_HAL_BOARD=$(HAL_BOARD) -DCONFIG_HAL_BOARD_SUBTYPE=$(HAL_BOARD_SUBTYPE) -DQUAN_NO_EXCEPTIONS
 WARNFLAGS       =   -Wformat -Wall -Wshadow -Wpointer-arith -Wcast-align -Wno-unused-parameter -Wno-missing-field-initializers
 WARNFLAGS      +=   -Wwrite-strings -Wformat=2
 WARNFLAGSCXX    = -Wno-reorder \
@@ -51,6 +51,7 @@ LIBS ?= -lm -lpthread
 ifneq ($(findstring CYGWIN, $(SYSTYPE)),)
 LIBS += -lwinmm
 endif
+LIBS += /home/andy/cpp/projects/mixer_lang/build/mixer_lang.a
 
 ifeq ($(VERBOSE),)
 v = @
@@ -105,11 +106,12 @@ print-%:
 $(SKETCHELF): $(SKETCHOBJS) $(LIBOBJS)
 	@echo "Building $(SKETCHELF)"
 	$(RULEHDR)
-	$(v)$(LD) $(LDFLAGS) -o $@ $(SKETCHOBJS) $(LIBOBJS) $(LIBS)
+	$(v)$(LD) $(LDFLAGS) -o $@ $(SKETCHOBJS) $(LIBOBJS) $(LIBS) 
 	$(v)cp $(SKETCHELF) .
 	@echo "Firmware is in $(BUILDELF)"
 
-SKETCH_INCLUDES	=	$(SKETCHLIBINCLUDES)
-SLIB_INCLUDES	=	-I$(dir $<)/utility $(SKETCHLIBINCLUDES)
+AERFLITE_INCLUDES = -I/home/andy/cpp/projects/quan-trunk/ -I/home/andy/cpp/projects/mixer_lang/include
+SKETCH_INCLUDES	=	$(SKETCHLIBINCLUDES) $(AERFLITE_INCLUDES)
+SLIB_INCLUDES	=	-I$(dir $<)/utility $(SKETCHLIBINCLUDES) $(AERFLITE_INCLUDES)
 
 include $(MK_DIR)/build_rules.mk

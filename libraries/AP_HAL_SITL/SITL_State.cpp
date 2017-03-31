@@ -65,9 +65,9 @@ void SITL_State::_sitl_setup(const char *home_str)
 #ifndef __CYGWIN__
     _parent_pid = getppid();
 #endif
-    _rcout_addr.sin_family = AF_INET;
-    _rcout_addr.sin_port = htons(_rcout_port);
-    inet_pton(AF_INET, _fdm_address, &_rcout_addr.sin_addr);
+    _rcout_addr.sin_family = AF_INET;  // _rcout_addr is of type sockaddr_in
+    _rcout_addr.sin_port = htons(_rcout_port); // convert port to network byte order
+    inet_pton(AF_INET, _fdm_address, &_rcout_addr.sin_addr); // convert a string network address into af_inet address structure
 
 #ifndef HIL_MODE
     _setup_fdm();

@@ -44,7 +44,13 @@ void Plane::init_rc_in()
     // set rc dead zones
     channel_roll->set_default_dead_zone(30);
     channel_pitch->set_default_dead_zone(30);
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    channel_pitch->set_reverse(true);
+#endif
     channel_rudder->set_default_dead_zone(30);
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    channel_rudder->set_reverse(true);
+#endif
     channel_throttle->set_default_dead_zone(30);
 
     update_aux();

@@ -21,7 +21,7 @@
 
 // does nothing
 #define AIRSPEED_SENSOR          ENABLED
-#define FLIGHT_MODE_CHANNEL      6
+#define FLIGHT_MODE_CHANNEL      8
 /*
 default 
 airspeed_sensor.enabled  in AP_Airspeed.cpp
