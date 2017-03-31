@@ -18,7 +18,14 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: CLMB_MAX
     // @DisplayName: Maximum Climb Rate (metres/sec)
-    // @Description: This is the best climb rate that the aircraft can achieve with the throttle set to THR_MAX and the airspeed set to the default value. For electric aircraft make sure this number can be achieved towards the end of flight when the battery voltage has reduced. The setting of this parameter can be checked by commanding a positive altitude change of 100m in loiter, RTL or guided mode. If the throttle required to climb is close to THR_MAX and the aircraft is maintaining airspeed, then this parameter is set correctly. If the airspeed starts to reduce, then the parameter is set to high, and if the throttle demand require to climb and maintain speed is noticeably less than THR_MAX, then either CLMB_MAX should be increased or THR_MAX reduced.
+    // @Description: This is the best climb rate that the aircraft can achieve with the throttle set to THR_MAX 
+    // and the airspeed set to the default value. For electric aircraft make sure this number can be achieved 
+    // towards the end of flight when the battery voltage has reduced. The setting of this parameter can be 
+    // checked by commanding a positive altitude change of 100m in loiter, RTL or guided mode. 
+    // If the throttle required to climb is close to THR_MAX and the aircraft is maintaining airspeed, 
+    // then this parameter is set correctly. If the airspeed starts to reduce, then the parameter is set to high, 
+    // and if the throttle demand require to climb and maintain speed is noticeably less than THR_MAX, 
+    // then either CLMB_MAX should be increased or THR_MAX reduced.
     // @Increment: 0.1
     // @Range: 0.1 20.0
     // @User: User
@@ -34,7 +41,8 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: TIME_CONST
     // @DisplayName: Controller time constant (sec)
-    // @Description: This is the time constant of the TECS control algorithm. Smaller values make it faster to respond, large values make it slower to respond.
+    // @Description: This is the time constant of the TECS control algorithm. 
+    // Smaller values make it faster to respond, large values make it slower to respond.
     // @Range: 3.0 10.0
     // @Increment: 0.2
     // @User: Advanced
@@ -66,7 +74,8 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: HGT_OMEGA
     // @DisplayName: Height complementary filter frequency (radians/sec)
-    // @Description: This is the cross-over frequency of the complementary filter used to fuse vertical acceleration and baro alt to obtain an estimate of height rate and height.
+    // @Description: This is the cross-over frequency of the complementary filter used to fuse vertical acceleration 
+    // and baro alt to obtain an estimate of height rate and height.
     // @Range: 1.0 5.0
     // @Increment: 0.05
     // @User: Advanced
@@ -74,7 +83,8 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: SPD_OMEGA
     // @DisplayName: Speed complementary filter frequency (radians/sec)
-    // @Description: This is the cross-over frequency of the complementary filter used to fuse longitudinal acceleration and airspeed to obtain a lower noise and lag estimate of airspeed.
+    // @Description: This is the cross-over frequency of the complementary filter used to fuse longitudinal acceleration 
+    // and airspeed to obtain a lower noise and lag estimate of airspeed.
     // @Range: 0.5 2.0
     // @Increment: 0.05
     // @User: Advanced
@@ -82,7 +92,11 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: RLL2THR
     // @DisplayName: Bank angle compensation gain
-    // @Description: Increasing this gain turn increases the amount of throttle that will be used to compensate for the additional drag created by turning. Ideally this should be set to approximately 10 x the extra sink rate in m/s created by a 45 degree bank turn. Increase this gain if the aircraft initially loses energy in turns and reduce if the aircraft initially gains energy in turns. Efficient high aspect-ratio aircraft (eg powered sailplanes) can use a lower value, whereas inefficient low aspect-ratio models (eg delta wings) can use a higher value.
+    // @Description: Increasing this gain turn increases the amount of throttle that will be used to compensate 
+    // for the additional drag created by turning. Ideally this should be set to approximately 10 x the extra sink 
+    // rate in m/s created by a 45 degree bank turn. Increase this gain if the aircraft initially loses energy in turns 
+    // and reduce if the aircraft initially gains energy in turns. Efficient high aspect-ratio aircraft 
+    //(eg powered sailplanes) can use a lower value, whereas inefficient low aspect-ratio models (eg delta wings) can use a higher value.
     // @Range: 5.0 30.0
     // @Increment: 1.0
     // @User: Advanced
@@ -90,7 +104,11 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: SPDWEIGHT
     // @DisplayName: Weighting applied to speed control
-    // @Description: This parameter adjusts the amount of weighting that the pitch control applies to speed vs height errors. Setting it to 0.0 will cause the pitch control to control height and ignore speed errors. This will normally improve height accuracy but give larger airspeed errors. Setting it to 2.0 will cause the pitch control loop to control speed and ignore height errors. This will normally reduce airsped errors, but give larger height errors.	A value of 1.0 gives a balanced response and is the default.
+    // @Description: This parameter adjusts the amount of weighting that the pitch control applies to speed vs height errors.
+    // Setting it to 0.0 will cause the pitch control to control height and ignore speed errors. 
+    // This will normally improve height accuracy but give larger airspeed errors. Setting it to 2.0 will cause 
+    // the pitch control loop to control speed and ignore height errors. This will normally reduce airsped errors, 
+    //but give larger height errors.	A value of 1.0 gives a balanced response and is the default.
     // @Range: 0.0 2.0
     // @Increment: 0.1
     // @User: Advanced
@@ -106,7 +124,9 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: SINK_MAX
     // @DisplayName: Maximum Descent Rate (metres/sec)
-    // @Description: This sets the maximum descent rate that the controller will use.  If this value is too large, the aircraft will reach the pitch angle limit first and be unable to achieve the descent rate. This should be set to a value that can be achieved at the lower pitch angle limit.
+    // @Description: This sets the maximum descent rate that the controller will use. 
+    // If this value is too large, the aircraft will reach the pitch angle limit first and be 
+    //unable to achieve the descent rate. This should be set to a value that can be achieved at the lower pitch angle limit.
     // @Increment: 0.1
     // @Range: 0.0 20.0
     // @User: User
@@ -114,7 +134,9 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: LAND_ARSPD
     // @DisplayName: Airspeed during landing approach (m/s)
-    // @Description: When performing an autonomus landing, this value is used as the goal airspeed during approach.  Note that this parameter is not useful if your platform does not have an airspeed sensor (use TECS_LAND_THR instead).  If negative then this value is not used during landing.
+    // @Description: When performing an autonomus landing, this value is used as the goal airspeed during approach. 
+    // Note that this parameter is not useful if your platform does not have an airspeed sensor (use TECS_LAND_THR instead). 
+    // If negative then this value is not used during landing.
     // @Range: -1 127
     // @Increment: 1
     // @User: User
@@ -122,7 +144,8 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: LAND_THR
     // @DisplayName: Cruise throttle during landing approach (percentage)
-    // @Description: Use this parameter instead of LAND_ASPD if your platform does not have an airspeed sensor.  It is the cruise throttle during landing approach.  If it is negative if TECS_LAND_ASPD is in use then this value is not used during landing.
+    // @Description: Use this parameter instead of LAND_ASPD if your platform does not have an airspeed sensor. 
+    // It is the cruise throttle during landing approach.  If it is negative if TECS_LAND_ASPD is in use then this value is not used during landing.
     // @Range: -1 to 100
     // @Increment: 0.1
     // @User: User
@@ -130,7 +153,11 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: LAND_SPDWGT
     // @DisplayName: Weighting applied to speed control during landing.
-    // @Description: Same as SPDWEIGHT parameter, with the exception that this parameter is applied during landing flight stages.  A value closer to 2 will result in the plane ignoring height error during landing and our experience has been that the plane will therefore keep the nose up -- sometimes good for a glider landing (with the side effect that you will likely glide a ways past the landing point).  A value closer to 0 results in the plane ignoring speed error -- use caution when lowering the value below 1 -- ignoring speed could result in a stall.
+    // @Description: Same as SPDWEIGHT parameter, with the exception that this parameter is applied during landing flight stages. 
+    // A value closer to 2 will result in the plane ignoring height error during landing and our experience has been that the plane 
+    // will therefore keep the nose up -- sometimes good for a glider landing (with the side effect that you will likely glide a ways
+    // past the landing point).  A value closer to 0 results in the plane ignoring speed error -- use caution when lowering the value below 
+    // 1 -- ignoring speed could result in a stall.
     // @Range: 0.0 2.0
     // @Increment: 0.1
     // @User: Advanced
@@ -138,7 +165,8 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: PITCH_MAX
     // @DisplayName: Maximum pitch in auto flight
-    // @Description: This controls maximum pitch up in automatic throttle modes. If this is set to zero then LIM_PITCH_MAX is used instead. The purpose of this parameter is to allow the use of a smaller pitch range when in automatic flight than what is used in FBWA mode.
+    // @Description: This controls maximum pitch up in automatic throttle modes. If this is set to zero then LIM_PITCH_MAX is used instead. 
+    // The purpose of this parameter is to allow the use of a smaller pitch range when in automatic flight than what is used in FBWA mode.
     // @Range: 0 45
     // @Increment: 1
     // @User: Advanced
@@ -146,7 +174,9 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: PITCH_MIN
     // @DisplayName: Minimum pitch in auto flight
-    // @Description: This controls minimum pitch in automatic throttle modes. If this is set to zero then LIM_PITCH_MIN is used instead. The purpose of this parameter is to allow the use of a smaller pitch range when in automatic flight than what is used in FBWA mode. Note that TECS_PITCH_MIN should be a negative number.
+    // @Description: This controls minimum pitch in automatic throttle modes. If this is set to zero then LIM_PITCH_MIN is used instead. 
+    // The purpose of this parameter is to allow the use of a smaller pitch range when in automatic flight than what is used in FBWA mode.
+    // Note that TECS_PITCH_MIN should be a negative number.
     // @Range: -45 0
     // @Increment: 1
     // @User: Advanced
@@ -162,7 +192,8 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: LAND_TCONST
     // @DisplayName: Land controller time constant (sec)
-    // @Description: This is the time constant of the TECS control algorithm when in final landing stage of flight. It should be smaller than TECS_TIME_CONST to allow for faster flare
+    // @Description: This is the time constant of the TECS control algorithm when in final landing stage of flight. 
+    // It should be smaller than TECS_TIME_CONST to allow for faster flare
     // @Range: 1.0 5.0
     // @Increment: 0.2
     // @User: Advanced
@@ -170,7 +201,8 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: LAND_DAMP
     // @DisplayName: Controller sink rate to pitch gain during flare
-    // @Description: This is the sink rate gain for the pitch demand loop when in final landing stage of flight. It should be larger than TECS_PTCH_DAMP to allow for better sink rate control during flare.
+    // @Description: This is the sink rate gain for the pitch demand loop when in final landing stage of flight. 
+    // It should be larger than TECS_PTCH_DAMP to allow for better sink rate control during flare.
     // @Range: 0.1 1.0
     // @Increment: 0.1
     // @User: Advanced
@@ -178,7 +210,9 @@ const AP_Param::GroupInfo AP_TECS::var_info[] = {
 
     // @Param: LAND_PMAX
     // @DisplayName: Maximum pitch during final stage of landing
-    // @Description: This limits the pitch used during the final stage of automatic landing. During the final landing stage most planes need to keep their pitch small to avoid stalling. A maximum of 10 degrees is usually good. A value of zero means to use the normal pitch limits.
+    // @Description: This limits the pitch used during the final stage of automatic landing. 
+    // During the final landing stage most planes need to keep their pitch small to avoid stalling. 
+    // A maximum of 10 degrees is usually good. A value of zero means to use the normal pitch limits.
     // @Range: 0 40
     // @Increment: 1
     // @User: Advanced
