@@ -6,7 +6,9 @@
 #include <quan/time.hpp>
 
 
-
+/*
+   
+*/
 template <typename FlightAxisT>
 struct FltCtrlInput{
    typedef quan::angle_<int32_t>::cdeg cdeg;
@@ -15,7 +17,7 @@ struct FltCtrlInput{
    cdeg get() const {return m_value;}
    FltCtrlInput() : m_value{cdeg{0}}{}
 private:
-   cdeg m_value;
+   cdeg m_value; // value between -4500 and 4500 cdeg
    FltCtrlInput(FltCtrlInput const & ) = delete;
    FltCtrlInput & operator =(FltCtrlInput const & ) = delete; 
 };
@@ -29,13 +31,13 @@ struct FltCtrlInput<FlightAxis::Thrust>{
    force_type get() const {return m_value;}
    FltCtrlInput() : m_value{force_type{0}}{}
 private:
-   force_type m_value;
+   force_type m_value; // value between 0 and 100 N
    FltCtrlInput(FltCtrlInput const & ) = delete;
    FltCtrlInput & operator =(FltCtrlInput const & ) = delete; 
 };
 
 struct FltCtrlOutput_base {
-   typedef quan::time_<int32_t>::us usec;
+  // typedef quan::time_<int32_t>::us usec;
    void set(float const & in) { m_value = quan::constrain(in,-1.f,1.f);}
    void constrain(float const & min_in, float const & max_in) { m_value = quan::constrain(m_value,min_in,max_in);}
    float get() const  {return m_value;}

@@ -11,8 +11,7 @@ extern const AP_HAL::HAL& hal ;
 
 void FltCtrlInput<FlightAxis::Thrust>::set(force_type const & in) 
 {
-    int32_t n = in.numeric_value();
-
+   // int32_t n = in.numeric_value();
     m_value = in;
 }
 
