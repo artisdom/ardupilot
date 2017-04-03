@@ -135,9 +135,16 @@ void AP_OSD::dequeue::read_stream(AP_OSD::dequeue::osd_info_t& info)
 void AP_OSD::dequeue::update(AP_OSD::dequeue::osd_info_t& info)
 {
    // recalc distance to home and bearing
+   // It is necessary to convert from deg10e7 int to deg float
+   // to prevent overflow and incorrect results
+   typedef quan::uav::position<quan::angle::deg,quan::length::mm> local_pos_type;
+   local_pos_type const home_position = info.home_position;
+   local_pos_type const aircraft_position = info.aircraft_position;
+
    quan::uav::get_bearing_and_distance(
-      info.home_position,info.aircraft_position,
-      info.bearing_to_home,info.distance_from_home);
+      home_position,aircraft_position,
+      info.bearing_to_home,info.distance_from_home
+   );
 }
 
 namespace AP_OSD { namespace dequeue {namespace detail{
