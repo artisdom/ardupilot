@@ -217,9 +217,9 @@ void Plane::read_radio()
 
 
    control_failsafe();
-   if ( control_mode == RTL){
-      hal.console->printf("autopilot set js thrust\n");
-   }
+//   if ( control_mode == RTL){
+//      hal.console->printf("autopilot set js thrust\n");
+//   }
   // channel_thrust.set_temp_out(channel_thrust.get_control_in());
    autopilot_thrust.set_js(joystick_thrust);
 

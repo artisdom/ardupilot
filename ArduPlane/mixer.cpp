@@ -88,21 +88,21 @@ namespace {
        float const v1 = (((v + 1.f)/2.f) + 1.f) * 1000.f;
        uint16_t const out = quan::constrain(static_cast<uint16_t>(v1),static_cast<uint16_t>(1000U),static_cast<uint16_t>(2000U)); 
        hal.rcout->write(N,out);
-       if ( in_rtl_mode()){
-         hal.console->printf("v %d in = %f, out = %d\n",static_cast<int>(N),static_cast<double>(v), out);
-       }
+//       if ( in_rtl_mode()){
+//         hal.console->printf("v %d in = %f, out = %d\n",static_cast<int>(N),static_cast<double>(v), out);
+//       }
    }
 
-   template<>
-   void output_action<2>(apm_mix::float_t const & v)
-   {
-       float const v1 = (((v + 1.f)/2.f) + 1.f) * 1000.f;
-       uint16_t const out = quan::constrain(static_cast<uint16_t>(v1),static_cast<uint16_t>(1000U),static_cast<uint16_t>(2000U)); 
-       hal.rcout->write(2,out);
-       if ( in_rtl_mode()){
-         hal.console->printf("throt in = %f, out = %d\n",static_cast<double>(v), out);
-       }
-   }
+//   template<>
+//   void output_action<2>(apm_mix::float_t const & v)
+//   {
+//       float const v1 = (((v + 1.f)/2.f) + 1.f) * 1000.f;
+//       uint16_t const out = quan::constrain(static_cast<uint16_t>(v1),static_cast<uint16_t>(1000U),static_cast<uint16_t>(2000U)); 
+//       hal.rcout->write(2,out);
+//       if ( in_rtl_mode()){
+//         hal.console->printf("throt in = %f, out = %d\n",static_cast<double>(v), out);
+//       }
+//   }
 
    // Outputs are passed as an array to the mixer constructor
    // only float are allowed here

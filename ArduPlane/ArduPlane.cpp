@@ -488,9 +488,9 @@ void Plane::handle_auto_mode(void)
             // we are in the final stage of a landing - force
             // zero thrust
            // channel_thrust.set_temp_out(0);
-           if ( control_mode == RTL){
-             hal.console->printf("RTL: thrust set to 0 in handle_auto_mode\n");
-           }
+//           if ( control_mode == RTL){
+//             hal.console->printf("RTL: thrust set to 0 in handle_auto_mode\n");
+//           }
            autopilot_thrust.set_force(0_N);
         }
     } else {

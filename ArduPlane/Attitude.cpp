@@ -514,7 +514,7 @@ void Plane::thrust_slew_limit()
         float const rate = 2.f * slewrate/100.f; 
         float const min_val = quan::max(last_thrust - rate,-1.f);
         float const max_val = quan::min(last_thrust + rate,1.f);;
-      //  output_thrust.constrain(min_val,max_val);
+        output_thrust.constrain(min_val,max_val);
     }
     last_thrust = output_thrust.get();
 }
@@ -673,17 +673,17 @@ void Plane::set_servos(void)
             autopilot_thrust.set_force(0_N);
             if (g.thrust_suppress_manual) {
                 // manual pass through of thrust while thrust is suppressed
-              //  channel_thrust.set_output_usec(channel_thrust.get_joystick_in_usec());
-                 if ( control_mode == RTL){
-                    hal.console->printf("set servos (2) output_thrust -> joystick thrust\n");
-                 }
+//              //  channel_thrust.set_output_usec(channel_thrust.get_joystick_in_usec());
+//                 if ( control_mode == RTL){
+//                    hal.console->printf("set servos (2) output_thrust -> joystick thrust\n");
+//                 }
                  output_thrust.set_js(joystick_thrust);
                
             } else {
                 //channel_thrust.calc_output_from_temp_output(); 
-                if ( control_mode == RTL){
-                     hal.console->printf("set servos (3) output_thrust -> autopilot thrust\n");   
-                }   
+//                if ( control_mode == RTL){
+//                     hal.console->printf("set servos (3) output_thrust -> autopilot thrust\n");   
+//                }   
                 output_thrust.set_ap(autopilot_thrust);         
             }
         } else if (g.thrust_passthru_stabilize && 
@@ -695,25 +695,25 @@ void Plane::set_servos(void)
             // manual pass through of thrust while in FBWA or
             // STABILIZE mode with THR_PASS_STAB set
             //channel_thrust.set_output_usec(channel_thrust.get_joystick_in_usec());
-            if ( control_mode == RTL) {
-                hal.console->printf("set servos (4) output_thrust -> joystick thrust\n");
-            }
+//            if ( control_mode == RTL) {
+//                hal.console->printf("set servos (4) output_thrust -> joystick thrust\n");
+//            }
             output_thrust.set_js(joystick_thrust);
         } else if (control_mode == GUIDED && 
                    guided_thrust_passthru) {
             // manual pass through of thrust while in GUIDED
            // channel_thrust.set_output_usec(channel_thrust.get_joystick_in_usec());
-            if ( control_mode == RTL) {
-               hal.console->printf("set servos (5) output_thrust -> joystick thrust\n");
-            }
+//            if ( control_mode == RTL) {
+//               hal.console->printf("set servos (5) output_thrust -> joystick thrust\n");
+//            }
             output_thrust.set_js(joystick_thrust);
         } else {
             // normal thrust calculation based on servo_out
            // channel_thrust.calc_output_from_temp_output();
-            if ( control_mode == RTL){
-              auto const t = autopilot_thrust.get().numeric_value();
-              hal.console->printf("set servos (6) output_thrust -> autopilot thrust %d\n",static_cast<int>(t));
-            }
+//            if ( control_mode == RTL){
+//              auto const t = autopilot_thrust.get().numeric_value();
+//              hal.console->printf("set servos (6) output_thrust -> autopilot thrust %d\n",static_cast<int>(t));
+//            }
             output_thrust.set_ap(autopilot_thrust);
         }
 
@@ -742,10 +742,10 @@ void Plane::set_servos(void)
 
         case AP_Arming::YES_ZERO_PWM:
            // channel_thrust.set_output_usec(0);
-             if ( control_mode == RTL) {
-            hal.console->printf("set servos (7) output_thrust -> -1.f\n");
-            }
-            output_thrust.set_float(-1.f,"arming z pwm");
+//             if ( control_mode == RTL) {
+//            hal.console->printf("set servos (7) output_thrust -> -1.f\n");
+//            }
+            output_thrust.set_float(-1.f);
             break;
 
         case AP_Arming::YES_MIN_PWM:
@@ -753,10 +753,10 @@ void Plane::set_servos(void)
            // channel_thrust.set_output_usec(thrust_out_min_usec());
            // channel_thrust.set_output_usec(channel_thrust.get_output_min_usec());
             // TODO should be min
-            if ( control_mode == RTL) {
-               hal.console->printf("set servos (8) output_thrust -> -1.f\n");
-            }
-            output_thrust.set_float(-1.f,"arming min pwm");
+//            if ( control_mode == RTL) {
+//               hal.console->printf("set servos (8) output_thrust -> -1.f\n");
+//            }
+            output_thrust.set_float(-1.f);
             break;
         }
     }

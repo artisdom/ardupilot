@@ -5,7 +5,7 @@
 #include <quan/constrain.hpp>
 #include <quan/time.hpp>
 
-bool in_rtl_mode();
+//bool in_rtl_mode();
 
 template <typename FlightAxisT>
 struct FltCtrlInput{
@@ -35,11 +35,11 @@ private:
 };
 
 struct FltCtrlOutput_base {
-   void print() const;
+ //  void print() const;
   // typedef quan::time_<int32_t>::us usec;
-   void set_float(float const & in, const char* id = nullptr);
+   void set_float(float const & in);
   // void set(float const & in) { m_value = quan::constrain(in,-1.f,1.f);}
-   //void constrain(float const & min_in, float const & max_in) { auto t = m_value; m_value = quan::constrain(t,min_in,max_in);}
+   void constrain(float const & min_in, float const & max_in) { m_value = quan::constrain(m_value,min_in,max_in);}
    float get() const  {return m_value;}
 protected:
    explicit FltCtrlOutput_base( float const & value) : m_value{quan::constrain(value,-1.f,1.f)}{}
@@ -76,13 +76,13 @@ struct FltCtrlOutput<FlightAxis::Thrust> : FltCtrlOutput_base{
    FltCtrlOutput() :  FltCtrlOutput_base{-1.f}{}
    void set_js(JoystickInput<FlightAxis::Thrust> const & in)
    {
-      if (in_rtl_mode()){
-         hal.console->printf("Setiing from js v = %d\n", static_cast<int>(in.as_force().numeric_value()));
-         this->set_float( (in.as_force().numeric_value()/ 50.f)-1.f, "Thrust");
-          this->print();
-      }else{
+//      if (in_rtl_mode()){
+//         hal.console->printf("Setiing from js v = %d\n", static_cast<int>(in.as_force().numeric_value()));
+//         this->set_float( (in.as_force().numeric_value()/ 50.f)-1.f, "Thrust");
+//          this->print();
+//      }else{
          this->set_float( (in.as_force().numeric_value()/ 50.f)-1.f);
-      }
+    // }
        
    }
 
