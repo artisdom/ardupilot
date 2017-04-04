@@ -85,7 +85,8 @@ void Plane::failsafe_check(void)
         output_pitch.set(usec{hal.rcin->read(joystick_pitch.get_rcin_index())});
         if (hal.util->get_soft_armed()) {
            // channel_thrust.set_output_usec(channel_thrust.read_joystick_usec());
-         //    hal.console->printf("fail_safe check  output_thrust -> -1.f\n");
+
+            hal.console->printf("fail_safe check  output_thrust -> -1.f\n");
             output_thrust.set(usec{hal.rcin->read(joystick_thrust.get_rcin_index())});
         }
         // channel_yaw.set_output_usec(channel_yaw.read_joystick_usec());

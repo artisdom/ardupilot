@@ -5,15 +5,13 @@
 #include <quan/constrain.hpp>
 #include <quan/time.hpp>
 
+bool in_rtl_mode();
 
-/*
-   
-*/
 template <typename FlightAxisT>
 struct FltCtrlInput{
    typedef quan::angle_<int32_t>::cdeg cdeg;
-   void set(JoystickInput<FlightAxisT> const & in){ this->set(in.as_angle());}
-   void set( cdeg const & in) {m_value = in;}
+   void set_js(JoystickInput<FlightAxisT> const & in){ this->set_angle(in.as_angle());}
+   void set_angle( cdeg const & in) {m_value = in;}
    cdeg get() const {return m_value;}
    FltCtrlInput() : m_value{cdeg{0}}{}
 private:
@@ -25,8 +23,8 @@ private:
 template <>
 struct FltCtrlInput<FlightAxis::Thrust>{
    typedef quan::force_<int32_t>::N force_type;
-   void set(JoystickInput<FlightAxis::Thrust> const & in){ this->set(in.as_force());}
-   void set(force_type const & in) ;
+   void set_js(JoystickInput<FlightAxis::Thrust> const & in){ this->set_force(in.as_force());}
+   void set_force(force_type const & in) ;
    void constrain(force_type const & min_in,force_type const &  max_in) { m_value = quan::constrain(m_value,min_in,max_in);}
    force_type get() const {return m_value;}
    FltCtrlInput() : m_value{force_type{0}}{}
@@ -37,9 +35,11 @@ private:
 };
 
 struct FltCtrlOutput_base {
+   void print() const;
   // typedef quan::time_<int32_t>::us usec;
-   void set(float const & in) { m_value = quan::constrain(in,-1.f,1.f);}
-   void constrain(float const & min_in, float const & max_in) { m_value = quan::constrain(m_value,min_in,max_in);}
+   void set_float(float const & in, const char* id = nullptr);
+  // void set(float const & in) { m_value = quan::constrain(in,-1.f,1.f);}
+   //void constrain(float const & min_in, float const & max_in) { auto t = m_value; m_value = quan::constrain(t,min_in,max_in);}
    float get() const  {return m_value;}
 protected:
    explicit FltCtrlOutput_base( float const & value) : m_value{quan::constrain(value,-1.f,1.f)}{}
@@ -52,16 +52,16 @@ private:
 template <typename FlightAxisT>
 struct FltCtrlOutput : FltCtrlOutput_base{
    FltCtrlOutput() :  FltCtrlOutput_base{0.f}{}
-   using FltCtrlOutput_base::set;
+   using FltCtrlOutput_base::set_float;
    using FltCtrlOutput_base::get;
-   void set(JoystickInput<FlightAxisT> const & in)
+   void set_js(JoystickInput<FlightAxisT> const & in)
    {
-      this->set(in.as_float());
+      this->set_float(in.as_float());
    }
 
-   void set(FltCtrlInput<FlightAxisT> const & in)
+   void set_ap(FltCtrlInput<FlightAxisT> const & in)
    {
-      this->set(in.get().numeric_value()/4500.f); 
+      this->set_float(in.get().numeric_value()/4500.f); 
    }
   // float as_float() const {return this->get();}
 private:
@@ -71,19 +71,26 @@ private:
 
 template <>
 struct FltCtrlOutput<FlightAxis::Thrust> : FltCtrlOutput_base{
-   using FltCtrlOutput_base::set;
-   using FltCtrlOutput_base::get;
+  // using FltCtrlOutput_base::set_float;
+  // using FltCtrlOutput_base::get;
    FltCtrlOutput() :  FltCtrlOutput_base{-1.f}{}
-   void set(JoystickInput<FlightAxis::Thrust> const & in)
+   void set_js(JoystickInput<FlightAxis::Thrust> const & in)
    {
-      this->set( (in.as_force().numeric_value()/ 50.f)-1.f); 
+      if (in_rtl_mode()){
+         hal.console->printf("Setiing from js v = %d\n", static_cast<int>(in.as_force().numeric_value()));
+         this->set_float( (in.as_force().numeric_value()/ 50.f)-1.f, "Thrust");
+          this->print();
+      }else{
+         this->set_float( (in.as_force().numeric_value()/ 50.f)-1.f);
+      }
+       
    }
 
-   void set(FltCtrlInput<FlightAxis::Thrust> const & in);
+   void set_ap(FltCtrlInput<FlightAxis::Thrust> const & in);
 
    void enable(){}
    void disable(){}
-   bool is_enabled() const {return false;}
+  // bool is_enabled() const {return false;}
 private:
    FltCtrlOutput(FltCtrlOutput const & ) = delete;
    FltCtrlOutput & operator =(FltCtrlOutput const & ) = delete; 

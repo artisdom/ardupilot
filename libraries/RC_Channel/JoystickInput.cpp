@@ -6,19 +6,40 @@
 constexpr JoystickInput_base::usec JoystickInput_base::m_min;
 constexpr JoystickInput_base::usec JoystickInput_base::m_max;
 
-
 extern const AP_HAL::HAL& hal ;
 
-void FltCtrlInput<FlightAxis::Thrust>::set(force_type const & in) 
+void FltCtrlOutput_base::set_float(float const & in, const char* id)
 {
+     m_value = quan::constrain(in,-1.f,1.f);
+     if ( id != nullptr){
+         hal.console->printf("%s v = %f\n",id, static_cast<double>(m_value));
+     }
+     
+}
+void FltCtrlOutput_base::print()const
+{
+   hal.console->printf("FtCtrlOB value =%f\n",static_cast<double>(m_value));
+}
+
+bool in_rtl_mode();
+
+void FltCtrlInput<FlightAxis::Thrust>::set_force(force_type const & in) 
+{
+      if ( in_rtl_mode()){
+       hal.console->printf("FlghtCtrlIn in thrust set_force %d\n",static_cast<int>(in.numeric_value()));
+      }
    // int32_t n = in.numeric_value();
     m_value = in;
 }
 
-void FltCtrlOutput<FlightAxis::Thrust>::set(FltCtrlInput<FlightAxis::Thrust> const & in)
+void FltCtrlOutput<FlightAxis::Thrust>::set_ap(FltCtrlInput<FlightAxis::Thrust> const & in)
 {
-  // hal.console->printf("FlghtCtrlOutput thrust set to %d\n",in.get().numeric_value());
-   this->set((in.get().numeric_value()/ 50.f)-1.f); 
+
+   this->set_float((in.get().numeric_value()/ 50.f)-1.f, "Thrust1 1"); 
+   if ( in_rtl_mode()){
+       hal.console->printf("FlghtCtrlOut  set_ap %d\n",static_cast<int>(in.get().numeric_value()));
+       this->print();
+   }
 }
 
 void JoystickInput_base::update() 

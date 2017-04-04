@@ -62,11 +62,11 @@ namespace {
 void Plane::thrust_off()
 {
   // channel_thrust.set_temp_out(0);
-   autopilot_thrust.set(0_N);
+   autopilot_thrust.set_force(0_N);
    
- //  hal.console->printf("thrust off : output_thrust ->  0N (autopilot thrust)\n");
+   hal.console->printf("thrust off : output_thrust ->  0N (autopilot thrust)\n");
   // channel_thrust.calc_output_from_temp_output();  
-   output_thrust.set(autopilot_thrust);
+   output_thrust.set_ap(autopilot_thrust);
 }
 
 void Plane::set_control_surfaces_centre()
@@ -217,9 +217,11 @@ void Plane::read_radio()
 
 
    control_failsafe();
-
+   if ( control_mode == RTL){
+      hal.console->printf("autopilot set js thrust\n");
+   }
   // channel_thrust.set_temp_out(channel_thrust.get_control_in());
-   autopilot_thrust.set(joystick_thrust);
+   autopilot_thrust.set_js(joystick_thrust);
 
   // if (g.thrust_nudge && channel_thrust.get_temp_out() > 50) {
    if (g.thrust_nudge && (autopilot_thrust.get() > 50_N)) {
@@ -235,7 +237,7 @@ void Plane::read_radio()
    }
    rudder_arm_disarm_check();
   // channel_yaw.set_temp_out(channel_yaw.get_control_in());
-   autopilot_yaw.set(joystick_yaw);
+   autopilot_yaw.set_js(joystick_yaw);
 }
 
 /*

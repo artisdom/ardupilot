@@ -96,7 +96,7 @@ void Plane::stabilize_roll(float speed_scaler)
         disable_integrator = true;
     }
   //  channel_roll.set_temp_out( rollController.get_servo_out(nav_roll_cd - ahrs.roll_sensor, 
-       autopilot_roll.set( cdeg{ rollController.get_servo_out(
+       autopilot_roll.set_angle( cdeg{ rollController.get_servo_out(
                                  nav_roll_cd - ahrs.roll_sensor, 
                                  speed_scaler, 
                                  disable_integrator)} );
@@ -114,14 +114,14 @@ void Plane::stabilize_pitch(float speed_scaler)
         // we are holding the tail down during takeoff. Just covert
         // from a percentage to a -4500..4500 centidegree angle
        // channel_pitch.set_temp_out( 45*force_elevator);
-        autopilot_pitch.set(cdeg{ 45 * force_elevator});
+        autopilot_pitch.set_angle(cdeg{ 45 * force_elevator});
         return;
     }
    // int32_t demanded_pitch = nav_pitch_cd + g.pitch_trim_cd + channel_thrust.get_temp_out() * g.kff_thrust_to_pitch;
     int32_t const demanded_pitch = nav_pitch_cd + g.pitch_trim_cd + autopilot_thrust.get().numeric_value() * g.kff_thrust_to_pitch;
     bool const disable_integrator = (control_mode == STABILIZE && joystick_pitch.as_angle() != 0_cdeg ) ;
    // channel_pitch.set_temp_out (pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, disable_integrator) );
-    autopilot_pitch.set(cdeg{pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, disable_integrator)});
+    autopilot_pitch.set_angle(cdeg{pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, disable_integrator)});
 }
 
 namespace {
@@ -138,7 +138,7 @@ namespace {
    {
       float const auto_influence = (1.f - std::abs(js.as_float()));
       cdeg const tempout = fc_in.get() * auto_influence + js.as_angle();
-      fc_in.set(tempout);
+      fc_in.set_angle(tempout);
    }
 }
 
@@ -218,7 +218,7 @@ void Plane::stabilize_training(float speed_scaler)
 {
    if (training_manual_roll) {
       // channel_roll.set_temp_out(channel_roll.get_control_in());
-      autopilot_roll.set(joystick_roll);
+      autopilot_roll.set_js(joystick_roll);
    }else{
       // calculate what is needed to hold
       stabilize_roll(speed_scaler);
@@ -229,13 +229,13 @@ void Plane::stabilize_training(float speed_scaler)
       ) {
          // allow user to get out of the roll
          // channel_roll.set_temp_out(channel_roll.get_control_in()); 
-         autopilot_roll.set(joystick_roll);           
+         autopilot_roll.set_js(joystick_roll);           
       }
    }
 
     if (training_manual_pitch) {
         //channel_pitch.set_temp_out(channel_pitch.get_control_in());
-          autopilot_pitch.set(joystick_pitch);
+          autopilot_pitch.set_js(joystick_pitch);
     } else {
         stabilize_pitch(speed_scaler);
        // if ((nav_pitch_cd > 0 && channel_pitch.get_control_in() < channel_pitch.get_temp_out()) ||
@@ -245,7 +245,7 @@ void Plane::stabilize_training(float speed_scaler)
            ){
             // allow user to get back to level
            // channel_pitch.set_temp_out(channel_pitch.get_control_in());  
-            autopilot_pitch.set(joystick_pitch);          
+            autopilot_pitch.set_js(joystick_pitch);          
         }
     }
 }
@@ -280,7 +280,7 @@ void Plane::stabilize_acro(float speed_scaler)
         // try to reduce the integrated angular error to zero. We set
         // 'stabilze' to true, which disables the roll integrator
        // channel_roll.set_temp_out(rollController.get_servo_out(roll_error_cd,speed_scaler, true));
-       autopilot_roll.set( cdeg{rollController.get_servo_out(roll_error_cd,speed_scaler, true)});
+       autopilot_roll.set_angle( cdeg{rollController.get_servo_out(roll_error_cd,speed_scaler, true)});
     } else {
         /*
           aileron stick is non-zero, use pure rate control until the
@@ -288,7 +288,7 @@ void Plane::stabilize_acro(float speed_scaler)
          */
         acro_state.locked_roll = false;
        // channel_roll.set_temp_out(rollController.get_rate_out(roll_rate,  speed_scaler));
-        autopilot_roll.set(cdeg{rollController.get_rate_out(roll_rate,  speed_scaler)});
+        autopilot_roll.set_angle(cdeg{rollController.get_rate_out(roll_rate,  speed_scaler)});
     }
 
     if (g.acro_locking && is_zero(pitch_rate)) {
@@ -304,14 +304,14 @@ void Plane::stabilize_acro(float speed_scaler)
         // integrator enabled, which helps with inverted flight
         nav_pitch_cd = acro_state.locked_pitch_cd;
        // channel_pitch.set_temp_out(pitchController.get_servo_out(nav_pitch_cd - ahrs.pitch_sensor,speed_scaler,false));
-          autopilot_pitch.set(cdeg{pitchController.get_servo_out(nav_pitch_cd - ahrs.pitch_sensor,speed_scaler,false)});
+        autopilot_pitch.set_angle(cdeg{pitchController.get_servo_out(nav_pitch_cd - ahrs.pitch_sensor,speed_scaler,false)});
     } else {
         /*
           user has non-zero pitch input, use a pure rate controller
          */
         acro_state.locked_pitch = false;
       //  channel_pitch.set_temp_out(pitchController.get_rate_out(pitch_rate, speed_scaler));
-        autopilot_pitch.set(cdeg{pitchController.get_rate_out(pitch_rate, speed_scaler)});
+        autopilot_pitch.set_angle(cdeg{pitchController.get_rate_out(pitch_rate, speed_scaler)});
     }
 
     /*
@@ -375,7 +375,7 @@ void Plane::calc_thrust()
 {
    if (aparm.thrust_cruise > 1){
       //channel_thrust.set_temp_out(SpdHgt_Controller->get_thrust_demand());
-      autopilot_thrust.set(force_type{SpdHgt_Controller->get_thrust_demand()});
+      autopilot_thrust.set_force(force_type{SpdHgt_Controller->get_thrust_demand()});
 //      if (control_mode == RTL){
 //          hal.console->printf(
 //            "SpdHgtCtrll calc thrust as %d_N\n",
@@ -386,7 +386,7 @@ void Plane::calc_thrust()
       hal.console->printf("calc thrust 0_N\n");
       //channel_thrust.set_temp_out(0);
 
-      autopilot_thrust.set(0_N);
+      autopilot_thrust.set_force(0_N);
    }
 }
 
@@ -512,9 +512,9 @@ void Plane::thrust_slew_limit()
         slewrate = quan::min(slewrate,100);
         // limit thrust change by the given percentage per second
         float const rate = 2.f * slewrate/100.f; 
-        float const max_val = quan::max(last_thrust - rate,-1.f);
-        float const min_val = quan::min(last_thrust + rate,1.f);;
-        output_thrust.constrain(min_val,max_val);
+        float const min_val = quan::max(last_thrust - rate,-1.f);
+        float const max_val = quan::min(last_thrust + rate,1.f);;
+      //  output_thrust.constrain(min_val,max_val);
     }
     last_thrust = output_thrust.get();
 }
@@ -620,15 +620,15 @@ void Plane::set_servos(void)
     if (control_mode == MANUAL) {
         // do a direct pass through of radio values
       //  channel_roll.set_output_usec(channel_roll.get_joystick_in_usec());  // can conv
-        output_roll.set(joystick_roll);
+        output_roll.set_js(joystick_roll);
        // channel_pitch.set_output_usec(channel_pitch.get_joystick_in_usec()); //can conv
-        output_pitch.set(joystick_pitch);
+        output_pitch.set_js(joystick_pitch);
        // channel_thrust.set_output_usec(channel_thrust.get_joystick_in_usec()); //can conv
       //  hal.console->printf("set servos (0) output_thrust -> joystick thrust\n");
-        output_thrust.set(joystick_thrust);
+        output_thrust.set_js(joystick_thrust);
         //channel_yaw.set_output_usec(channel_yaw.get_joystick_in_usec()); // can conv
  
-        output_yaw.set(joystick_yaw);
+        output_yaw.set_js(joystick_yaw);
 
     } else {  // not manual
 
@@ -636,11 +636,11 @@ void Plane::set_servos(void)
         // for this function the value rc_channel.get_temp_out is converted and put to radio_out 
         // so essentially get_servo out is the autopilots input?
       //  channel_roll.calc_output_from_temp_output();
-        output_roll.set(autopilot_roll);
+        output_roll.set_ap(autopilot_roll);
       //  channel_pitch.calc_output_from_temp_output();
-        output_pitch.set(autopilot_pitch);
+        output_pitch.set_ap(autopilot_pitch);
       //  channel_yaw.calc_output_from_temp_output();
-        output_yaw.set(autopilot_yaw);
+        output_yaw.set_ap(autopilot_yaw);
         //------------------------------------------------------------------
         // convert 0 to 100% into PWM
         uint8_t min_thrust = aparm.thrust_min.get();
@@ -670,21 +670,21 @@ void Plane::set_servos(void)
 //            if ( control_mode == RTL){
 //               hal.console->printf("set servos(1) suppress thrust set to 0\n");
 //            }
-            autopilot_thrust.set(0_N);
+            autopilot_thrust.set_force(0_N);
             if (g.thrust_suppress_manual) {
                 // manual pass through of thrust while thrust is suppressed
               //  channel_thrust.set_output_usec(channel_thrust.get_joystick_in_usec());
-//                 if ( control_mode == RTL){
-//                    hal.console->printf("set servos (2) output_thrust -> joystick thrust\n");
-//                 }
-                 output_thrust.set(joystick_thrust);
+                 if ( control_mode == RTL){
+                    hal.console->printf("set servos (2) output_thrust -> joystick thrust\n");
+                 }
+                 output_thrust.set_js(joystick_thrust);
                
             } else {
                 //channel_thrust.calc_output_from_temp_output(); 
-//                if ( control_mode == RTL){
-//                     hal.console->printf("set servos (3) output_thrust -> autopilot thrust\n");   
-//                }   
-                output_thrust.set(autopilot_thrust);         
+                if ( control_mode == RTL){
+                     hal.console->printf("set servos (3) output_thrust -> autopilot thrust\n");   
+                }   
+                output_thrust.set_ap(autopilot_thrust);         
             }
         } else if (g.thrust_passthru_stabilize && 
                    (control_mode == STABILIZE || 
@@ -695,22 +695,26 @@ void Plane::set_servos(void)
             // manual pass through of thrust while in FBWA or
             // STABILIZE mode with THR_PASS_STAB set
             //channel_thrust.set_output_usec(channel_thrust.get_joystick_in_usec());
-          //  hal.console->printf("set servos (4) output_thrust -> joystick thrust\n");
-            output_thrust.set(joystick_thrust);
+            if ( control_mode == RTL) {
+                hal.console->printf("set servos (4) output_thrust -> joystick thrust\n");
+            }
+            output_thrust.set_js(joystick_thrust);
         } else if (control_mode == GUIDED && 
                    guided_thrust_passthru) {
             // manual pass through of thrust while in GUIDED
            // channel_thrust.set_output_usec(channel_thrust.get_joystick_in_usec());
-          //  hal.console->printf("set servos (5) output_thrust -> joystick thrust\n");
-            output_thrust.set(joystick_thrust);
+            if ( control_mode == RTL) {
+               hal.console->printf("set servos (5) output_thrust -> joystick thrust\n");
+            }
+            output_thrust.set_js(joystick_thrust);
         } else {
             // normal thrust calculation based on servo_out
            // channel_thrust.calc_output_from_temp_output();
-//            if ( control_mode == RTL){
-//              auto const t = autopilot_thrust.get().numeric_value();
-//              hal.console->printf("set servos (6) output_thrust -> autopilot thrust %d\n",static_cast<int>(t));
-//            }
-            output_thrust.set(autopilot_thrust);
+            if ( control_mode == RTL){
+              auto const t = autopilot_thrust.get().numeric_value();
+              hal.console->printf("set servos (6) output_thrust -> autopilot thrust %d\n",static_cast<int>(t));
+            }
+            output_thrust.set_ap(autopilot_thrust);
         }
 
     }
@@ -724,7 +728,7 @@ void Plane::set_servos(void)
     if (control_mode == TRAINING) {
         // copy rudder in training mode
        // channel_yaw.set_output_usec(channel_yaw.get_joystick_in_usec());
-       output_yaw.set(joystick_yaw);
+       output_yaw.set_js(joystick_yaw);
     }
 
     if (!arming.is_armed()) {
@@ -738,8 +742,10 @@ void Plane::set_servos(void)
 
         case AP_Arming::YES_ZERO_PWM:
            // channel_thrust.set_output_usec(0);
-         //   hal.console->printf("set servos (7) output_thrust -> -1.f\n");
-            output_thrust.set(-1.f);
+             if ( control_mode == RTL) {
+            hal.console->printf("set servos (7) output_thrust -> -1.f\n");
+            }
+            output_thrust.set_float(-1.f,"arming z pwm");
             break;
 
         case AP_Arming::YES_MIN_PWM:
@@ -747,8 +753,10 @@ void Plane::set_servos(void)
            // channel_thrust.set_output_usec(thrust_out_min_usec());
            // channel_thrust.set_output_usec(channel_thrust.get_output_min_usec());
             // TODO should be min
-         //   hal.console->printf("set servos (8) output_thrust -> -1.f\n");
-            output_thrust.set(-1.f);
+            if ( control_mode == RTL) {
+               hal.console->printf("set servos (8) output_thrust -> -1.f\n");
+            }
+            output_thrust.set_float(-1.f,"arming min pwm");
             break;
         }
     }
@@ -781,23 +789,23 @@ void Plane::set_servos(void)
 void Plane::demo_servos(uint8_t i) 
 {
    // int16_t const save_channel_roll_radio_out = channel_roll.get_output_usec();
-    auto const saved_roll = output_roll.get();
+    float const saved_roll = output_roll.get();
     while(i > 0) {
         gcs_send_text(MAV_SEVERITY_INFO,"Demo servos");
         demoing_servos = true;
       //  channel_roll.set_output_usec(1400);
      //   channel_roll.write_output_usec();
-        output_roll.set(-0.2f);
+        output_roll.set_float(-0.2f);
         mix();
         hal.scheduler->delay(400);
 //        channel_roll.set_output_usec(1600);
 //        channel_roll.write_output_usec();
-        output_roll.set(0.2f);
+        output_roll.set_float(0.2f);
         mix();
         hal.scheduler->delay(200);
         //channel_roll.set_output_usec(1500);
        // channel_roll.write_output_usec();
-        output_roll.set(0.f);
+        output_roll.set_float(0.f);
         mix();
         hal.scheduler->delay(400);
         demoing_servos = false;
@@ -805,7 +813,7 @@ void Plane::demo_servos(uint8_t i)
     }
    // channel_roll.set_output_usec(save_channel_roll_radio_out);
    // channel_roll.write_output_usec();
-      output_roll.set(saved_roll);
+      output_roll.set_float(saved_roll);
       mix();
 }
 

@@ -5,6 +5,8 @@
 #include "Plane.h"
 
 extern const AP_HAL::HAL& hal;
+
+float get_thrust_demand();
 // avoid c style functions that use malloc
 // TODO allocate a large block once, store the strings there
 // and then free the entire block once when done
@@ -49,6 +51,9 @@ bool apm_mix::yyerror(const char* str )
    return false;
 }
 
+
+
+bool in_rtl_mode();
 namespace {
 
    // true simulates a possible sensor failure 
@@ -65,7 +70,7 @@ namespace {
        {"Pitch", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_pitch_demand();})}
       ,{"Yaw",  static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_yaw_demand();})}
       ,{"Roll", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_roll_demand();})}
-      ,{"Throttle", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_thrust_demand();})}
+      ,{"Throttle",get_thrust_demand}
       ,{"Flap", dummy} //TODO
       ,{"Airspeed", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_airspeed();})}
       ,{"ControlMode", dummy}
@@ -83,6 +88,20 @@ namespace {
        float const v1 = (((v + 1.f)/2.f) + 1.f) * 1000.f;
        uint16_t const out = quan::constrain(static_cast<uint16_t>(v1),static_cast<uint16_t>(1000U),static_cast<uint16_t>(2000U)); 
        hal.rcout->write(N,out);
+       if ( in_rtl_mode()){
+         hal.console->printf("v %d in = %f, out = %d\n",static_cast<int>(N),static_cast<double>(v), out);
+       }
+   }
+
+   template<>
+   void output_action<2>(apm_mix::float_t const & v)
+   {
+       float const v1 = (((v + 1.f)/2.f) + 1.f) * 1000.f;
+       uint16_t const out = quan::constrain(static_cast<uint16_t>(v1),static_cast<uint16_t>(1000U),static_cast<uint16_t>(2000U)); 
+       hal.rcout->write(2,out);
+       if ( in_rtl_mode()){
+         hal.console->printf("throt in = %f, out = %d\n",static_cast<double>(v), out);
+       }
    }
 
    // Outputs are passed as an array to the mixer constructor

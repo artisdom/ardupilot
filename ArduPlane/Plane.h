@@ -93,6 +93,8 @@ public:
     float get_airspeed_max() const { return static_cast<float>(aparm.airspeed_max);}
     // weight towards min whatever
     float get_airspeed_cruise() const { return (aparm.airspeed_min * 3 + aparm.airspeed_max *2)/5.f;}
+
+    FlightMode get_control_mode()const { return control_mode;}
 private:
     // key aircraft parameters passed to multiple libraries
     AP_Vehicle::FixedWing aparm;

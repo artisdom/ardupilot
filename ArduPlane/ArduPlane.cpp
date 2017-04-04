@@ -488,10 +488,10 @@ void Plane::handle_auto_mode(void)
             // we are in the final stage of a landing - force
             // zero thrust
            // channel_thrust.set_temp_out(0);
-//           if ( control_mode == RTL){
-//             hal.console->printf("RTL: thrust set to 0 in handle_auto_mode\n");
-//           }
-           autopilot_thrust.set(0_N);
+           if ( control_mode == RTL){
+             hal.console->printf("RTL: thrust set to 0 in handle_auto_mode\n");
+           }
+           autopilot_thrust.set_force(0_N);
         }
     } else {
         // we are doing normal AUTO flight, the special cases
@@ -602,7 +602,7 @@ void Plane::update_flight_mode(void)
             nav_roll_cd = 0;
             nav_pitch_cd = 0;
            // channel_thrust.set_temp_out(0);
-            autopilot_thrust.set(0_N);
+            autopilot_thrust.set_force(0_N);
         }
         if (g.fbwa_tdrag_chan > 0) {
             // check for the user enabling FBWA taildrag takeoff mode
@@ -672,12 +672,12 @@ void Plane::update_flight_mode(void)
         // servo_out is for Sim control only
         // ---------------------------------
        // channel_roll.set_temp_out(channel_roll.get_control_in());
-         autopilot_roll.set(joystick_roll);
+         autopilot_roll.set_js(joystick_roll);
        // channel_pitch.set_temp_out(channel_pitch.get_control_in());
-         autopilot_pitch.set(joystick_pitch);
+         autopilot_pitch.set_js(joystick_pitch);
         // in fact either this or the same call in  read_radio is not necessary
          //channel_yaw.set_temp_out(channel_yaw.get_control_in());
-         autopilot_yaw.set(joystick_yaw);
+         autopilot_yaw.set_js(joystick_yaw);
         break;
         
     case INITIALISING:
