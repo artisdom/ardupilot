@@ -22,7 +22,7 @@ namespace {
    typedef quan::stm32::tim4 rcout_1to4_timer;
 
 #if defined QUAN_AERFLITE_BOARD
-   typedef quan::stm32::tim1 rcout_5_6_timer;
+   typedef quan::stm32::tim1 rcout_5to7_timer;
 #endif
    // use PWM on all channels
    typedef quan::mcu::pin<quan::stm32::gpiob,6> rcout_ch1;   
@@ -33,9 +33,8 @@ namespace {
 #if defined QUAN_AERFLITE_BOARD
    typedef quan::mcu::pin<quan::stm32::gpiob,0> rcout_ch5;
    typedef quan::mcu::pin<quan::stm32::gpiob,1> rcout_ch6;
+   typedef quan::mcu::pin<quan::stm32::gpioa,11> rcout_ch7;
 #endif
-
-   
 
    constexpr uint32_t min_freq_hz = 50U;
    constexpr uint32_t max_freq_hz = 400U;
@@ -44,7 +43,7 @@ namespace {
    constexpr uint16_t min_pulsewidth = 400U;
 
 #if defined QUAN_AERFLITE_BOARD
-   constexpr uint8_t  rcout_num_channels = 6;
+   constexpr uint8_t  rcout_num_channels = 7;
 #else
    constexpr uint8_t  rcout_num_channels = 4;
 #endif
@@ -148,9 +147,10 @@ namespace {
 
 #if defined QUAN_AERFLITE_BOARD
 
-   void rcout_setup_rc_out_5_6_pins()
+   void rcout_setup_rc_out_5to7_pins()
    {
-     // the gpio module was already enabled
+      quan::stm32::module_enable<quan::stm32::gpioa>();
+
       // set up as mode TIM1_CH2N
       quan::stm32::apply<
          rcout_ch5
@@ -166,34 +166,43 @@ namespace {
          ,quan::stm32::gpio::pupd::none
          ,quan::stm32::gpio::ospeed::slow
       >();
+
+       // set up as TIM1 CH4
+       quan::stm32::apply<
+         rcout_ch7
+         ,quan::stm32::gpio::mode::af1
+         ,quan::stm32::gpio::pupd::none
+         ,quan::stm32::gpio::ospeed::slow
+      >();
    }
 
-   void rcout_5_6_timer_setup()
+   void rcout_5to7_timer_setup()
    {
-      rcout_setup_rc_out_5_6_pins();
+      rcout_setup_rc_out_5to7_pins();
 
-      quan::stm32::module_enable<rcout_5_6_timer>();
-      constexpr uint32_t timer_5_6_freq = quan::stm32::get_raw_timer_frequency<rcout_5_6_timer>();
+      quan::stm32::module_enable<rcout_5to7_timer>();
+      constexpr uint32_t timer_5to7_freq = quan::stm32::get_raw_timer_frequency<rcout_5to7_timer>();
       // set the granularity to 1 us, period to 50 Hz
-      rcout_5_6_timer::get()->psc = (timer_5_6_freq / 1000000 )-1;
-      rcout_5_6_timer::get()->rcr = 0;
-      rcout_5_6_timer::get()->arr = 20000 -1;  // 50 Hz
-      rcout_5_6_timer::get()->cnt = 0x0;
+      rcout_5to7_timer::get()->psc = (timer_5to7_freq / 1000000 )-1;
+      rcout_5to7_timer::get()->rcr = 0;
+      rcout_5to7_timer::get()->arr = 20000 -1;  // 50 Hz
+      rcout_5to7_timer::get()->cnt = 0x0;
     
       {
          quan::stm32::tim::cr1_t cr1 = 0;  
          cr1.urs = true;   // Only counter overflow/underflow generates an update interrupt or DMA request if enabled
          cr1.arpe = true ; // recommended for these TIM1/8 with PWM 
-         rcout_5_6_timer::get()->cr1.set(cr1.value);
+         rcout_5to7_timer::get()->cr1.set(cr1.value);
       }
 
       {
          quan::stm32::tim::cr2_t cr2 = 0; 
          cr2.ois2n = false;  // output idle state state when moe == 0
          cr2.ois3n = false;  // output idle state state when moe == 0
+         cr2.ois4 = false;
          cr2.ccpc = false;  
          cr2.ccds = false;
-         rcout_5_6_timer::get()->cr2.set(cr2.value);
+         rcout_5to7_timer::get()->cr2.set(cr2.value);
       }
 
        {
@@ -202,30 +211,38 @@ namespace {
          ccmr1.cc2s = 0b00; // channel 2 output
          ccmr1.oc2m = 0b110;  // PWM mode 1
          ccmr1.oc2pe = true;  // recommended setting
-         rcout_5_6_timer::get()->ccmr1.set(ccmr1.value);
+         rcout_5to7_timer::get()->ccmr1.set(ccmr1.value);
       }
 
       {
-        // set pwm mode on ch3 pwm mode in OCxM in TIM1_CCMRx
+        // set pwm mode on ch3 in OCxM in TIM1_CCMRx
+        // set pwm mode on ch4 in OCXM 
          quan::stm32::tim::ccmr2_t ccmr2 = 0;
          ccmr2.cc3s = 0b00; // channel 3 output
          ccmr2.oc3m = 0b110;  // PWM mode 1
          ccmr2.oc3pe = true;  // recommended setting
-         rcout_5_6_timer::get()->ccmr2.set(ccmr2.value);
+         ccmr2.cc4s = 0b00; // channel 4 output
+         ccmr2.oc4m = 0b110; // pwm mode 1
+         ccmr2.oc4pe = true;
+         rcout_5to7_timer::get()->ccmr2.set(ccmr2.value);
       }
-      rcout_5_6_timer::get()->ccr2 = 1500;
-      rcout_5_6_timer::get()->ccr3 = 1500;
+
+      rcout_5to7_timer::get()->ccr2 = 1500;
+      rcout_5to7_timer::get()->ccr3 = 1500;
+      rcout_5to7_timer::get()->ccr4 = 1500;
 
       {
-        // set up TIM1_CH2N,TIM1_CH3N polarity high pulse
+        // set up TIM1_CH2N,TIM1_CH3N, TIM1_CH4 polarity high pulse
          quan::stm32::tim::ccer_t ccer = 0;
-         ccer.cc2np = false ; // TIM1_CH2N is positive pulse
-         ccer.cc2e = false  ; // enable TIM1_CH2N 
-         ccer.cc2ne = false ; // true to enable TIM1_CH2N, start disabled
-         ccer.cc3np = false ; // TIM1_CH3N is positive pulse
-         ccer.cc3e = false  ; // enable TIM1_CH3N
-         ccer.cc3ne = false ; // true to enable TIM1_CH3N, start disabled
-         rcout_5_6_timer::get()->ccer.set(ccer.value);
+//         ccer.cc2np = false ; // TIM1_CH2N is positive pulse
+//         ccer.cc2e = false  ; // enable TIM1_CH2N 
+//         ccer.cc2ne = false ; // true to enable TIM1_CH2N, start disabled
+//         ccer.cc3np = false ; // TIM1_CH3N is positive pulse
+//         ccer.cc3e = false  ; // enable TIM1_CH3N
+//         ccer.cc3ne = false ; // true to enable TIM1_CH3N, start disabled
+//         ccer.cc4e  = false ; // Ch 4 start disabled
+//         ccer.cc4p = false ; // ch4 positive pulse
+         rcout_5to7_timer::get()->ccer.set(ccer.value);
       }
  
       {
@@ -237,9 +254,9 @@ namespace {
          bdtr.bke = false;   // disable braek inputs
          bdtr.bkp = false;   // break polarity is dont care
          bdtr.dtg = 0;
-         rcout_5_6_timer::get()->bdtr.set(bdtr.value);
+         rcout_5to7_timer::get()->bdtr.set(bdtr.value);
       }
-      rcout_5_6_timer::get()->sr = 0;
+      rcout_5to7_timer::get()->sr = 0;
    }
 
 #endif
@@ -248,7 +265,7 @@ namespace {
    {
       rcout_1to4_timer_setup();
 #if defined QUAN_AERFLITE_BOARD
-      rcout_5_6_timer_setup();
+      rcout_5to7_timer_setup();
 #endif
    }
 
@@ -260,7 +277,7 @@ namespace {
 #if defined QUAN_AERFLITE_BOARD
    void start_5_6_timer()
    {
-      rcout_5_6_timer::get()->cr1.bb_setbit<0>(); // (CEN)
+      rcout_5to7_timer::get()->cr1.bb_setbit<0>(); // (CEN)
    }
 #endif
 
@@ -288,8 +305,8 @@ namespace {
                rcout_1to4_timer::get()->arr = (1000000U / freq_hz) -1 ;
             }
 #if defined QUAN_AERFLITE_BOARD
-            if ( (chmask & 0x00000030) == 0x00000030 ){
-               rcout_5_6_timer::get()->arr = (1000000U / freq_hz) -1 ;
+            if ( (chmask & 0x00000070) == 0x00000070 ){
+               rcout_5to7_timer::get()->arr = (1000000U / freq_hz) -1 ;
             }
 #endif
          }
@@ -301,8 +318,8 @@ namespace {
             return 1000000U / ( rcout_1to4_timer::get()->arr + 1);
          }
 #if defined QUAN_AERFLITE_BOARD
-         if ( ch < 6) {
-           return 1000000U / ( rcout_5_6_timer::get()->arr + 1);
+         if ( ch < 7) {
+           return 1000000U / ( rcout_5to7_timer::get()->arr + 1);
          }
 #endif
          return 0;
@@ -317,7 +334,12 @@ namespace {
          }
 #if defined QUAN_AERFLITE_BOARD
          if ( ch < 6){
-            rcout_5_6_timer::get()->ccer |= (1U << ((ch - 3U)*4U + 2U));
+            rcout_5to7_timer::get()->ccer |= (1U << ((ch - 3U)*4U + 2U));
+            return;
+         }else{
+            if (ch == 6){  // ccer.cc4e
+               rcout_5to7_timer::get()->ccer.bb_setbit<12>();
+            }
          }
 #endif
       }
@@ -331,7 +353,12 @@ namespace {
          }
 #if defined QUAN_AERFLITE_BOARD
          if ( ch < 6){
-            rcout_5_6_timer::get()->ccer  &= ~(1U << ((ch - 3U)*4U + 2U));
+            rcout_5to7_timer::get()->ccer &= ~(1U << ((ch - 3U)*4U + 2U));
+            return;
+         }else{
+            if (ch == 6){  // ccer.cc4e
+               rcout_5to7_timer::get()->ccer.bb_clearbit<12>();
+            }
          }
 #endif
       }
@@ -344,8 +371,8 @@ namespace {
             return;
          }
 #if defined QUAN_AERFLITE_BOARD
-         if ( ch < 6){
-            volatile uint32_t * ccrs = &rcout_5_6_timer::get()->ccr2;
+         if ( ch < 7){
+            volatile uint32_t * ccrs = &rcout_5to7_timer::get()->ccr2;
             ccrs[ch - 4] = quan::constrain(pulsewidth_in_us,min_pulsewidth, max_pulsewidth);
          }
 #endif
@@ -366,8 +393,8 @@ namespace {
            return ccrs[ch] ;
         }
 #if defined QUAN_AERFLITE_BOARD
-        if ( ch < 6){
-            volatile uint32_t * ccrs = &rcout_5_6_timer::get()->ccr2;
+        if ( ch < 7){
+            volatile uint32_t * ccrs = &rcout_5to7_timer::get()->ccr2;
             return ccrs[ch - 4];
         }
 #endif

@@ -28,7 +28,7 @@ namespace {
    constexpr uint8_t pin_off = 0U;
    constexpr uint8_t pin_on = 1U;
 
-   constexpr uint8_t num_rc_out_channels = 6;
+   constexpr uint8_t num_rc_out_channels = 7;
 
    constexpr uint16_t max_pulsewidth_us = 2100;
    constexpr uint16_t min_pulsewidth_us = 900;
@@ -51,7 +51,8 @@ namespace {
       ,{increasing, 0, 1500, 26, 20}
       ,{increasing, 0, 1500, 43, 50}
       ,{decreasing, 0, 1500, 90,  5}
-      ,{increasing, 0, 1500,  4, 20}
+      ,{increasing, 0, 1500,  8, 20}
+      ,{decreasing, 0, 1500,  30, 20}
    };
 
    struct test_task_t{
