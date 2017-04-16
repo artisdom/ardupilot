@@ -88,7 +88,11 @@ public:
     float get_roll_demand()const { return output_roll.get();}
     float get_yaw_demand()const { return output_yaw.get();}
     float get_thrust_demand()const { return output_thrust.get();}
-
+    float get_flap_demand()const 
+    { 
+       constexpr uint8_t flap_js_channel = 4;
+       return quan::constrain(static_cast<float>( hal.rcin->read(flap_js_channel) - 1500) / 500.f,-1.f,1.f);
+    }
     float get_airspeed_min() const { return static_cast<float>(aparm.airspeed_min);}
     float get_airspeed_max() const { return static_cast<float>(aparm.airspeed_max);}
     // weight towards min whatever

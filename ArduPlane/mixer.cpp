@@ -1,4 +1,7 @@
 
+
+#if 0
+
 #include <cstring>
 #include <mixer_lang.hpp>
 #include <mixer_lang_cstrstream.hpp>
@@ -6,7 +9,9 @@
 
 extern const AP_HAL::HAL& hal;
 
-float get_thrust_demand();
+
+
+//float get_thrust_demand();
 // avoid c style functions that use malloc
 // TODO allocate a large block once, store the strings there
 // and then free the entire block once when done
@@ -70,15 +75,9 @@ namespace {
        {"Pitch", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_pitch_demand();})}
       ,{"Yaw",  static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_yaw_demand();})}
       ,{"Roll", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_roll_demand();})}
-      ,{"Throttle",get_thrust_demand}
-      ,{"Flap", dummy} //TODO
-      ,{"Airspeed", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_airspeed();})}
-      ,{"ControlMode", dummy}
-      ,{"ARSPD_MIN", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_airspeed_min();})}
-      ,{"ARSPD_CRUISE",static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_airspeed_cruise();})}
-      ,{"ARSPD_MAX", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_airspeed_max();})}
-      ,{"FAILSAFE_ON", failsafe_on}
-      ,{"DUMMY_INT", static_cast<apm_mix::int_t(*)()>([]()->apm_mix::int_t{return 1000;})}
+      ,{"Throttle",static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_thrust_demand();})} 
+      ,{"Flap", static_cast<apm_mix::float_t(*)()>([]()->apm_mix::float_t{return plane.get_flap_demand();})}
+
    };
 
 // convert the -1 to +1 value to a pwm output
@@ -129,31 +128,41 @@ namespace {
       "}\n"; 
 #else
    const char mixer_string [] = 
-      "roll_gain = -0.5;\n"
-      "pitch_gain = -0.5;\n"
-      "\n"
-      "mixer(){\n"
-      "roll = input{Roll} * roll_gain;\n"
-      "pitch = input{Pitch} * pitch_gain;\n"
-      "output[0] = roll + pitch;\n"
-      "output[1] = roll - pitch;\n"
-      "output[2] = input{Throttle};\n"
-      "}\n"; 
+   #if 1
+      #include "skyhook_disco.mixstr"
+   #else
+         "roll_gain = -0.5;\n"
+         "pitch_gain = -0.5;\n"
+         "\n"
+         "mixer(){\n"
+         "roll = input{Roll} * roll_gain;\n"
+         "pitch = input{Pitch} * pitch_gain;\n"
+         "output[0] = roll + pitch;\n"
+         "output[1] = roll - pitch;\n"
+         "output[2] = input{Throttle};\n"
+         "}\n"; 
+   #endif
 #endif
 }
 
+
 bool Plane::create_mixer()
 {
-   apm_lexer::cstrstream_t stream{mixer_string,500}; 
-
-   return apm_mix::mixer_create(
-      &stream
-      ,inputs, sizeof(inputs)/sizeof(inputs[0])
-      ,outputs, sizeof(outputs)/sizeof(outputs[0])
-   ); 
+   return true;
+//   apm_lexer::cstrstream_t stream{mixer_string,500}; 
+//
+//   return apm_mix::mixer_create(
+//      &stream
+//      ,inputs, sizeof(inputs)/sizeof(inputs[0])
+//      ,outputs, sizeof(outputs)/sizeof(outputs[0])
+//   ); 
 }
 
 void Plane::mix()
 {
-    apm_mix::mixer_eval();
+  //  apm_mix::mixer_eval();
+    mixer_eval();
 }
+
+#endif
+
