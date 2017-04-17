@@ -13,12 +13,12 @@ namespace {
    uint8_t constexpr port_ail_inner = 4;
    uint8_t constexpr port_ail_outer = 5;
 
-   float constexpr stbd_ail_inner_dir = 1.f;
-   float constexpr stbd_ail_outer_dir = 1.f;
-   float constexpr port_ail_inner_dir = -1.f;
-   float constexpr port_ail_outer_dir = -1.f;
+   float constexpr stbd_ail_inner_dir = -1.f;
+   float constexpr stbd_ail_outer_dir = -1.f;
+   float constexpr port_ail_inner_dir = 1.f;
+   float constexpr port_ail_outer_dir = 1.f;
 
-   float constexpr ail_inner_horn_len = 1.f;
+   float constexpr ail_inner_horn_len = 0.7f;
    float constexpr ail_outer_horn_len = 1.f;
 
    float constexpr up_ail_gain = 0.75f;
@@ -30,7 +30,7 @@ namespace {
    float constexpr down_ail_outer_gain = down_ail_gain * ail_outer_horn_len;
 
    float constexpr up_flap_gain = 0.1f;
-   float constexpr down_flap_gain = 0.4f;
+   float constexpr down_flap_gain = 0.3f;
 
    float constexpr up_flap_inner_gain = up_flap_gain * ail_inner_horn_len;
    float constexpr down_flap_inner_gain = down_flap_gain * ail_inner_horn_len;
@@ -38,13 +38,13 @@ namespace {
    float constexpr down_flap_outer_gain = down_flap_gain * ail_outer_horn_len;
 
    float constexpr rudder_roll_gain = -0.3f;
-   float constexpr elev_flap_gain = -0.1f;
+   float constexpr elev_flap_gain = 0.1f;
 
    float output[7] = {0.f,0.f,0.f,0.f,0.f,0.f,0.f};
 
    void output_action(uint8_t channel)
    {
-       float const v1 = (((output[channel] + 1.f)/2.f) + 1.f) * 1000.f;
+       float const v1 = (output[channel] + 3.f) * 500.f;
        uint16_t const out = quan::constrain(static_cast<uint16_t>(v1),static_cast<uint16_t>(1000U),static_cast<uint16_t>(2000U)); 
        hal.rcout->write(channel,out);
    }
