@@ -40,6 +40,12 @@ namespace {
    float constexpr rudder_roll_gain = -0.3f;
    float constexpr elev_flap_gain = 0.1f;
 
+   float constexpr crow_up_gain = 0.3f;
+   float constexpr crow_down_gain = 0.5f;
+   float constexpr elev_to_crow_gain = 0.1f;
+
+  //################################
+   
    float output[7] = {0.f,0.f,0.f,0.f,0.f,0.f,0.f};
 
    void output_action(uint8_t channel)
@@ -49,29 +55,51 @@ namespace {
        hal.rcout->write(channel,out);
    }
 
+   //###############################
+
    void mixer_eval()
    {
+     bool const manual_mode = plane.get_control_mode() == MANUAL;
+     bool const crow_mode = manual_mode && (hal.rcin->read(6) > 1750);
+     bool const crow_active = crow_mode && (plane.get_thrust_demand() < 0.f);
+
      float const roll = -plane.get_roll_demand();
      bool const positive_roll = roll > 0.f;
      float const port_inner_ail = roll * (positive_roll? up_ail_inner_gain: down_ail_inner_gain);
      float const port_outer_ail = roll * (positive_roll? up_ail_outer_gain: down_ail_outer_gain);
      float const stbd_inner_ail = -roll * (positive_roll? down_ail_inner_gain: up_ail_inner_gain);
      float const stbd_outer_ail = -roll * (positive_roll? down_ail_outer_gain: up_ail_outer_gain);
-     float const flap = - plane.get_flap_demand();
+   
+     float const thrust_in = plane.get_thrust_demand();
+     if ( crow_mode){
+        output[throttle] = thrust_in * 2.f - 1.f;
+     }else{
+        output[throttle] = thrust_in;
+     }
+     float const crow = (crow_active ?-thrust_in * 2.f : 0.f);
+     float const inner_crow = (crow - 0.5f) * crow_down_gain;
+     float const outer_crow = (crow - 0.5f) * crow_up_gain;
+     
+     float const flap_in = plane.get_flap_demand();
+     float const flap = (crow_mode == false) 
+      ? -flap_in
+      : (crow_active ? 1.f - crow : 1.f);
      bool const  up_flap = flap < 0.f;
      float const inner_flap = flap * (up_flap?up_flap_inner_gain:down_flap_inner_gain);
      float const outer_flap = flap * (up_flap?up_flap_outer_gain:down_flap_outer_gain);
-     output[throttle] = plane.get_thrust_demand();
-     output[port_ail_inner] = (port_inner_ail - inner_flap) * port_ail_inner_dir;
-     output[port_ail_outer] = (port_outer_ail - outer_flap) * port_ail_outer_dir;
-     output[stbd_ail_inner] = (stbd_inner_ail - inner_flap) * stbd_ail_inner_dir;
-     output[stbd_ail_outer] = (stbd_outer_ail - outer_flap) * stbd_ail_outer_dir;
+     
+     output[port_ail_inner] = (port_inner_ail - inner_flap - inner_crow) * port_ail_inner_dir;
+     output[stbd_ail_inner] = (stbd_inner_ail - inner_flap - inner_crow) * stbd_ail_inner_dir;
+     output[port_ail_outer] = (port_outer_ail - outer_flap + outer_crow) * port_ail_outer_dir;
+     output[stbd_ail_outer] = (stbd_outer_ail - outer_flap + outer_crow) * stbd_ail_outer_dir;
+
      float const elev_to_flap = (up_flap?up_flap_gain:down_flap_gain) * elev_flap_gain * flap;
      float const roll_to_rudder = roll * rudder_roll_gain;
+     float const elev_to_crow = elev_to_crow_gain * crow;
      float const pitch = plane.get_pitch_demand();
      float const yaw = plane.get_yaw_demand();
-     output[port_v_tail] = pitch * 0.5f + yaw * 0.5f + roll_to_rudder + elev_to_flap;
-     output[stbd_v_tail] = -pitch * 0.5f + yaw * 0.5f + roll_to_rudder - elev_to_flap;
+     output[port_v_tail] = pitch * 0.5f + yaw * 0.5f + roll_to_rudder + elev_to_flap + elev_to_crow;
+     output[stbd_v_tail] = -pitch * 0.5f + yaw * 0.5f + roll_to_rudder - elev_to_flap - elev_to_crow;
 
      for ( uint8_t i = 0; i < 7; ++i){
          output_action(i);
@@ -84,18 +112,10 @@ namespace {
 bool Plane::create_mixer()
 {
    return true;
-//   apm_lexer::cstrstream_t stream{mixer_string,500}; 
-//
-//   return apm_mix::mixer_create(
-//      &stream
-//      ,inputs, sizeof(inputs)/sizeof(inputs[0])
-//      ,outputs, sizeof(outputs)/sizeof(outputs[0])
-//   ); 
 }
 
 void Plane::mix()
 {
-  //  apm_mix::mixer_eval();
     mixer_eval();
 }
 
