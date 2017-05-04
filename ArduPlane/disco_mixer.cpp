@@ -38,11 +38,11 @@ namespace {
    float constexpr down_flap_outer_gain = down_flap_gain * ail_outer_horn_len;
 
    float constexpr rudder_roll_gain = -0.3f;
-   float constexpr elev_flap_gain = 0.1f;
+   float constexpr elev_flap_gain = 0.05f;
 
-   float constexpr crow_up_gain = 0.3f;
-   float constexpr crow_down_gain = 0.5f;
-   float constexpr elev_to_crow_gain = 0.1f;
+   float constexpr crow_up_gain = 0.35f;
+   float constexpr crow_down_gain = 0.715f;
+   float constexpr elev_to_crow_gain = -0.1f;
 
   //################################
    
@@ -77,13 +77,26 @@ namespace {
         output[throttle] = thrust_in;
      }
      float const crow = (crow_active ?-thrust_in * 2.f : 0.f);
-     float const inner_crow = (crow - 0.5f) * crow_down_gain;
-     float const outer_crow = (crow - 0.5f) * crow_up_gain;
+     float const inner_crow = (crow - 0.5f) * crow_down_gain * ail_inner_horn_len;
+     float const outer_crow = (crow - 0.5f) * crow_up_gain * ail_outer_horn_len;
      
      float const flap_in = plane.get_flap_demand();
-     float const flap = (crow_mode == false) 
-      ? -flap_in
-      : (crow_active ? 1.f - crow : 1.f);
+     /*
+       flap only works in manual mode else it is 0
+       In crow mode, bottom half of throttle controls amount of crow
+       In manual mode, if crow is on then flap goes from full down flap at minimum crow ( around half throttle)
+       as crow increases(thorttle sticl towards min throttle) the flap effect reduces . 
+       This gives a smooth flap movement from min to max crow in crow mode
+       Crow flaps are only effective when throttle is in bottom half.
+       With throttle in upper half, throttle increses as throttle stick increases
+       In top half of throttle flap stays on full down flap, to give a good climb out if landing is aborted
+      */
+     float const flap = 
+         (manual_mode == true)
+         ?((crow_mode == false) 
+            ? -flap_in
+            : (crow_active ? 1.f - crow : 1.f))
+         : 0.f;
      bool const  up_flap = flap < 0.f;
      float const inner_flap = flap * (up_flap?up_flap_inner_gain:down_flap_inner_gain);
      float const outer_flap = flap * (up_flap?up_flap_outer_gain:down_flap_outer_gain);
@@ -104,9 +117,7 @@ namespace {
      for ( uint8_t i = 0; i < 7; ++i){
          output_action(i);
      }
-
    }
-
 }
 
 bool Plane::create_mixer()
