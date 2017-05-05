@@ -1,8 +1,4 @@
 
-#include "Plane.h"
-
-extern const AP_HAL::HAL& hal;
-
 namespace {
 
    uint8_t constexpr port_v_tail = 0;
@@ -45,15 +41,8 @@ namespace {
    float constexpr elev_to_crow_gain = -0.1f;
 
   //################################
-   
-   float output[7] = {0.f,0.f,0.f,0.f,0.f,0.f,0.f};
-
-   void output_action(uint8_t channel)
-   {
-       float const v1 = (output[channel] + 3.f) * 500.f;
-       uint16_t const out = quan::constrain(static_cast<uint16_t>(v1),static_cast<uint16_t>(1000U),static_cast<uint16_t>(2000U)); 
-       hal.rcout->write(channel,out);
-   }
+   uint8_t constexpr num_outputs = 7;
+   float output[num_outputs] = {0.f,0.f,0.f,0.f,0.f,0.f,0.f};
 
    //###############################
 
@@ -114,27 +103,8 @@ namespace {
      output[port_v_tail] = pitch * 0.5f + yaw * 0.5f + roll_to_rudder + elev_to_flap + elev_to_crow;
      output[stbd_v_tail] = -pitch * 0.5f + yaw * 0.5f + roll_to_rudder - elev_to_flap - elev_to_crow;
 
-     for ( uint8_t i = 0; i < 7; ++i){
+     for ( uint8_t i = 0; i < num_outputs; ++i){
          output_action(i);
      }
    }
 }
-
-bool Plane::create_mixer()
-{
-   return true;
-}
-
-void Plane::mix()
-{
-    mixer_eval();
-}
-
-
-
-
-
-
-
-
-
