@@ -117,7 +117,9 @@ const AP_Param::GroupInfo Compass::var_info[] = {
 
     // @Param: EXTERNAL
     // @DisplayName: Compass is attached via an external cable
-    // @Description: Configure compass so it is attached externally. This is auto-detected on PX4 and Pixhawk, but must be set correctly on an APM2. Set to 1 if the compass is externally connected. When externally connected the COMPASS_ORIENT option operates independently of the AHRS_ORIENTATION board orientation option
+    // @Description: Configure compass so it is attached externally. This is auto-detected on PX4 and Pixhawk, but must be set correctly on an APM2. 
+    // Set to 1 if the compass is externally connected. 
+    // When externally connected the COMPASS_ORIENT option operates independently of the AHRS_ORIENTATION board orientation option
     // @Values: 0:Internal,1:External
     // @User: Advanced
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
