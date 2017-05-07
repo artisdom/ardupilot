@@ -131,6 +131,9 @@ namespace{
       uint8_t encoded [19];
       quan::tracker::zapp4::encode_position(norm_pos,encoded);
       write_telemetry_data((const char*)encoded,19);
+     //###########################################
+     // TODO add write to uart for rf modem
+     //###########################################
    }
 
    void transmit_gps_status(quan::tracker::zapp4::gps_status_t gps_status)
@@ -138,7 +141,6 @@ namespace{
       uint8_t encoded[11];
       quan::tracker::zapp4::encode_gps_status(gps_status,encoded);
       write_telemetry_data((const char*)encoded,11);
-
    }
 }
 
