@@ -7,7 +7,6 @@ namespace {
 }
 
 #if (CONFIG_HAL_BOARD == HAL_BOARD_SITL)
-#error wtf
    #include "mixers/sitl_mixer.cpp"
 #else
    #if (1)

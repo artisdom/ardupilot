@@ -36,6 +36,11 @@ namespace{
 
    AP_OSD::dequeue::osd_info_t info;
    AP_OSD::OSD_params osd;
+#if defined QUAN_AERFLITE_BOARD
+   AP_HAL::UARTDriver * telem_port = nullptr;
+   uint32_t last_telem_time_ms = 0U; 
+   uint32_t constexpr telem_loop_time_ms = 200; // every 0.2 secs send a new gps telem
+#endif
 }
 
 namespace Quan{
@@ -65,10 +70,19 @@ namespace {
 
    void do_initialising()
    {
+
       quan::uav::osd::pxp_type pos {-150,20};
       quan::uav::osd::draw_text("initialising",pos); 
       pos.y -= 20;
       quan::uav::osd::draw_text("Press return x 3 for CLI",pos,Quan::FontID::MWOSD); 
+#if defined QUAN_AERFLITE_BOARD
+      if ( telem_port == nullptr){
+         telem_port = hal.uartD; // 3.3V port uart6
+         if ( telem_port != nullptr){
+            telem_port->begin(115200, 100,100);
+         }
+      }
+#endif
    } 
 
    void do_running()
@@ -131,9 +145,17 @@ namespace{
       uint8_t encoded [19];
       quan::tracker::zapp4::encode_position(norm_pos,encoded);
       write_telemetry_data((const char*)encoded,19);
-     //###########################################
-     // TODO add write to uart for rf modem
-     //###########################################
+
+#if defined QUAN_AERFLITE_BOARD
+//write to uart for rf modem
+      auto const time_now_ms = AP_HAL::millis();
+      if ( (time_now_ms - last_telem_time_ms) >= telem_loop_time_ms){
+         last_telem_time_ms = time_now_ms;
+         if ( telem_port != nullptr){
+            telem_port->write(encoded,19);
+         }
+      }
+#endif
    }
 
    void transmit_gps_status(quan::tracker::zapp4::gps_status_t gps_status)
@@ -141,6 +163,16 @@ namespace{
       uint8_t encoded[11];
       quan::tracker::zapp4::encode_gps_status(gps_status,encoded);
       write_telemetry_data((const char*)encoded,11);
+#if defined QUAN_AERFLITE_BOARD
+//write to uart for rf modem
+      auto const time_now_ms = AP_HAL::millis();
+      if ( (time_now_ms - last_telem_time_ms) >= telem_loop_time_ms){
+         last_telem_time_ms = time_now_ms;
+         if ( telem_port != nullptr){
+            telem_port->write(encoded,11);
+         }
+      }
+#endif
    }
 }
 
