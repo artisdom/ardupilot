@@ -130,7 +130,7 @@ namespace {
 void setup() {
     // we output data on telemetry uart
     // which is connected to the RF modem.
-    uart = hal.uartB;
+    uart = hal.uartA;
     uart->begin(57600);
 
     hal.scheduler->delay(1000);
@@ -172,6 +172,10 @@ void setup() {
 
     uart->printf("press space for menu\n");
 
+}
+
+void on_telemetry_transmitted()
+{
 }
 
 void quan::uav::osd::on_draw() 
