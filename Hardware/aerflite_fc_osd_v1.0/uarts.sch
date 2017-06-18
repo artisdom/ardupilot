@@ -13,11 +13,6 @@ LIBS:display
 LIBS:cypress
 LIBS:siliconi
 LIBS:contrib
-LIBS:si80655
-LIBS:fms6141
-LIBS:tja1051t
-LIBS:conn_5
-LIBS:si8065
 LIBS:osd-cache
 EELAYER 25 0
 EELAYER END

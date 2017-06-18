@@ -13,11 +13,6 @@ LIBS:display
 LIBS:cypress
 LIBS:siliconi
 LIBS:contrib
-LIBS:si80655
-LIBS:fms6141
-LIBS:tja1051t
-LIBS:conn_5
-LIBS:si8065
 LIBS:osd-cache
 EELAYER 25 0
 EELAYER END
@@ -712,4 +707,8 @@ Wire Wire Line
 Wire Wire Line
 	6250 2800 6250 2325
 Connection ~ 6250 2325
+Text Notes 8250 2125 0    60   ~ 0
+A0=1
+Text Notes 8250 2475 0    60   ~ 0
+A0=0
 $EndSCHEMATC
