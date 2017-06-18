@@ -103,6 +103,16 @@ ifeq ($(AERFLITE),True)
 QUAN_DEFINES += QUAN_AERFLITE_BOARD
 endif
 
+ifeq ($(MIXER_DISCO),True)
+   QUAN_DEFINES += QUAN_MIXER_DISCO
+else
+ifeq ($(MIXER_FALCON),True)
+   QUAN_DEFINES += QUAN_MIXER_FALCON
+else
+   $(error "MIXER must be defined.")
+endif
+endif
+
 MIXER_LANG_INCLUDES = $(MIXER_LANG_PATH)/include
 
 QUAN_INCLUDES = $(STM32_INCLUDES) $(QUAN_INCLUDE_PATH) $(QUANTRACKER_ROOT_DIR)include \

@@ -378,13 +378,9 @@ void Plane::send_servo_out(mavlink_channel_t chan)
         chan,
         millis(),
         0, // port 0
-      //  10000 * channel_roll.norm_output() ,
         10000 * output_roll.get(),
-      //  10000 * channel_pitch.norm_output() ,
         10000 * output_pitch.get(),
-      //  10000 * channel_thrust.norm_output(),
         10000 * output_thrust.get(),
-      //  10000 * channel_yaw.norm_output() ,
         10000 * output_yaw.get(),
         0,
         0,

@@ -487,10 +487,6 @@ void Plane::handle_auto_mode(void)
         if (auto_state.land_complete) {
             // we are in the final stage of a landing - force
             // zero thrust
-           // channel_thrust.set_temp_out(0);
-//           if ( control_mode == RTL){
-//             hal.console->printf("RTL: thrust set to 0 in handle_auto_mode\n");
-//           }
            autopilot_thrust.set_force(0_N);
         }
     } else {
@@ -583,11 +579,8 @@ void Plane::update_flight_mode(void)
     case AUTOTUNE:
     case FLY_BY_WIRE_A: {
         // set nav_roll and nav_pitch using sticks
-      //  nav_roll_cd  = channel_roll.norm_input() * roll_limit_cd;
         nav_roll_cd = joystick_roll.as_float() * roll_limit_cd;
-       // nav_roll_cd = constrain_int32(nav_roll_cd, -roll_limit_cd, roll_limit_cd);
         update_load_factor();
-     //   float pitch_input = channel_pitch.norm_input();
         float const pitch_input = joystick_pitch.as_float();
         if (pitch_input > 0) {
             nav_pitch_cd = pitch_input * aparm.pitch_limit_max_cd;
@@ -601,7 +594,6 @@ void Plane::update_flight_mode(void)
             // FBWA failsafe glide
             nav_roll_cd = 0;
             nav_pitch_cd = 0;
-           // channel_thrust.set_temp_out(0);
             autopilot_thrust.set_force(0_N);
         }
         if (g.fbwa_tdrag_chan > 0) {
@@ -619,7 +611,6 @@ void Plane::update_flight_mode(void)
 
     case FLY_BY_WIRE_B:
         // Thanks to Yury MonZon for the altitude limit code!
-       // nav_roll_cd = channel_roll.norm_input() * roll_limit_cd;
         nav_roll_cd = joystick_roll.as_float() * roll_limit_cd;
         nav_roll_cd = constrain_int32(nav_roll_cd, -roll_limit_cd, roll_limit_cd);
         update_load_factor();
@@ -633,15 +624,12 @@ void Plane::update_flight_mode(void)
           any aileron or rudder input
         */
 
-     //  if ((channel_roll.get_control_in() != 0 ||
-        if( (joystick_roll.as_angle() != 0_cdeg )  ||
-     //        channel_yaw.get_control_in() != 0))   
+        if( (joystick_roll.as_angle() != 0_cdeg )  || 
             (joystick_yaw.as_angle() != 0_cdeg ) ){
             cruise_state.locked_heading = false;
             cruise_state.lock_timer_ms = 0;
         }
         if (!cruise_state.locked_heading) {
-          //  nav_roll_cd = channel_roll.norm_input() * roll_limit_cd;
             nav_roll_cd = joystick_roll.as_float() * roll_limit_cd;
             nav_roll_cd = constrain_int32(nav_roll_cd, -roll_limit_cd, roll_limit_cd);
             update_load_factor();
@@ -652,8 +640,8 @@ void Plane::update_flight_mode(void)
         break;
         
     case STABILIZE:
-        nav_roll_cd        = 0;
-        nav_pitch_cd       = 0;
+        nav_roll_cd = 0;
+        nav_pitch_cd = 0;
         // thrust is passthrough
         break;
         
@@ -662,21 +650,15 @@ void Plane::update_flight_mode(void)
         // or we just want to fly around in a gentle circle w/o GPS,
         // holding altitude at the altitude we set when we
         // switched into the mode
-        nav_roll_cd  = roll_limit_cd / 3;
+        nav_roll_cd = roll_limit_cd / 3;
         update_load_factor();
         calc_nav_pitch();
         calc_thrust();
         break;
 
     case MANUAL:
-        // servo_out is for Sim control only
-        // ---------------------------------
-       // channel_roll.set_temp_out(channel_roll.get_control_in());
          autopilot_roll.set_js(joystick_roll);
-       // channel_pitch.set_temp_out(channel_pitch.get_control_in());
          autopilot_pitch.set_js(joystick_pitch);
-        // in fact either this or the same call in  read_radio is not necessary
-         //channel_yaw.set_temp_out(channel_yaw.get_control_in());
          autopilot_yaw.set_js(joystick_yaw);
         break;
         
@@ -825,8 +807,6 @@ void Plane::update_flight_stage(void)
             if (auto_state.takeoff_complete == false) {
                 set_flight_stage(AP_SpdHgtControl::FLIGHT_TAKEOFF);
             } else if (mission.get_current_nav_cmd().id == MAV_CMD_NAV_LAND) {
-
-             //   if ((g.land_abort_thrust_enable && channel_thrust.get_control_in() > 95) ||
                 if ((g.land_abort_thrust_enable && joystick_thrust.as_force() > 95_N) ||
                         flight_stage == AP_SpdHgtControl::FLIGHT_LAND_ABORT){
                     // abort mode is sticky, it must complete while executing NAV_LAND
@@ -899,11 +879,9 @@ void loop(void);
 void setup(void)
 {
     plane.setup();
-   // hal.console->printf("setup done\n");
 }
 void loop(void)
 {
-   // hal.console->printf("loop\n");
     plane.loop();
 }
 

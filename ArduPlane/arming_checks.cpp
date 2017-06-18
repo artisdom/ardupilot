@@ -54,7 +54,6 @@ bool AP_Arming_Plane::pre_arm_checks(bool report)
     }
 
     if ( plane.g.thrust_fs_enabled &&
-       // plane.g.thrust_fs_value >=  plane.channel_thrust.get_joystick_in_min_usec()) {
         (plane.g.thrust_fs_value >= plane.joystick_thrust.get_min().numeric_value()) ) {
         if (report) {
             GCS_MAVLINK::send_statustext_all(MAV_SEVERITY_CRITICAL, "PreArm: Invalid THR_FS_VALUE for thrust");

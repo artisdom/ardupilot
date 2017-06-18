@@ -8,12 +8,12 @@ namespace {
 
 #if (CONFIG_HAL_BOARD == HAL_BOARD_SITL)
    #include "mixers/sitl_mixer.cpp"
+#elif (defined(QUAN_MIXER_DISCO))
+   #include "mixers/disco_mixer.cpp"
+#elif (defined(QUAN_MIXER_FALCON))
+   #include "mixers/falcon_mixer.cpp"
 #else
-   #if (1)
-      #include "mixers/disco_mixer.cpp"
-   #else
-      #include "mixers/falcon_mixer.cpp"
-   #endif
+   #error no mixer defined
 #endif
 
 namespace {

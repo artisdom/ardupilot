@@ -31,13 +31,3 @@ Plane::Plane(void)
 }
 
 Plane plane;
-
-bool in_rtl_mode()
-{
-   return plane.get_control_mode() == RTL;
-}
-
-//float get_thrust_demand()
-//{
-//   return plane.get_thrust_demand();
-//}

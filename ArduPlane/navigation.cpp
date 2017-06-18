@@ -90,8 +90,9 @@ void Plane::calc_airspeed_errors()
     if (control_mode == FLY_BY_WIRE_B || 
         control_mode == CRUISE) {
         target_airspeed_cm 
-        // = ((int32_t)(aparm.airspeed_max - aparm.airspeed_min) * channel_thrust.get_control_in()) +  ((int32_t)aparm.airspeed_min * 100);
-         = ((int32_t)(aparm.airspeed_max - aparm.airspeed_min) * joystick_thrust.as_force().numeric_value()) +  ((int32_t)aparm.airspeed_min * 100);
+            = ((int32_t)(aparm.airspeed_max - aparm.airspeed_min) * 
+               joystick_thrust.as_force().numeric_value()) + 
+                  ((int32_t)aparm.airspeed_min * 100);
     }
 
     // Set target to current airspeed + ground speed undershoot,
@@ -161,9 +162,7 @@ void Plane::update_loiter()
 void Plane::update_cruise()
 {
     if (!cruise_state.locked_heading &&
-       // channel_roll.get_control_in() == 0 &&
         (joystick_roll.as_angle() == 0_cdeg)   &&
-     //   channel_yaw.get_control_in() == 0 &&
         (joystick_yaw.as_angle() == 0_cdeg)  &&
         gps.status() >= AP_GPS::GPS_OK_FIX_2D &&
         gps.ground_speed() >= 3 &&
@@ -201,7 +200,7 @@ namespace {
 }
 void Plane::update_fbwb_speed_height(void)
 {
-   // float elevator_input = channel_pitch.get_control_in() / 4500.0f;
+
     float elevator_input = joystick_pitch.as_float();
     
     if (g.flybywire_elev_reverse) {
@@ -244,4 +243,3 @@ void Plane::setup_turn_angle(void)
         auto_state.next_turn_angle = wrap_180_cd(next_ground_course_cd - ground_course_cd) * 0.01f;
     }
 }    
-

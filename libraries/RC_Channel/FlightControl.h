@@ -5,7 +5,6 @@
 #include <quan/constrain.hpp>
 #include <quan/time.hpp>
 
-//bool in_rtl_mode();
 
 template <typename FlightAxisT>
 struct FltCtrlInput{
@@ -71,26 +70,18 @@ private:
 
 template <>
 struct FltCtrlOutput<FlightAxis::Thrust> : FltCtrlOutput_base{
-  // using FltCtrlOutput_base::set_float;
-  // using FltCtrlOutput_base::get;
+
    FltCtrlOutput() :  FltCtrlOutput_base{-1.f}{}
    void set_js(JoystickInput<FlightAxis::Thrust> const & in)
    {
-//      if (in_rtl_mode()){
-//         hal.console->printf("Setiing from js v = %d\n", static_cast<int>(in.as_force().numeric_value()));
-//         this->set_float( (in.as_force().numeric_value()/ 50.f)-1.f, "Thrust");
-//          this->print();
-//      }else{
-         this->set_float( (in.as_force().numeric_value()/ 50.f)-1.f);
-    // }
-       
+      this->set_float( (in.as_force().numeric_value()/ 50.f)-1.f);
    }
 
    void set_ap(FltCtrlInput<FlightAxis::Thrust> const & in);
 
    void enable(){}
    void disable(){}
-  // bool is_enabled() const {return false;}
+
 private:
    FltCtrlOutput(FltCtrlOutput const & ) = delete;
    FltCtrlOutput & operator =(FltCtrlOutput const & ) = delete; 

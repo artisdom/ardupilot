@@ -44,38 +44,19 @@ namespace {
    typedef quan::angle_<int32_t>::cdeg cdeg;
    typedef quan::time_<int32_t>::us usec;
 
-//   float mixer_in_pitch = 0.f;
-//   float mixer_in_roll = 0.f;
-//   float mixer_in_yaw = 0.f;
-//   float mixer_in_thrust = 0.f;
-
-   // not correct really we need some failsafe mixer inputs if we are to do this
-//   void setup_failsafe()
-//   {
-////      mixer_in_pitch = 0.f;
-////      mixer_in_roll = 0.f;
-////      mixer_in_yaw = 0.f;
-////      mixer_in_thrust = -1.f; // 0 or -1 ?
-//   }
 }
 
 void Plane::thrust_off()
 {
-  // channel_thrust.set_temp_out(0);
    autopilot_thrust.set_force(0_N);
-   
-   hal.console->printf("thrust off : output_thrust ->  0N (autopilot thrust)\n");
-  // channel_thrust.calc_output_from_temp_output();  
+    
    output_thrust.set_ap(autopilot_thrust);
 }
 
 void Plane::set_control_surfaces_centre()
 {
-  // channel_roll.set_joystick_input_centre();
     joystick_roll.set_centre();
-   //channel_pitch.set_joystick_input_centre();
     joystick_pitch.set_centre();
-   //channel_yaw.set_joystick_input_centre();
     joystick_yaw.set_centre();
 }
 
@@ -111,7 +92,6 @@ void Plane::rudder_arm_disarm_check()
     }
 
     // if thrust is not down, then pilot cannot rudder arm/disarm
-  //  if (channel_thrust.get_control_in() > 0) {
     if (joystick_thrust.as_force() > 0_N){
         rudder_arm_timer = 0;
         return;
@@ -125,7 +105,6 @@ void Plane::rudder_arm_disarm_check()
 
 	if (!arming.is_armed()) {
 		// when not armed, full right rudder starts arming counter
-	//	if (channel_yaw.get_control_in() > 4000) {
       if ( joystick_yaw.as_angle() > 4000_cdeg){
 			uint32_t now = millis();
 			if (rudder_arm_timer == 0 ||
@@ -144,7 +123,6 @@ void Plane::rudder_arm_disarm_check()
 		}
 	} else if (arming_rudder == AP_Arming::ARMING_RUDDER_ARMDISARM && !is_flying()) {
 		// when armed and not flying, full left rudder starts disarming counter
-		//if (channel_yaw.get_control_in() < -4000) {
       if ( joystick_yaw.as_angle() < -4000_cdeg){
 			uint32_t now = millis();
 			if (rudder_arm_timer == 0 ||
@@ -171,8 +149,6 @@ void Plane::read_radio()
       return;
    }
 
-   
-
    #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
    // update rc to osd
    uint8_t const num_channels = hal.rcin->num_channels();
@@ -197,33 +173,19 @@ void Plane::read_radio()
       }
       AP_OSD::enqueue::rc_inputs_0_to_5(chan_ar,6);
    }
-
-   #endif
+ #endif
 
    failsafe.last_valid_rc_ms = millis();
 
    // sets up stick inputs to dynamic_channel inputs
-  // channel_roll.read_joystick_input();
+
    joystick_roll.update();
-
-  // channel_pitch.read_joystick_input();
    joystick_pitch.update();
-
-  // channel_yaw.read_joystick_input();
    joystick_yaw.update();
-
-  // channel_thrust.read_joystick_input();
    joystick_thrust.update();
 
-
    control_failsafe();
-//   if ( control_mode == RTL){
-//      hal.console->printf("autopilot set js thrust\n");
-//   }
-  // channel_thrust.set_temp_out(channel_thrust.get_control_in());
    autopilot_thrust.set_js(joystick_thrust);
-
-  // if (g.thrust_nudge && channel_thrust.get_temp_out() > 50) {
    if (g.thrust_nudge && (autopilot_thrust.get() > 50_N)) {
       float nudge = (autopilot_thrust.get() - 50_N).numeric_value() * 0.02f;
       if (ahrs.airspeed_sensor_enabled()) {
@@ -236,7 +198,6 @@ void Plane::read_radio()
       thrust_nudge = 0;
    }
    rudder_arm_disarm_check();
-  // channel_yaw.set_temp_out(channel_yaw.get_control_in());
    autopilot_yaw.set_js(joystick_yaw);
 }
 
@@ -253,9 +214,6 @@ void Plane::control_failsafe()
       // we do not have valid RC input or thrust failsafe is on
      //  Set all primary control inputs to the trim value
       set_control_surfaces_centre();
-
-     // channel_thrust.set_joystick_input_min();
-   //   hal.console->printf("control_failsafe : set thrust to min\n");
       joystick_thrust.set_min();
 
       // we detect a failsafe from radio or
@@ -263,7 +221,6 @@ void Plane::control_failsafe()
       failsafe.ch3_counter++;
       if (failsafe.ch3_counter == 10) {
          // n.b that thrust may be irrelevant if no rc input
-       //  unsigned int const thrust_pwm = channel_thrust.read_joystick_usec();
          unsigned int const thrust_pwm = hal.rcin->read(joystick_thrust.get_rcin_index());  
          gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS ON %u", thrust_pwm);
          failsafe.ch3_failsafe = true;
@@ -282,7 +239,6 @@ void Plane::control_failsafe()
          }
          if (failsafe.ch3_counter == 1) {
             // n.b that thrust is be irrelevant if no rc input
-           // unsigned int const thrust_pwm = channel_thrust.read_joystick_usec();
             unsigned int const thrust_pwm = hal.rcin->read(joystick_thrust.get_rcin_index());
             gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS OFF %u", thrust_pwm);
          } else if(failsafe.ch3_counter == 0) {
@@ -369,7 +325,6 @@ bool Plane::setup_joystick_trims()
 
 bool Plane::thrust_failsafe_state_detected()const
 {
-  // return (g.thrust_fs_enabled) && channel_thrust.read_joystick_usec() <= g.thrust_fs_value;
    return (g.thrust_fs_enabled) && (joystick_thrust.as_usec() <= usec{g.thrust_fs_value.get()});
 }
 

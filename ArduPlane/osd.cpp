@@ -23,6 +23,7 @@
 #include <quan/where.hpp>
 #include <quantracker/osd/osd.hpp>
 #include <task.h>
+#include <cstdlib>
 #include <quantracker/osd/telemetry_transmitter.hpp>
 #include <quan/tracker/zapp4/position.hpp>
 #include <quan/tracker/zapp4/gps_status.hpp>
@@ -39,7 +40,14 @@ namespace{
 #if defined QUAN_AERFLITE_BOARD
    AP_HAL::UARTDriver * telem_port = nullptr;
    uint32_t last_telem_time_ms = 0U; 
-   uint32_t constexpr telem_loop_time_ms = 200; // every 0.2 secs send a new gps telem
+   uint32_t telem_loop_time_ms = 150; 
+   // make the timing of telem updates somewhat random
+   // This means that hopefully it won't sync with other 
+   // 433 MHz radio signals
+   void update_loop_time_ms()
+   {
+     telem_loop_time_ms = 100 + (rand() % 100);
+   }
 #endif
 }
 
@@ -81,6 +89,7 @@ namespace {
          if ( telem_port != nullptr){
             telem_port->begin(115200, 100,100);
          }
+         //srand (AP_HAL::millis());
       }
 #endif
    } 
@@ -143,6 +152,7 @@ namespace{
          xTaskResumeAll();
       }
       uint8_t encoded [19];
+      
       quan::tracker::zapp4::encode_position(norm_pos,encoded);
       write_telemetry_data((const char*)encoded,19);
 
@@ -151,8 +161,10 @@ namespace{
       auto const time_now_ms = AP_HAL::millis();
       if ( (time_now_ms - last_telem_time_ms) >= telem_loop_time_ms){
          last_telem_time_ms = time_now_ms;
+         update_loop_time_ms();
          if ( telem_port != nullptr){
             telem_port->write(encoded,19);
+            telem_port->write(static_cast<uint8_t>(0U)); // for end of frame
          }
       }
 #endif
@@ -165,13 +177,14 @@ namespace{
       write_telemetry_data((const char*)encoded,11);
 #if defined QUAN_AERFLITE_BOARD
 //write to uart for rf modem
-      auto const time_now_ms = AP_HAL::millis();
-      if ( (time_now_ms - last_telem_time_ms) >= telem_loop_time_ms){
-         last_telem_time_ms = time_now_ms;
-         if ( telem_port != nullptr){
-            telem_port->write(encoded,11);
-         }
-      }
+//      auto const time_now_ms = AP_HAL::millis();
+//      if ( (time_now_ms - last_telem_time_ms) >= telem_loop_time_ms){
+//         last_telem_time_ms = time_now_ms;
+//         update_loop_time_ms();
+//         if ( telem_port != nullptr){
+//            telem_port->write(encoded,11);
+//         }
+//      }
 #endif
    }
 }

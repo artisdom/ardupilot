@@ -75,11 +75,6 @@ static void mavlink_delay_cb_static()
     plane.mavlink_delay_cb();
 }
 
-//static void failsafe_check_static()
-//{
-//    plane.failsafe_check();
-//}
-
 void Plane::init_ardupilot()
 {
     serial_manager.init_console();
