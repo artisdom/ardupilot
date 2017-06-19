@@ -55,6 +55,7 @@ namespace {
       vvect3  gyro;
    };
 
+   // modified by setup
    uint32_t num_irqs_for_update_message = 1;
 
 } // ~namespace
@@ -111,7 +112,7 @@ namespace Quan{
 
          vTaskSuspendAll();
          {
-            Quan::spi::enable_rx_dma();
+            Quan::spi::enable_dma();
             quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
             Quan::bmi160::enable_interrupt_from_device();
             quan::stm32::enable_exti_interrupt<Quan::bmi160::not_DR>();
@@ -132,10 +133,35 @@ namespace {
 //   uint32_t irq_count_led = 0;
 
    inertial_sensor_args_t imu_args;
-   volatile uint32_t irq_count = 0;
 
-   volatile uint32_t rx_buffer_idx = 0;
+
+  // volatile uint32_t rx_buffer_idx = 0;
 }
+
+//--------------------------------------------------
+
+// if (quan::stm32::is_event_pending<inertial_sensor::data_ready_irq>()){
+//
+//      mpu_watchdog::get()->cnt = 0;  
+//
+//      inertial_sensor::dma_transaction_in_progress = true;
+//
+//      spi_device_driver::cs_assert<inertial_sensor::chip_select>(); // start transaction
+//      spi_device_driver::stop_spi();
+//      
+//      quan::stm32::clear_event_pending<inertial_sensor::data_ready_irq>();
+//       
+//      DMA2_Stream5->NDTR = inertial_sensor::dma_buffer_size; // TX
+//      DMA2_Stream0->NDTR = inertial_sensor::dma_buffer_size; // RX
+//
+//      DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
+//      DMA2_Stream5->CR |= (1 << 0); // (EN) enable DMA  tx
+//      // 
+//      spi_device_driver::start_spi();
+//   }else{
+//      panic("unknown EXTI15_10 event\n");
+//   }
+////---------------------------------
 
 // data ready interrupt from IMU
 extern "C" void EXTI15_10_IRQHandler() __attribute__ ((interrupt ("IRQ")));
@@ -147,21 +173,19 @@ extern "C" void EXTI15_10_IRQHandler()
       mpu_watchdog::get()->sr = 0;
 
       Quan::spi::cs_assert<Quan::bmi160::not_CS>(); // start transaction
+      Quan::spi::disable();
       quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
-     
-      DMA2->LIFCR = ( 0b111101 << 0) ; // Stream 0 clear flags
+
       DMA2_Stream0->NDTR = Quan::bmi160::dma_buffer_size; // RX
-
-      rx_buffer_idx = 0;
-
-      // clear any junk
-      Quan::spi::ll_read();
-      while (!Quan::spi::txe()){;}
-
-      Quan::spi::ll_write(Quan::bmi160::reg::gyro_data_lsb | 0x80);
-      Quan::spi::enable_rxneie();
+      DMA2_Stream5->NDTR = Quan::bmi160::dma_buffer_size; // RX
+      DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
+      DMA2_Stream5->CR |= (1 << 0); // (EN) enable DMA  tx
+      // memory barrier?
+      Quan::spi::enable();
 
    }else{
+// TODO
+      // change to reset the irq somehow
       uint32_t const exti_pr_reg = quan::stm32::exti::get()->pr.get();
       // mask interrupts to prevent recur forever
       quan::stm32::exti::get()->emr.set(0);
@@ -205,68 +229,73 @@ namespace Quan{
 
 } // Quan
 
-extern "C" void  SPI1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
-extern "C" void  SPI1_IRQHandler()
-{
-   if ( rx_buffer_idx == 0){
-      Quan::spi::disable_rxneie();
-      Quan::spi::ll_read();
-      DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
-   }
-   Quan::spi::disable_txeie();
-   if ( ++rx_buffer_idx <= Quan::bmi160::dma_buffer_size){
-     Quan::spi::ll_write(0U);
-     Quan::spi::enable_txeie();
-   }
-}
+//extern "C" void  SPI1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
+//extern "C" void  SPI1_IRQHandler()
+//{
+//   if ( rx_buffer_idx == 0){
+//      Quan::spi::disable_rxneie();
+//      Quan::spi::ll_read();
+//      DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
+//   }
+//   Quan::spi::disable_txeie();
+//   if ( ++rx_buffer_idx <= Quan::bmi160::dma_buffer_size){
+//     Quan::spi::ll_write(0U);
+//     Quan::spi::enable_txeie();
+//   }
+//}
 
+namespace {
+   volatile uint32_t irq_count = 0;
+}
 // RX DMA complete
 extern "C" void DMA2_Stream0_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void DMA2_Stream0_IRQHandler()
 {
-   quan::stm32::push_FPregs();
-
    DMA2_Stream0->CR &= ~(1 << 0); // (EN) disable DMA
-
-   float const gyro_k = Quan::bmi160::get_gyro_constant();
-   Vector3f const gyro {
-      Quan::bmi160::dma_rx_buffer.gyro_x * gyro_k
-      ,-Quan::bmi160::dma_rx_buffer.gyro_y * gyro_k
-      ,-Quan::bmi160::dma_rx_buffer.gyro_z * gyro_k 
-   };        
-
-   float const accel_k = Quan::bmi160::get_accel_constant();
-   Vector3f const accel{
-      Quan::bmi160::dma_rx_buffer.accel_x * accel_k
-      ,-Quan::bmi160::dma_rx_buffer.accel_y * accel_k
-      ,-Quan::bmi160::dma_rx_buffer.accel_z * accel_k 
-   }; 
-
+   DMA2_Stream5->CR &= ~(1 << 0); // (EN) disable DMA
    BaseType_t HigherPriorityTaskWoken_imu = pdFALSE;
+   {
+      quan::stm32::push_FPregs();
 
-   bool applied = false;
-   if ( ++irq_count == num_irqs_for_update_message){
-       irq_count = 0;
-       if ( xQueueIsQueueEmptyFromISR(h_imu_args_queue)){
-          imu_args.accel = accel_filter.apply(accel);
-          imu_args.gyro = gyro_filter.apply(gyro);
-          auto*  p_imu_args = &imu_args;
-          xQueueSendToBackFromISR(h_imu_args_queue,&p_imu_args,&HigherPriorityTaskWoken_imu);
-          applied = true;
+      float const gyro_k = Quan::bmi160::get_gyro_constant();
+      Vector3f const gyro {
+         Quan::bmi160::dma_rx_buffer.gyro_x * gyro_k
+         ,-Quan::bmi160::dma_rx_buffer.gyro_y * gyro_k
+         ,-Quan::bmi160::dma_rx_buffer.gyro_z * gyro_k 
+      };        
+
+      float const accel_k = Quan::bmi160::get_accel_constant();
+      Vector3f const accel{
+         Quan::bmi160::dma_rx_buffer.accel_x * accel_k
+         ,-Quan::bmi160::dma_rx_buffer.accel_y * accel_k
+         ,-Quan::bmi160::dma_rx_buffer.accel_z * accel_k 
+      }; 
+
+      bool applied = false;
+      if ( ++irq_count >= num_irqs_for_update_message){
+          irq_count = 0;
+          if ( xQueueIsQueueEmptyFromISR(h_imu_args_queue)){
+             imu_args.accel = accel_filter.apply(accel);
+             imu_args.gyro = gyro_filter.apply(gyro);
+             auto*  p_imu_args = &imu_args;
+             xQueueSendToBackFromISR(h_imu_args_queue,&p_imu_args,&HigherPriorityTaskWoken_imu);
+             applied = true;
+         }
       }
+      if (!applied){  // need to apply to filter for quiet irq's
+          accel_filter.apply(accel);
+          gyro_filter.apply(gyro);
+      }
+      quan::stm32::pop_FPregs();
    }
-   if (!applied){  // need to apply to filter for quiet irq's
-       accel_filter.apply(accel);
-       gyro_filter.apply(gyro);
-   }
- 
-   while( DMA2_Stream0->CR & (1 << 0) ){;}
+   // change to finite for loop
+   // if loop fails  reset the dma spi etc
+   while( (DMA2_Stream5->CR | DMA2_Stream0->CR ) & (1 << 0) ){;}
 
+   DMA2->HIFCR = ( 0b111101 << 6) ; // Stream 5 clear flags
    DMA2->LIFCR = ( 0b111101 << 0) ; // Stream 0 clear flags
 
    Quan::spi::cs_release<Quan::bmi160::not_CS>();
-
-   quan::stm32::pop_FPregs();
 
    portEND_SWITCHING_ISR(HigherPriorityTaskWoken_imu);
 }

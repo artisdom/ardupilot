@@ -362,10 +362,11 @@ namespace Quan {
       static uint32_t get_output_data_rate_Hz() { return output_data_rate_Hz;}
       static uint32_t get_num_irqs_for_update_msg() { return output_data_rate_Hz / main_loop_rate_Hz;}
       static uint32_t get_main_loop_rate_Hz(){ return main_loop_rate_Hz;}
-      static constexpr uint32_t dma_buffer_size = 12;
+      static constexpr uint32_t dma_buffer_size = 13;
 
       union dma_rx_buffer_t{
          struct {
+            const volatile int16_t dummy; // for alignment
             const volatile int16_t gyro_x;
             const volatile int16_t gyro_y;
             const volatile int16_t gyro_z;
@@ -373,10 +374,11 @@ namespace Quan {
             const volatile int16_t accel_y;
             const volatile int16_t accel_z;
          };
-         volatile uint8_t arr[dma_buffer_size];
+         volatile uint8_t arr[dma_buffer_size + 1];
          dma_rx_buffer_t(){}
       };
       static dma_rx_buffer_t dma_rx_buffer;
+      static uint8_t const dma_tx_buffer[dma_buffer_size];
    };
 }//Quan
 
