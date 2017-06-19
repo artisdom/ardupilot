@@ -82,7 +82,16 @@ void Plane::init_ardupilot()
     cliSerial->printf("\n\nInit " FIRMWARE_STRING
                          "\n\nFree RAM: %lu\n",
                         static_cast<unsigned long>(hal.util->available_memory()));
+
+    // loading parameteers
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::system_status(AP_OSD::system_status_t::loading_eeprom_params);
+#endif
     load_parameters();
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::system_status(AP_OSD::system_status_t::initialising);
+#endif
+    // parameteers loaded
 
 #if HIL_SUPPORT
     if (g.hil_mode == 1) {
@@ -277,7 +286,13 @@ void Plane::startup_ground(void)
     // Makes the servos wiggle - 3 times signals ready to fly
     // -----------------------
     if (ins.gyro_calibration_timing() != AP_InertialSensor::GYRO_CAL_NEVER) {
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::system_status(AP_OSD::system_status_t::demo_servos);
+#endif
         demo_servos(3);
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    AP_OSD::enqueue::system_status(AP_OSD::system_status_t::initialising);
+#endif
     }
 
     // reset last heartbeat time, so we don't trigger failsafe on slow

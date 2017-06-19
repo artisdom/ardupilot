@@ -32,7 +32,6 @@
 #include <AP_GPS/AP_GPS.h>
 #include "Plane.h"
 
-
 namespace{
 
    AP_OSD::dequeue::osd_info_t info;
@@ -48,6 +47,8 @@ namespace{
    {
      telem_loop_time_ms = 100 + (rand() % 100);
    }
+
+   constexpr char version_string = "AerFlite OSD V1.1";
 #endif
 }
 
@@ -63,7 +64,7 @@ namespace {
    void do_startup_screen()
    {
       quan::uav::osd::pxp_type pos {-150,20};
-      quan::uav::osd::draw_text("AerFlite OSD V1.0",pos); 
+      quan::uav::osd::draw_text(version_string,pos); 
       pos.y -= 20;
       quan::uav::osd::draw_text("Press return x 3 for CLI",pos,Quan::FontID::MWOSD); 
    }
@@ -92,7 +93,22 @@ namespace {
          //srand (AP_HAL::millis());
       }
 #endif
+
    } 
+
+   void do_loading_eeprom_params()
+   {
+      quan::uav::osd::pxp_type pos {-150,20};
+      quan::uav::osd::draw_text("Loading params",pos); 
+      pos.y -= 20;
+      quan::uav::osd::draw_text("Please wait...",pos,Quan::FontID::MWOSD); 
+   }
+
+   void do_demo_servos()
+   {
+      quan::uav::osd::pxp_type pos {-150,20};
+      quan::uav::osd::draw_text("Demo servos",pos); 
+   }
 
    void do_running()
    {
@@ -125,6 +141,12 @@ void quan::uav::osd::on_draw()
          break;
      case AP_OSD::system_status_t::in_cli:
          do_cli();
+         break;
+     case AP_OSD::system_status_t::demo_servos:
+         do_demo_servos();
+         break;
+     case AP_OSD::system_status_t::loading_eeprom_params:
+         do_loading_eeprom_params();
          break;
      case AP_OSD::system_status_t::initialising:
          do_initialising();

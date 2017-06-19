@@ -103,8 +103,11 @@ namespace {
       };
 
       constexpr uint32_t num_tasks = sizeof(tasks)/ sizeof(task);
-
+#if defined QUAN_I2C_DEBUG
       bool succeeded = true;
+#endif
+    //TODO.
+ // On bus error etc. clear the error and continue
       for (;;){
 #if defined QUAN_I2C_DEBUG
          Quan::reset_i2c_sr1_flags_index();
@@ -114,28 +117,43 @@ namespace {
             // do any eeprom reads in a timely fashion, 
             // but allow the start conv requests to be started first
             if ( i > 1) {// now the baro and compass request have been started
+#if defined QUAN_I2C_DEBUG
                succeeded = Quan::eeprom_service_read_requests();
                if( !succeeded){
                   break;
                }
+#else
+               Quan::eeprom_service_read_requests();
+#endif
             }
             task & t = tasks[i];
             auto const time_since_task_started = millis() - loop_start_ms;
             if ( time_since_task_started < t.get_begin_ms()  ){
               vTaskDelay( t.get_begin_ms() - time_since_task_started);
             }
+#if defined QUAN_I2C_DEBUG
             if ( !t.run()){
+
                hal.console->printf("i2c task %s failed\n",t.get_name());
                succeeded = false;
+               // reset I2c bus etc
                break;
             }
+#else
+            t.run();
+#endif
          }
+#if defined QUAN_I2C_DEBUG
          if (succeeded) { 
             vTaskDelayUntil(&previous_waketime_ms, looptime_ms);
          }else{
             break;
          }
+#else
+         vTaskDelayUntil(&previous_waketime_ms, looptime_ms);
+#endif
       }
+#if defined QUAN_I2C_DEBUG
   // ----------------- get here on fail
    // todo we actually need to try to recover
       if ( Quan::i2c_periph::has_errored()){
@@ -143,10 +161,10 @@ namespace {
       }else{
          hal.console->printf("--- i2c has failed but no errors flagged ---\n");
       }
-#if defined QUAN_I2C_DEBUG
+
       //read the captured interrupt entry flags
       Quan::show_i2c_sr1_flags();
-#endif
+
          // show we are still running
       uint32_t count = 0;
       for(uint32_t i = 0; i < 120;++i){
@@ -161,6 +179,7 @@ namespace {
       for(;;){
          vTaskDelayUntil(&previous_waketime_ms,looptime_ms);
       }
+#endif
    }
 
    void wait_for_power_up()

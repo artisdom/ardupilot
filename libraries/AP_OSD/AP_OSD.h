@@ -9,10 +9,17 @@
 
 namespace AP_OSD{
 
+   /*
+       add loading eeprom
+       demo servos
+   */
+
    enum class system_status_t{
       starting = 0
      , in_cli
      , initialising
+     , loading_eeprom_params
+     , demo_servos
      , running
    };
 

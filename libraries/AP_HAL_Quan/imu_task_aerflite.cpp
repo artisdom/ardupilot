@@ -116,7 +116,7 @@ namespace Quan{
             quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
             Quan::bmi160::enable_interrupt_from_device();
             quan::stm32::enable_exti_interrupt<Quan::bmi160::not_DR>();
-//##################### TODO Make sure to enable before flight  but off for tsesting #####################
+//##################### TODO Make sure to enable before flight  but off for testing #####################
             inertial_sensor_watchdog_enable();
 //#################################################################
          }
@@ -130,38 +130,8 @@ namespace Quan{
 namespace {
    typedef quan::stm32::tim7 mpu_watchdog;
 
-//   uint32_t irq_count_led = 0;
-
    inertial_sensor_args_t imu_args;
-
-
-  // volatile uint32_t rx_buffer_idx = 0;
 }
-
-//--------------------------------------------------
-
-// if (quan::stm32::is_event_pending<inertial_sensor::data_ready_irq>()){
-//
-//      mpu_watchdog::get()->cnt = 0;  
-//
-//      inertial_sensor::dma_transaction_in_progress = true;
-//
-//      spi_device_driver::cs_assert<inertial_sensor::chip_select>(); // start transaction
-//      spi_device_driver::stop_spi();
-//      
-//      quan::stm32::clear_event_pending<inertial_sensor::data_ready_irq>();
-//       
-//      DMA2_Stream5->NDTR = inertial_sensor::dma_buffer_size; // TX
-//      DMA2_Stream0->NDTR = inertial_sensor::dma_buffer_size; // RX
-//
-//      DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
-//      DMA2_Stream5->CR |= (1 << 0); // (EN) enable DMA  tx
-//      // 
-//      spi_device_driver::start_spi();
-//   }else{
-//      panic("unknown EXTI15_10 event\n");
-//   }
-////---------------------------------
 
 // data ready interrupt from IMU
 extern "C" void EXTI15_10_IRQHandler() __attribute__ ((interrupt ("IRQ")));
@@ -179,8 +149,8 @@ extern "C" void EXTI15_10_IRQHandler()
       DMA2_Stream0->NDTR = Quan::bmi160::dma_buffer_size; // RX
       DMA2_Stream5->NDTR = Quan::bmi160::dma_buffer_size; // RX
       DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
-      DMA2_Stream5->CR |= (1 << 0); // (EN) enable DMA  tx
-      // memory barrier?
+      DMA2_Stream5->CR |= (1 << 0); // (EN) enable DMA tx
+
       Quan::spi::enable();
 
    }else{
@@ -229,21 +199,6 @@ namespace Quan{
 
 } // Quan
 
-//extern "C" void  SPI1_IRQHandler() __attribute__ ((interrupt ("IRQ")));
-//extern "C" void  SPI1_IRQHandler()
-//{
-//   if ( rx_buffer_idx == 0){
-//      Quan::spi::disable_rxneie();
-//      Quan::spi::ll_read();
-//      DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
-//   }
-//   Quan::spi::disable_txeie();
-//   if ( ++rx_buffer_idx <= Quan::bmi160::dma_buffer_size){
-//     Quan::spi::ll_write(0U);
-//     Quan::spi::enable_txeie();
-//   }
-//}
-
 namespace {
    volatile uint32_t irq_count = 0;
 }
@@ -253,6 +208,7 @@ extern "C" void DMA2_Stream0_IRQHandler()
 {
    DMA2_Stream0->CR &= ~(1 << 0); // (EN) disable DMA
    DMA2_Stream5->CR &= ~(1 << 0); // (EN) disable DMA
+
    BaseType_t HigherPriorityTaskWoken_imu = pdFALSE;
    {
       quan::stm32::push_FPregs();
