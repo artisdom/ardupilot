@@ -48,7 +48,7 @@ namespace{
      telem_loop_time_ms = 100 + (rand() % 100);
    }
 
-   constexpr char version_string = "AerFlite OSD V1.1";
+   constexpr char version_string []= "AerFlite OSD V1.1";
 #endif
 }
 
