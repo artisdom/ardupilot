@@ -116,9 +116,7 @@ namespace Quan{
             quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
             Quan::bmi160::enable_interrupt_from_device();
             quan::stm32::enable_exti_interrupt<Quan::bmi160::not_DR>();
-//##################### TODO Make sure to enable before flight  but off for testing #####################
             inertial_sensor_watchdog_enable();
-//#################################################################
          }
          xTaskResumeAll();
          hal.console->println("inertial sensor started");
@@ -137,32 +135,20 @@ namespace {
 extern "C" void EXTI15_10_IRQHandler() __attribute__ ((interrupt ("IRQ")));
 extern "C" void EXTI15_10_IRQHandler()
 {      
-   if (quan::stm32::is_event_pending<Quan::bmi160::not_DR>()){
-      // reset the watchdog
-      mpu_watchdog::get()->cnt = 0; 
-      mpu_watchdog::get()->sr = 0;
+   // reset the watchdog
+   mpu_watchdog::get()->cnt = 0; 
+   mpu_watchdog::get()->sr = 0;
 
-      Quan::spi::cs_assert<Quan::bmi160::not_CS>(); // start transaction
-      Quan::spi::disable();
-      quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
+   Quan::spi::cs_assert<Quan::bmi160::not_CS>(); // start transaction
+   Quan::spi::disable();
+   quan::stm32::clear_event_pending<Quan::bmi160::not_DR>();
 
-      DMA2_Stream0->NDTR = Quan::bmi160::dma_buffer_size; // RX
-      DMA2_Stream5->NDTR = Quan::bmi160::dma_buffer_size; // RX
-      DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
-      DMA2_Stream5->CR |= (1 << 0); // (EN) enable DMA tx
+   DMA2_Stream0->NDTR = Quan::bmi160::dma_buffer_size; // RX
+   DMA2_Stream5->NDTR = Quan::bmi160::dma_buffer_size; // TX
+   DMA2_Stream0->CR |= (1 << 0); // (EN) enable DMA rx
+   DMA2_Stream5->CR |= (1 << 0); // (EN) enable DMA tx
 
-      Quan::spi::enable();
-
-   }else{
-// TODO
-      // change to reset the irq somehow
-      uint32_t const exti_pr_reg = quan::stm32::exti::get()->pr.get();
-      // mask interrupts to prevent recur forever
-      quan::stm32::exti::get()->emr.set(0);
-      // clear interrupt flags
-      quan::stm32::exti::get()->pr.set(0);
-      AP_HAL::panic("unknown EXTI15_10 event exti.pr = %lu\n", exti_pr_reg);
-   }
+   Quan::spi::enable();
 }
 
 namespace Quan{
