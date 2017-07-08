@@ -119,6 +119,7 @@ namespace {
      AP_OSD::draw_control_mode(info,osd);
      AP_OSD::draw_airspeed(info,osd);
      AP_OSD::draw_homeinfo(info,osd);
+     AP_OSD::draw_altitude_scale(info,osd);
    }
 
    void do_unknown()
