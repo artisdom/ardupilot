@@ -53,4 +53,19 @@ void AP_OSD::draw_altitude_scale(dequeue::osd_info_t const & info,OSD_params con
       p2 -= pxp_type{0,1}; 
       draw_line(p1,p2,colour_type::black);
    }
+
+   pxp_type p1{pos.x,pos.y + font_size.y/2};
+   pxp_type p2{pos.x + font_size.x * 6 + 20,pos.y - font_size.y/2};
+
+   // clear a box for current altitude
+   draw_box(p1,p2,colour_type::transparent,true);
+
+   p1 += pxp_type{20-2,2};
+   p2 += pxp_type{23,-2};
+
+   draw_box(p1,p2,colour_type::white,false);
+   // put current altitude in middle of scale
+   pxp_type p3{pos.x+20,pos.y -font_size.y/2};
+   draw_text<100,Quan::FontID::MWOSD>(p3,"% 6i\n", static_cast<int32_t>(aircraft_altitude.numeric_value() + 0.5f));
+    
 }
