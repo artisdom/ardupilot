@@ -1,4 +1,5 @@
 EESchema Schematic File Version 2
+LIBS:osd-rescue
 LIBS:power
 LIBS:device
 LIBS:transistors

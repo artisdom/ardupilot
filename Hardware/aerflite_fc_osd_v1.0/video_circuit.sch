@@ -1,4 +1,5 @@
 EESchema Schematic File Version 2
+LIBS:osd-rescue
 LIBS:power
 LIBS:device
 LIBS:transistors
@@ -519,9 +520,11 @@ LP filter to remove\n4.43361875 MHz\ncolor subcarrier
 Text Notes 2300 5700 0    45   ~ 0
 Csync circuit
 $Comp
-L MCP6562 U3
+L MCP6562-RESCUE-osd U3
 U 3 1 54707205
 P 10700 1200
+AR Path="/54707205" Ref="U3"  Part="3" 
+AR Path="/573F746B/573F7492/54707205" Ref="U3"  Part="3" 
 F 0 "U3" H 10750 1400 60  0000 L CNN
 F 1 "MCP6562" H 10650 1000 60  0000 L CNN
 F 2 "MSOP-8:MSOP-8" H 10700 1200 60  0001 C CNN
@@ -533,9 +536,11 @@ F 6 "Comparator/Dual/MSOP-8" H 10700 1200 60  0001 C CNN "Description"
 	1    0    0    -1  
 $EndComp
 $Comp
-L MCP6562 U3
+L MCP6562-RESCUE-osd U3
 U 2 1 54706BB6
 P 5200 6400
+AR Path="/54706BB6" Ref="U3"  Part="2" 
+AR Path="/573F746B/573F7492/54706BB6" Ref="U3"  Part="2" 
 F 0 "U3" H 5250 6600 60  0000 L CNN
 F 1 "MCP6562" H 5150 6200 60  0000 L CNN
 F 2 "MSOP-8:MSOP-8" H 5200 6400 60  0001 C CNN
@@ -547,9 +552,11 @@ F 6 "Comparator/Dual/MSOP-8" H 5200 6400 60  0001 C CNN "Description"
 	1    0    0    -1  
 $EndComp
 $Comp
-L MCP6562 U3
+L MCP6562-RESCUE-osd U3
 U 1 1 54706B91
 P 2450 6200
+AR Path="/54706B91" Ref="U3"  Part="1" 
+AR Path="/573F746B/573F7492/54706B91" Ref="U3"  Part="1" 
 F 0 "U3" H 2500 6400 60  0000 L CNN
 F 1 "MCP6562" H 2400 6000 60  0000 L CNN
 F 2 "MSOP-8:MSOP-8" H 2450 6200 60  0001 C CNN
