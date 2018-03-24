@@ -103,6 +103,7 @@ void SITL_State::_parse_command_line(int argc, char * const argv[])
     _rcout_port = 5502;
     _simin_port = 5501;
     _fdm_address = "127.0.0.1";
+     
     _client_address = NULL;
     _instance = 0;
 

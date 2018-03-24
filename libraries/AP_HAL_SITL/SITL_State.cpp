@@ -17,6 +17,8 @@
 #include <errno.h>
 #include <sys/select.h>
 
+#include <SITL/SIM_JSBSim.h>
+#include <AP_HAL/utility/Socket.h>
 #include <AP_Param/AP_Param.h>
 
 extern const AP_HAL::HAL& hal;
@@ -96,6 +98,8 @@ void SITL_State::_sitl_setup(const char *home_str)
         if (enable_ADSB) {
             adsb = new ADSB(_sitl->state, home_str);
         }
+
+        fg_socket.connect("127.0.0.1", 5503);
     }
 
     if (_synthetic_clock_mode) {
@@ -259,12 +263,50 @@ void SITL_State::_fdm_input_local(void)
         adsb->update();
     }
 
+    _output_to_flightgear();
+
     // update simulation time
     hal.scheduler->stop_clock(_sitl->state.timestamp_us);
 
     _synthetic_clock_mode = true;
     _update_count++;
 }
+
+void SITL_State::_output_to_flightgear(void)
+{
+
+    SITL::FGNetFDM fdm {};
+    const SITL::sitl_fdm &sfdm = _sitl->state;
+
+    fdm.version = 0x18;
+    fdm.padding = 0;
+    fdm.longitude = radians(sfdm.longitude);
+    fdm.latitude = radians(sfdm.latitude);
+    fdm.altitude = sfdm.altitude;
+    fdm.agl = sfdm.altitude;
+    fdm.phi   = radians(sfdm.rollDeg);
+    fdm.theta = radians(sfdm.pitchDeg);
+    fdm.psi   = radians(sfdm.yawDeg);
+    if (_vehicle == ArduCopter) {
+        fdm.num_engines = 4;
+        for (uint8_t i=0; i<4; i++) {
+            fdm.rpm[i] = constrain_float((pwm_output[i]-1000), 0, 1000);
+        }
+    } else {
+        fdm.num_engines = 4;
+        fdm.rpm[0] = constrain_float((pwm_output[2]-1000)*3, 0, 3000);
+        // for quadplane
+        fdm.rpm[1] = constrain_float((pwm_output[5]-1000)*12, 0, 12000);
+        fdm.rpm[2] = constrain_float((pwm_output[6]-1000)*12, 0, 12000);
+        fdm.rpm[3] = constrain_float((pwm_output[7]-1000)*12, 0, 12000);
+    }
+    fdm.ByteSwap();
+
+    fg_socket.send(&fdm, sizeof(fdm));
+   
+}
+
+
 #endif
 
 /*
