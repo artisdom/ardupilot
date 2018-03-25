@@ -39,4 +39,4 @@ install:
    - export QUAN_TARGET_VEHICLE=QUAN_APM_ARDUPLANE
 
 script: > 
-   make AERFLITE=True quan
+   make AERFLITE=True MIXER_DISCO=True quan
