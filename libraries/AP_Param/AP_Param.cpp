@@ -1319,7 +1319,11 @@ void AP_Param::show_all(AP_HAL::BetterStream *port, bool showKeyValues)
  #endif 
 
         if (showKeyValues) {
-            port->printf("Key %lu: Index %lu: GroupElement %lu  :  ", token.key, token.idx, token.group_element);
+            port->printf("Key %lu: Index %lu: GroupElement %lu  :  ", 
+               static_cast<unsigned long>(token.key), 
+               static_cast<unsigned long>(token.idx), 
+               static_cast<unsigned long>(token.group_element)
+            );
         }
         show(ap, token, type, port);
     }
