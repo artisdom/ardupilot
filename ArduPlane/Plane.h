@@ -302,11 +302,6 @@ private:
     // Battery Sensors
     AP_BattMonitor battery;
 
-#if FRSKY_TELEM_ENABLED == ENABLED
-    // FrSky telemetry support
-//    AP_Frsky_Telem frsky_telemetry {ahrs, battery};
-#endif
-
     // Airspeed Sensors
     AP_Airspeed airspeed {aparm};
 
