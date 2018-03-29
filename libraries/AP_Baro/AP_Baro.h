@@ -9,12 +9,7 @@
 #include <Filter/DerivativeFilter.h>
 #include <AP_Buffer/AP_Buffer.h>
 
-// maximum number of sensor instances
-#define BARO_MAX_INSTANCES 3
 
-// maximum number of drivers. Note that a single driver can provide
-// multiple sensor instances
-#define BARO_MAX_DRIVERS 2
 
 class AP_Baro_Backend;
 class AP_Baro;
