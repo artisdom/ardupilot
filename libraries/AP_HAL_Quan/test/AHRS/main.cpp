@@ -6,7 +6,7 @@
 #include <AP_ADC/AP_ADC.h>
 #include <AP_ADC_AnalogSource/AP_ADC_AnalogSource.h>
 #include <AP_HAL_Quan/AP_HAL_Quan_Test_Main.h>
-#include <AP_AHRS/AP_AHRS.h>
+#include <AP_AHRS/AP_AHRS_DCM.h>
 #include <AP_OSD/AP_OSD_enqueue.h>
 #include <AP_BattMonitor/AP_BattMonitor.h>
 
