@@ -98,7 +98,7 @@ void SITL_State::_sitl_setup(const char *home_str)
         if (enable_ADSB) {
             adsb = new ADSB(_sitl->state, home_str);
         }
-
+        // connect to flightgear
         fg_socket.connect("127.0.0.1", 5503);
     }
 

@@ -82,7 +82,11 @@ void SITL_State::_parse_command_line(int argc, char * const argv[])
 {
     int opt;
     // default to CMAC
-    const char *home_str = "-35.363261,149.165230,584,353";
+    /*
+     string is Lat, Lon altitude in feet? direction in degrees
+   */ 
+    const char *home_str = "51.573067,-4.260000,220,270";
+    //const char *home_str = "-35.363261,149.165230,584,353";
     const char *model_str = NULL;
     char *autotest_dir = NULL;
     float speedup = 1.0f;
@@ -171,7 +175,7 @@ void SITL_State::_parse_command_line(int argc, char * const argv[])
             _synthetic_clock_mode = true;
             break;
         case 'O':
-            home_str = gopt.optarg;
+           // home_str = gopt.optarg;
             break;
         case 'M':
             model_str = gopt.optarg;
