@@ -128,9 +128,9 @@ void AP_Baro::calibrate()
    // hal.console->printf("health check done\n");
     // now average over 5 values for the ground pressure and
     // temperature settings
-    float sum_pressure[BARO_MAX_INSTANCES] = {0};
-    float sum_temperature[BARO_MAX_INSTANCES] = {0};
-    uint8_t count[BARO_MAX_INSTANCES] = {0};
+    float sum_pressure[m_max_baro_instances] = {0};
+    float sum_temperature[m_max_baro_instances] = {0};
+    uint8_t count[m_max_baro_instances] = {0};
     const uint8_t num_samples = 5;
      //hal.console->printf("averaging\n");
     for (uint8_t c = 0; c < num_samples; c++) {
@@ -369,7 +369,7 @@ void AP_Baro::accumulate(void)
 */
 uint8_t AP_Baro::register_sensor(void)
 {
-    if (_num_sensors >= BARO_MAX_INSTANCES) {
+    if (_num_sensors >= m_max_baro_instances) {
         AP_HAL::panic("Too many barometers");
     }
     return _num_sensors++;

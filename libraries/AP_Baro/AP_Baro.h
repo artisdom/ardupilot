@@ -126,8 +126,10 @@ public:
 
 private:
     // how many drivers do we have?
+    static constexpr uint32_t m_max_baro_drivers = 2U;
+    static constexpr uint32_t m_max_baro_instances = 3U;
     uint8_t _num_drivers;
-    AP_Baro_Backend *drivers[BARO_MAX_DRIVERS];
+    AP_Baro_Backend *drivers[m_max_baro_drivers];
 
     // how many sensors do we have?
     uint8_t _num_sensors;
@@ -145,7 +147,7 @@ private:
         float altitude;                 // calculated altitude
         AP_Float ground_temperature;
         AP_Float ground_pressure;
-    } sensors[BARO_MAX_INSTANCES];
+    } sensors[m_max_baro_instances];
 
     AP_Float                            _alt_offset;
     AP_Int8                             _primary_baro; // primary chosen by user
