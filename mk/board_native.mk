@@ -2,6 +2,16 @@ TOOLCHAIN = NATIVE
 
 include $(MK_DIR)/find_tools.mk
 
+
+ifeq ($(QUANTRACKER_ROOT_DIR), )
+# See http://github.com/kwikius/quantracker
+$(error QUANTRACKER_ROOT_DIR must be defined to the path to the quantracker root directory.)
+endif
+
+include $(QUANTRACKER_ROOT_DIR)Dependencies.mk
+
+
+
 #
 # Tool options
 #
@@ -110,7 +120,7 @@ $(SKETCHELF): $(SKETCHOBJS) $(LIBOBJS)
 	$(v)cp $(SKETCHELF) .
 	@echo "Firmware is in $(BUILDELF)"
 
-AERFLITE_INCLUDES = -I/home/andy/cpp/projects/quan-trunk/ -I/home/andy/cpp/projects/mixer_lang/include
+AERFLITE_INCLUDES = -I$(QUAN_INCLUDE_PATH) 
 SKETCH_INCLUDES	=	$(SKETCHLIBINCLUDES) $(AERFLITE_INCLUDES)
 SLIB_INCLUDES	=	-I$(dir $<)/utility $(SKETCHLIBINCLUDES) $(AERFLITE_INCLUDES)
 
