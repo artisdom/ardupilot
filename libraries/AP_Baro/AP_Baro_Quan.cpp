@@ -4,7 +4,12 @@
 
 #include "AP_Baro_Quan.h"
 
-extern const AP_HAL::HAL& hal;
+template<> AP_Baro_Backend * create_baro_driver<Quan::tag_board>(AP_Baro & baro)
+{
+   return new AP_Baro_Quan(baro);
+}
+
+//extern const AP_HAL::HAL& hal;
 
  AP_Baro_Quan::AP_Baro_Quan(AP_Baro & baro)
  : AP_Baro_Backend{baro}

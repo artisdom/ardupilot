@@ -19,10 +19,11 @@
  *
  */
 
+#include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_Common/AP_Common.h>
 #include "AP_Baro.h"
-#include <AP_HAL/AP_HAL.h>
+#include "AP_Baro_Backend.h"
 
 extern const AP_HAL::HAL& hal;
 
@@ -282,64 +283,11 @@ float AP_Baro::get_calibration_temperature(uint8_t instance) const
  */
 void AP_Baro::init(void)
 {
-    if (_hil_mode) {
-        drivers[0] = new AP_Baro_HIL(*this);
-        _num_drivers = 1;
-        return;
-    }
-
-#if HAL_BARO_DEFAULT == HAL_BARO_PX4 || HAL_BARO_DEFAULT == HAL_BARO_VRBRAIN
-    drivers[0] = new AP_Baro_PX4(*this);
-    _num_drivers = 1;
-#elif HAL_BARO_DEFAULT == HAL_BARO_HIL
-    drivers[0] = new AP_Baro_HIL(*this);
-    _num_drivers = 1;
-#elif HAL_BARO_DEFAULT == HAL_BARO_BMP085
-    {
-        drivers[0] = new AP_Baro_BMP085(*this);
-        _num_drivers = 1;
-    }
-#elif HAL_BARO_DEFAULT == HAL_BARO_MS5611 && HAL_BARO_MS5611_I2C_BUS == 0
-    {
-       // hal.console->printf("quan baro\n");
-        drivers[0] = new AP_Baro_MS5611(*this, new AP_SerialBus_I2C(hal.i2c, HAL_BARO_MS5611_I2C_ADDR), false);
-        _num_drivers = 1;
-    }
-#elif HAL_BARO_DEFAULT == HAL_BARO_MS5611 && HAL_BARO_MS5611_I2C_BUS == 1
-    {
-        drivers[0] = new AP_Baro_MS5611(*this, new AP_SerialBus_I2C(hal.i2c1, HAL_BARO_MS5611_I2C_ADDR), false);
-        _num_drivers = 1;
-    }
-#elif HAL_BARO_DEFAULT == HAL_BARO_MS5611_SPI
-    {
-        drivers[0] = new AP_Baro_MS5611(*this, 
-                                        new AP_SerialBus_SPI(AP_HAL::SPIDevice_MS5611, 
-                                                             AP_HAL::SPIDeviceDriver::SPI_SPEED_HIGH),
-                                        true);
-        _num_drivers = 1;
-    }
-#elif HAL_BARO_DEFAULT == HAL_BARO_MS5607 && HAL_BARO_MS5607_I2C_BUS == 1
-    {
-        drivers[0] = new AP_Baro_MS5607(*this, new AP_SerialBus_I2C(hal.i2c1, HAL_BARO_MS5607_I2C_ADDR), true);
-        _num_drivers = 1;
-    }
-#elif HAL_BARO_DEFAULT == HAL_BARO_MS5637_I2C
-    {
-        AP_SerialBus *bus = new AP_SerialBus_I2C(HAL_BARO_MS5611_I2C_POINTER,
-                                                 HAL_BARO_MS5611_I2C_ADDR);
-        drivers[0] = new AP_Baro_MS5637(*this, bus, true);
-        _num_drivers = 1;
-    }
-#elif HAL_BARO_DEFAULT == HAL_BARO_QUAN
-   {
-     drivers[0] = new AP_Baro_Quan(*this);
-     _num_drivers = 1;
+   drivers[0] = create_baro_driver<AP_HAL::board>(*this);
+   if (drivers[0] == NULL) {
+      AP_HAL::panic("Baro: unable to initialise driver");
    }
-#endif    
-
-    if (_num_drivers == 0 || _num_sensors == 0 || drivers[0] == NULL) {
-        AP_HAL::panic("Baro: unable to initialise driver");
-    }
+   _num_drivers = 1;
 }
 
 

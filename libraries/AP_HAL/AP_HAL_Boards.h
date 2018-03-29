@@ -111,6 +111,13 @@
 #define HAL_INS_DEFAULT HAL_INS_HIL
 #define HAL_BARO_DEFAULT HAL_BARO_HIL
 #define HAL_COMPASS_DEFAULT HAL_COMPASS_HIL
+namespace HALSITL {
+   struct tag_board;
+}
+
+namespace AP_HAL{
+   typedef HALSITL::tag_board board;
+}
 
 #elif CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #define AP_HAL_BOARD_DRIVER AP_HAL_Quan
@@ -124,7 +131,13 @@
 #define HAL_BARO_DEFAULT HAL_BARO_QUAN
 #define HAL_COMPASS_DEFAULT HAL_COMPASS_QUAN
 #define CONFIG_HAL_BOARD_SUBTYPE HAL_BOARD_SUBTYPE_NONE
+namespace Quan {
+   struct tag_board;
+}
 
+namespace AP_HAL{
+   typedef Quan::tag_board board;
+}
 #else
 #error "Unknown CONFIG_HAL_BOARD type"
 #endif

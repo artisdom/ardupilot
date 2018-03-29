@@ -5,6 +5,7 @@
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 
 #include "AP_Baro.h"
+#include "AP_Baro_Backend.h"
 #include <AP_HAL_Quan/i2c_task.hpp>
 
 class AP_Baro_Quan : public AP_Baro_Backend

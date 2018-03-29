@@ -20,6 +20,7 @@
   Substantially modified by Andrew Tridgell
 */
 
+#if 0
 #include <AP_HAL/AP_HAL.h>
 
 #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
@@ -256,5 +257,6 @@ void AP_Baro_BMP085::Calculate()
     }
 }
 
+#endif
 #endif
 

@@ -1646,7 +1646,9 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
     case MAVLINK_MSG_ID_HIL_STATE:
     {
-#if HIL_SUPPORT
+
+#if (HIL_SUPPORT && (CONFIG_HAL_BOARD == HAL_BOARD_SITL))
+
         if (plane.g.hil_mode != 1) {
             break;
         }

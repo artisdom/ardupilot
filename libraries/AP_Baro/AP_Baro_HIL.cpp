@@ -1,9 +1,17 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
-#include "AP_Baro.h"
 #include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+#include "AP_Baro.h"
+#include "AP_Baro_HIL.h"
 
 extern const AP_HAL::HAL& hal;
+
+template<> AP_Baro_Backend * create_baro_driver<HALSITL::tag_board>(AP_Baro & baro)
+{
+   return new AP_Baro_HIL(baro);
+}
+
 
 AP_Baro_HIL::AP_Baro_HIL(AP_Baro &baro) :
     AP_Baro_Backend(baro)
@@ -93,3 +101,5 @@ void AP_Baro_HIL::update(void)
         _copy_to_frontend(0, pressure_sum, temperature_sum);
     }
 }
+#endif
+

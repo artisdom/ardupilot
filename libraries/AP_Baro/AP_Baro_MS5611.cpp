@@ -19,8 +19,10 @@
 
   Heavily modified by Andrew Tridgell
 */
-
+#if 0 // not used atm
 #include <AP_HAL/AP_HAL.h>
+
+
 #include "AP_Baro.h"
 
 extern const AP_HAL::HAL& hal;
@@ -517,3 +519,4 @@ void AP_Baro_MS56XX::accumulate(void)
         _timer();
     }
 }
+#endif

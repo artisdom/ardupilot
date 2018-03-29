@@ -7,7 +7,7 @@
 #ifndef __AP_BARO_HIL_H__
 #define __AP_BARO_HIL_H__
 
-#include "AP_Baro.h"
+#include "AP_Baro_Backend.h"
 
 class AP_Baro_HIL : public AP_Baro_Backend
 {
