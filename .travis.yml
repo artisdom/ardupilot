@@ -38,5 +38,10 @@ install:
    - cd /home/travis/build/kwikius/ardupilot/ArduPlane
    - export QUAN_TARGET_VEHICLE=QUAN_APM_ARDUPLANE
 
-script: > 
-   make AERFLITE=True MIXER_DISCO=True quan
+script:
+   - make AERFLITE=True MIXER_DISCO=True quan
+   - cd ../
+   - make clean
+   - cd ArduPlane
+   - make sitl
+
