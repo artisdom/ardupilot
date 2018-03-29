@@ -10,7 +10,7 @@ endif
 
 include $(QUANTRACKER_ROOT_DIR)Dependencies.mk
 
-
+MIXER_LANG_INCLUDES = $(MIXER_LANG_PATH)/include
 
 #
 # Tool options
@@ -61,7 +61,6 @@ LIBS ?= -lm -lpthread
 ifneq ($(findstring CYGWIN, $(SYSTYPE)),)
 LIBS += -lwinmm
 endif
-LIBS += /home/andy/cpp/projects/mixer_lang/build/mixer_lang.a
 
 ifeq ($(VERBOSE),)
 v = @
