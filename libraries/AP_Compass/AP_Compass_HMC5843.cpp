@@ -22,7 +22,7 @@
  *       Sensor is initialized in Continuos mode (10Hz)
  *
  */
-
+#if 0
 #include <AP_Math/AP_Math.h>
 #include <AP_HAL/AP_HAL.h>
 
@@ -569,3 +569,5 @@ bool AP_HMC5843_SerialBus_MPU6000::start_measurements()
 
     return true;
 }
+#endif
+

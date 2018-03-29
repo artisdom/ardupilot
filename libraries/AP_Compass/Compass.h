@@ -1,6 +1,6 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
-#ifndef Compass_h
-#define Compass_h
+#ifndef ARDUPILOT_LIBRARIES_COMPASS_H_INCLUDED
+#define ARDUPILOT_LIBRARIES_COMPASS_H_INCLUDED
 
 #include <inttypes.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
@@ -8,57 +8,24 @@
 #include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
 #include <AP_Math/AP_Math.h>
-#include <AP_Declination/AP_Declination.h> // ArduPilot Mega Declination Helper Library
+#include <AP_Declination/AP_Declination.h> 
 #include <AP_HAL/AP_HAL.h>
 #include "AP_Compass_Backend.h"
 
-// compass product id
-#define AP_COMPASS_TYPE_UNKNOWN         0x00
-#define AP_COMPASS_TYPE_HIL             0x01
-#define AP_COMPASS_TYPE_HMC5843         0x02
-#define AP_COMPASS_TYPE_HMC5883L        0x03
-//#define AP_COMPASS_TYPE_PX4             0x04
-//#define AP_COMPASS_TYPE_VRBRAIN         0x05
-#define AP_COMPASS_TYPE_AK8963_MPU9250  0x06
-#define AP_COMPASS_TYPE_AK8963_I2C      0x07
-#define AP_COMPASS_TYPE_LSM303D         0x08
-#define AP_COMPASS_TYPE_QUAN            0x09
-
-// motor compensation types (for use with motor_comp_enabled)
-#define AP_COMPASS_MOT_COMP_DISABLED    0x00
-#define AP_COMPASS_MOT_COMP_THROTTLE    0x01
-#define AP_COMPASS_MOT_COMP_CURRENT     0x02
-
-// setup default mag orientation for some board types
-#if CONFIG_HAL_BOARD == HAL_BOARD_LINUX && CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_RASPILOT
-# define MAG_BOARD_ORIENTATION ROTATION_ROLL_180
-#elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX && CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_BEBOP
-# define MAG_BOARD_ORIENTATION ROTATION_YAW_90
-#else
-# define MAG_BOARD_ORIENTATION ROTATION_NONE
-#endif
-
-/**
-   maximum number of compass instances available on this platform. If more
-   than 1 then redundant sensors may be available
- */
-#define COMPASS_MAX_INSTANCES 3
-#define COMPASS_MAX_BACKEND   3
-
-//MAXIMUM COMPASS REPORTS
-#define MAX_CAL_REPORTS 10
-#define CONTINUOUS_REPORTS 0
-#define AP_COMPASS_MAX_XYZ_ANG_DIFF radians(50.0f)
-#define AP_COMPASS_MAX_XY_ANG_DIFF radians(30.0f)
-#define AP_COMPASS_MAX_XY_LENGTH_DIFF 100.0f
+template <typename Board> AP_Compass_Backend * create_compass_driver(Compass& compass);
 
 class Compass
 {
 friend class AP_Compass_Backend;
 public:
-    /// Constructor
-    ///
+
     Compass();
+
+    // motor compensation types (for use with motor_comp_enabled)
+    
+   static constexpr int8_t motor_compensation_disabled = 0;
+   static constexpr int8_t motor_compensation_throttle = 1;
+   static constexpr int8_t motor_compensation_current  = 2;
 
     /// Initialize the compass device.
     ///
@@ -257,7 +224,7 @@ public:
     /// Set the throttle as a percentage from 0.0 to 1.0
     /// @param thr_pct              throttle expressed as a percentage from 0 to 1.0
     void set_throttle(float thr_pct) {
-        if (_motor_comp_type == AP_COMPASS_MOT_COMP_THROTTLE) {
+        if (_motor_comp_type == motor_compensation_throttle) {
             _thr_or_curr = thr_pct;
         }
     }
@@ -265,7 +232,7 @@ public:
     /// Set the current used by system in amps
     /// @param amps                 current flowing to the motors expressed in amps
     void set_current(float amps) {
-        if (_motor_comp_type == AP_COMPASS_MOT_COMP_CURRENT) {
+        if (_motor_comp_type == motor_compensation_current) {
             _thr_or_curr = amps;
         }
     }
@@ -298,15 +265,21 @@ public:
 
     static const struct AP_Param::GroupInfo var_info[];
 
+  // #define COMPASS_MAX_INSTANCES 3
+    static constexpr uint8_t m_max_instances = 3;
+    static constexpr uint8_t m_max_backends = 3;
+
     // HIL variables
     struct {
         Vector3f Bearth;
         float last_declination;
-        bool healthy[COMPASS_MAX_INSTANCES];
-        Vector3f field[COMPASS_MAX_INSTANCES];
+        bool healthy[m_max_instances];
+        Vector3f field[m_max_instances];
     } _hil;
 
 private:
+
+  // #define COMPASS_MAX_BACKEND   3
     /// Register a new compas driver, allocating an instance number
     ///
     /// @return number of compass instances
@@ -317,7 +290,7 @@ private:
     void _detect_backends(void);
 
     //keep track of number of calibration reports sent
-    uint8_t _reports_sent[COMPASS_MAX_INSTANCES];
+    uint8_t _reports_sent[m_max_instances];
     
     //autoreboot after compass calibration
     bool _compass_cal_autoreboot;
@@ -325,7 +298,7 @@ private:
     bool _cal_has_run;
 
     // backend objects
-    AP_Compass_Backend *_backends[COMPASS_MAX_BACKEND];
+    AP_Compass_Backend *_backends[m_max_backends];
     uint8_t     _backend_count;
 
     // number of registered compasses.
@@ -397,9 +370,9 @@ private:
         bool        updated_unfiltered_field;
         Vector3f    raw_field;
         Vector3f    unfiltered_field;
-    } _state[COMPASS_MAX_INSTANCES];
+    } _state[m_max_instances];
 
-    CompassCalibrator _calibrator[COMPASS_MAX_INSTANCES];
+    CompassCalibrator _calibrator[m_max_instances];
 
     // if we want HIL only
     bool _hil_mode:1;
@@ -407,11 +380,4 @@ private:
     AP_Float _calibration_threshold;
 };
 
-#include "AP_Compass_Backend.h"
-#include "AP_Compass_HMC5843.h"
-#include "AP_Compass_HIL.h"
-#include "AP_Compass_AK8963.h"
-///#include "AP_Compass_PX4.h"
-#include "AP_Compass_LSM303D.h"
-#include "AP_Compass_Quan.h"
 #endif

@@ -1,4 +1,6 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
+
+#if 0
 #pragma once
 
 #include <AP_Common/AP_Common.h>
@@ -58,4 +60,5 @@ public:
     static AP_Compass_Backend *detect_spi(Compass &compass);
 };
 
+#endif
 #endif

@@ -19,9 +19,16 @@
  *
  */
 
-
 #include <AP_HAL/AP_HAL.h>
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+
 #include "AP_Compass_HIL.h"
+
+template <> AP_Compass_Backend * create_compass_driver<HALSITL::tag_board>(Compass& compass)
+{
+   return AP_Compass_HIL::detect(compass);
+}
 
 extern const AP_HAL::HAL& hal;
 
@@ -70,3 +77,6 @@ void AP_Compass_HIL::read()
         }
     }
 }
+#endif
+
+

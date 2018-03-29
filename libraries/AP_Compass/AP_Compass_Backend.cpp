@@ -28,7 +28,7 @@ AP_Compass_Backend::AP_Compass_Backend(Compass &compass) :
 void AP_Compass_Backend::rotate_field(Vector3f &mag, uint8_t instance)
 {
     Compass::mag_state &state = _compass._state[instance];
-    mag.rotate(MAG_BOARD_ORIENTATION);
+   // mag.rotate(MAG_BOARD_ORIENTATION);
 
     if (!state.external) {
         // and add in AHRS_ORIENTATION setting if not an external compass
@@ -75,7 +75,7 @@ void AP_Compass_Backend::correct_field(Vector3f &mag, uint8_t i)
      * being applied so it can be logged correctly
      */
     mag += offsets;
-    if(_compass._motor_comp_type != AP_COMPASS_MOT_COMP_DISABLED && !is_zero(_compass._thr_or_curr)) {
+    if(_compass._motor_comp_type != Compass::motor_compensation_disabled && !is_zero(_compass._thr_or_curr)) {
         state.motor_offset = mot * _compass._thr_or_curr;
         mag += state.motor_offset;
     } else {

@@ -14,6 +14,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#if 0
 #include <AP_Math/AP_Math.h>
 #include <AP_HAL/AP_HAL.h>
 #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
@@ -545,3 +546,4 @@ uint8_t AP_Compass_LSM303D::_mag_set_samplerate(uint16_t frequency)
 }
 
 #endif // #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+#endif

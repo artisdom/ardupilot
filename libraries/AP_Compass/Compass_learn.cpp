@@ -42,7 +42,7 @@ Compass::learn_offsets(void)
     if (!_null_init_done) {
         // first time through
         _null_init_done = true;
-        for (uint8_t k=0; k<COMPASS_MAX_INSTANCES; k++) {
+        for (uint8_t k=0; k<Compass::m_max_instances; k++) {
             const Vector3f &field = _state[k].field;
             const Vector3f &ofs = _state[k].offset.get();
             for (uint8_t i=0; i<_mag_history_size; i++) {
@@ -57,7 +57,7 @@ Compass::learn_offsets(void)
         return;
     }
 
-    for (uint8_t k=0; k<COMPASS_MAX_INSTANCES; k++) {
+    for (uint8_t k=0; k<Compass::m_max_instances; k++) {
         const Vector3f &ofs = _state[k].offset.get();
         const Vector3f &field = _state[k].field;
         Vector3f b1, diff;
