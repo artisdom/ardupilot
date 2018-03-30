@@ -20,8 +20,7 @@
  */
 
 #include <AP_HAL/AP_HAL.h>
-#include <AP_ADC/AP_ADC.h>
-#include <AP_ADC_AnalogSource/AP_ADC_AnalogSource.h>
+
 #include <AP_Airspeed/AP_Airspeed.h>
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
@@ -31,6 +30,10 @@ const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 #include <quantracker/osd/osd.hpp>
 #include <task.h>
+
+void on_telemetry_transmitted()
+{
+}
 
 // do something on osd to check its running ok
 void quan::uav::osd::on_draw() 
@@ -69,7 +72,7 @@ void loop(void)
         timer = AP_HAL::millis();
 #endif
         airspeed.read();
-        hal.console->printf("airspeed %.2f healthy=%u\n", airspeed.get_airspeed(), airspeed.healthy());
+        hal.console->printf("airspeed %.2f healthy=%u\n", static_cast<double>(airspeed.get_airspeed()), airspeed.healthy());
 #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
     }
     hal.scheduler->delay(1);

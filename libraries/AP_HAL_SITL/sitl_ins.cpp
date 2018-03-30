@@ -20,7 +20,6 @@
 #include <SITL/SITL.h>
 #include "Scheduler.h"
 #include <AP_Math/AP_Math.h>
-#include <AP_ADC/AP_ADC.h>
 #include "SITL_State.h"
 #include <fenv.h>
 

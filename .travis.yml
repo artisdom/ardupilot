@@ -44,4 +44,6 @@ script:
    - make clean
    - cd ArduPlane
    - make sitl
+   - cd ../
+   - make AERFLITE=True MIXER_DISCO=True quan-test-ins
 

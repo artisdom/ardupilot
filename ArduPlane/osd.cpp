@@ -49,7 +49,10 @@ namespace{
    }
 
    constexpr char version_string []= "AerFlite OSD V1.1";
+#else
+   constexpr char version_string []= "AerfQuan OSD V1.1";
 #endif
+   
 }
 
 namespace Quan{

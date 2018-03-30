@@ -1,39 +1,16 @@
-// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
-//
+
 // Test for AP_GPS_AUTO
-//
 
-#include <stdlib.h>
-
+#include <AP_HAL/AP_HAL.h>
 #include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
-#include <AP_HAL/AP_HAL.h>
+
 #include <AP_GPS/AP_GPS.h>
-#include <DataFlash/DataFlash.h>
-#include <AP_InertialSensor/AP_InertialSensor.h>
 #include <AP_HAL_Quan/AP_HAL_Quan_Test_Main.h>
-#include <AP_ADC/AP_ADC.h>
-#include <GCS_MAVLink/GCS_MAVLink.h>
-#include <AP_Baro/AP_Baro.h>
-#include <Filter/Filter.h>
-#include <AP_AHRS/AP_AHRS.h>
-#include <AP_Compass/AP_Compass.h>
-#include <AP_Declination/AP_Declination.h>
-#include <AP_Airspeed/AP_Airspeed.h>
-#include <AP_Vehicle/AP_Vehicle.h>
-#include <AP_ADC_AnalogSource/AP_ADC_AnalogSource.h>
-#include <AP_Mission/AP_Mission.h>
-#include <StorageManager/StorageManager.h>
-#include <AP_Terrain/AP_Terrain.h>
-#include <AP_Math/AP_Math.h>
-#include <AP_Notify/AP_Notify.h>
+
 #include <AP_Notify/AP_BoardLED.h>
-#include <AP_NavEKF/AP_NavEKF.h>
-#include <AP_Rally/AP_Rally.h>
 #include <AP_Scheduler/AP_Scheduler.h>
-#include <AP_BattMonitor/AP_BattMonitor.h>
 #include <AP_SerialManager/AP_SerialManager.h>
-#include <AP_RangeFinder/AP_RangeFinder.h>
 
 #include <quantracker/osd/osd.hpp>
 
@@ -47,9 +24,6 @@ AP_GPS gps;
 
 // Serial manager is needed for UART comunications
 AP_SerialManager serial_manager;
-
-#define T6 1000000
-#define T7 10000000
 
 void setup()
 {
@@ -71,6 +45,11 @@ namespace {
 }
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
+void on_telemetry_transmitted()
+{
+}
+
 void quan::uav::osd::on_draw() 
 { 
 /*

@@ -161,7 +161,6 @@ private:
     // when did we last notify the GCS of new pressure reference?
     uint32_t                            _last_notify_ms;
     
-    void SimpleAtmosphere(const float alt, float &sigma, float &delta, float &theta);
 };
 
 #endif // __AP_BARO_H__

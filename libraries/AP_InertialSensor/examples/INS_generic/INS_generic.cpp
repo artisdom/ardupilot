@@ -4,8 +4,6 @@
 // Simple test for the AP_InertialSensor driver.
 //
 
-#include <AP_ADC/AP_ADC.h>
-#include <AP_ADC_AnalogSource/AP_ADC_AnalogSource.h>
 #include <AP_HAL/AP_HAL.h>
 #include <AP_InertialSensor/AP_InertialSensor.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN

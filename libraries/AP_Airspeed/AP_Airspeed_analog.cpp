@@ -21,11 +21,8 @@
 #include <AP_HAL/AP_HAL.h>
 
 #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
-#include <AP_Math/AP_Math.h>
-#include <AP_Common/AP_Common.h>
-#include <AP_ADC/AP_ADC.h>
-#include <AP_ADC_AnalogSource/AP_ADC_AnalogSource.h>
-#include "AP_Airspeed.h"
+#include <AP_Airspeed/AP_Airspeed_analog.h>
+
 
 extern const AP_HAL::HAL& hal;
 
@@ -48,6 +45,7 @@ bool AP_Airspeed_Analog::get_differential_pressure(float &pressure)
     pressure = _source->voltage_average_ratiometric() * VOLTS_TO_PASCAL;
     return true;
 }
+
 #endif
 
 

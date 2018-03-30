@@ -218,6 +218,7 @@ float AP_Baro::get_altitude_difference(float base_pressure, float pressure) cons
 // return current scale factor that converts from equivalent to true airspeed
 // valid for altitudes up to 10km AMSL
 // assumes standard atmosphere lapse rate
+// Fixme This is a mess. Split into  get and calc funs
 float AP_Baro::get_EAS2TAS(void)
 {
     float altitude = get_altitude();
@@ -250,6 +251,7 @@ float AP_Baro::get_climb_rate(void)
 {
     // we use a 7 point derivative filter on the climb rate. This seems
     // to produce somewhat reasonable results on real hardware
+// Fixme This is a mess. Split into  get and calc funs
     return _climb_rate_filter.slope() * 1.0e3f;
 }
 
@@ -388,3 +390,64 @@ bool AP_Baro::all_healthy(void) const
      }
      return _num_sensors > 0;
 }
+
+// ==========================================================================
+// based on tables.cpp from http://www.pdas.com/atmosdownload.html
+
+namespace {
+   /* 
+      Compute the temperature, density, and pressure in the standard atmosphere
+      Correct to 20 km.  Only approximate thereafter.
+   */
+   void compute_atmosphere(
+      const float alt,                           // geometric altitude, km.
+      float& sigma,                   // density/sea-level standard density
+      float& delta,                 // pressure/sea-level standard pressure
+      float& theta)           // temperature/sea-level standard temperature
+   {
+       const float REARTH = 6369.0f;        // radius of the Earth (km)
+       const float GMR    = 34.163195f;     // gas constant
+       float h=alt*REARTH/(alt+REARTH);     // geometric to geopotential altitude
+
+       if (h < 11.0f) {
+           // Troposphere
+           theta=(288.15f-6.5f*h)/288.15f;
+           delta=powf(theta, GMR/6.5f);
+       } else {
+           // Stratosphere
+           theta=216.65f/288.15f;
+           delta=0.2233611f*expf(-GMR*(h-11.0f)/216.65f);
+       }
+
+       sigma = delta/theta;
+   }
+}
+
+/*
+  convert an altitude in meters above sea level to a presssure and temperature
+ */
+void AP_Baro::setHIL(float altitude_msl)
+{
+    float sigma, delta, theta;
+    const float p0 = 101325;
+
+    compute_atmosphere(altitude_msl*0.001f, sigma, delta, theta);
+    float p = p0 * delta;
+    float T = 303.16f * theta - 273.16f; // Assume 30 degrees at sea level - converted to degrees Kelvin
+
+    setHIL(0, p, T);
+}
+
+/*
+  set HIL pressure and temperature for an instance
+ */
+void AP_Baro::setHIL(uint8_t instance, float pressure, float temperature)
+{
+    if (instance >= _num_sensors) {
+        // invalid
+        return;
+    }
+    _hil.press_buffer.push_back(pressure);
+    _hil.temp_buffer.push_back(temperature);
+}
+
