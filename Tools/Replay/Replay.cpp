@@ -20,9 +20,7 @@
 #include <fenv.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_HAL/AP_HAL.h>
-//#include <AP_ADC/AP_ADC.h>
 #include <AP_Declination/AP_Declination.h>
-//#include <AP_ADC_AnalogSource/AP_ADC_AnalogSource.h>
 #include <Filter/Filter.h>
 #include <AP_Buffer/AP_Buffer.h>
 #include <AP_Airspeed/AP_Airspeed.h>
