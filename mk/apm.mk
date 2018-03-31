@@ -26,30 +26,11 @@ include $(MK_DIR)/sketch_sources.mk
 ifneq ($(MAKECMDGOALS),clean)
 
 # board specific includes
-ifeq ($(HAL_BOARD),HAL_BOARD_SITL)
-include $(MK_DIR)/board_native.mk
+ifeq ($(BOARD_NAME),)
+$(error, board name error)
 endif
 
-ifeq ($(HAL_BOARD),HAL_BOARD_LINUX)
-include $(MK_DIR)/board_linux.mk
-endif
-
-ifeq ($(HAL_BOARD),HAL_BOARD_PX4)
-include $(MK_DIR)/board_px4.mk
-endif
-
-ifeq ($(HAL_BOARD),HAL_BOARD_VRBRAIN)
-include $(MK_DIR)/board_vrbrain.mk
-endif
-
-ifeq ($(HAL_BOARD),HAL_BOARD_FLYMAPLE)
-include $(MK_DIR)/board_flymaple.mk
-endif
-
-ifeq ($(HAL_BOARD),HAL_BOARD_QUAN)
-include $(MK_DIR)/board_quan.mk
-endif
-
+include $(MK_DIR)/board_$(BOARD_NAME).mk
 endif
 
 endif

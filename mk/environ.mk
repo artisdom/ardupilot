@@ -1,7 +1,7 @@
 # find key paths and system type
 
 # Save the system type for later use.
-#
+# SYSTYPE will be "Linux", "Cygwin" etc
 SYSTYPE			:=	$(shell uname)
 
 GIT_VERSION := $(shell git rev-parse HEAD | cut -c1-8)
@@ -10,9 +10,7 @@ EXTRAFLAGS += -DGIT_VERSION="\"$(GIT_VERSION)\""
 # force LANG to C so awk works sanely on MacOS
 export LANG=C
 
-#
-# Locate the sketch sources based on the initial Makefile's path
-#
+# Locate the sketch sources directory based on the initial Makefile's path
 SRCROOT			:=	$(realpath $(dir $(firstword $(MAKEFILE_LIST))))
 ifneq ($(findstring CYGWIN, $(SYSTYPE)),)
   # Workaround a $(realpath ) bug on cygwin
@@ -23,12 +21,11 @@ ifneq ($(findstring CYGWIN, $(SYSTYPE)),)
   endif
 endif
 
-#
-# We need to know the location of the sketchbook.  If it hasn't been overridden,
+# Find location of the sketchbook.  If it hasn't been overridden,
 # try the parent of the current directory.  If there is no libraries directory
 # there, assume that we are in a library's examples directory and try backing up
 # further.
-#
+# SKETCHBOOk will be ArduPlane, ArduCopter, ArduRover etc
 ifeq ($(SKETCHBOOK),)
   SKETCHBOOK		:=	$(shell cd $(SRCROOT)/.. && pwd)
   ifeq ($(wildcard $(SKETCHBOOK)/libraries),)
@@ -53,11 +50,13 @@ ifneq ($(findstring CYGWIN, $(SYSTYPE)),)
     SKETCHBOOK	:= $(shell cygpath ${SKETCHBOOK})
 endif
 
+# This is a No-Op I think
 ifneq ($(wildcard $(SKETCHBOOK)/config.mk),)
 $(info Reading $(SKETCHBOOK)/config.mk)
 include $(SKETCHBOOK)/config.mk
 endif
 
+# This is a No-Op I think
 ifneq ($(wildcard $(SKETCHBOOK)/developer.mk),)
 $(info Reading $(SKETCHBOOK)/developer.mk)
 include $(SKETCHBOOK)/developer.mk
@@ -65,7 +64,7 @@ endif
 
 #
 # Work out the sketch name from the name of the source directory.
-#
+# for example "ArduPlane", "ArduCopter" etc
 SKETCH			:=	$(lastword $(subst /, ,$(SRCROOT)))
 # Workaround a $(lastword ) bug on cygwin
 ifeq ($(SKETCH),)
@@ -77,30 +76,6 @@ endif
 # Work out where we are going to be building things
 #
 TMPDIR			?=	/tmp
-
-ifneq ($(findstring px4, $(MAKECMDGOALS)),)
-# when building px4 we need all sources to be inside the sketchbook directory
-# as the NuttX build system relies on it
-BUILDROOT		:=	$(SKETCHBOOK)/Build.$(SKETCH)
-endif
-
-ifneq ($(findstring vrbrain, $(MAKECMDGOALS)),)
-# when building vrbrain we need all sources to be inside the sketchbook directory
-# as the NuttX build system relies on it
-BUILDROOT		:=	$(SKETCHBOOK)/Build.$(SKETCH)
-endif
-
-ifneq ($(findstring vrubrain, $(MAKECMDGOALS)),)
-# when building vrbrain we need all sources to be inside the sketchbook directory
-# as the NuttX build system relies on it
-BUILDROOT		:=	$(SKETCHBOOK)/Build.$(SKETCH)
-endif
-
-ifneq ($(findstring vrhero, $(MAKECMDGOALS)),)
-# when building vrbrain we need all sources to be inside the sketchbook directory
-# as the NuttX build system relies on it
-BUILDROOT		:=	$(SKETCHBOOK)/Build.$(SKETCH)
-endif
 
 ifeq ($(BUILDROOT),)
 BUILDROOT		:=	$(abspath $(TMPDIR)/$(SKETCH).build)
@@ -117,97 +92,16 @@ ifneq ($(findstring CYGWIN, $(SYSTYPE)),)
   endif
 endif
 
-ifneq ($(APPDIR),)
-# this is a recusive PX4 build
-HAL_BOARD = HAL_BOARD_PX4
-endif
-
-# handle target based overrides for board type
-ifneq ($(findstring px4, $(MAKECMDGOALS)),)
-HAL_BOARD = HAL_BOARD_PX4
-endif
-
 ifneq ($(findstring sitl, $(MAKECMDGOALS)),)
 HAL_BOARD = HAL_BOARD_SITL
+BOARD_NAME = sitl
 HAL_BOARD_SUBTYPE = HAL_BOARD_SUBTYPE_NONE
 endif
 
-ifneq ($(findstring linux, $(MAKECMDGOALS)),)
-HAL_BOARD = HAL_BOARD_LINUX
-HAL_BOARD_SUBTYPE = HAL_BOARD_SUBTYPE_LINUX_NONE
-endif
-
-ifneq ($(findstring erleboard, $(MAKECMDGOALS)),)
-HAL_BOARD = HAL_BOARD_LINUX
-HAL_BOARD_SUBTYPE = HAL_BOARD_SUBTYPE_LINUX_ERLEBOARD
-endif
-
-ifneq ($(findstring zynq, $(MAKECMDGOALS)),)
-HAL_BOARD = HAL_BOARD_LINUX
-HAL_BOARD_SUBTYPE = HAL_BOARD_SUBTYPE_LINUX_ZYNQ
-endif
-
-ifneq ($(findstring pxf, $(MAKECMDGOALS)),)
-HAL_BOARD = HAL_BOARD_LINUX
-HAL_BOARD_SUBTYPE = HAL_BOARD_SUBTYPE_LINUX_PXF
-endif
-
-ifneq ($(findstring bebop, $(MAKECMDGOALS)),)
-HAL_BOARD = HAL_BOARD_LINUX
-HAL_BOARD_SUBTYPE = HAL_BOARD_SUBTYPE_LINUX_BEBOP
-endif
-
-
-ifneq ($(findstring navio, $(MAKECMDGOALS)),)
-HAL_BOARD = HAL_BOARD_LINUX
-HAL_BOARD_SUBTYPE = HAL_BOARD_SUBTYPE_LINUX_NAVIO
-endif
-
-ifneq ($(findstring raspilot, $(MAKECMDGOALS)),)
-HAL_BOARD = HAL_BOARD_LINUX
-HAL_BOARD_SUBTYPE = HAL_BOARD_SUBTYPE_LINUX_RASPILOT
-endif
-
-ifneq ($(findstring erlebrain2, $(MAKECMDGOALS)),)
-HAL_BOARD = HAL_BOARD_LINUX
-HAL_BOARD_SUBTYPE = HAL_BOARD_SUBTYPE_LINUX_ERLEBRAIN2
-endif
-
-ifneq ($(findstring bbbmini, $(MAKECMDGOALS)),)
-HAL_BOARD = HAL_BOARD_LINUX
-HAL_BOARD_SUBTYPE = HAL_BOARD_SUBTYPE_LINUX_BBBMINI
-endif
-
-ifneq ($(findstring minlure, $(MAKECMDGOALS)),)
-HAL_BOARD = HAL_BOARD_LINUX
-HAL_BOARD_SUBTYPE = HAL_BOARD_SUBTYPE_LINUX_MINLURE
-endif
-
-ifneq ($(findstring vrbrain, $(MAKECMDGOALS)),)
-HAL_BOARD = HAL_BOARD_VRBRAIN
-HAL_BOARD_SUBTYPE = HAL_BOARD_SUBTYPE_NONE
-endif
-
-ifneq ($(findstring vrubrain, $(MAKECMDGOALS)),)
-HAL_BOARD = HAL_BOARD_VRBRAIN
-HAL_BOARD_SUBTYPE = HAL_BOARD_SUBTYPE_NONE
-endif
-
-ifneq ($(findstring vrhero, $(MAKECMDGOALS)),)
-HAL_BOARD = HAL_BOARD_VRBRAIN
-HAL_BOARD_SUBTYPE = HAL_BOARD_SUBTYPE_NONE
-endif
-
-ifneq ($(findstring flymaple, $(MAKECMDGOALS)),)
-HAL_BOARD = HAL_BOARD_FLYMAPLE
-endif
-
-###################################################
 ifneq ($(findstring quan, $(MAKECMDGOALS)),)
 HAL_BOARD = HAL_BOARD_QUAN
+BOARD_NAME = quan
 endif
-
-######################################
 
 # default to SITL
 ifeq ($(HAL_BOARD),)

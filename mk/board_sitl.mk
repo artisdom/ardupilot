@@ -62,6 +62,7 @@ ifneq ($(findstring CYGWIN, $(SYSTYPE)),)
 LIBS += -lwinmm
 endif
 
+VERBOSE=True
 ifeq ($(VERBOSE),)
 v = @
 else
@@ -124,3 +125,4 @@ SKETCH_INCLUDES	=	$(SKETCHLIBINCLUDES) $(AERFLITE_INCLUDES)
 SLIB_INCLUDES	=	-I$(dir $<)/utility $(SKETCHLIBINCLUDES) $(AERFLITE_INCLUDES)
 
 include $(MK_DIR)/build_rules.mk
+

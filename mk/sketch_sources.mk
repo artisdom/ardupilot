@@ -9,6 +9,8 @@ ifeq (,$(MAKE_INC))
 $(error You must have a make.inc file to list library dependencies)
 endif
 
+SRC_EXCLUDES = $(wildcard $(SRCROOT)/exlude.inc)
+
 # Sketch source files
 SKETCHSRCS     := $(wildcard $(addprefix $(SRCROOT)/,$(SRCSUFFIXES)))
 SKETCHCPP      := $(SRCROOT)/$(SKETCH).cpp
@@ -20,7 +22,6 @@ SKETCHOBJS := $(addsuffix .o,$(basename $(SKETCHOBJS)))
 # get list of libraries from make.inc
 include $(MAKE_INC)
 LIBTOKENS := $(LIBRARIES)
-
 
 # HAL and board specific libraries are included here.
 LIBTOKENS += \
@@ -41,26 +42,6 @@ ifeq ($(HAL_BOARD),HAL_BOARD_SITL)
 LIBTOKENS += \
 	AP_HAL_SITL \
 	SITL
-endif
-
-ifeq ($(HAL_BOARD),HAL_BOARD_LINUX)
-LIBTOKENS += \
-	AP_HAL_Linux
-endif
-
-ifeq ($(HAL_BOARD),HAL_BOARD_PX4)
-LIBTOKENS += \
-	AP_HAL_PX4
-endif
-
-ifeq ($(HAL_BOARD),HAL_BOARD_VRBRAIN)
-LIBTOKENS += \
-	AP_HAL_VRBRAIN
-endif
-
-ifeq ($(HAL_BOARD),HAL_BOARD_FLYMAPLE)
-LIBTOKENS += \
-	AP_HAL_FLYMAPLE
 endif
 
 ifeq ($(HAL_BOARD),HAL_BOARD_QUAN)
