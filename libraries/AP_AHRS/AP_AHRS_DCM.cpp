@@ -25,6 +25,9 @@
 #include <AP_HAL/AP_HAL.h>
 #include "AP_AHRS_DCM.h"
 
+#define AP_AHRS_RP_P_MIN   0.05f        // minimum value for AHRS_RP_P parameter
+#define AP_AHRS_YAW_P_MIN  0.05f        // minimum value for AHRS_YAW_P parameter
+
 extern const AP_HAL::HAL& hal;
 
 // this is the speed in m/s above which we first get a yaw lock with

@@ -15,8 +15,12 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-#include "AP_AHRS.h"
+
 #include <AP_HAL/AP_HAL.h>
+#include "AP_AHRS.h"
+
+#define AP_AHRS_TRIM_LIMIT 10.0f        // maximum trim angle in degrees
+
 extern const AP_HAL::HAL& hal;
 
 // table of user settable parameters

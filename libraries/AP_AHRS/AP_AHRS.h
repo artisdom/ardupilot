@@ -33,10 +33,6 @@
 
 #include <AP_OpticalFlow/AP_OpticalFlow.h>
 
-#define AP_AHRS_TRIM_LIMIT 10.0f        // maximum trim angle in degrees
-#define AP_AHRS_RP_P_MIN   0.05f        // minimum value for AHRS_RP_P parameter
-#define AP_AHRS_YAW_P_MIN  0.05f        // minimum value for AHRS_YAW_P parameter
-
 enum AHRS_VehicleClass {
     AHRS_VEHICLE_UNKNOWN,
     AHRS_VEHICLE_GROUND,
@@ -45,8 +41,7 @@ enum AHRS_VehicleClass {
 };
 
 
-class AP_AHRS
-{
+class AP_AHRS{
 public:
     // Constructor
     AP_AHRS(AP_InertialSensor &ins, AP_Baro &baro, AP_GPS &gps) :
