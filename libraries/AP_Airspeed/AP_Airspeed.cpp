@@ -123,7 +123,7 @@ const AP_Param::GroupInfo AP_Airspeed::var_info[] = {
   0 to 4095 raw ADC value for 0-5V to the new system which gets the
   voltage in volts directly from the ADC driver
  */
-#define SCALING_OLD_CALIBRATION 819 // 4095/5
+//#define SCALING_OLD_CALIBRATION 819 // 4095/5
 
 void AP_Airspeed::init()
 {
@@ -248,3 +248,22 @@ void AP_Airspeed::setHIL(float airspeed, float diff_pressure, float temperature)
     _hil_set = true;
     _healthy = true;
 }
+
+// log airspeed calibration data to MAVLink
+void AP_Airspeed::log_mavlink_send(mavlink_channel_t chan, const Vector3f &vground)
+{
+    mavlink_msg_airspeed_autocal_send(chan,
+                                      vground.x,
+                                      vground.y,
+                                      vground.z,
+                                      get_differential_pressure(),
+                                      _EAS2TAS,
+                                      _ratio.get(),
+                                      _calibration.state.x,
+                                      _calibration.state.y,
+                                      _calibration.state.z,
+                                      _calibration.P.a.x,
+                                      _calibration.P.b.y,
+                                      _calibration.P.c.z);
+}
+

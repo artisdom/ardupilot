@@ -3,17 +3,19 @@
 #ifndef __AP_AIRSPEED_H__
 #define __AP_AIRSPEED_H__
 
-#include <AP_Common/AP_Common.h>
 #include <AP_HAL/AP_HAL.h>
+#include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include <AP_Vehicle/AP_Vehicle.h>
+
+
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include "AP_Airspeed_Quan.h"
 #else
 #include "AP_Airspeed_Backend.h"
 #include "AP_Airspeed_analog.h"
-//#include "AP_Airspeed_I2C.h"
+
 #endif
 
 class Airspeed_Calibration {
@@ -39,8 +41,7 @@ private:
     const AP_Vehicle::FixedWing &aparm;
 };
 
-class AP_Airspeed
-{
+class AP_Airspeed{
 public:
     // constructor
     AP_Airspeed(const AP_Vehicle::FixedWing &parms) :
