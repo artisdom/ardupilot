@@ -31,10 +31,10 @@ public:
     virtual bool init(void) = 0;
 
     // return the current differential_pressure in Pascal
-    virtual bool get_differential_pressure(float &pressure) = 0;
+    virtual bool get_differential_pressure(float &pressure)const = 0;
 
     // return the current temperature in degrees C, if available
-    virtual bool get_temperature(float &temperature) = 0;
+    virtual bool get_temperature(float &temperature)const = 0;
 };
 
 #endif // __AP_AIRSPEED_BACKEND_H__

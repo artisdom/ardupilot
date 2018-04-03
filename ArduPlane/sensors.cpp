@@ -71,10 +71,10 @@ void Plane::compass_cal_update() {
 /*
   ask airspeed sensor for a new value
  */
-void Plane::read_airspeed(void)
+void Plane::update_airspeed(void)
 {
     if (airspeed.enabled()) {
-        airspeed.read();
+        airspeed.update();
         if (should_log(MASK_LOG_IMU)) {
             Log_Write_Airspeed();
         }
@@ -101,7 +101,7 @@ void Plane::read_airspeed(void)
 void Plane::zero_airspeed(bool in_startup)
 {
     airspeed.calibrate(in_startup);
-    read_airspeed();
+    update_airspeed();
     // update barometric calibration with new airspeed supplied temperature
     barometer.update_calibration();
     gcs_send_text(MAV_SEVERITY_INFO,"Zero airspeed calibrated");

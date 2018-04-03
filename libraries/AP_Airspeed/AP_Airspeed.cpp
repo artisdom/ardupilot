@@ -149,12 +149,11 @@ float AP_Airspeed::get_pressure(void)
 
      _healthy = m_backend.get_differential_pressure(pressure);
 
-
     return pressure;
 }
 
 // get a temperature reading if possible
-bool AP_Airspeed::get_temperature(float &temperature)
+bool AP_Airspeed::get_temperature(float &temperature)const
 {
 
     if (!_enable) {
@@ -199,8 +198,8 @@ void AP_Airspeed::calibrate(bool in_startup)
     _raw_airspeed = 0;
 }
 
-// read the airspeed sensor
-void AP_Airspeed::read(void)
+// update the airspeed sensor
+void AP_Airspeed::update(void)
 {
     float airspeed_pressure;
     if (!_enable) {
@@ -212,7 +211,7 @@ void AP_Airspeed::read(void)
     _raw_pressure     = airspeed_pressure;
 
     /*
-      we support different pitot tube setups so used can choose if
+      we support different pitot tube setups so user can choose if
       they want to be able to detect pressure on the static port
      */
     switch ((enum pitot_tube_order)_tube_order.get()) {

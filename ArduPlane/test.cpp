@@ -474,7 +474,7 @@ int8_t Plane::test_airspeed(uint8_t argc, const Menu::arg *argv)
 
         while(1) {
             hal.scheduler->delay(20);
-            read_airspeed();
+            update_airspeed();
             cliSerial->printf("%.1f m/s\n", (double)airspeed.get_airspeed());
 
             if(cliSerial->available() > 0) {

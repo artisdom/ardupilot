@@ -59,7 +59,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
 
     SCHED_TASK(navigate,                5,   3000),
     SCHED_TASK(update_compass,          5,   1200),
-    SCHED_TASK(read_airspeed,           5,   1200),
+    SCHED_TASK(update_airspeed,           5,   1200),
     SCHED_TASK(update_alt,              5,   3400),
 ///----------------------------------------
     SCHED_TASK(adjust_altitude_target,  5,   1000),

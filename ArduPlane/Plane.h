@@ -749,7 +749,7 @@ private:
     void init_barometer(void);
     void init_rangefinder(void);
     void read_rangefinder(void);
-    void read_airspeed(void);
+    void update_airspeed(void);
     void zero_airspeed(bool in_startup);
     void read_battery(void);
     void read_receiver_rssi(void);

@@ -19,7 +19,7 @@ bool AP_Airspeed_Quan::init()
 }
 
 // MPXV7002
-bool AP_Airspeed_Quan::get_differential_pressure(float &pressure)
+bool AP_Airspeed_Quan::get_differential_pressure(float &pressure)const
 {
 
 //  sensitivity  = 1 e-3 Volts/ Pa

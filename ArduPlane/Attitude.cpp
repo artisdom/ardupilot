@@ -5,12 +5,7 @@
 #endif
 #include "Plane.h"
 
-/*
-  get a speed scaling number for control surfaces. This is applied to
-  PIDs to change the scaling of the PID with speed. At high speed we
-  move the surfaces less, and at low speeds we move them more.
-  The return value hovers somewhere around 1.0f
- */
+
 
 namespace {
 
@@ -23,12 +18,19 @@ namespace {
    typedef quan::time_<int32_t>::us usec;
 }
 
+/*
+  get a speed scaling number for control surfaces. This is applied to
+  PIDs to change the scaling of the PID with speed. At high speed we
+  move the surfaces less, and at low speeds we move them more.
+  The return value hovers somewhere around 1.0f
+ */
+
 float Plane::get_speed_scaler(void)
 {
     float aspeed, speed_scaler;
     if (ahrs.airspeed_estimate(&aspeed)) {
         if (aspeed > auto_state.highest_airspeed) {
-            auto_state.highest_airspeed = aspeed;
+           auto_state.highest_airspeed = aspeed;
         }
         if (aspeed > 0) {
             speed_scaler = g.scaling_speed / aspeed;
@@ -357,8 +359,9 @@ void Plane::calc_nav_pitch()
 {
     // Calculate the Pitch of the plane
     // --------------------------------
-    nav_pitch_cd = SpdHgt_Controller->get_pitch_demand();
-    nav_pitch_cd = constrain_int32(nav_pitch_cd, pitch_limit_min_cd, aparm.pitch_limit_max_cd.get());
+    nav_pitch_cd = constrain_int32(
+        SpdHgt_Controller->get_pitch_demand(), pitch_limit_min_cd, aparm.pitch_limit_max_cd.get()
+    );
 }
 
 
@@ -639,7 +642,7 @@ void Plane::update_load_factor(void)
         return;
     }
 
-    float const max_load_factor = smoothed_airspeed / aparm.airspeed_min;
+    float const max_load_factor = smoothed_airspeed / get_airspeed_min();
     if (max_load_factor <= 1) {
         // our airspeed is below the minimum airspeed. Limit roll to
         // 25 degrees

@@ -32,16 +32,17 @@ extern const AP_HAL::HAL& hal;
 bool AP_Airspeed_Analog::init()
 {
     _source = hal.analogin->channel(_pin);
+    _source->set_pin(_pin);
     return true;
 }
 
 // read the airspeed sensor
-bool AP_Airspeed_Analog::get_differential_pressure(float &pressure)
+bool AP_Airspeed_Analog::get_differential_pressure(float &pressure)const
 {
     if (_source == NULL) {
         return false;
     }
-    _source->set_pin(_pin);
+    
     pressure = _source->voltage_average_ratiometric() * VOLTS_TO_PASCAL;
     return true;
 }

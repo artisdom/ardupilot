@@ -8,6 +8,7 @@
 #include <AP_Param/AP_Param.h>
 #include <GCS_MAVLink/GCS_MAVLink.h>
 #include <AP_Vehicle/AP_Vehicle.h>
+#include <AP_Airspeed/Airspeed_Calibration.h>
 
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
@@ -17,29 +18,6 @@
 #include "AP_Airspeed_analog.h"
 
 #endif
-
-class Airspeed_Calibration {
-public:
-    friend class AP_Airspeed;
-    // constructor
-    Airspeed_Calibration(const AP_Vehicle::FixedWing &parms);
-
-    // initialise the calibration
-    void init(float initial_ratio);
-
-    // take current airspeed in m/s and ground speed vector and return
-    // new scaling factor
-    float update(float airspeed, const Vector3f &vg);
-
-private:
-    // state of kalman filter for airspeed ratio estimation
-    Matrix3f P; // covarience matrix
-    const float Q0; // process noise matrix top left and middle element
-    const float Q1; // process noise matrix bottom right element
-    Vector3f state; // state vector
-    const float DT; // time delta
-    const AP_Vehicle::FixedWing &aparm;
-};
 
 class AP_Airspeed{
 public:
@@ -66,7 +44,7 @@ public:
     void init(void);
 
     // read the analog source and update _airspeed
-    void        read(void);
+    void        update(void);
 
     // calibrate the airspeed. This must be called on startup if the
     // altitude/climb_rate/acceleration interfaces are ever used
@@ -93,7 +71,7 @@ public:
     }
 
     // get temperature if available
-    bool get_temperature(float &temperature);
+    bool get_temperature(float &temperature) const;
 
     // set the airspeed ratio (dimensionless)
     void        set_airspeed_ratio(float ratio) {

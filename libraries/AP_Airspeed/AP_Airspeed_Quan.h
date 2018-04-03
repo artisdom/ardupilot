@@ -16,9 +16,9 @@ public:
     bool init(void);
 
     // return the current differential_pressure in Pascal
-    bool get_differential_pressure(float &pressure);
+    bool get_differential_pressure(float &pressure)const;
 
-    bool get_temperature(float &temperature) { return false;}
+    bool get_temperature(float &temperature)const { return false;}
 };
 
 
