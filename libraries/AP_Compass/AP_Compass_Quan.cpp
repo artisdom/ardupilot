@@ -9,7 +9,7 @@
 
 template <> AP_Compass_Backend * create_compass_driver<Quan::tag_board>(Compass& compass)
 {
-  return AP_Compass_Quan::detect(compass);
+    return AP_Compass_Quan::detect(compass);
 }
 
 extern const AP_HAL::HAL& hal;

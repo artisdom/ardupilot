@@ -7,6 +7,12 @@
 #include <AP_HAL_Quan/imu_task.hpp>
 #include "AP_InertialSensor_Quan.h"
 
+template <> 
+AP_InertialSensor_Backend * create_inertial_sensor_driver<Quan::tag_board>(AP_InertialSensor & imu)
+{
+    return AP_InertialSensor_Quan::detect(imu);
+}
+
 extern const AP_HAL::HAL& hal;
 
 AP_InertialSensor_Quan::AP_InertialSensor_Quan(AP_InertialSensor &imu)

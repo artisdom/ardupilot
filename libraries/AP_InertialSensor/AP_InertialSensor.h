@@ -41,6 +41,12 @@ class DataFlash_Class;
  * blog post describing the method: http://chionophilous.wordpress.com/2011/10/24/accelerometer-calibration-iv-1-implementing-gauss-newton-on-an-atmega/
  * original sketch available at http://rolfeschmidt.com/mathtools/skimetrics/adxl_gn_calibration.pde
  */
+
+class AP_InertialSensor;
+
+template <typename Board> 
+AP_InertialSensor_Backend * create_inertial_sensor_driver(AP_InertialSensor & imu);
+
 class AP_InertialSensor
 {
     friend class AP_InertialSensor_Backend;
@@ -226,8 +232,8 @@ public:
     void set_delta_velocity(uint8_t instance, float deltavt, const Vector3f &deltav);
     void set_delta_angle(uint8_t instance, const Vector3f &deltaa);
 
-    AuxiliaryBus *get_auxiliary_bus(int16_t backend_id) { return get_auxiliary_bus(backend_id, 0); }
-    AuxiliaryBus *get_auxiliary_bus(int16_t backend_id, uint8_t instance);
+//    AuxiliaryBus *get_auxiliary_bus(int16_t backend_id) { return get_auxiliary_bus(backend_id, 0); }
+//    AuxiliaryBus *get_auxiliary_bus(int16_t backend_id, uint8_t instance);
 
     void detect_backends(void);
 
@@ -389,16 +395,16 @@ private:
     static AP_InertialSensor *_s_instance;
 };
 
-#include "AP_InertialSensor_Backend.h"
-#include "AP_InertialSensor_MPU6000.h"
-#include "AP_InertialSensor_MPU9250.h"
-#include "AP_InertialSensor_L3G4200D.h"
-#include "AP_InertialSensor_Flymaple.h"
-#include "AP_InertialSensor_MPU9150.h"
-#include "AP_InertialSensor_LSM9DS0.h"
-#include "AP_InertialSensor_HIL.h"
-#include "AP_InertialSensor_SITL.h"
-#include "AP_InertialSensor_UserInteract_Stream.h"
-#include "AP_InertialSensor_UserInteract_MAVLink.h"
+//#include "AP_InertialSensor_Backend.h"
+//#include "AP_InertialSensor_MPU6000.h"
+//#include "AP_InertialSensor_MPU9250.h"
+//#include "AP_InertialSensor_L3G4200D.h"
+//#include "AP_InertialSensor_Flymaple.h"
+//#include "AP_InertialSensor_MPU9150.h"
+//#include "AP_InertialSensor_LSM9DS0.h"
+//#include "AP_InertialSensor_HIL.h"
+//#include "AP_InertialSensor_SITL.h"
+//#include "AP_InertialSensor_UserInteract_Stream.h"
+//#include "AP_InertialSensor_UserInteract_MAVLink.h"
 
 #endif // __AP_INERTIAL_SENSOR_H__

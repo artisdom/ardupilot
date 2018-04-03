@@ -24,7 +24,7 @@
 #ifndef __AP_INERTIALSENSOR_BACKEND_H__
 #define __AP_INERTIALSENSOR_BACKEND_H__
 
-class AuxiliaryBus;
+//class AuxiliaryBus;
 
 class AP_InertialSensor_Backend
 {
@@ -57,7 +57,7 @@ public:
     /*
      * Return an AuxiliaryBus if backend has another bus it is able to export
      */
-    virtual AuxiliaryBus *get_auxiliary_bus() { return nullptr; }
+   // virtual AuxiliaryBus *get_auxiliary_bus() { return nullptr; }
 
     /*
       return the product ID

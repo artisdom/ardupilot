@@ -3,6 +3,7 @@
 #include <assert.h>
 
 #include "AP_InertialSensor.h"
+#include "AP_InertialSensor_Backend.h"
 
 #include <AP_Common/AP_Common.h>
 #include <AP_HAL/AP_HAL.h>
@@ -495,15 +496,27 @@ void AP_InertialSensor::_add_backend(AP_InertialSensor_Backend *backend)
 void
 AP_InertialSensor::detect_backends(void)
 {
+#if 1
+   if (_backends_detected == false){
+      _add_backend(create_inertial_sensor_driver<AP_HAL::board>(*this));
+
+      if (_backend_count == 0) {
+           AP_HAL::panic("No INS backends available");
+      }
+      _product_id.set(_backends[0]->product_id());
+      _backends_detected = true;
+      
+   }
+#else
     if (_backends_detected)
         return;
 
     _backends_detected = true;
 
-    if (_hil_mode) {
-        _add_backend(AP_InertialSensor_HIL::detect(*this));
-        return;
-    }
+//    if (_hil_mode) {
+//        _add_backend(AP_InertialSensor_HIL::detect(*this));
+//        return;
+//    }
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     _add_backend(AP_InertialSensor_SITL::detect(*this));    
 #elif HAL_INS_DEFAULT == HAL_INS_HIL
@@ -540,8 +553,10 @@ AP_InertialSensor::detect_backends(void)
         AP_HAL::panic("No INS backends available");
     }
 
+
     // set the product ID to the ID of the first backend
     _product_id.set(_backends[0]->product_id());
+#endif
 }
 
 /*
@@ -1607,16 +1622,16 @@ void AP_InertialSensor::set_delta_angle(uint8_t instance, const Vector3f &deltaa
 /*
  * Get an AuxiliaryBus of N @instance of backend identified by @backend_id
  */
-AuxiliaryBus *AP_InertialSensor::get_auxiliary_bus(int16_t backend_id, uint8_t instance)
-{
-    detect_backends();
-
-    AP_InertialSensor_Backend *backend = _find_backend(backend_id, instance);
-    if (backend == NULL)
-        return NULL;
-
-    return backend->get_auxiliary_bus();
-}
+//AuxiliaryBus *AP_InertialSensor::get_auxiliary_bus(int16_t backend_id, uint8_t instance)
+//{
+//    detect_backends();
+//
+//    AP_InertialSensor_Backend *backend = _find_backend(backend_id, instance);
+//    if (backend == NULL)
+//        return NULL;
+//
+//    return backend->get_auxiliary_bus();
+//}
 
 // calculate vibration levels and check for accelerometer clipping (called by a backends)
 void AP_InertialSensor::calc_vibration_and_clipping(uint8_t instance, const Vector3f &accel, float dt)

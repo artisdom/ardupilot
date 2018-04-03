@@ -3,7 +3,12 @@
 #ifndef __AP_INERTIALSENSOR_SITL_H__
 #define __AP_INERTIALSENSOR_SITL_H__
 
+#include <AP_HAL/AP_HAL.h>
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+
 #include "AP_InertialSensor.h"
+#include "AP_InertialSensor_Backend.h"
 #include <SITL/SITL.h>
 
 #define INS_SITL_INSTANCES 2
@@ -30,5 +35,7 @@ private:
     uint8_t gyro_instance[INS_SITL_INSTANCES];
     uint8_t accel_instance[INS_SITL_INSTANCES];
 };
+
+#endif
 
 #endif // __AP_INERTIALSENSOR_SITL_H__

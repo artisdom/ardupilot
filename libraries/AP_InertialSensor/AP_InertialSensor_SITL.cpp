@@ -1,10 +1,16 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
 #include <AP_HAL/AP_HAL.h>
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+
 #include "AP_InertialSensor_SITL.h"
 #include <SITL/SITL.h>
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+template <> 
+AP_InertialSensor_Backend * create_inertial_sensor_driver<HALSITL::tag_board>(AP_InertialSensor & imu)
+{
+   return AP_InertialSensor_SITL::detect(imu);
+}
 
 const extern AP_HAL::HAL& hal;
 

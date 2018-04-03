@@ -2,6 +2,10 @@
 #ifndef AP_Compass_HIL_H
 #define AP_Compass_HIL_H
 
+#include <AP_HAL/AP_HAL.h>
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+
 #include "Compass.h"
 
 #define HIL_NUM_COMPASSES 2
@@ -19,5 +23,7 @@ public:
 private:
     uint8_t     _compass_instance[HIL_NUM_COMPASSES];
 };
+
+#endif
 
 #endif
