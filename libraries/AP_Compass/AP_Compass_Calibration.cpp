@@ -151,7 +151,7 @@ Compass::accept_calibration_mask(uint8_t mask)
 {
     for(uint8_t i=0; i<Compass::m_max_instances; i++) {
         if ((1<<i) & mask) {
-            CompassCalibrator& cal = _calibrator[i];
+            CompassCalibrator const & cal = _calibrator[i];
             uint8_t cal_status = cal.get_status();
             if (cal_status != COMPASS_CAL_SUCCESS && cal_status != COMPASS_CAL_NOT_STARTED) {
                 // a compass failed or is still in progress
@@ -179,7 +179,7 @@ Compass::accept_calibration_all()
 }
 
 void
-Compass::send_mag_cal_progress(mavlink_channel_t chan)
+Compass::send_mag_cal_progress(mavlink_channel_t chan)const
 {
     uint8_t cal_mask = get_cal_mask();
 

@@ -115,10 +115,10 @@ public:
 
     bool accept_calibration(uint8_t i);
     bool accept_calibration_all();
-    bool accept_calibration_mask(uint8_t mask);
+    bool accept_calibration_mask(uint8_t mask) ;
 
-    bool compass_cal_requires_reboot() { return _cal_complete_requires_reboot; }
-    bool auto_reboot() { return _compass_cal_autoreboot; }
+    bool compass_cal_requires_reboot() const { return _cal_complete_requires_reboot; }
+    bool auto_reboot() const { return _compass_cal_autoreboot; }
     uint8_t get_cal_mask() const;
     bool is_calibrating() const;
 
@@ -127,7 +127,7 @@ public:
     */
     uint8_t handle_mag_cal_command(const mavlink_command_long_t &packet);
 
-    void send_mag_cal_progress(mavlink_channel_t chan);
+    void send_mag_cal_progress(mavlink_channel_t chan)const;
     void send_mag_cal_report(mavlink_channel_t chan);
 
     // check if the compasses are pointing in the same direction
