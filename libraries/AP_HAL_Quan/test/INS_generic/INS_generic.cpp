@@ -7,6 +7,7 @@
 #include <AP_HAL/AP_HAL.h>
 
 #include <AP_InertialSensor/AP_InertialSensor.h>
+#include <AP_InertialSensor/AP_InertialSensor_UserInteract_Stream.h>
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #include <quantracker/osd/osd.hpp>
 #include <task.h>
@@ -92,7 +93,6 @@ static void run_calibration()
     while( uart->available() ) {
         uart->read();
     }
-
 
     AP_InertialSensor_UserInteractStream interact(uart);
     ins.calibrate_accel(&interact, roll_trim, pitch_trim);

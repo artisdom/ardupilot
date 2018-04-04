@@ -57,7 +57,7 @@ public:
     static constexpr uint8_t m_vibration_check_instances  = 2U;
 
     AP_InertialSensor();
-    static AP_InertialSensor *get_instance();
+   // static AP_InertialSensor *get_instance();
 
     // the rate that updates will be available to the application
     enum Sample_rate {
@@ -396,7 +396,7 @@ private:
 
     DataFlash_Class *_dataflash;
 
-    static AP_InertialSensor *_s_instance;
+   // static AP_InertialSensor *_s_instance;
 };
 
 //#include "AP_InertialSensor_Backend.h"

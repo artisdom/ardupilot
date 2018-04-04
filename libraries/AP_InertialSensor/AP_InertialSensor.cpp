@@ -310,7 +310,7 @@ const AP_Param::GroupInfo AP_InertialSensor::var_info[] = {
     AP_GROUPEND
 };
 
-AP_InertialSensor *AP_InertialSensor::_s_instance = nullptr;
+//AP_InertialSensor *AP_InertialSensor::_s_instance = nullptr;
 
 #define AP_INERTIAL_SENSOR_ACCEL_VIBE_FLOOR_FILT_HZ     5.0f
 #define AP_INERTIAL_SENSOR_ACCEL_VIBE_FILT_HZ           2.0f
@@ -330,10 +330,10 @@ AP_InertialSensor::AP_InertialSensor() :
     _backends_detected(false),
     _dataflash(NULL)
 {
-    if (_s_instance) {
-        AP_HAL::panic("Too many inertial sensors");
-    }
-    _s_instance = this;
+//    if (_s_instance) {
+//        AP_HAL::panic("Too many inertial sensors");
+//    }
+//    _s_instance = this;
     AP_Param::setup_object_defaults(this, var_info);        
     for (uint8_t i=0; i<m_max_backends; i++) {
         _backends[i] = NULL;
@@ -367,12 +367,12 @@ AP_InertialSensor::AP_InertialSensor() :
 /*
  * Get the AP_InertialSensor singleton
  */
-AP_InertialSensor *AP_InertialSensor::get_instance()
-{
-    if (!_s_instance)
-        _s_instance = new AP_InertialSensor();
-    return _s_instance;
-}
+//AP_InertialSensor *AP_InertialSensor::get_instance()
+//{
+//    if (!_s_instance)
+//        _s_instance = new AP_InertialSensor();
+//    return _s_instance;
+//}
 
 /*
   register a new gyro instance
