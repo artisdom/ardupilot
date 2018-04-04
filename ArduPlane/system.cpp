@@ -148,7 +148,7 @@ void Plane::init_ardupilot()
     airspeed.init();
 
     if (g.compass_enabled==true) {
-        bool compass_ok = compass.init() && compass.read();
+        bool compass_ok = compass.init() && compass.update();
 #if HIL_SUPPORT
         compass_ok = true;
 #endif

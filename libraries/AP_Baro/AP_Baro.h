@@ -11,7 +11,7 @@
 class AP_baro_driver;
 class AP_Baro;
 
-template <typename Board> AP_baro_driver * create_baro_driver(AP_Baro & baro);
+template <typename Board> AP_baro_driver * connect_baro_driver(AP_Baro & baro);
 
 class AP_Baro
 {

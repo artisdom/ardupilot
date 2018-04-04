@@ -450,7 +450,7 @@ AP_AHRS_DCM::drift_correction_yaw(void)
             // we force an additional compass read()
             // here. This has the effect of throwing away
             // the first compass value, which can be bad
-            if (!_flags.have_initial_yaw && _compass->read()) {
+            if (!_flags.have_initial_yaw && _compass->update()) {
                 float heading = _compass->calculate_heading(_dcm_matrix);
                 _dcm_matrix.from_euler(roll, pitch, heading);
                 _omega_yaw_P.zero();

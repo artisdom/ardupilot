@@ -10,16 +10,11 @@
 
 #define HIL_NUM_COMPASSES 2
 
-class AP_Compass_HIL : public AP_Compass_Backend
-{
+class AP_Compass_HIL final: public AP_Compass_Backend{
 public:
-    AP_Compass_HIL(Compass &compass);
-    void read(void);
-    bool init(void);
-
-    // detect the sensor
-    static AP_Compass_Backend *detect(Compass &compass);
-
+    AP_Compass_HIL();
+    AP_Compass_HIL*   connect(Compass & compass);
+    void              update() override;
 private:
     uint8_t     _compass_instance[HIL_NUM_COMPASSES];
 };

@@ -427,7 +427,7 @@ Compass::init()
     if (_compass_count != 0) {
         // get initial health status
         hal.scheduler->delay(100);
-        read();
+        update();
     }
     return true;
 }
@@ -456,27 +456,27 @@ void Compass::_add_backend(AP_Compass_Backend *backend)
  */
 void Compass::_detect_backends(void)
 {
-   _add_backend(create_compass_driver<AP_HAL::board>(*this));
+   _add_backend(connect_compass_driver<AP_HAL::board>(*this));
    if (_backend_count == 0 || _compass_count == 0) {
       hal.console->println("No Compass backends available");
    }
 }
 
-void 
-Compass::accumulate(void)
-{    
-    for (uint8_t i=0; i< _backend_count; i++) {
-        // call accumulate on each of the backend
-        _backends[i]->accumulate();
-    }
-}
+//void 
+//Compass::accumulate(void)
+//{    
+//    for (uint8_t i=0; i< _backend_count; i++) {
+//        // call accumulate on each of the backend
+//        _backends[i]->accumulate();
+//    }
+//}
 
 bool 
-Compass::read(void)
+Compass::update(void)
 {
     for (uint8_t i=0; i< _backend_count; i++) {
         // call read on each of the backend. This call updates field[i]
-        _backends[i]->read();
+        _backends[i]->update();
     }    
     for (uint8_t i=0; i < Compass::m_max_instances; i++) {
         _state[i].healthy = (AP_HAL::millis() - _state[i].last_update_ms < 500);

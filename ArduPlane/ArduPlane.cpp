@@ -1,12 +1,9 @@
-/// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
 /*
-   Lead developer: Andrew Tridgell
+   Andy Little 2015 - 2018
  
-   Authors:    Doug Weibel, Jose Julio, Jordi Munoz, Jason Short, Randy Mackay, Pat Hickey, John Arne Birkeland, Olivier Adler, Amilcar Lucas, Gregory Fletcher, Paul Riseborough, Brandon Jones, Jon Challinger
+   Authors   Andrew Tridgell, Doug Weibel, Jose Julio, Jordi Munoz, Jason Short, Randy Mackay, Pat Hickey, John Arne Birkeland, Olivier Adler, Amilcar Lucas, Gregory Fletcher, Paul Riseborough, Brandon Jones, Jon Challinger
    Thanks to:  Chris Anderson, Michael Oborne, Paul Mather, Bill Premerlani, James Cohen, JB from rotorFX, Automatik, Fefenin, Peter Meister, Remzibi, Yury Smirnov, Sandro Benigno, Max Levine, Roberto Navoni, Lorenz Meier, Yury MonZon
-
-   Please contribute your ideas! See http://dev.ardupilot.com for details
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -67,7 +64,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(gcs_update,              1,   1700),
     SCHED_TASK(gcs_data_stream_send,    1,   3000),
     SCHED_TASK(read_battery,            5,   1000),
-    SCHED_TASK(compass_accumulate,      1,   1500),
+  //  SCHED_TASK(compass_accumulate,      1,   1500),
     SCHED_TASK(update_notify,           1,    300),
     SCHED_TASK(compass_cal_update,      1,    100),
 #if OPTFLOW == ENABLED
@@ -190,7 +187,7 @@ void Plane::update_speed_height(void)
  */
 void Plane::update_compass(void)
 {
-    if (g.compass_enabled && compass.read()) {
+    if (g.compass_enabled && compass.update()) {
         ahrs.set_compass(&compass);
         compass.learn_offsets();
         if (should_log(MASK_LOG_COMPASS)) {
@@ -204,12 +201,12 @@ void Plane::update_compass(void)
 /*
   if the compass is enabled then try to accumulate a reading
  */
-void Plane::compass_accumulate(void)
-{
-    if (g.compass_enabled) {
-        compass.accumulate();
-    }    
-}
+//void Plane::compass_accumulate(void)
+//{
+//    if (g.compass_enabled) {
+//        compass.accumulate();
+//    }    
+//}
 
 /*
   do 10Hz logging

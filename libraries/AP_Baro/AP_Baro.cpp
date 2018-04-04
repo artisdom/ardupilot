@@ -293,7 +293,7 @@ float AP_Baro::get_calibration_temperature(uint8_t instance) const
  */
 void AP_Baro::init(void)
 {
-   drivers[0] = create_baro_driver<AP_HAL::board>(*this);
+   drivers[0] = connect_baro_driver<AP_HAL::board>(*this);
    if (drivers[0] == NULL) {
       AP_HAL::panic("Baro: unable to initialise driver");
    }

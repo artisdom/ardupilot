@@ -8,14 +8,11 @@
 #include "AP_Compass_Backend.h"
 #include <AP_HAL_Quan/i2c_task.hpp>
 
-class AP_Compass_Quan : public AP_Compass_Backend
-{
+class AP_Compass_Quan final: public AP_Compass_Backend{
 public:
-   bool        init(void);
-   void        read(void);
-
-   AP_Compass_Quan(Compass &compass);
-   static AP_Compass_Backend *detect(Compass &compass);
+   AP_Compass_Quan();
+   AP_Compass_Quan*        connect(Compass & compass);
+   void                    update() override;
 
  private:
    QueueHandle_t m_hQueue;

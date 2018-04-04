@@ -13,7 +13,7 @@ namespace {
    AP_Baro_HIL baro_driver;
 }
 
-template<> AP_baro_driver * create_baro_driver<HALSITL::tag_board>(AP_Baro & baro)
+template<> AP_baro_driver * connect_baro_driver<HALSITL::tag_board>(AP_Baro & baro)
 {
    return baro_driver.connect(baro);
 }

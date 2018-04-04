@@ -363,7 +363,7 @@ int8_t Plane::test_ins(uint8_t argc, const Menu::arg *argv)
             if(g.compass_enabled) {
                 counter++;
                 if(counter == 5) {
-                    compass.read();
+                    compass.update();
                     counter = 0;
                 }
             }
@@ -422,7 +422,7 @@ int8_t Plane::test_mag(uint8_t argc, const Menu::arg *argv)
             ahrs.update();
 
             if(counter % 5 == 0) {
-                if (compass.read()) {
+                if (compass.update()) {
                     // Calculate heading
                     const Matrix3f &m = ahrs.get_dcm_matrix();
                     heading = compass.calculate_heading(m);

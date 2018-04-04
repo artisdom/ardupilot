@@ -5,8 +5,6 @@
 #endif
 #include "Plane.h"
 
-
-
 namespace {
 
    QUAN_QUANTITY_LITERAL(force,N)

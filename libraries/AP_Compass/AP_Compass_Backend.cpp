@@ -6,9 +6,9 @@
 
 extern const AP_HAL::HAL& hal;
 
-AP_Compass_Backend::AP_Compass_Backend(Compass &compass) :
-    _compass(compass)
-{}
+//AP_Compass_Backend::AP_Compass_Backend(Compass &compass) :
+//    _compass(compass)
+//{}
 
 /*
  * A compass measurement is expected to pass through the following functions:
@@ -27,12 +27,12 @@ AP_Compass_Backend::AP_Compass_Backend(Compass &compass) :
 
 void AP_Compass_Backend::rotate_field(Vector3f &mag, uint8_t instance)
 {
-    Compass::mag_state &state = _compass._state[instance];
+    Compass::mag_state &state = m_compass->_state[instance];
    // mag.rotate(MAG_BOARD_ORIENTATION);
 
     if (!state.external) {
         // and add in AHRS_ORIENTATION setting if not an external compass
-        mag.rotate(_compass._board_orientation);
+        mag.rotate(m_compass->_board_orientation);
     } else {
         // add user selectable orientation
         mag.rotate((enum Rotation)state.orientation.get());
@@ -41,7 +41,7 @@ void AP_Compass_Backend::rotate_field(Vector3f &mag, uint8_t instance)
 
 void AP_Compass_Backend::publish_raw_field(const Vector3f &mag, uint32_t time_us, uint8_t instance)
 {
-    Compass::mag_state &state = _compass._state[instance];
+    Compass::mag_state &state = m_compass->_state[instance];
 
     state.last_update_ms = AP_HAL::millis();
 
@@ -54,12 +54,12 @@ void AP_Compass_Backend::publish_raw_field(const Vector3f &mag, uint32_t time_us
     state.updated_raw_field = true;
     state.has_raw_field = true;
 
-    _compass._calibrator[instance].new_sample(mag);
+    m_compass->_calibrator[instance].new_sample(mag);
 }
 
 void AP_Compass_Backend::correct_field(Vector3f &mag, uint8_t i)
 {
-    Compass::mag_state &state = _compass._state[i];
+    Compass::mag_state &state = m_compass->_state[i];
 
     if (state.diagonals.get().is_zero()) {
         state.diagonals.set(Vector3f(1.0f,1.0f,1.0f));
@@ -75,8 +75,8 @@ void AP_Compass_Backend::correct_field(Vector3f &mag, uint8_t i)
      * being applied so it can be logged correctly
      */
     mag += offsets;
-    if(_compass._motor_comp_type != Compass::motor_compensation_disabled && !is_zero(_compass._thr_or_curr)) {
-        state.motor_offset = mot * _compass._thr_or_curr;
+    if(m_compass->_motor_comp_type != Compass::motor_compensation_disabled && !is_zero(m_compass->_thr_or_curr)) {
+        state.motor_offset = mot * m_compass->_thr_or_curr;
         mag += state.motor_offset;
     } else {
         state.motor_offset.zero();
@@ -93,7 +93,7 @@ void AP_Compass_Backend::correct_field(Vector3f &mag, uint8_t i)
 
 void AP_Compass_Backend::publish_unfiltered_field(const Vector3f &mag, uint32_t time_us, uint8_t instance)
 {
-    Compass::mag_state &state = _compass._state[instance];
+    Compass::mag_state &state = m_compass->_state[instance];
 
     state.unfiltered_field = mag;
     state.raw_meas_time_us = time_us;
@@ -106,7 +106,7 @@ void AP_Compass_Backend::publish_unfiltered_field(const Vector3f &mag, uint32_t 
  */
 void AP_Compass_Backend::publish_filtered_field(const Vector3f &mag, uint8_t instance)
 {
-    Compass::mag_state &state = _compass._state[instance];
+    Compass::mag_state &state = m_compass->_state[instance];
 
     state.field = mag;
 
@@ -124,10 +124,10 @@ void AP_Compass_Backend::publish_filtered_field(const Vector3f &mag, uint8_t ins
   register a new backend with frontend, returning instance which
   should be used in publish_field()
  */
-uint8_t AP_Compass_Backend::register_compass(void) const
-{ 
-    return _compass.register_compass(); 
-}
+//uint8_t AP_Compass_Backend::register_compass(void) const
+//{ 
+//    return m_compass->register_compass(); 
+//}
 
 
 /*
@@ -135,7 +135,7 @@ uint8_t AP_Compass_Backend::register_compass(void) const
 */
 void AP_Compass_Backend::set_dev_id(uint8_t instance, uint32_t dev_id)
 {
-    _compass._state[instance].dev_id.set(dev_id);
+    m_compass->_state[instance].dev_id.set(dev_id);
 }
 
 /*
@@ -143,5 +143,5 @@ void AP_Compass_Backend::set_dev_id(uint8_t instance, uint32_t dev_id)
 */
 void AP_Compass_Backend::set_external(uint8_t instance, bool external)
 {
-    _compass._state[instance].external.set(external);
+    m_compass->_state[instance].external.set(external);
 }

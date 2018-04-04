@@ -12,7 +12,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include "AP_Compass_Backend.h"
 
-template <typename Board> AP_Compass_Backend * create_compass_driver(Compass& compass);
+template <typename Board> AP_Compass_Backend * connect_compass_driver(Compass& compass);
 
 class Compass
 {
@@ -35,12 +35,13 @@ public:
     bool init();
 
     /// Read the compass and update the mag_ variables.
-    ///
-    bool read();    
+    /// Should be update
+    bool update();    
 
     /// use spare CPU cycles to accumulate values from the compass if
     /// possible (this method should also be implemented in the backends)
-    void accumulate();
+    // todo remove
+    //void accumulate();
 
     /// Calculate the tilt-compensated heading_ variables.
     ///
@@ -277,13 +278,15 @@ public:
         Vector3f field[m_max_instances];
     } _hil;
 
+     uint8_t register_compass(void);
+
 private:
 
   // #define COMPASS_MAX_BACKEND   3
     /// Register a new compas driver, allocating an instance number
     ///
     /// @return number of compass instances
-    uint8_t register_compass(void);
+   
 
     // load backend drivers
     void _add_backend(AP_Compass_Backend *backend);

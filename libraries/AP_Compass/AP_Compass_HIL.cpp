@@ -25,51 +25,40 @@
 
 #include "AP_Compass_HIL.h"
 
-template <> AP_Compass_Backend * create_compass_driver<HALSITL::tag_board>(Compass& compass)
+namespace {
+  AP_Compass_HIL compass_driver;
+}
+
+template <> AP_Compass_Backend * connect_compass_driver<HALSITL::tag_board>(Compass& compass)
 {
-   return AP_Compass_HIL::detect(compass);
+   return compass_driver.connect(compass);
 }
 
 extern const AP_HAL::HAL& hal;
 
 // constructor
-AP_Compass_HIL::AP_Compass_HIL(Compass &compass):
-    AP_Compass_Backend(compass)
+AP_Compass_HIL::AP_Compass_HIL()
 {
-    memset(_compass_instance, 0, sizeof(_compass_instance));
-    _compass._setup_earth_field();
+   memset(_compass_instance, 0, sizeof(_compass_instance));
 }
 
 // detect the sensor
-AP_Compass_Backend *AP_Compass_HIL::detect(Compass &compass)
+AP_Compass_HIL *AP_Compass_HIL::connect(Compass &compass)
 {
-    AP_Compass_HIL *sensor = new AP_Compass_HIL(compass);
-    if (sensor == NULL) {
-        return NULL;
-    }
-    if (!sensor->init()) {
-        delete sensor;
-        return NULL;
-    }
-    return sensor;
+   this->set_compass(compass);
+   for (uint8_t i=0; i<HIL_NUM_COMPASSES; i++) {
+        _compass_instance[i] = compass.register_compass();
+   }
+   compass._setup_earth_field();
+   return this;
 }
 
-bool
-AP_Compass_HIL::init(void)
-{
-    // register two compass instances
-    for (uint8_t i=0; i<HIL_NUM_COMPASSES; i++) {
-        _compass_instance[i] = register_compass();
-    }
-    return true;
-}
-
-void AP_Compass_HIL::read()
+void AP_Compass_HIL::update()
 {
     for (uint8_t i=0; i < ARRAY_SIZE(_compass_instance); i++) {
-        if (_compass._hil.healthy[i]) {
+        if (m_compass->_hil.healthy[i]) {
             uint8_t compass_instance = _compass_instance[i];
-            Vector3f field = _compass._hil.field[compass_instance];
+            Vector3f field = m_compass->_hil.field[compass_instance];
             rotate_field(field, compass_instance);
             publish_raw_field(field, AP_HAL::micros(), compass_instance);
             correct_field(field, compass_instance);
