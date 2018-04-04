@@ -24,8 +24,6 @@
 #ifndef __AP_INERTIALSENSOR_BACKEND_H__
 #define __AP_INERTIALSENSOR_BACKEND_H__
 
-//class AuxiliaryBus;
-
 #include "AP_InertialSensor.h"
 
 class AP_InertialSensor_Backend
@@ -47,19 +45,16 @@ public:
 
     /*
      * optional function to accumulate more samples. This is needed for drivers that don't use a timer to gather samples
+       TODO remove
      */
     virtual void accumulate() {}
 
     /*
      * Configure and start all sensors. The empty implementation allows
      * subclasses to already start the sensors when it's detected
+       TODO remove
      */
     virtual void start() { }
-
-    /*
-     * Return an AuxiliaryBus if backend has another bus it is able to export
-     */
-   // virtual AuxiliaryBus *get_auxiliary_bus() { return nullptr; }
 
     /*
       return the product ID

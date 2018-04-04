@@ -1,22 +1,6 @@
-/// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
-#ifndef __AP_INERTIAL_SENSOR_H__
-#define __AP_INERTIAL_SENSOR_H__
-
-// Gyro and Accelerometer calibration criteria
-//#define AP_INERTIAL_SENSOR_ACCEL_TOT_MAX_OFFSET_CHANGE  4.0f
-//#define AP_INERTIAL_SENSOR_ACCEL_MAX_OFFSET             250.0f
-//#define AP_INERTIAL_SENSOR_ACCEL_CLIP_THRESH_MSS        (15.5f*GRAVITY_MSS) // accelerometer values over 15.5G are recorded as a clipping error
-//#define AP_INERTIAL_SENSOR_ACCEL_VIBE_FLOOR_FILT_HZ     5.0f    // accel vibration floor filter hz
-//#define AP_INERTIAL_SENSOR_ACCEL_VIBE_FILT_HZ           2.0f    // accel vibration filter hz
-
-/**
-   maximum number of INS instances available on this platform. If more
-   than 1 then redundant sensors may be available
- */
-//#define INS_MAX_INSTANCES 3
-//#define INS_MAX_BACKENDS  6
-//#define INS_VIBRATION_CHECK_INSTANCES 2
+#ifndef AERFPILOT_LIBRARIES_AP_INERTIAL_SENSOR_H_INCLUDED
+#define AERFPILOT_LIBRARIES_AP_INERTIAL_SENSOR_H_INCLUDED
 
 #include <stdint.h>
 #include <AP_HAL/AP_HAL.h>
@@ -26,7 +10,6 @@
 #include <Filter/LowPassFilter2p.h>
 
 class AP_InertialSensor_Backend;
-//class AuxiliaryBus;
 
 /*
   forward declare DataFlash class. We can't include DataFlash.h
@@ -236,9 +219,6 @@ public:
     void set_delta_velocity(uint8_t instance, float deltavt, const Vector3f &deltav);
     void set_delta_angle(uint8_t instance, const Vector3f &deltaa);
 
-//    AuxiliaryBus *get_auxiliary_bus(int16_t backend_id) { return get_auxiliary_bus(backend_id, 0); }
-//    AuxiliaryBus *get_auxiliary_bus(int16_t backend_id, uint8_t instance);
-
     void detect_backends(void);
 
 private:
@@ -396,19 +376,7 @@ private:
 
     DataFlash_Class *_dataflash;
 
-   // static AP_InertialSensor *_s_instance;
 };
 
-//#include "AP_InertialSensor_Backend.h"
-//#include "AP_InertialSensor_MPU6000.h"
-//#include "AP_InertialSensor_MPU9250.h"
-//#include "AP_InertialSensor_L3G4200D.h"
-//#include "AP_InertialSensor_Flymaple.h"
-//#include "AP_InertialSensor_MPU9150.h"
-//#include "AP_InertialSensor_LSM9DS0.h"
-//#include "AP_InertialSensor_HIL.h"
-//#include "AP_InertialSensor_SITL.h"
-//#include "AP_InertialSensor_UserInteract_Stream.h"
-//#include "AP_InertialSensor_UserInteract_MAVLink.h"
 
-#endif // __AP_INERTIAL_SENSOR_H__
+#endif  // AERFPILOT_LIBRARIES_AP_INERTIAL_SENSOR_H_INCLUDED

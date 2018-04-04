@@ -364,15 +364,6 @@ AP_InertialSensor::AP_InertialSensor() :
     memset(_delta_angle_valid,0,sizeof(_delta_angle_valid));
 }
 
-/*
- * Get the AP_InertialSensor singleton
- */
-//AP_InertialSensor *AP_InertialSensor::get_instance()
-//{
-//    if (!_s_instance)
-//        _s_instance = new AP_InertialSensor();
-//    return _s_instance;
-//}
 
 /*
   register a new gyro instance
