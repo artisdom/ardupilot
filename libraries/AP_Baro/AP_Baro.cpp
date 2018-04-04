@@ -23,7 +23,7 @@
 #include <AP_Math/AP_Math.h>
 #include <AP_Common/AP_Common.h>
 #include "AP_Baro.h"
-#include "AP_Baro_Backend.h"
+#include "AP_baro_driver.h"
 
 // maximum number of sensor instances
 #define BARO_MAX_INSTANCES 3
@@ -203,15 +203,15 @@ void AP_Baro::update_calibration()
 // given base_pressure in Pascal
 float AP_Baro::get_altitude_difference(float base_pressure, float pressure) const
 {
-    float ret;
-    float temp    = get_ground_temperature() + 273.15f;
-    float scaling = pressure / base_pressure;
+   // float ret;
+    float const temp    = get_ground_temperature() + 273.15f;
+    float const scaling = pressure / base_pressure;
 
     // This is an exact calculation that is within +-2.5m of the standard
     // atmosphere tables in the troposphere (up to 11,000 m amsl).
-    ret = 153.8462f * temp * (1.0f - expf(0.190259f * logf(scaling)));
+    return 153.8462f * temp * (1.0f - expf(0.190259f * logf(scaling)));
 
-    return ret;
+   // return ret;
 }
 
 
@@ -219,6 +219,8 @@ float AP_Baro::get_altitude_difference(float base_pressure, float pressure) cons
 // valid for altitudes up to 10km AMSL
 // assumes standard atmosphere lapse rate
 // Fixme This is a mess. Split into  get and calc funs
+// if altitude difference < 100 m do nothing much
+// therefore only need updating every 1 s or so?
 float AP_Baro::get_EAS2TAS(void)
 {
     float altitude = get_altitude();
@@ -354,17 +356,6 @@ void AP_Baro::update(void)
         }
     }
 }
-
-/*
-  call accumulate on all drivers
- */
-void AP_Baro::accumulate(void)
-{
-    for (uint8_t i=0; i<_num_drivers; i++) {
-        drivers[i]->accumulate();
-    }
-}
-
 
 /* register a new sensor, claiming a sensor slot. If we are out of
    slots it will panic

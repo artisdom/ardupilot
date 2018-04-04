@@ -9,14 +9,14 @@
 #include <Filter/DerivativeFilter.h>
 #include <AP_Buffer/AP_Buffer.h>
 
-class AP_Baro_Backend;
+class AP_baro_driver;
 class AP_Baro;
 
-template <typename Board> AP_Baro_Backend * create_baro_driver(AP_Baro & baro);
+template <typename Board> AP_baro_driver * create_baro_driver(AP_Baro & baro);
 
 class AP_Baro
 {
-    friend class AP_Baro_Backend;
+    friend class AP_baro_driver;
 
 public:
     // constructor
@@ -46,7 +46,7 @@ public:
 
     // accumulate a reading on sensors. Some backends without their
     // own thread or a timer may need this.
-    void accumulate(void);
+   // void accumulate(void);
 
     // calibrate the barometer. This must be called on startup if the
     // altitude/climb_rate/acceleration interfaces are ever used
@@ -122,12 +122,13 @@ public:
     // enable HIL mode
     void set_hil_mode(void) { _hil_mode = true; }
 
+  
 private:
     // how many drivers do we have?
     static constexpr uint32_t m_max_baro_drivers = 2U;
     static constexpr uint32_t m_max_baro_instances = 3U;
     uint8_t _num_drivers;
-    AP_Baro_Backend *drivers[m_max_baro_drivers];
+    AP_baro_driver *drivers[m_max_baro_drivers];
 
     // how many sensors do we have?
     uint8_t _num_sensors;
@@ -146,6 +147,18 @@ private:
         AP_Float ground_temperature;
         AP_Float ground_pressure;
     } sensors[m_max_baro_instances];
+public:
+
+   void set_sensor_instance(uint8_t instance,float const & pressure, float const & temperature)
+   {
+      if ( instance < m_max_baro_instances){
+         sensors[instance].pressure = pressure;
+         sensors[instance].temperature = temperature;
+         sensors[instance].last_update_ms = AP_HAL::millis();
+      }
+   }
+   
+private:
 
     AP_Float                            _alt_offset;
     AP_Int8                             _primary_baro; // primary chosen by user

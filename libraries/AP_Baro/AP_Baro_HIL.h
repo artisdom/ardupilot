@@ -7,16 +7,17 @@
 #ifndef __AP_BARO_HIL_H__
 #define __AP_BARO_HIL_H__
 
-#include "AP_Baro_Backend.h"
+#include "AP_baro_driver.h"
 
-class AP_Baro_HIL : public AP_Baro_Backend
+class AP_Baro_HIL final : public AP_baro_driver
 {
 public:
-    AP_Baro_HIL(AP_Baro &baro);
-    void update(void);
-
+    AP_Baro_HIL();
+    void update()const override;
+    AP_baro_driver* connect(AP_Baro & baro);
 private:
-    uint8_t _instance;
+    uint8_t m_instance;
+    AP_Baro * m_baro;
 };
 
 #endif //  __AP_BARO_HIL_H__

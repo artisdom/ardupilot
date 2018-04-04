@@ -9,39 +9,53 @@
 
 extern const AP_HAL::HAL& hal;
 
-template<> AP_Baro_Backend * create_baro_driver<HALSITL::tag_board>(AP_Baro & baro)
-{
-   return new AP_Baro_HIL(baro);
+namespace {
+   AP_Baro_HIL baro_driver;
 }
 
-AP_Baro_HIL::AP_Baro_HIL(AP_Baro &baro) :
-    AP_Baro_Backend(baro)
+template<> AP_baro_driver * create_baro_driver<HALSITL::tag_board>(AP_Baro & baro)
 {
-    _instance = _frontend.register_sensor();
+   return baro_driver.connect(baro);
 }
+
+AP_baro_driver* AP_Baro_HIL::connect(AP_Baro& baro)
+{
+   m_baro = &baro;
+   m_instance = baro.register_sensor();
+   return this;
+}
+
+AP_Baro_HIL::AP_Baro_HIL() 
+:m_baro{nullptr}, m_instance {static_cast<uint8_t>(-1)}
+{}
 
 // Read the sensor
-void AP_Baro_HIL::update(void)
+void AP_Baro_HIL::update(void)const
 {
-    float pressure = 0.0;
-    float temperature = 0.0;
-    float pressure_sum = 0.0;
-    float temperature_sum = 0.0;
-    uint32_t sum_count = 0;
+   if ( m_baro != nullptr){
 
-    while (_frontend._hil.press_buffer.is_empty() == false){
-        _frontend._hil.press_buffer.pop_front(pressure);
-        pressure_sum += pressure; // Pressure in Pascals
-        _frontend._hil.temp_buffer.pop_front(temperature);
-        temperature_sum += temperature; // degrees celcius
-        sum_count++;
-    }
+      float pressure_sum = 0.0;
+      float temperature_sum = 0.0;
+      uint32_t sum_count = 0;
 
-    if (sum_count > 0) {
-        pressure_sum /= (float)sum_count;
-        temperature_sum /= (float)sum_count;
-        _copy_to_frontend(0, pressure_sum, temperature_sum);
-    }
+      while (m_baro->_hil.press_buffer.is_empty() == false){
+         float pressure = 0.0;
+         m_baro->_hil.press_buffer.pop_front(pressure);
+         pressure_sum += pressure; // Pressure in Pascals
+
+         float temperature = 0.0;
+         m_baro->_hil.temp_buffer.pop_front(temperature);
+         temperature_sum += temperature; // degrees celcius
+
+         ++sum_count;
+      }
+
+      if (sum_count > 0) {
+         pressure_sum /= sum_count;
+         temperature_sum /= sum_count;
+         m_baro->set_sensor_instance(m_instance, pressure_sum, temperature_sum);
+      }
+   }
 }
 
 #endif

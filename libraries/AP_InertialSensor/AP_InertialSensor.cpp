@@ -496,7 +496,6 @@ void AP_InertialSensor::_add_backend(AP_InertialSensor_Backend *backend)
 void
 AP_InertialSensor::detect_backends(void)
 {
-#if 1
    if (_backends_detected == false){
       _add_backend(create_inertial_sensor_driver<AP_HAL::board>(*this));
 
@@ -505,58 +504,7 @@ AP_InertialSensor::detect_backends(void)
       }
       _product_id.set(_backends[0]->product_id());
       _backends_detected = true;
-      
    }
-#else
-    if (_backends_detected)
-        return;
-
-    _backends_detected = true;
-
-//    if (_hil_mode) {
-//        _add_backend(AP_InertialSensor_HIL::detect(*this));
-//        return;
-//    }
-#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-    _add_backend(AP_InertialSensor_SITL::detect(*this));    
-#elif HAL_INS_DEFAULT == HAL_INS_HIL
-    _add_backend(AP_InertialSensor_HIL::detect(*this));
-#elif HAL_INS_DEFAULT == HAL_INS_MPU60XX_SPI
-    _add_backend(AP_InertialSensor_MPU6000::detect_spi(*this));
-#elif HAL_INS_DEFAULT == HAL_INS_MPU60XX_I2C && HAL_INS_MPU60XX_I2C_BUS == 2
-    _add_backend(AP_InertialSensor_MPU6000::detect_i2c(*this, hal.i2c2, HAL_INS_MPU60XX_I2C_ADDR));
-#elif HAL_INS_DEFAULT == HAL_INS_PX4 || HAL_INS_DEFAULT == HAL_INS_VRBRAIN
-    _add_backend(AP_InertialSensor_PX4::detect(*this));
-#elif HAL_INS_DEFAULT == HAL_INS_MPU9250
-    _add_backend(AP_InertialSensor_MPU9250::detect(*this, hal.spi->device(AP_HAL::SPIDevice_MPU9250)));
-#elif HAL_INS_DEFAULT == HAL_INS_FLYMAPLE
-    _add_backend(AP_InertialSensor_Flymaple::detect(*this));
-#elif HAL_INS_DEFAULT == HAL_INS_LSM9DS0
-    _add_backend(AP_InertialSensor_LSM9DS0::detect(*this));
-#elif HAL_INS_DEFAULT == HAL_INS_L3G4200D
-    _add_backend(AP_InertialSensor_L3G4200D::detect(*this));
-#elif HAL_INS_DEFAULT == HAL_INS_RASPILOT
-    //_add_backend(AP_InertialSensor_L3GD20::detect);
-    //_add_backend(AP_InertialSensor_LSM303D::detect);
-    _add_backend(AP_InertialSensor_MPU6000::detect_spi(*this));
-#elif HAL_INS_DEFAULT == HAL_INS_MPU9250_I2C
-    _add_backend(AP_InertialSensor_MPU9250::detect_i2c(*this,
-                                                       HAL_INS_MPU9250_I2C_POINTER,
-                                                       HAL_INS_MPU9250_I2C_ADDR));
-#elif HAL_INS_DEFAULT == HAL_INS_QUAN
-     _add_backend(AP_InertialSensor_Quan::detect(*this));
-#else
-    #error Unrecognised HAL_INS_TYPE setting
-#endif
-
-    if (_backend_count == 0) {
-        AP_HAL::panic("No INS backends available");
-    }
-
-
-    // set the product ID to the ID of the first backend
-    _product_id.set(_backends[0]->product_id());
-#endif
 }
 
 /*

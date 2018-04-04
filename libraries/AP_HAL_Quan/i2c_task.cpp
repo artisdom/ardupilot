@@ -32,7 +32,7 @@
 /*
 The MS56111 Baro and HMC5883 compass are on a single I2C bus
 
-The AP_Baro_Backend and AP_Compass_Backend run in the APM_Task
+The AP_baro_driver and AP_Compass_Backend run in the APM_Task
 
 The I2C_Task runs as a separate task in FreeRTOS
 

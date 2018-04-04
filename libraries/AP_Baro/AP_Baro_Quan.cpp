@@ -3,36 +3,46 @@
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 
 #include "AP_Baro_Quan.h"
+#include <task.h>
 
-template<> AP_Baro_Backend * create_baro_driver<Quan::tag_board>(AP_Baro & baro)
-{
-   return new AP_Baro_Quan(baro);
+namespace {
+   AP_Baro_Quan baro_driver;
 }
 
-//extern const AP_HAL::HAL& hal;
+template<> AP_baro_driver * create_baro_driver<Quan::tag_board>(AP_Baro & baro)
+{
+   return baro_driver.connect(baro);
+}
 
- AP_Baro_Quan::AP_Baro_Quan(AP_Baro & baro)
- : AP_Baro_Backend{baro}
-  ,m_hQueue{Quan::get_baro_queue_handle()}
-  ,m_instance{baro.register_sensor()}
+AP_Baro_Quan::AP_Baro_Quan(): 
+m_baro{nullptr},m_hQueue{NULL},m_instance{static_cast<uint8_t>(-1)}
 {}
 
-void  AP_Baro_Quan::update()
+AP_baro_driver* AP_Baro_Quan::connect(AP_Baro & baro)
 {
-
-   Quan::detail::baro_args args;
-
-   // receive should be available in 1/5th sec!
-   if ( xQueueReceive(m_hQueue, &args,0) == pdTRUE) {
-       // convert temperature to Centigrade from Kelvin
-      float const temperature_C = args.temperature.numeric_value() - 273.15f;
-      float const pressure_Pa  = args.pressure.numeric_value();
-      _copy_to_frontend(m_instance, pressure_Pa, temperature_C);
+   auto const inst = baro.register_sensor();
+   if ( inst < baro.num_instances()){
+      m_instance = inst;
+      m_hQueue = Quan::get_baro_queue_handle();
+      m_baro = &baro;
    }
-    /*else{
-      hal.console->printf("failed to receieve Baro update after 1/5th sec\n");
-   } */
+   return this;
+}
 
+void AP_Baro_Quan::copy_to_frontend(quan::pressure_<float>::Pa const & pressure, quan::temperature_<float>::K const & temperature)const
+{
+    if (m_baro != nullptr) {
+        m_baro->set_sensor_instance(m_instance, pressure.numeric_value(), temperature.numeric_value() - 273.15f);
+    }
+}
+
+void AP_Baro_Quan::update()const
+{
+   Quan::detail::baro_args args;
+   // receive should be available in 1/5th sec!
+   if ( (m_hQueue != NULL) && ( xQueueReceive(m_hQueue, &args,0) == pdTRUE) ) {
+      copy_to_frontend(args.pressure,args.temperature);
+   }
 }
 
 #endif  // CONFIG_HAL_BOARD == HAL_BOARD_QUAN
