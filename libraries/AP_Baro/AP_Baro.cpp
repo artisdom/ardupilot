@@ -27,11 +27,11 @@
 #include "AP_baro_driver.h"
 
 // maximum number of sensor instances
-#define BARO_MAX_INSTANCES 3
+//#define BARO_MAX_INSTANCES 3
 
 // maximum number of drivers. Note that a single driver can provide
 // multiple sensor instances
-#define BARO_MAX_DRIVERS 2
+//#define BARO_MAX_DRIVERS 2
 
 extern const AP_HAL::HAL& hal;
 

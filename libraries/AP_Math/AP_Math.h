@@ -7,7 +7,7 @@
 
 #include <AP_Common/AP_Common.h>
 #include <AP_Param/AP_Param.h>
-#include <math.h>
+#include <cmath>
 #include <stdint.h>
 #include "rotations.h"
 #include "vector2.h"
@@ -173,9 +173,9 @@ static inline float constrain_float(float amt, float low, float high)
 	// floating point errors through any function that uses
 	// constrain_float(). The normal float semantics already handle -Inf
 	// and +Inf
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+
  using std::isnan;
-#endif
+
 	if (isnan(amt)) {
 		return (low+high)*0.5f;
 	}
