@@ -26,6 +26,8 @@
 
 //class AuxiliaryBus;
 
+#include "AP_InertialSensor.h"
+
 class AP_InertialSensor_Backend
 {
 public:
@@ -140,8 +142,8 @@ protected:
     void update_accel(uint8_t instance);
     
     // support for updating filter at runtime
-    int8_t _last_accel_filter_hz[INS_MAX_INSTANCES];
-    int8_t _last_gyro_filter_hz[INS_MAX_INSTANCES];
+    int8_t _last_accel_filter_hz[AP_InertialSensor::m_max_instances];
+    int8_t _last_gyro_filter_hz[AP_InertialSensor::m_max_instances];
     
     // note that each backend is also expected to have a static detect()
     // function which instantiates an instance of the backend sensor

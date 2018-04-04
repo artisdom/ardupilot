@@ -4,19 +4,19 @@
 #define __AP_INERTIAL_SENSOR_H__
 
 // Gyro and Accelerometer calibration criteria
-#define AP_INERTIAL_SENSOR_ACCEL_TOT_MAX_OFFSET_CHANGE  4.0f
-#define AP_INERTIAL_SENSOR_ACCEL_MAX_OFFSET             250.0f
-#define AP_INERTIAL_SENSOR_ACCEL_CLIP_THRESH_MSS        (15.5f*GRAVITY_MSS) // accelerometer values over 15.5G are recorded as a clipping error
-#define AP_INERTIAL_SENSOR_ACCEL_VIBE_FLOOR_FILT_HZ     5.0f    // accel vibration floor filter hz
-#define AP_INERTIAL_SENSOR_ACCEL_VIBE_FILT_HZ           2.0f    // accel vibration filter hz
+//#define AP_INERTIAL_SENSOR_ACCEL_TOT_MAX_OFFSET_CHANGE  4.0f
+//#define AP_INERTIAL_SENSOR_ACCEL_MAX_OFFSET             250.0f
+//#define AP_INERTIAL_SENSOR_ACCEL_CLIP_THRESH_MSS        (15.5f*GRAVITY_MSS) // accelerometer values over 15.5G are recorded as a clipping error
+//#define AP_INERTIAL_SENSOR_ACCEL_VIBE_FLOOR_FILT_HZ     5.0f    // accel vibration floor filter hz
+//#define AP_INERTIAL_SENSOR_ACCEL_VIBE_FILT_HZ           2.0f    // accel vibration filter hz
 
 /**
    maximum number of INS instances available on this platform. If more
    than 1 then redundant sensors may be available
  */
-#define INS_MAX_INSTANCES 3
-#define INS_MAX_BACKENDS  6
-#define INS_VIBRATION_CHECK_INSTANCES 2
+//#define INS_MAX_INSTANCES 3
+//#define INS_MAX_BACKENDS  6
+//#define INS_VIBRATION_CHECK_INSTANCES 2
 
 #include <stdint.h>
 #include <AP_HAL/AP_HAL.h>
@@ -26,7 +26,7 @@
 #include <Filter/LowPassFilter2p.h>
 
 class AP_InertialSensor_Backend;
-class AuxiliaryBus;
+//class AuxiliaryBus;
 
 /*
   forward declare DataFlash class. We can't include DataFlash.h
@@ -52,6 +52,10 @@ class AP_InertialSensor
     friend class AP_InertialSensor_Backend;
 
 public:
+    static constexpr uint8_t m_max_instances = 3U;
+    static constexpr uint8_t m_max_backends = 6;
+    static constexpr uint8_t m_vibration_check_instances  = 2U;
+
     AP_InertialSensor();
     static AP_InertialSensor *get_instance();
 
@@ -268,7 +272,7 @@ private:
     void  _save_parameters();
 
     // backend objects
-    AP_InertialSensor_Backend *_backends[INS_MAX_BACKENDS];
+    AP_InertialSensor_Backend *_backends[m_max_backends];
 
     // number of gyros and accel drivers. Note that most backends
     // provide both accel and gyro data, so will increment both
@@ -281,48 +285,48 @@ private:
     Sample_rate _sample_rate;
     
     // Most recent accelerometer reading
-    Vector3f _accel[INS_MAX_INSTANCES];
-    Vector3f _delta_velocity[INS_MAX_INSTANCES];
-    float _delta_velocity_dt[INS_MAX_INSTANCES];
-    bool _delta_velocity_valid[INS_MAX_INSTANCES];
+    Vector3f _accel[m_max_instances];
+    Vector3f _delta_velocity[m_max_instances];
+    float _delta_velocity_dt[m_max_instances];
+    bool _delta_velocity_valid[m_max_instances];
     // delta velocity accumulator
-    Vector3f _delta_velocity_acc[INS_MAX_INSTANCES];
+    Vector3f _delta_velocity_acc[m_max_instances];
     // time accumulator for delta velocity accumulator
-    float _delta_velocity_acc_dt[INS_MAX_INSTANCES];
+    float _delta_velocity_acc_dt[m_max_instances];
 
     // Low Pass filters for gyro and accel
-    LowPassFilter2pVector3f _accel_filter[INS_MAX_INSTANCES];
-    LowPassFilter2pVector3f _gyro_filter[INS_MAX_INSTANCES];
-    Vector3f _accel_filtered[INS_MAX_INSTANCES];
-    Vector3f _gyro_filtered[INS_MAX_INSTANCES];
-    bool _new_accel_data[INS_MAX_INSTANCES];
-    bool _new_gyro_data[INS_MAX_INSTANCES];
+    LowPassFilter2pVector3f _accel_filter[m_max_instances];
+    LowPassFilter2pVector3f _gyro_filter[m_max_instances];
+    Vector3f _accel_filtered[m_max_instances];
+    Vector3f _gyro_filtered[m_max_instances];
+    bool _new_accel_data[m_max_instances];
+    bool _new_gyro_data[m_max_instances];
     
     // Most recent gyro reading
-    Vector3f _gyro[INS_MAX_INSTANCES];
-    Vector3f _delta_angle[INS_MAX_INSTANCES];
-    bool _delta_angle_valid[INS_MAX_INSTANCES];
-    Vector3f _delta_angle_acc[INS_MAX_INSTANCES];
-    Vector3f _last_delta_angle[INS_MAX_INSTANCES];
-    Vector3f _last_raw_gyro[INS_MAX_INSTANCES];
+    Vector3f _gyro[m_max_instances];
+    Vector3f _delta_angle[m_max_instances];
+    bool _delta_angle_valid[m_max_instances];
+    Vector3f _delta_angle_acc[m_max_instances];
+    Vector3f _last_delta_angle[m_max_instances];
+    Vector3f _last_raw_gyro[m_max_instances];
 
     // product id
     AP_Int16 _product_id;
 
     // accelerometer scaling and offsets
-    AP_Vector3f _accel_scale[INS_MAX_INSTANCES];
-    AP_Vector3f _accel_offset[INS_MAX_INSTANCES];
-    AP_Vector3f _gyro_offset[INS_MAX_INSTANCES];
+    AP_Vector3f _accel_scale[m_max_instances];
+    AP_Vector3f _accel_offset[m_max_instances];
+    AP_Vector3f _gyro_offset[m_max_instances];
 
     // accelerometer max absolute offsets to be used for calibration
-    float _accel_max_abs_offsets[INS_MAX_INSTANCES];
+    float _accel_max_abs_offsets[m_max_instances];
 
     // accelerometer and gyro raw sample rate in units of Hz
-    uint16_t _accel_raw_sample_rates[INS_MAX_INSTANCES];
-    uint16_t _gyro_raw_sample_rates[INS_MAX_INSTANCES];
+    uint16_t _accel_raw_sample_rates[m_max_instances];
+    uint16_t _gyro_raw_sample_rates[m_max_instances];
 
     // temperatures for an instance if available
-    float _temperature[INS_MAX_INSTANCES];
+    float _temperature[m_max_instances];
 
     // filtering frequency (0 means default)
     AP_Int8     _accel_filter_cutoff;
@@ -330,13 +334,13 @@ private:
     AP_Int8     _gyro_cal_timing;
 
     // use for attitude, velocity, position estimates
-    AP_Int8     _use[INS_MAX_INSTANCES];
+    AP_Int8     _use[m_max_instances];
 
     // board orientation from AHRS
     enum Rotation _board_orientation;
 
     // calibrated_ok flags
-    bool _gyro_cal_ok[INS_MAX_INSTANCES];
+    bool _gyro_cal_ok[m_max_instances];
 
     // primary accel and gyro
     uint8_t _primary_gyro;
@@ -369,16 +373,16 @@ private:
     uint32_t _sample_period_usec;
 
     // health of gyros and accels
-    bool _gyro_healthy[INS_MAX_INSTANCES];
-    bool _accel_healthy[INS_MAX_INSTANCES];
+    bool _gyro_healthy[m_max_instances];
+    bool _accel_healthy[m_max_instances];
 
-    uint32_t _accel_error_count[INS_MAX_INSTANCES];
-    uint32_t _gyro_error_count[INS_MAX_INSTANCES];
+    uint32_t _accel_error_count[m_max_instances];
+    uint32_t _gyro_error_count[m_max_instances];
 
     // vibration and clipping
-    uint32_t _accel_clip_count[INS_MAX_INSTANCES];
-    LowPassFilterVector3f _accel_vibe_floor_filter[INS_VIBRATION_CHECK_INSTANCES];
-    LowPassFilterVector3f _accel_vibe_filter[INS_VIBRATION_CHECK_INSTANCES];
+    uint32_t _accel_clip_count[m_max_instances];
+    LowPassFilterVector3f _accel_vibe_floor_filter[m_vibration_check_instances];
+    LowPassFilterVector3f _accel_vibe_filter[m_vibration_check_instances];
 
     // threshold for detecting stillness
     AP_Float _still_threshold;

@@ -3,7 +3,6 @@
 #ifndef __AP_BARO_H__
 #define __AP_BARO_H__
 
-//#include <AP_HAL/AP_HAL.h>
 #include <AP_Param/AP_Param.h>
 #include <Filter/Filter.h>
 #include <Filter/DerivativeFilter.h>

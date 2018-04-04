@@ -1,4 +1,4 @@
-/// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
+
 #ifndef ARDUPILOT_LIBRARIES_COMPASS_H_INCLUDED
 #define ARDUPILOT_LIBRARIES_COMPASS_H_INCLUDED
 

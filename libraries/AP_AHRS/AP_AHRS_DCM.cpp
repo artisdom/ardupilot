@@ -727,9 +727,9 @@ AP_AHRS_DCM::drift_correction(float deltat)
     // rate of our accelerometers. On the Pixhawk we have the LSM303D
     // running at 800Hz and the MPU6000 running at 1kHz, by combining
     // the two the effects of aliasing are greatly reduced.
-    Vector3f error[INS_MAX_INSTANCES];
-    float error_dirn[INS_MAX_INSTANCES];
-    Vector3f GA_b[INS_MAX_INSTANCES];
+    Vector3f error[AP_InertialSensor::m_max_instances];
+    float error_dirn[AP_InertialSensor::m_max_instances];
+    Vector3f GA_b[AP_InertialSensor::m_max_instances];
     int8_t besti = -1;
     float best_error = 0;
     for (uint8_t i=0; i<_ins.get_accel_count(); i++) {

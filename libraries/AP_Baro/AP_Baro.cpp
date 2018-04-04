@@ -19,6 +19,7 @@
  *
  */
 
+#include <quan/min.hpp>
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_Common/AP_Common.h>
@@ -281,11 +282,9 @@ float AP_Baro::get_calibration_temperature(uint8_t instance) const
     // not just using the baro temperature is it tends to read high,
     // often 30 degrees above the actual temperature. That means the
     // EAS2TAS tends to be off by quite a large margin
-    float ret = get_temperature(instance);
-    if (ret > 25) {
-        ret = 25;
-    }
-    return ret;    
+
+    return quan::min(get_temperature(instance),25.f);
+  
 }
 
 

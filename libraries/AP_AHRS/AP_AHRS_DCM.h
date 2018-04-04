@@ -149,7 +149,7 @@ private:
 
     // variables to cope with delaying the GA sum to match GPS lag
     Vector3f ra_delayed(uint8_t instance, const Vector3f &ra);
-    Vector3f _ra_delay_buffer[INS_MAX_INSTANCES];
+    Vector3f _ra_delay_buffer[AP_InertialSensor::m_max_instances];
 
     // P term gain based on spin rate
     float           _P_gain(float spin_rate);
@@ -167,7 +167,7 @@ private:
     uint32_t _gps_last_update;
 
     // state of accel drift correction
-    Vector3f _ra_sum[INS_MAX_INSTANCES];
+    Vector3f _ra_sum[AP_InertialSensor::m_max_instances];
     Vector3f _last_velocity;
     float _ra_deltat;
     uint32_t _ra_sum_start;

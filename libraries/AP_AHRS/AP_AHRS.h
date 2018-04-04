@@ -466,7 +466,7 @@ protected:
     float _gyro_drift_limit;
 
     // accelerometer values in the earth frame in m/s/s
-    Vector3f        _accel_ef[INS_MAX_INSTANCES];
+    Vector3f        _accel_ef[AP_InertialSensor::m_max_instances];
     Vector3f        _accel_ef_blended;
 
     // Declare filter states for HPF and LPF used by complementary

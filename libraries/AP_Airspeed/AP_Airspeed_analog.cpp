@@ -23,7 +23,6 @@
 #if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
 #include <AP_Airspeed/AP_Airspeed_analog.h>
 
-
 extern const AP_HAL::HAL& hal;
 
 // scaling for 3DR analog airspeed sensor

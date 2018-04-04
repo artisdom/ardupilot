@@ -312,6 +312,9 @@ const AP_Param::GroupInfo AP_InertialSensor::var_info[] = {
 
 AP_InertialSensor *AP_InertialSensor::_s_instance = nullptr;
 
+#define AP_INERTIAL_SENSOR_ACCEL_VIBE_FLOOR_FILT_HZ     5.0f
+#define AP_INERTIAL_SENSOR_ACCEL_VIBE_FILT_HZ           2.0f
+
 AP_InertialSensor::AP_InertialSensor() :
     _gyro_count(0),
     _accel_count(0),
@@ -332,10 +335,10 @@ AP_InertialSensor::AP_InertialSensor() :
     }
     _s_instance = this;
     AP_Param::setup_object_defaults(this, var_info);        
-    for (uint8_t i=0; i<INS_MAX_BACKENDS; i++) {
+    for (uint8_t i=0; i<m_max_backends; i++) {
         _backends[i] = NULL;
     }
-    for (uint8_t i=0; i<INS_MAX_INSTANCES; i++) {
+    for (uint8_t i=0; i<m_max_instances; i++) {
         _accel_error_count[i] = 0;
         _gyro_error_count[i] = 0;
         _gyro_cal_ok[i] = true;
@@ -353,7 +356,7 @@ AP_InertialSensor::AP_InertialSensor() :
         _last_delta_angle[i].zero();
         _last_raw_gyro[i].zero();
     }
-    for (uint8_t i=0; i<INS_VIBRATION_CHECK_INSTANCES; i++) {
+    for (uint8_t i=0; i<m_vibration_check_instances; i++) {
         _accel_vibe_floor_filter[i].set_cutoff_frequency(AP_INERTIAL_SENSOR_ACCEL_VIBE_FLOOR_FILT_HZ);
         _accel_vibe_filter[i].set_cutoff_frequency(AP_INERTIAL_SENSOR_ACCEL_VIBE_FILT_HZ);
     }
@@ -376,7 +379,7 @@ AP_InertialSensor *AP_InertialSensor::get_instance()
  */
 uint8_t AP_InertialSensor::register_gyro(uint16_t raw_sample_rate_hz)
 {
-    if (_gyro_count == INS_MAX_INSTANCES) {
+    if (_gyro_count == m_max_instances) {
         AP_HAL::panic("Too many gyros");
     }
     _gyro_raw_sample_rates[_gyro_count] = raw_sample_rate_hz;
@@ -388,7 +391,7 @@ uint8_t AP_InertialSensor::register_gyro(uint16_t raw_sample_rate_hz)
  */
 uint8_t AP_InertialSensor::register_accel(uint16_t raw_sample_rate_hz)
 {
-    if (_accel_count == INS_MAX_INSTANCES) {
+    if (_accel_count == m_max_instances) {
         AP_HAL::panic("Too many accels");
     }
     _accel_raw_sample_rates[_accel_count] = raw_sample_rate_hz;
@@ -485,7 +488,7 @@ void AP_InertialSensor::_add_backend(AP_InertialSensor_Backend *backend)
 {
     if (!backend)
         return;
-    if (_backend_count == INS_MAX_BACKENDS)
+    if (_backend_count == m_max_backends)
         AP_HAL::panic("Too many INS backends");
     _backends[_backend_count++] = backend;
 }
@@ -540,12 +543,12 @@ bool AP_InertialSensor::calibrate_accel(AP_InertialSensor_UserInteract* interact
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
    using quan::min;
 #endif
-    uint8_t num_accels = min(get_accel_count(), INS_MAX_INSTANCES);
-    Vector3f samples[INS_MAX_INSTANCES][6];
-    Vector3f new_offsets[INS_MAX_INSTANCES];
-    Vector3f new_scaling[INS_MAX_INSTANCES];
-    Vector3f orig_offset[INS_MAX_INSTANCES];
-    Vector3f orig_scale[INS_MAX_INSTANCES];
+    uint8_t num_accels = min(get_accel_count(), m_max_instances);
+    Vector3f samples[m_max_instances][6];
+    Vector3f new_offsets[m_max_instances];
+    Vector3f new_scaling[m_max_instances];
+    Vector3f orig_offset[m_max_instances];
+    Vector3f orig_scale[m_max_instances];
     uint8_t num_ok = 0;
 
     // exit immediately if calibration is already in progress
@@ -675,7 +678,7 @@ bool AP_InertialSensor::calibrate_accel(AP_InertialSensor_UserInteract* interact
             _accel_offset[k].set(new_offsets[k]);
             _accel_scale[k].set(new_scaling[k]);
         }
-        for (uint8_t k=num_accels; k<INS_MAX_INSTANCES; k++) {
+        for (uint8_t k=num_accels; k<m_max_instances; k++) {
             // clear unused accelerometer's scaling and offsets
             _accel_offset[k] = Vector3f(0,0,0);
             _accel_scale[k] = Vector3f(0,0,0);
@@ -759,7 +762,7 @@ bool AP_InertialSensor::gyro_calibrated_ok_all() const
 // return true if gyro instance should be used (must be healthy and have it's use parameter set to 1)
 bool AP_InertialSensor::use_gyro(uint8_t instance) const
 {
-    if (instance >= INS_MAX_INSTANCES) {
+    if (instance >= m_max_instances) {
         return false;
     }
 
@@ -859,8 +862,8 @@ bool AP_InertialSensor::accel_calibrated_ok_all() const
     }
 
     // check calibrated accels matches number of accels (no unused accels should have offsets or scaling)
-    if (get_accel_count() < INS_MAX_INSTANCES) {
-        for (uint8_t i=get_accel_count(); i<INS_MAX_INSTANCES; i++) {
+    if (get_accel_count() < m_max_instances) {
+        for (uint8_t i=get_accel_count(); i<m_max_instances; i++) {
             const Vector3f &scaling = _accel_scale[i].get();
             bool have_scaling = (!is_zero(scaling.x) && !is_equal(scaling.x,1.0f)) || (!is_zero(scaling.y) && !is_equal(scaling.y,1.0f)) || (!is_zero(scaling.z) && !is_equal(scaling.z,1.0f));
             bool have_offsets = !_accel_offset[i].get().is_zero();
@@ -877,7 +880,7 @@ bool AP_InertialSensor::accel_calibrated_ok_all() const
 // return true if accel instance should be used (must be healthy and have it's use parameter set to 1)
 bool AP_InertialSensor::use_accel(uint8_t instance) const
 {
-    if (instance >= INS_MAX_INSTANCES) {
+    if (instance >= m_max_instances) {
         return false;
     }
 
@@ -887,11 +890,11 @@ bool AP_InertialSensor::use_accel(uint8_t instance) const
 void
 AP_InertialSensor::_init_gyro()
 {
-    uint8_t num_gyros = min(get_gyro_count(), INS_MAX_INSTANCES);
-    Vector3f last_average[INS_MAX_INSTANCES], best_avg[INS_MAX_INSTANCES];
-    Vector3f new_gyro_offset[INS_MAX_INSTANCES];
-    float best_diff[INS_MAX_INSTANCES];
-    bool converged[INS_MAX_INSTANCES];
+    uint8_t num_gyros = min(get_gyro_count(), m_max_instances);
+    Vector3f last_average[m_max_instances], best_avg[m_max_instances];
+    Vector3f new_gyro_offset[m_max_instances];
+    float best_diff[m_max_instances];
+    bool converged[m_max_instances];
 
     // exit immediately if calibration is already in progress
     if (_calibrating) {
@@ -945,9 +948,9 @@ AP_InertialSensor::_init_gyro()
     // if the gyros are stable, we should get it in 1 second
     for (int16_t j = 0; j <= 30*4 && num_converged < num_gyros; j++) {
         // hal.console->print("###---###\n");
-        Vector3f gyro_sum[INS_MAX_INSTANCES], gyro_avg[INS_MAX_INSTANCES], gyro_diff[INS_MAX_INSTANCES];
+        Vector3f gyro_sum[m_max_instances], gyro_avg[m_max_instances], gyro_diff[m_max_instances];
         Vector3f accel_start;
-        float diff_norm[INS_MAX_INSTANCES];
+        float diff_norm[m_max_instances];
         uint8_t i;
 
         memset(diff_norm, 0, sizeof(diff_norm));
@@ -1235,7 +1238,7 @@ void AP_InertialSensor::_calibrate_find_delta(float dS[6], float JS[6][6], float
 void AP_InertialSensor::_save_parameters()
 {
     _product_id.save();
-    for (uint8_t i=0; i<INS_MAX_INSTANCES; i++) {
+    for (uint8_t i=0; i<m_max_instances; i++) {
         _accel_scale[i].save();
         _accel_offset[i].save();
         _gyro_offset[i].save();
@@ -1253,7 +1256,7 @@ void AP_InertialSensor::update(void)
     wait_for_sample();
 
     if (!_hil_mode) {
-        for (uint8_t i=0; i<INS_MAX_INSTANCES; i++) {
+        for (uint8_t i=0; i<m_max_instances; i++) {
             // mark sensors unhealthy and let update() in each backend
             // mark them healthy via _publish_gyro() and
             // _publish_accel()
@@ -1267,7 +1270,7 @@ void AP_InertialSensor::update(void)
         }
 
         // clear accumulators
-        for (uint8_t i = 0; i < INS_MAX_INSTANCES; i++) {
+        for (uint8_t i = 0; i < m_max_instances; i++) {
             _delta_velocity_acc[i].zero();
             _delta_velocity_acc_dt[i] = 0;
             _delta_angle_acc[i].zero();
@@ -1277,7 +1280,7 @@ void AP_InertialSensor::update(void)
         // but another sensor doesn't. 
         bool have_zero_accel_error_count = false;
         bool have_zero_gyro_error_count = false;
-        for (uint8_t i=0; i<INS_MAX_INSTANCES; i++) {
+        for (uint8_t i=0; i<m_max_instances; i++) {
             if (_accel_healthy[i] && _accel_error_count[i] == 0) {
                 have_zero_accel_error_count = true;
             }
@@ -1286,7 +1289,7 @@ void AP_InertialSensor::update(void)
             }
         }
 
-        for (uint8_t i=0; i<INS_MAX_INSTANCES; i++) {
+        for (uint8_t i=0; i<m_max_instances; i++) {
             if (_gyro_healthy[i] && _gyro_error_count[i] != 0 && have_zero_gyro_error_count) {
                 // we prefer not to use a gyro that has had errors
                 _gyro_healthy[i] = false;
@@ -1298,13 +1301,13 @@ void AP_InertialSensor::update(void)
         }
 
         // set primary to first healthy accel and gyro
-        for (uint8_t i=0; i<INS_MAX_INSTANCES; i++) {
+        for (uint8_t i=0; i<m_max_instances; i++) {
             if (_gyro_healthy[i] && _use[i]) {
                 _primary_gyro = i;
                 break;
             }
         }
-        for (uint8_t i=0; i<INS_MAX_INSTANCES; i++) {
+        for (uint8_t i=0; i<m_max_instances; i++) {
             if (_accel_healthy[i] && _use[i]) {
                 _primary_accel = i;
                 break;
@@ -1409,7 +1412,7 @@ check_sample:
             for (uint8_t i=0; i<_backend_count; i++) {
                 _backends[i]->accumulate();
             }
-            for (uint8_t i=0; i<INS_MAX_INSTANCES; i++) {
+            for (uint8_t i=0; i<m_max_instances; i++) {
                 gyro_available |= _new_gyro_data[i];
                 accel_available |= _new_accel_data[i];
             }
@@ -1505,7 +1508,7 @@ void AP_InertialSensor::set_accel(uint8_t instance, const Vector3f &accel)
         // we haven't initialised yet
         return;
     }
-    if (instance < INS_MAX_INSTANCES) {
+    if (instance < m_max_instances) {
         _accel[instance] = accel;
         _accel_healthy[instance] = true;
         if (_accel_count <= instance) {
@@ -1523,7 +1526,7 @@ void AP_InertialSensor::set_gyro(uint8_t instance, const Vector3f &gyro)
         // we haven't initialised yet
         return;
     }
-    if (instance < INS_MAX_INSTANCES) {
+    if (instance < m_max_instances) {
         _gyro[instance] = gyro;
         _gyro_healthy[instance] = true;
         if (_gyro_count <= instance) {
@@ -1549,7 +1552,7 @@ void AP_InertialSensor::set_delta_time(float delta_time)
  */
 void AP_InertialSensor::set_delta_velocity(uint8_t instance, float deltavt, const Vector3f &deltav)
 {
-    if (instance < INS_MAX_INSTANCES) {
+    if (instance < m_max_instances) {
         _delta_velocity_valid[instance] = true;
         _delta_velocity[instance] = deltav;
         _delta_velocity_dt[instance] = deltavt;
@@ -1561,7 +1564,7 @@ void AP_InertialSensor::set_delta_velocity(uint8_t instance, float deltavt, cons
  */
 void AP_InertialSensor::set_delta_angle(uint8_t instance, const Vector3f &deltaa)
 {
-    if (instance < INS_MAX_INSTANCES) {
+    if (instance < m_max_instances) {
         _delta_angle_valid[instance] = true;
         _delta_angle[instance] = deltaa;
     }
@@ -1581,6 +1584,7 @@ void AP_InertialSensor::set_delta_angle(uint8_t instance, const Vector3f &deltaa
 //    return backend->get_auxiliary_bus();
 //}
 
+#define AP_INERTIAL_SENSOR_ACCEL_CLIP_THRESH_MSS  (15.5f*GRAVITY_MSS)
 // calculate vibration levels and check for accelerometer clipping (called by a backends)
 void AP_InertialSensor::calc_vibration_and_clipping(uint8_t instance, const Vector3f &accel, float dt)
 {
@@ -1592,7 +1596,7 @@ void AP_InertialSensor::calc_vibration_and_clipping(uint8_t instance, const Vect
     }
 
     // calculate vibration levels
-    if (instance < INS_VIBRATION_CHECK_INSTANCES) {
+    if (instance < m_vibration_check_instances) {
         // filter accel at 5hz
         Vector3f accel_filt = _accel_vibe_floor_filter[instance].apply(accel, dt);
 
@@ -1609,7 +1613,7 @@ void AP_InertialSensor::calc_vibration_and_clipping(uint8_t instance, const Vect
 Vector3f AP_InertialSensor::get_vibration_levels(uint8_t instance) const
 {
     Vector3f vibe;
-    if (instance < INS_VIBRATION_CHECK_INSTANCES) {
+    if (instance < m_vibration_check_instances) {
         vibe = _accel_vibe_filter[instance].get();
         vibe.x = safe_sqrt(vibe.x);
         vibe.y = safe_sqrt(vibe.y);
