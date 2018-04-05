@@ -22,6 +22,7 @@
 #include <AP_Math/AP_Math.h>
 #include <AP_Common/AP_Common.h>
 #include "AP_Airspeed.h"
+#include "AP_Airspeed_Backend.h"
 
 extern const AP_HAL::HAL& hal;
 
@@ -118,49 +119,43 @@ const AP_Param::GroupInfo AP_Airspeed::var_info[] = {
 };
 
 
-/*
-  this scaling factor converts from the old system where we used a 
-  0 to 4095 raw ADC value for 0-5V to the new system which gets the
-  voltage in volts directly from the ADC driver
- */
-//#define SCALING_OLD_CALIBRATION 819 // 4095/5
-
 void AP_Airspeed::init()
 {
+    m_backend = connect_airspeed_driver<AP_HAL::board>(*this);
     _last_pressure = 0;
     _calibration.init(_ratio);
     _last_saved_ratio = _ratio;
     _counter = 0;
-    
-    m_backend.init();
 }
 
 // read the airspeed sensor
 float AP_Airspeed::get_pressure(void)
 {
+    
     if (!_enable) {
-        return 0;
+        return 0.f;
     }
     if (_hil_set) {
         _healthy = true;
         return _hil_pressure;
     }
-    float pressure = 0;
-
-     _healthy = m_backend.get_differential_pressure(pressure);
-
-    return pressure;
+    
+    if (m_backend != nullptr){
+        float pressure = 0.f;
+       _healthy = m_backend->get_differential_pressure(pressure);
+        return pressure;
+    }else{
+       return 0.f;
+    }
 }
 
 // get a temperature reading if possible
 bool AP_Airspeed::get_temperature(float &temperature)const
 {
-
-    if (!_enable) {
+    if (!_enable || (m_backend == nullptr)) {
         return false;
     }
-
-    return m_backend.get_temperature(temperature);
+    return m_backend->get_temperature(temperature);
 
 }
 
@@ -201,11 +196,10 @@ void AP_Airspeed::calibrate(bool in_startup)
 // update the airspeed sensor
 void AP_Airspeed::update(void)
 {
-    float airspeed_pressure;
     if (!_enable) {
         return;
     }
-    airspeed_pressure = get_pressure() - _offset;
+    float airspeed_pressure = get_pressure() - _offset;
 
     // remember raw pressure for logging
     _raw_pressure     = airspeed_pressure;
@@ -249,7 +243,7 @@ void AP_Airspeed::setHIL(float airspeed, float diff_pressure, float temperature)
 }
 
 // log airspeed calibration data to MAVLink
-void AP_Airspeed::log_mavlink_send(mavlink_channel_t chan, const Vector3f &vground)
+void AP_Airspeed::log_mavlink_send(mavlink_channel_t chan, const Vector3f &vground)const
 {
     mavlink_msg_airspeed_autocal_send(chan,
                                       vground.x,

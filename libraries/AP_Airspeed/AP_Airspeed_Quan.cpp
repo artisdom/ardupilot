@@ -8,15 +8,29 @@
 
 extern const AP_HAL::HAL& hal;
 
-bool AP_Airspeed_Quan::init()
+namespace {
+   AP_Airspeed_Quan airspeed_driver;
+}
+
+template <> AP_Airspeed_Backend * connect_airspeed_driver<Quan::tag_board>(AP_Airspeed & airspeed)
 {
-   // give time for sensor to stabilise
+ // give time for sensor to stabilise
    uint32_t now = AP_HAL::millis();
    if ( now < 5000){
          hal.scheduler->delay(5000 - now);
    }
-   return true;
+   return &airspeed_driver;
 }
+
+//bool AP_Airspeed_Quan::init()
+//{
+//   // give time for sensor to stabilise
+////   uint32_t now = AP_HAL::millis();
+////   if ( now < 5000){
+////         hal.scheduler->delay(5000 - now);
+////   }
+////   return true;
+//}
 
 // MPXV7002
 bool AP_Airspeed_Quan::get_differential_pressure(float &pressure)const

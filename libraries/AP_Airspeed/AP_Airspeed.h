@@ -10,33 +10,28 @@
 #include <AP_Vehicle/AP_Vehicle.h>
 #include <AP_Airspeed/Airspeed_Calibration.h>
 
+class AP_Airspeed;
+class AP_Airspeed_Backend;
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-#include "AP_Airspeed_Quan.h"
-#else
-#include "AP_Airspeed_Backend.h"
-#include "AP_Airspeed_analog.h"
-
-#endif
+template <typename Board>
+AP_Airspeed_Backend * connect_airspeed_driver(AP_Airspeed & airspeed);
 
 class AP_Airspeed{
 public:
     // constructor
     AP_Airspeed(const AP_Vehicle::FixedWing &parms) :
-        _raw_airspeed(0.0f),
-        _airspeed(0.0f),
-        _last_pressure(0.0f),
-        _raw_pressure(0.0f),
-        _EAS2TAS(1.0f),
-        _healthy(false),
-        _hil_set(false),
-        _last_update_ms(0),
-        _calibration(parms),
-        _last_saved_ratio(0.0f),
-        _counter(0)
-#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
-       ,m_backend(_pin)
-#endif
+        m_backend{nullptr},
+        _raw_airspeed{0.0f},
+        _airspeed{0.0f},
+        _last_pressure{0.0f},
+        _raw_pressure{0.0f},
+        _EAS2TAS{1.0f},
+        _healthy{false},
+        _hil_set{false},
+        _last_update_ms{0},
+        _calibration{parms},
+        _last_saved_ratio{0.0f},
+        _counter{0}
     {
 		AP_Param::setup_object_defaults(this, var_info);
     };
@@ -44,14 +39,15 @@ public:
     void init(void);
 
     // read the analog source and update _airspeed
-    void        update(void);
+    void  update(void);
 
     // calibrate the airspeed. This must be called on startup if the
     // altitude/climb_rate/acceleration interfaces are ever used
-    void            calibrate(bool in_startup);
+    void  calibrate(bool in_startup);
 
     // return the current airspeed in m/s
-    float           get_airspeed(void) const {
+    float           get_airspeed(void) const 
+    {
         return _airspeed;
     }
 
@@ -79,22 +75,22 @@ public:
     }
 
     // return true if airspeed is enabled, and airspeed use is set
-    bool        use(void) const {
+    bool   use(void) const {
         return _enable && _use;
     }
 
     // return true if airspeed is enabled
-    bool        enabled(void) const {
+    bool  enabled(void) const {
         return _enable;
     }
 
     // force disable the airspeed sensor
-    void        disable(void) {
+    void  disable(void) {
         _enable.set(0);
     }
 
     // used by HIL to set the airspeed
-    void        set_HIL(float airspeed) {
+    void set_HIL(float airspeed) {
         _airspeed = airspeed;
     }
 
@@ -124,11 +120,13 @@ public:
         return _EAS2TAS;
     }
 
+    int8_t get_pin()const { return _pin.get();}
+
     // update airspeed ratio calibration
     void update_calibration(const Vector3f &vground);
 
-	// log data to MAVLink
-	void log_mavlink_send(mavlink_channel_t chan, const Vector3f &vground);
+	 // log data to MAVLink
+	 void log_mavlink_send(mavlink_channel_t chan, const Vector3f &vground)const;
 
     // return health status of sensor
     bool healthy(void) const { return _healthy && fabsf(_offset) > 0; }
@@ -147,6 +145,9 @@ public:
                             PITOT_TUBE_ORDER_AUTO     =2};
 
 private:
+    float get_pressure(void);
+
+    AP_Airspeed_Backend * m_backend;
     AP_Float        _offset;
     AP_Float        _ratio;
     AP_Int8         _use;
@@ -157,8 +158,8 @@ private:
     AP_Int8         _skip_cal;
     float           _raw_airspeed;
     float           _airspeed;
-    float			_last_pressure;
-    float			_raw_pressure;
+    float			  _last_pressure;
+    float			  _raw_pressure;
     float           _EAS2TAS;
     bool		    _healthy:1;
     bool		    _hil_set:1;
@@ -167,15 +168,7 @@ private:
 
     Airspeed_Calibration _calibration;
     float _last_saved_ratio;
-    uint8_t _counter;
-
-    float get_pressure(void);
-
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-    AP_Airspeed_Quan   m_backend;
-#else
-    AP_Airspeed_Analog  m_backend;
-#endif
+    uint8_t _counter;   
 };
 
 

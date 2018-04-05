@@ -20,30 +20,41 @@
 
 #include <AP_HAL/AP_HAL.h>
 
-#if CONFIG_HAL_BOARD != HAL_BOARD_QUAN
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+
+#include <AP_Airspeed/AP_Airspeed.h>
 #include <AP_Airspeed/AP_Airspeed_analog.h>
 
+namespace {
+
+   AP_Airspeed_Analog airspeed_driver;
+}
+
 extern const AP_HAL::HAL& hal;
+
+template <> AP_Airspeed_Backend * connect_airspeed_driver<HALSITL::tag_board>(AP_Airspeed & airspeed)
+{
+   airspeed_driver.set_source( hal.analogin->channel(airspeed.get_pin()));
+   return &airspeed_driver;
+}
 
 // scaling for 3DR analog airspeed sensor
 #define VOLTS_TO_PASCAL 819
 
-bool AP_Airspeed_Analog::init()
-{
-    _source = hal.analogin->channel(_pin);
-    _source->set_pin(_pin);
-    return true;
-}
-
 // read the airspeed sensor
 bool AP_Airspeed_Analog::get_differential_pressure(float &pressure)const
 {
-    if (_source == NULL) {
-        return false;
-    }
-    
-    pressure = _source->voltage_average_ratiometric() * VOLTS_TO_PASCAL;
-    return true;
+   if (_source != nullptr) {
+      pressure = _source->voltage_average_ratiometric() * VOLTS_TO_PASCAL;
+      return true;
+   }else{
+      return false;
+   }
+}
+
+void AP_Airspeed_Analog::set_source(AP_HAL::AnalogSource * source)
+{
+   _source = source;
 }
 
 #endif
