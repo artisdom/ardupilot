@@ -339,7 +339,7 @@ bool LR_MsgHandler::set_parameter(const char *name, float value)
                                    "COMPASS_ORIENT", "COMPASS_ORIENT2",
                                    "COMPASS_ORIENT3"};
     for (uint8_t i=0; i < ARRAY_SIZE(ignore_parms); i++) {
-        if (strncmp(name, ignore_parms[i], AP_MAX_NAME_SIZE) == 0) {
+        if (strncmp(name, ignore_parms[i], AP_Param::m_max_name_size) == 0) {
             ::printf("Ignoring set of %s to %f\n", name, value);
             return true;
         }
@@ -374,7 +374,7 @@ bool LR_MsgHandler::set_parameter(const char *name, float value)
 
 void LR_MsgHandler_PARM::process_message(uint8_t *msg)
 {
-    const uint8_t parameter_name_len = AP_MAX_NAME_SIZE + 1; // null-term
+    const uint8_t parameter_name_len = AP_Param::m_max_name_size + 1; // null-term
     char parameter_name[parameter_name_len];
     uint64_t time_us;
 

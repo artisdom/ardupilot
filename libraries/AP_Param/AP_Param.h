@@ -31,7 +31,7 @@
 #include <AP_Progmem/AP_Progmem.h>
 #include <StorageManager/StorageManager.h>
 
-#define AP_MAX_NAME_SIZE 16
+//#define m_max_name_size 16
 #define AP_NESTED_GROUPS_ENABLED
 
 // a variant of offsetof() to work around C++ restrictions.
@@ -72,22 +72,24 @@ enum ap_var_type {
 class AP_Param
 {
 public:
+    static constexpr uint32_t m_max_name_size = 16U;
     // the Info and GroupInfo structures are passed by the main
     // program in setup() to give information on how variables are
     // named and their location in memory
     struct GroupInfo {
         uint8_t type; // AP_PARAM_*
         uint8_t idx;  // identifier within the group
-        const char name[AP_MAX_NAME_SIZE+1];
+        const char name[m_max_name_size+1];
         uintptr_t offset; // offset within the object
         union {
             const struct GroupInfo *group_info;
             const float def_value;
         };
     };
+
     struct Info {
         uint8_t type; // AP_PARAM_*
-        const char name[AP_MAX_NAME_SIZE+1];
+        const char name[m_max_name_size+1];
         uint8_t key; // k_param_*
         const void *ptr;    // pointer to the variable in memory
         union {
@@ -95,17 +97,22 @@ public:
             const float def_value;
         };
     };
+
     struct ConversionInfo {
         uint8_t old_key; // k_param_*
         uint8_t old_group_element; // index in old object
         enum ap_var_type type; // AP_PARAM_*
-        const char new_name[AP_MAX_NAME_SIZE+1];        
+        const char new_name[m_max_name_size+1];        
     };
 
-    // called once at startup to setup the _var_info[] table. This
-    // will also check the EEPROM header and re-initialise it if the
-    // wrong version is found
-    static bool setup();
+    // a token used for first()/next() state
+    typedef struct {
+        uint32_t key : 8;
+        uint32_t idx : 6; // offset into array types
+        uint32_t group_element : 18;
+    } ParamToken;
+
+
 
     // constructor with var_info
     AP_Param(const struct Info *info)
@@ -116,18 +123,112 @@ public:
         _num_vars = i;
     }
 
+    /// Uses token to look up AP_Param::Info for the variable
+    void copy_name_token(const ParamToken &token, char *buffer, size_t bufferSize, bool force_scalar=false) const;
+
+    /// cast a variable to a float given its type
+    float                   cast_to_float(enum ap_var_type type) const;
+
+    /// Notify GCS of current parameter value
+    ///
+
+    void notify() const;
+
+    bool save(bool force_save=false);
+
+    /// Load the variable from EEPROM.
+    ///
+    /// @return                True if the variable was loaded successfully.
+    ///
+
+    bool load(void);
+
+    /// Load all variables from EEPROM
+    ///
+    /// This function performs a best-efforts attempt to load all
+    /// of the variables from EEPROM.  If some fail to load, their
+    /// values will remain as they are.
+    ///
+    /// @return                False if any variable failed to load
+    ///
+    static bool load_all(void);
+
+    /*
+      set a parameter to a float
+    */
+    void set_float(float value, enum ap_var_type var_type);
+
+    // called once at startup to setup the _var_info[] table. This
+    // will also check the EEPROM header and re-initialise it if the
+    // wrong version is found
+    static bool setup();
+
+    /// Find a variable by name.
+    ///
+    /// If the variable has no name, it cannot be found by this interface.
+    ///
+    /// @param  name            The full name of the variable to be found.
+    /// @return                 A pointer to the variable, or NULL if
+    ///                         it does not exist.
+    ///
+
+    static AP_Param * find(const char *name, enum ap_var_type *ptype);
+
+    /// Find a variable by index.
+    ///
+    ///
+    /// @param  idx             The index of the variable
+    /// @return                 A pointer to the variable, or NULL if
+    ///                         it does not exist.
+    ///
+    static AP_Param * find_by_index(uint16_t idx, enum ap_var_type *ptype, ParamToken *token);
+
+
+    /// Find a object in the top level var_info table
+    ///
+    /// If the variable has no name, it cannot be found by this interface.
+    ///
+    /// @param  name            The full name of the variable to be found.
+    ///
+    static AP_Param * find_object(const char *name);
+
+    // load default values for scalars in a group
+    static void         setup_object_defaults(const void *object_pointer, const struct GroupInfo *group_info);
+
+    // load default values for all scalars in the main sketch. This
+    // does not recurse into the sub-objects    
+    static void         setup_sketch_defaults(void);
+
+    // convert old vehicle parameters to new object parameters
+    static void         convert_old_parameters(const struct ConversionInfo *conversion_table, uint8_t table_size);
+
+    /// Erase all variables in EEPROM.
+    ///
+    static bool         erase_all(void);
+
+
+    /// print the value of all variables
+    static void         show_all(AP_HAL::BetterStream *port, bool showKeyValues=false);
+
+    /// print the value of one variable
+    static void         show(const AP_Param *param, 
+                             const char *name,
+                             enum ap_var_type ptype, 
+                             AP_HAL::BetterStream *port);
+
+    static AP_Param *      first(ParamToken *token, enum ap_var_type *ptype);
+
+    /// Returns the next scalar variable in _var_info, recursing into groups
+    /// as needed
+    static AP_Param *       next_scalar(ParamToken *token, enum ap_var_type *ptype);
+
+    // check var table for consistency
+    static bool             check_var_info(void);
+protected:
     // empty constructor
     AP_Param() {}
 
-    // a token used for first()/next() state
-    typedef struct {
-        uint32_t key : 8;
-        uint32_t idx : 6; // offset into array types
-        uint32_t group_element : 18;
-    } ParamToken;
 
-    // return true if AP_Param has been initialised via setup()
-    static bool initialised(void);
 
     /// Copy the variable's name, prefixed by any containing group name, to a
     /// buffer.
@@ -145,39 +246,6 @@ public:
     /// Copy the variable's name, prefixed by any containing group name, to a
     /// buffer.
     ///
-    /// Uses token to look up AP_Param::Info for the variable
-    void copy_name_token(const ParamToken &token, char *buffer, size_t bufferSize, bool force_scalar=false) const;
-
-    /// Find a variable by name.
-    ///
-    /// If the variable has no name, it cannot be found by this interface.
-    ///
-    /// @param  name            The full name of the variable to be found.
-    /// @return                 A pointer to the variable, or NULL if
-    ///                         it does not exist.
-    ///
-    static AP_Param * find(const char *name, enum ap_var_type *ptype);
-
-    /// Find a variable by index.
-    ///
-    ///
-    /// @param  idx             The index of the variable
-    /// @return                 A pointer to the variable, or NULL if
-    ///                         it does not exist.
-    ///
-    static AP_Param * find_by_index(uint16_t idx, enum ap_var_type *ptype, ParamToken *token);
-
-    /// Find a object in the top level var_info table
-    ///
-    /// If the variable has no name, it cannot be found by this interface.
-    ///
-    /// @param  name            The full name of the variable to be found.
-    ///
-    static AP_Param * find_object(const char *name);
-
-    /// Notify GCS of current parameter value
-    ///
-    void notify() const;
 
     // send a parameter to all GCS instances
     void send_parameter(char *name, enum ap_var_type param_header_type) const;
@@ -188,61 +256,18 @@ public:
     ///
     /// @return                True if the variable was saved successfully.
     ///
-    bool save(bool force_save=false);
 
-    /// Load the variable from EEPROM.
-    ///
-    /// @return                True if the variable was loaded successfully.
-    ///
-    bool load(void);
-
-    /// Load all variables from EEPROM
-    ///
-    /// This function performs a best-efforts attempt to load all
-    /// of the variables from EEPROM.  If some fail to load, their
-    /// values will remain as they are.
-    ///
-    /// @return                False if any variable failed to load
-    ///
-    static bool load_all(void);
+    // return true if AP_Param has been initialised via setup()
+    static bool initialised(void);
 
     // set a AP_Param variable to a specified value
     static void   set_value(enum ap_var_type type, void *ptr, float def_value);
-
-    /*
-      set a parameter to a float
-    */
-    void set_float(float value, enum ap_var_type var_type);
-
-    // load default values for scalars in a group
-    static void         setup_object_defaults(const void *object_pointer, const struct GroupInfo *group_info);
 
     // set a value directly in an object. This should only be used by
     // example code, not by mainline vehicle code
     static void set_object_value(const void *object_pointer, 
                                  const struct GroupInfo *group_info, 
                                  const char *name, float value);
-
-    // load default values for all scalars in the main sketch. This
-    // does not recurse into the sub-objects    
-    static void         setup_sketch_defaults(void);
-
-    // convert old vehicle parameters to new object parameters
-    static void         convert_old_parameters(const struct ConversionInfo *conversion_table, uint8_t table_size);
-
-    /// Erase all variables in EEPROM.
-    ///
-    static bool         erase_all(void);
-
-    /// print the value of all variables
-    static void         show_all(AP_HAL::BetterStream *port, bool showKeyValues=false);
-
-    /// print the value of one variable
-    static void         show(const AP_Param *param, 
-                             const char *name,
-                             enum ap_var_type ptype, 
-                             AP_HAL::BetterStream *port);
-
     /// print the value of one variable
     static void         show(const AP_Param *param, 
                              const ParamToken &token,
@@ -254,21 +279,10 @@ public:
     /// @return             The first variable in _var_info, or NULL if
     ///                     there are none.
     ///
-    static AP_Param *      first(ParamToken *token, enum ap_var_type *ptype);
 
     /// Returns the next variable in _var_info, recursing into groups
     /// as needed
     static AP_Param *      next(ParamToken *token, enum ap_var_type *ptype);
-
-    /// Returns the next scalar variable in _var_info, recursing into groups
-    /// as needed
-    static AP_Param *       next_scalar(ParamToken *token, enum ap_var_type *ptype);
-
-    /// cast a variable to a float given its type
-    float                   cast_to_float(enum ap_var_type type) const;
-
-    // check var table for consistency
-    static bool             check_var_info(void);
 
     // return true if the parameter is configured in the defaults file
     bool configured_in_defaults_file(void);

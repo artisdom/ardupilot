@@ -644,7 +644,7 @@ AP_Param::find_group(const char *name, uint8_t vindex, const struct GroupInfo *g
             return (AP_Param *)(p + PGM_POINTER(&group_info[i].offset));
         } else if (type == AP_PARAM_VECTOR3F) {
             // special case for finding Vector3f elements
-            uint8_t suffix_len = strnlen(group_info[i].name, AP_MAX_NAME_SIZE);
+            uint8_t suffix_len = strnlen(group_info[i].name, m_max_name_size);
             if (strncmp(name, group_info[i].name, suffix_len) == 0 &&
                 name[suffix_len] == '_' &&
                 (name[suffix_len+1] == 'X' ||
@@ -676,7 +676,7 @@ AP_Param::find(const char *name, enum ap_var_type *ptype)
     for (uint8_t i=0; i<_num_vars; i++) {
         uint8_t type = PGM_UINT8(&_var_info[i].type);
         if (type == AP_PARAM_GROUP) {
-            uint8_t len = strnlen(_var_info[i].name, AP_MAX_NAME_SIZE);
+            uint8_t len = strnlen(_var_info[i].name, m_max_name_size);
             if (strncmp(name, _var_info[i].name, len) != 0) {
                 continue;
             }
@@ -760,7 +760,7 @@ void AP_Param::notify() const {
         return;
     }
 
-    char name[AP_MAX_NAME_SIZE+1];
+    char name[m_max_name_size+1];
     copy_name_info(info, ginfo, idx, name, sizeof(name), true);
 
     uint32_t param_header_type;
@@ -810,7 +810,7 @@ bool AP_Param::save(bool force_save)
         ap = (const AP_Param *)((uintptr_t)ap) - (idx*sizeof(float));
     }
 
-    char name[AP_MAX_NAME_SIZE+1];
+    char name[m_max_name_size+1];
     copy_name_info(info, ginfo, idx, name, sizeof(name), true);
 
     // scan EEPROM to find the right location
@@ -1064,14 +1064,10 @@ void AP_Param::setup_sketch_defaults(void)
     }
 }
 
-
 // Load all variables from EEPROM
 //
 bool AP_Param::load_all(void)
 {
-    struct Param_header phdr;
-    uint16_t ofs = sizeof(AP_Param::EEPROM_header);
-
     /*
       if the HAL specifies a defaults parameter file then override
       defaults using that file
@@ -1083,10 +1079,12 @@ bool AP_Param::load_all(void)
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     start_thread_timer();
 #endif
+    uint16_t ofs = sizeof(AP_Param::EEPROM_header);
     while (ofs < _storage.size()) {
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
          check_thread_timer();
  #endif 
+        struct Param_header phdr;
         if (! _storage.read_block(&phdr, ofs, sizeof(phdr))){
             Debug("read eeprom failed");
             return false;
@@ -1099,11 +1097,10 @@ bool AP_Param::load_all(void)
             // we've reached the sentinal
             return true;
         }
-
-        const struct AP_Param::Info *info;
+        
         void *ptr;
 
-        info = find_by_header(phdr, &ptr);
+        const struct AP_Param::Info * info = find_by_header(phdr, &ptr);
         if (info != NULL) {
            if ( ! _storage.read_block(ptr, ofs+sizeof(phdr), type_size((enum ap_var_type)phdr.type))){
                Debug("read eeprom failed");
@@ -1295,9 +1292,9 @@ void AP_Param::show(const AP_Param *ap, const char *s,
 void AP_Param::show(const AP_Param *ap, const ParamToken &token,
                     enum ap_var_type type, AP_HAL::BetterStream *port)
 {
-    char s[AP_MAX_NAME_SIZE+1];
+    char s[m_max_name_size+1];
     ap->copy_name_token(token, s, sizeof(s), true);
-    s[AP_MAX_NAME_SIZE] = 0;
+    s[m_max_name_size] = 0;
     show(ap, s, type, port);
 }
 
@@ -1460,7 +1457,7 @@ bool AP_Param::parse_param_line(char *line, char **vname, float &value)
     if (pname == NULL) {
         return false;
     }
-    if (strlen(pname) > AP_MAX_NAME_SIZE) {
+    if (strlen(pname) > m_max_name_size) {
         return false;
     }
     const char *value_s = strtok_r(NULL, ", =\t", &saveptr);
