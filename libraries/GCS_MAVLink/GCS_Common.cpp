@@ -157,7 +157,7 @@ GCS_MAVLINK::queued_param_send()
         // if the parameter can be cast to float, report it here and break out of the loop
         value = vp->cast_to_float(_queued_parameter_type);
 
-        char param_name[AP_MAX_NAME_SIZE];
+        char param_name[AP_Param::m_max_name_size];
         vp->copy_name_token(_queued_parameter_token, param_name, sizeof(param_name), true);
 
         mavlink_msg_param_value_send(
@@ -498,18 +498,18 @@ void GCS_MAVLINK::handle_param_request_read(mavlink_message_t *msg)
 
     enum ap_var_type p_type;
     AP_Param *vp;
-    char param_name[AP_MAX_NAME_SIZE+1];
+    char param_name[AP_Param::m_max_name_size+1];
     if (packet.param_index != -1) {
         AP_Param::ParamToken token;
         vp = AP_Param::find_by_index(packet.param_index, &p_type, &token);
         if (vp == NULL) {
             return;
         }
-        vp->copy_name_token(token, param_name, AP_MAX_NAME_SIZE, true);
-        param_name[AP_MAX_NAME_SIZE] = 0;
+        vp->copy_name_token(token, param_name, AP_Param::m_max_name_size, true);
+        param_name[AP_Param::m_max_name_size] = 0;
     } else {
-        strncpy(param_name, packet.param_id, AP_MAX_NAME_SIZE);
-        param_name[AP_MAX_NAME_SIZE] = 0;
+        strncpy(param_name, packet.param_id, AP_Param::m_max_name_size);
+        param_name[AP_Param::m_max_name_size] = 0;
         vp = AP_Param::find(param_name, &p_type);
         if (vp == NULL) {
             return;
@@ -535,9 +535,9 @@ void GCS_MAVLINK::handle_param_set(mavlink_message_t *msg, DataFlash_Class *Data
 
     // set parameter
     AP_Param *vp;
-    char key[AP_MAX_NAME_SIZE+1];
-    strncpy(key, (char *)packet.param_id, AP_MAX_NAME_SIZE);
-    key[AP_MAX_NAME_SIZE] = 0;
+    char key[AP_Param::m_max_name_size+1];
+    strncpy(key, (char *)packet.param_id, AP_Param::m_max_name_size);
+    key[AP_Param::m_max_name_size] = 0;
 
     // find existing param so we can get the old value
     vp = AP_Param::find(key, &var_type);
@@ -1046,14 +1046,14 @@ void GCS_MAVLINK::send_raw_imu(const AP_InertialSensor &ins, const Compass &comp
 void GCS_MAVLINK::send_scaled_pressure(AP_Baro &barometer)
 {
     uint32_t now = AP_HAL::millis();
-    float pressure = barometer.get_pressure(0);
+    float pressure = barometer.get_pressure();
     mavlink_msg_scaled_pressure_send(
         chan,
         now,
         pressure*0.01f, // hectopascal
-        (pressure - barometer.get_ground_pressure(0))*0.01f, // hectopascal
-        barometer.get_temperature(0)*100); // 0.01 degrees C
-
+        (pressure - barometer.get_ground_pressure())*0.01f, // hectopascal
+        barometer.get_temperature()*100); // 0.01 degrees C
+#if 0
     if (barometer.num_instances() > 1) {
         pressure = barometer.get_pressure(1);
         mavlink_msg_scaled_pressure2_send(
@@ -1073,6 +1073,7 @@ void GCS_MAVLINK::send_scaled_pressure(AP_Baro &barometer)
             (pressure - barometer.get_ground_pressure(2))*0.01f, // hectopascal
             barometer.get_temperature(2)*100); // 0.01 degrees C        
     }
+#endif
 }
 
 void GCS_MAVLINK::send_sensor_offsets(const AP_InertialSensor &ins, const Compass &compass, AP_Baro &barometer)

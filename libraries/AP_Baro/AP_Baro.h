@@ -30,15 +30,20 @@ public:
 
     // healthy - returns true if sensor and derived altitude are good
     bool healthy(void) const { return healthy(_primary); }
-    bool healthy(uint8_t instance) const { return sensors[instance].healthy && sensors[instance].alt_ok && sensors[instance].calibrated; }
 
+private:
+
+    bool healthy(uint8_t instance) const { return sensors[instance].healthy && sensors[instance].alt_ok && sensors[instance].calibrated; }
+public:
     // check if all baros are healthy - used for SYS_STATUS report
     bool all_healthy(void) const;
 
+
     // pressure in Pascal. Divide by 100 for millibars or hectopascals
     float get_pressure(void) const { return get_pressure(_primary); }
+private:
     float get_pressure(uint8_t instance) const { return sensors[instance].pressure; }
-
+public:
     // temperature in degrees C
     float get_temperature(void) const { return get_temperature(_primary); }
     float get_temperature(uint8_t instance) const { return sensors[instance].temperature; }
@@ -58,7 +63,9 @@ public:
     // get current altitude in meters relative to altitude at the time
     // of the last calibrate() call
     float get_altitude(void) const { return get_altitude(_primary); }
+private:
     float get_altitude(uint8_t instance) const { return sensors[instance].altitude; }
+public:
 
     // get altitude difference in meters relative given a base
     // pressure in Pascal
@@ -77,8 +84,9 @@ public:
     // ground temperature in degrees C
     // the ground values are only valid after calibration
     float get_ground_temperature(void) const { return get_ground_temperature(_primary); }
+private:
     float get_ground_temperature(uint8_t i)  const { return sensors[i].ground_temperature.get(); }
-
+public:
     // ground pressure in Pascal
     // the ground values are only valid after calibration
     float get_ground_pressure(void) const { return get_ground_pressure(_primary); }
@@ -89,16 +97,19 @@ public:
     // airspeed sensor) to be used as the temperature source
     void set_external_temperature(float temperature);
 
+
     // get last time sample was taken (in ms)
     uint32_t get_last_update(void) const { return get_last_update(_primary); }
+private:
     uint32_t get_last_update(uint8_t instance) const { return sensors[_primary].last_update_ms; }
-
+public:
     // settable parameters
     static const struct AP_Param::GroupInfo var_info[];
 
     float get_calibration_temperature(void) const { return get_calibration_temperature(_primary); }
+private:
     float get_calibration_temperature(uint8_t instance) const;
-
+public:
     // HIL (and SITL) interface, setting altitude
     void setHIL(float altitude_msl);
 
@@ -121,7 +132,6 @@ public:
     // enable HIL mode
     void set_hil_mode(void) { _hil_mode = true; }
 
-  
 private:
     // how many drivers do we have?
     static constexpr uint32_t m_max_baro_drivers = 2U;
