@@ -16,7 +16,6 @@ public:
     static AP_InertialSensor_Backend *detect(AP_InertialSensor &imu);
     bool accel_sample_available(void);
     bool gyro_sample_available(void);
-   // void start();
 private:
   
    uint8_t m_accel_id;

@@ -491,7 +491,7 @@ void
 AP_InertialSensor::detect_backends(void)
 {
    if (_backends_detected == false){
-      _add_backend(create_inertial_sensor_driver<AP_HAL::board>(*this));
+      _add_backend(connect_inertial_sensor_driver<AP_HAL::board>(*this));
 
       if (_backend_count == 0) {
            AP_HAL::panic("No INS backends available");

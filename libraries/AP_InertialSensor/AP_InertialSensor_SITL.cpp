@@ -7,7 +7,7 @@
 #include <SITL/SITL.h>
 
 template <> 
-AP_InertialSensor_Backend * create_inertial_sensor_driver<HALSITL::tag_board>(AP_InertialSensor & imu)
+AP_InertialSensor_Backend * connect_inertial_sensor_driver<HALSITL::tag_board>(AP_InertialSensor & imu)
 {
    return AP_InertialSensor_SITL::detect(imu);
 }

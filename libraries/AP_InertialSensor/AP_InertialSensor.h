@@ -28,7 +28,7 @@ class DataFlash_Class;
 class AP_InertialSensor;
 
 template <typename Board> 
-AP_InertialSensor_Backend * create_inertial_sensor_driver(AP_InertialSensor & imu);
+AP_InertialSensor_Backend * connect_inertial_sensor_driver(AP_InertialSensor & imu);
 
 class AP_InertialSensor
 {
