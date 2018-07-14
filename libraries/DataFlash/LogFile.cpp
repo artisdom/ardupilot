@@ -855,8 +855,8 @@ void DataFlash_Class::Log_Write_Baro(AP_Baro &baro)
 void DataFlash_Class::Log_Write_IMU(const AP_InertialSensor &ins)
 {
     uint64_t time_us = AP_HAL::micros64();
-    const Vector3f &gyro = ins.get_gyro(0);
-    const Vector3f &accel = ins.get_accel(0);
+    const Vector3f &gyro = ins.get_gyro();
+    const Vector3f &accel = ins.get_accel();
     struct log_IMU pkt = {
         LOG_PACKET_HEADER_INIT(LOG_IMU_MSG),
         time_us : time_us,
@@ -866,13 +866,14 @@ void DataFlash_Class::Log_Write_IMU(const AP_InertialSensor &ins)
         accel_x : accel.x,
         accel_y : accel.y,
         accel_z : accel.z,
-        gyro_error  : ins.get_gyro_error_count(0),
-        accel_error : ins.get_accel_error_count(0),
-        temperature : ins.get_temperature(0),
-        gyro_health : (uint8_t)ins.get_gyro_health(0),
-        accel_health : (uint8_t)ins.get_accel_health(0)
+        gyro_error  : ins.get_gyro_error_count(),
+        accel_error : ins.get_accel_error_count(),
+        temperature : ins.get_temperature(),
+        gyro_health : (uint8_t)ins.get_gyro_health(),
+        accel_health : (uint8_t)ins.get_accel_health()
     };
     WriteBlock(&pkt, sizeof(pkt));
+#if 0
     if (ins.get_gyro_count() < 2 && ins.get_accel_count() < 2) {
         return;
     }
@@ -916,6 +917,7 @@ void DataFlash_Class::Log_Write_IMU(const AP_InertialSensor &ins)
         accel_health : (uint8_t)ins.get_accel_health(2)
     };
     WriteBlock(&pkt3, sizeof(pkt3));
+#endif
 }
 
 // Write an accel/gyro delta time data packet
@@ -1001,9 +1003,9 @@ void DataFlash_Class::Log_Write_Vibration(const AP_InertialSensor &ins)
         vibe_x      : vibration.x,
         vibe_y      : vibration.y,
         vibe_z      : vibration.z,
-        clipping_0  : ins.get_accel_clip_count(0),
-        clipping_1  : ins.get_accel_clip_count(1),
-        clipping_2  : ins.get_accel_clip_count(2)
+        clipping_0  : ins.get_accel_clip_count(),
+        clipping_1  : 0U,
+        clipping_2  : 0U
     };
     WriteBlock(&pkt, sizeof(pkt));
 }

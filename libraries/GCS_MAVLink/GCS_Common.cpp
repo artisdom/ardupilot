@@ -970,11 +970,11 @@ void GCS_MAVLINK::send_radio_in(uint8_t receiver_rssi)
 
 void GCS_MAVLINK::send_raw_imu(const AP_InertialSensor &ins, const Compass &compass)
 {
-    const Vector3f &accel = ins.get_accel(0);
-    const Vector3f &gyro = ins.get_gyro(0);
+    const Vector3f &accel = ins.get_accel();
+    const Vector3f &gyro = ins.get_gyro();
     Vector3f mag;
     if (compass.get_count() >= 1) {
-        mag = compass.get_field(0);
+        mag = compass.get_field();
     } else {
         mag.zero();
     }
@@ -991,7 +991,7 @@ void GCS_MAVLINK::send_raw_imu(const AP_InertialSensor &ins, const Compass &comp
         mag.x,
         mag.y,
         mag.z);
-
+#if 0
     if (ins.get_gyro_count() <= 1 &&
         ins.get_accel_count() <= 1 &&
         compass.get_count() <= 1) {
@@ -1040,7 +1040,8 @@ void GCS_MAVLINK::send_raw_imu(const AP_InertialSensor &ins, const Compass &comp
         gyro3.z * 1000.0f,
         mag.x,
         mag.y,
-        mag.z);        
+        mag.z);  
+#endif      
 }
 
 void GCS_MAVLINK::send_scaled_pressure(AP_Baro &barometer)
@@ -1086,9 +1087,9 @@ void GCS_MAVLINK::send_sensor_offsets(const AP_InertialSensor &ins, const Compas
     }
     counter = 0;
 
-    const Vector3f &mag_offsets = compass.get_offsets(0);
-    const Vector3f &accel_offsets = ins.get_accel_offsets(0);
-    const Vector3f &gyro_offsets = ins.get_gyro_offsets(0);
+    const Vector3f &mag_offsets = compass.get_offsets();
+    const Vector3f &accel_offsets = ins.get_accel_offsets();
+    const Vector3f &gyro_offsets = ins.get_gyro_offsets();
 
     mavlink_msg_sensor_offsets_send(chan,
                                     mag_offsets.x,
@@ -1281,9 +1282,9 @@ void GCS_MAVLINK::send_vibration(const AP_InertialSensor &ins) const
         vibration.x,
         vibration.y,
         vibration.z,
-        ins.get_accel_clip_count(0),
-        ins.get_accel_clip_count(1),
-        ins.get_accel_clip_count(2));
+        ins.get_accel_clip_count(),
+        0U,
+        0U);
 }
 
 void GCS_MAVLINK::send_home(const Location &home) const

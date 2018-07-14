@@ -65,6 +65,12 @@ public:
     ///
     void init(Sample_rate sample_rate);
 
+    // update gyro and accel values from accumulated samples
+    void update(void);
+
+    // wait for a sample to be available
+    void wait_for_sample(void);
+
     /// Register a new gyro/accel driver, allocating an instance
     /// number
     uint8_t register_gyro(uint16_t raw_sample_rate_hz);
@@ -91,77 +97,30 @@ public:
     ///
     /// @returns	vector of rotational rates in radians/sec
     ///
-    const Vector3f     &get_gyro(uint8_t i) const { return _gyro[i]; }
-    const Vector3f     &get_gyro(void) const { return get_gyro(_primary_gyro); }
-
-    // set gyro offsets in radians/sec
-    const Vector3f &get_gyro_offsets(uint8_t i) const { return _gyro_offset[i]; }
-    const Vector3f &get_gyro_offsets(void) const { return get_gyro_offsets(_primary_gyro); }
-
-    //get delta angle if available
-    bool get_delta_angle(uint8_t i, Vector3f &delta_angle) const;
+    // radians/sec
+    const Vector3f& get_gyro(void) const { return get_gyro(_primary_gyro); }
+    // get gyro offsets in radians/sec
+    const Vector3f& get_gyro_offsets(void) const { return get_gyro_offsets(_primary_gyro); }
     bool get_delta_angle(Vector3f &delta_angle) const { return get_delta_angle(_primary_gyro, delta_angle); }
-
-    //get delta velocity if available
-    bool get_delta_velocity(uint8_t i, Vector3f &delta_velocity) const;
     bool get_delta_velocity(Vector3f &delta_velocity) const { return get_delta_velocity(_primary_accel, delta_velocity); }
-
-    float get_delta_velocity_dt(uint8_t i) const;
     float get_delta_velocity_dt() const { return get_delta_velocity_dt(_primary_accel); }
-
-    /// Fetch the current accelerometer values
-    ///
-    /// @returns	vector of current accelerations in m/s/s
-    ///
-    const Vector3f     &get_accel(uint8_t i) const { return _accel[i]; }
     const Vector3f     &get_accel(void) const { return get_accel(_primary_accel); }
-
-    uint32_t get_gyro_error_count(uint8_t i) const { return _gyro_error_count[i]; }
-    uint32_t get_accel_error_count(uint8_t i) const { return _accel_error_count[i]; }
-
-    // multi-device interface
-    bool get_gyro_health(uint8_t instance) const { return (instance<_gyro_count) ? _gyro_healthy[instance] : false; }
     bool get_gyro_health(void) const { return get_gyro_health(_primary_gyro); }
-    bool get_gyro_health_all(void) const;
     uint8_t get_gyro_count(void) const { return _gyro_count; }
-    bool gyro_calibrated_ok(uint8_t instance) const { return _gyro_cal_ok[instance]; }
-    bool gyro_calibrated_ok_all() const;
-    bool use_gyro(uint8_t instance) const;
-    Gyro_Calibration_Timing gyro_calibration_timing() { return (Gyro_Calibration_Timing)_gyro_cal_timing.get(); }
-
-    bool get_accel_health(uint8_t instance) const { return (instance<_accel_count) ? _accel_healthy[instance] : false; }
-    bool get_accel_health(void) const { return get_accel_health(_primary_accel); }
-    bool get_accel_health_all(void) const;
-    uint8_t get_accel_count(void) const { return _accel_count; };
-    bool accel_calibrated_ok_all() const;
-    bool use_accel(uint8_t instance) const;
-
-    // get accel offsets in m/s/s
-    const Vector3f &get_accel_offsets(uint8_t i) const { return _accel_offset[i]; }
     const Vector3f &get_accel_offsets(void) const { return get_accel_offsets(_primary_accel); }
-
-    // get accel scale
-    const Vector3f &get_accel_scale(uint8_t i) const { return _accel_scale[i]; }
+    bool get_accel_health(void) const { return get_accel_health(_primary_accel); }
     const Vector3f &get_accel_scale(void) const { return get_accel_scale(_primary_accel); }
-
-    // return the temperature if supported. Zero is returned if no
-    // temperature is available
-    float get_temperature(uint8_t instance) const { return _temperature[instance]; }
-
-    /* get_delta_time returns the time period in seconds
-     * overwhich the sensor data was collected
-     */
+    // retrieve latest calculated vibration levels
+    Vector3f get_vibration_levels() const { return get_vibration_levels(_primary_accel); }
+    uint16_t error_count(void) const { return 0; }
     float get_delta_time() const { return _delta_time; }
+
+    void set_accel(const Vector3f &accel){set_accel(_primary_accel,accel);}
+    void set_gyro(const Vector3f &gyro){set_gyro(_primary_gyro,gyro);}
 
     // return the maximum gyro drift rate in radians/s/s. This
     // depends on what gyro chips are being used
     float get_gyro_drift_rate(void) const { return ToRad(0.5f/60); }
-
-    // update gyro and accel values from accumulated samples
-    void update(void);
-
-    // wait for a sample to be available
-    void wait_for_sample(void);
 
     // class level parameters
     static const struct AP_Param::GroupInfo var_info[];
@@ -174,7 +133,6 @@ public:
     // return the selected sample rate
     Sample_rate get_sample_rate(void) const { return _sample_rate; }
 
-    uint16_t error_count(void) const { return 0; }
     bool healthy(void) const { return get_gyro_health() && get_accel_health(); }
 
     uint8_t get_primary_accel(void) const { return _primary_accel; }
@@ -183,23 +141,80 @@ public:
     // enable HIL mode
     void set_hil_mode(void) { _hil_mode = true; }
 
+    // enable/disable raw gyro/accel logging
+    void set_raw_logging(bool enable) { _log_raw_data = enable; }
+
+    Gyro_Calibration_Timing gyro_calibration_timing() { return (Gyro_Calibration_Timing)_gyro_cal_timing.get(); }
+    uint8_t get_accel_count(void) const { return _accel_count; };
+
     // get the gyro filter rate in Hz
     uint8_t get_gyro_filter_hz(void) const { return _gyro_filter_cutoff; }
 
     // get the accel filter rate in Hz
     uint8_t get_accel_filter_hz(void) const { return _accel_filter_cutoff; }
+    void set_delta_time(float delta_time);
 
     // pass in a pointer to DataFlash for raw data logging
     void set_dataflash(DataFlash_Class *dataflash) { _dataflash = dataflash; }
 
-    // enable/disable raw gyro/accel logging
-    void set_raw_logging(bool enable) { _log_raw_data = enable; }
+    uint32_t get_gyro_error_count() const { return get_gyro_error_count(_primary_gyro); }
+//
+    bool get_gyro_health_all(void) const;
+    bool gyro_calibrated_ok_all() const;
+    bool accel_calibrated_ok_all() const;
+    bool get_accel_health_all(void) const;
+    uint32_t get_accel_clip_count() const{return get_accel_clip_count(_primary_accel);}
+
+/// todo remove these
+
+    const Vector3f  &get_gyro(uint8_t i) const { return _gyro[i]; }
+    bool get_gyro_health(uint8_t instance) const { return (instance<_gyro_count) ? _gyro_healthy[instance] : false; }
+    bool get_delta_angle(uint8_t i, Vector3f &delta_angle) const;
+    bool get_accel_health(uint8_t instance) const { return (instance<_accel_count) ? _accel_healthy[instance] : false; }
+    bool get_delta_velocity(uint8_t i, Vector3f &delta_velocity) const;
+    float get_delta_velocity_dt(uint8_t i) const;
+
+    uint32_t get_accel_error_count()const { return get_accel_error_count(_primary_accel);}
+    // get accel offsets in m/s/s
+
+    bool use_accel(uint8_t instance) const;
+    // gyro accel ?
+    float get_temperature() const { return get_temperature(0); }
+private:
+    const Vector3f &get_gyro_offsets(uint8_t i) const { return _gyro_offset[i]; }
+
+    const Vector3f &get_accel_offsets(uint8_t i) const { return _accel_offset[i]; }
+
+    /// Fetch the current accelerometer values
+    ///
+    /// @returns	vector of current accelerations in m/s/s
+    ///
+    const Vector3f  &get_accel(uint8_t i) const { return _accel[i]; }
+
+    uint32_t get_gyro_error_count(uint8_t i) const { return _gyro_error_count[i]; }
+    uint32_t get_accel_error_count(uint8_t i) const { return _accel_error_count[i]; }
+    // multi-device interface
+
+    bool gyro_calibrated_ok(uint8_t instance) const { return _gyro_cal_ok[instance]; }
+
+    bool use_gyro(uint8_t instance) const;
+
+
+    // get accel scale
+    const Vector3f &get_accel_scale(uint8_t i) const { return _accel_scale[i]; }
+    // return the temperature if supported. Zero is returned if no
+    // temperature is available
+    float get_temperature(uint8_t instance) const { return _temperature[instance]; }
+
+    /* get_delta_time returns the time period in seconds
+     * overwhich the sensor data was collected
+     */
+
+
 
     // calculate vibration levels and check for accelerometer clipping (called by a backends)
     void calc_vibration_and_clipping(uint8_t instance, const Vector3f &accel, float dt);
 
-    // retrieve latest calculated vibration levels
-    Vector3f get_vibration_levels() const { return get_vibration_levels(_primary_accel); }
     Vector3f get_vibration_levels(uint8_t instance) const;
 
     // retrieve and clear accelerometer clipping count
@@ -215,7 +230,7 @@ public:
      */
     void set_accel(uint8_t instance, const Vector3f &accel);
     void set_gyro(uint8_t instance, const Vector3f &gyro);
-    void set_delta_time(float delta_time);
+
     void set_delta_velocity(uint8_t instance, float deltavt, const Vector3f &deltav);
     void set_delta_angle(uint8_t instance, const Vector3f &deltaa);
 

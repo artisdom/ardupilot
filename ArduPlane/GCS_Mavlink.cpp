@@ -1688,8 +1688,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         accels.y = packet.yacc * GRAVITY_MSS*0.001f;
         accels.z = packet.zacc * GRAVITY_MSS*0.001f;
 
-        plane.ins.set_gyro(0, gyros);
-        plane.ins.set_accel(0, accels);
+        plane.ins.set_gyro(gyros);
+        plane.ins.set_accel(accels);
 
         plane.barometer.setHIL(packet.alt*0.001f);
         plane.compass.setHIL(0, packet.roll, packet.pitch, packet.yaw);
