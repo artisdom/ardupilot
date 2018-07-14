@@ -61,18 +61,18 @@ public:
         return _airspeed*100;
     }
 
-    // return the current airspeed ratio (dimensionless)
-    float        get_airspeed_ratio(void) const {
-        return _ratio;
-    }
+//    // return the current airspeed ratio (dimensionless)
+//    float        get_airspeed_ratio(void) const {
+//        return _ratio;
+//    }
 
     // get temperature if available
     bool get_temperature(float &temperature) const;
 
     // set the airspeed ratio (dimensionless)
-    void        set_airspeed_ratio(float ratio) {
-        _ratio.set(ratio);
-    }
+//    void        set_airspeed_ratio(float ratio) {
+//        _ratio.set(ratio);
+//    }
 
     // return true if airspeed is enabled, and airspeed use is set
     bool   use(void) const {
@@ -90,9 +90,9 @@ public:
     }
 
     // used by HIL to set the airspeed
-    void set_HIL(float airspeed) {
-        _airspeed = airspeed;
-    }
+//    void set_HIL(float airspeed) {
+//        _airspeed = airspeed;
+//    }
 
     // return the differential pressure in Pascal for the last
     // airspeed reading. Used by the calibration code
@@ -100,7 +100,7 @@ public:
         return _last_pressure;
     }
 
-    // return the current offset
+//    // return the current offset
     float get_offset(void) const {
         return _offset;
     }
@@ -134,7 +134,7 @@ public:
     void setHIL(float pressure) { _healthy=_hil_set=true; _hil_pressure=pressure; };
 
     // return time in ms of last update
-    uint32_t last_update_ms(void) const { return _last_update_ms; }
+   // uint32_t last_update_ms(void) const { return _last_update_ms; }
 
     void setHIL(float airspeed, float diff_pressure, float temperature);
 

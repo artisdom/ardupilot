@@ -46,8 +46,9 @@ private:
 public:
     // temperature in degrees C
     float get_temperature(void) const { return get_temperature(_primary); }
+private:
     float get_temperature(uint8_t instance) const { return sensors[instance].temperature; }
-
+public:
     // accumulate a reading on sensors. Some backends without their
     // own thread or a timer may need this.
    // void accumulate(void);
@@ -90,8 +91,9 @@ public:
     // ground pressure in Pascal
     // the ground values are only valid after calibration
     float get_ground_pressure(void) const { return get_ground_pressure(_primary); }
+private:
     float get_ground_pressure(uint8_t i)  const { return sensors[i].ground_pressure.get(); }
-
+public:
     // set the temperature to be used for altitude calibration. This
     // allows an external temperature source (such as a digital
     // airspeed sensor) to be used as the temperature source
