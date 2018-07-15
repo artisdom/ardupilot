@@ -55,7 +55,8 @@ const AP_Param::GroupInfo AP_Airspeed::var_info[] = {
 
     // @Param: OFFSET
     // @DisplayName: Airspeed offset
-    // @Description: Airspeed calibration offset
+    // @Description: Airspeed calibration offset in Pascals to subtract from sensor reading
+    // passed to the backend
     // @Increment: 0.1
     AP_GROUPINFO("OFFSET", 2, AP_Airspeed, _offset, 0),
 
@@ -129,6 +130,8 @@ void AP_Airspeed::init()
 }
 
 // read the airspeed sensor
+// FixMe!
+// in fact returns the pressure but with an offset
 float AP_Airspeed::get_pressure(void)
 {
     

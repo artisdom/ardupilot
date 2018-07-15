@@ -40,71 +40,72 @@ void Airspeed_Calibration::init(float initial_ratio)
  */
 float Airspeed_Calibration::update(float airspeed, const Vector3f &vg)
 {
-    // Perform the covariance prediction
-    // Q is a diagonal matrix so only need to add three terms in
-    // C code implementation
-    // P = P + Q;
-    P.a.x += Q0;
-    P.b.y += Q0;
-    P.c.z += Q1;
-    
-    // Perform the predicted measurement using the current state estimates
-    // No state prediction required because states are assumed to be time
-    // invariant plus process noise
-    // Ignore vertical wind component
-    float TAS_pred = state.z * pythagorous3(vg.x - state.x, vg.y - state.y, vg.z);
-    float TAS_mea  = airspeed;
-    
-    // Calculate the observation Jacobian H_TAS
-    float SH1 = sq(vg.y - state.y) + sq(vg.x - state.x);
-    if (SH1 < 0.000001f) {
-        // avoid division by a small number
-        return state.z;
-    }
-    float SH2 = 1/sqrtf(SH1);
+   // Perform the covariance prediction
+   // Q is a diagonal matrix so only need to add three terms in
+   // C code implementation
+   // P = P + Q;
+   P.a.x += Q0;
+   P.b.y += Q0;
+   P.c.z += Q1;
 
-    // observation Jacobian
-    Vector3f H_TAS(
-        -(state.z*SH2*(2*vg.x - 2*state.x))/2,
-        -(state.z*SH2*(2*vg.y - 2*state.y))/2,
-        1/SH2);
-    
-    // Calculate the fusion innovaton covariance assuming a TAS measurement
-    // noise of 1.0 m/s
-    // S = H_TAS*P*H_TAS' + 1.0; % [1 x 3] * [3 x 3] * [3 x 1] + [1 x 1]
-    Vector3f PH = P * H_TAS;
-    float S = H_TAS * PH + 1.0f;
-    
-    // Calculate the Kalman gain
-    // [3 x 3] * [3 x 1] / [1 x 1]
-    Vector3f KG = PH / S; 
-    
-    // Update the states
-    state += KG*(TAS_mea - TAS_pred); // [3 x 1] + [3 x 1] * [1 x 1]
-    
-    // Update the covariance matrix
-    Vector3f HP2 = H_TAS * P;
-    P -= KG.mul_rowcol(HP2);
-    
-    // force symmetry on the covariance matrix - necessary due to rounding
-    // errors
-	float P12 = 0.5f * (P.a.y + P.b.x);
-	float P13 = 0.5f * (P.a.z + P.c.x);
-	float P23 = 0.5f * (P.b.z + P.c.y);
-	P.a.y = P.b.x = P12;
-	P.a.z = P.c.x = P13;
-	P.b.z = P.c.y = P23;
+   // Perform the predicted measurement using the current state estimates
+   // No state prediction required because states are assumed to be time
+   // invariant plus process noise
+   // Ignore vertical wind component
+   float const TAS_pred = state.z * pythagorous3(vg.x - state.x, vg.y - state.y, vg.z);
+   float const TAS_mea  = airspeed;
 
-    // Constrain diagonals to be non-negative - protects against rounding errors
-    P.a.x = max(P.a.x, 0.0f);
-    P.b.y = max(P.b.y, 0.0f);
-    P.c.z = max(P.c.z, 0.0f);
+   // Calculate the observation Jacobian H_TAS
+   float const SH1 = sq(vg.y - state.y) + sq(vg.x - state.x);
+   if (SH1 < 0.000001f) {
+      // avoid division by a small number
+      return state.z;
+   }
+   float const SH2 = 1/sqrtf(SH1);
 
-    state.x = constrain_float(state.x, -aparm.airspeed_max, aparm.airspeed_max);
-    state.y = constrain_float(state.y, -aparm.airspeed_max, aparm.airspeed_max);
-    state.z = constrain_float(state.z, 0.5f, 1.0f);
+   // observation Jacobian
+   Vector3f H_TAS(
+   -(state.z*SH2*(2*vg.x - 2*state.x))/2,
+   -(state.z*SH2*(2*vg.y - 2*state.y))/2,
+   1/SH2);
 
-    return state.z;
+   // Calculate the fusion innovaton covariance assuming a TAS measurement
+   // noise of 1.0 m/s
+   // S = H_TAS*P*H_TAS' + 1.0; % [1 x 3] * [3 x 3] * [3 x 1] + [1 x 1]
+   Vector3f PH = P * H_TAS;
+   float const S = H_TAS * PH + 1.0f;
+
+   // Calculate the Kalman gain
+   // [3 x 3] * [3 x 1] / [1 x 1]
+   Vector3f const KG = PH / S; 
+
+   // Update the states
+   state += KG*(TAS_mea - TAS_pred); // [3 x 1] + [3 x 1] * [1 x 1]
+
+   // Update the covariance matrix
+   Vector3f const HP2 = H_TAS * P;
+   P -= KG.mul_rowcol(HP2);
+
+   // force symmetry on the covariance matrix - necessary due to rounding
+   // errors
+   float const P12 = 0.5f * (P.a.y + P.b.x);
+   float const P13 = 0.5f * (P.a.z + P.c.x);
+   float const P23 = 0.5f * (P.b.z + P.c.y);
+
+   P.a.y = P.b.x = P12;
+   P.a.z = P.c.x = P13;
+   P.b.z = P.c.y = P23;
+
+   // Constrain diagonals to be non-negative - protects against rounding errors
+   P.a.x = max(P.a.x, 0.0f);
+   P.b.y = max(P.b.y, 0.0f);
+   P.c.z = max(P.c.z, 0.0f);
+
+   state.x = constrain_float(state.x, -aparm.airspeed_max, aparm.airspeed_max);
+   state.y = constrain_float(state.y, -aparm.airspeed_max, aparm.airspeed_max);
+   state.z = constrain_float(state.z, 0.5f, 1.0f);
+
+   return state.z;
 }
 
 
