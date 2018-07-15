@@ -59,6 +59,12 @@ namespace Quan{
    bool baro_request_conversion();
    bool baro_start_read();
    bool baro_calculate();
+
+#if defined QUAN_MIXER_TRANQUILITY
+   bool sdp3x_exist_test();
+#endif
+
+   
 #endif
 }
 

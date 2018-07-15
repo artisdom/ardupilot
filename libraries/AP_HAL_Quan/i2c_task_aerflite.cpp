@@ -30,6 +30,7 @@ namespace {
 
    QueueHandle_t hCompassGainQueue = nullptr;
 
+
    void wait_for_power_up();
 
    struct task{
@@ -58,11 +59,20 @@ namespace {
 
       hal.console->printf("starting i2c task\n");
 
+
       if ( (hBaroQueue == nullptr) || (hCompassQueue == nullptr) ){
         AP_HAL::panic("create FreeRTOS queues failed in I2c task\n");
       }
       
       Quan::i2c_periph::init();
+
+#if defined QUAN_MIXER_TRANQUILITY
+     if ( Quan::sdp3x_exist_test()){
+          hal.console->printf("sdp3x test succeeded\n");
+      }else{
+        hal.console->printf("sdp3x test failed\n");
+      }
+#endif
 
       if (!Quan::setup_baro()) {
          AP_HAL::panic("baro setup failed");
