@@ -109,7 +109,11 @@ else
 ifeq ($(MIXER_FALCON),True)
    QUAN_DEFINES += QUAN_MIXER_FALCON
 else
-   $(error "MIXER must be defined.")
+ifeq ($(MIXER_TRANQUILITY),True)
+   QUAN_DEFINES += QUAN_MIXER_TRANQUILITY
+else
+   $(warning "No MIXER defined.")
+endif
 endif
 endif
 

@@ -12,6 +12,8 @@ namespace {
    #include "mixers/disco_mixer.cpp"
 #elif (defined(QUAN_MIXER_FALCON))
    #include "mixers/falcon_mixer.cpp"
+#elif (defined(QUAN_MIXER_TRANQUILITY))
+   #include "mixers/tranquility_mixer.cpp"
 #else
    #error no mixer defined
 #endif
