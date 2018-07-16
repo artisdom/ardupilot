@@ -13,6 +13,7 @@
 #include <AP_HAL_Quan/i2c/i2c_driver/i2c_driver.cpp>
 #include <AP_HAL_Quan/i2c/i2c_driver/i2c_eeprom_driver.cpp>
 #include <AP_HAL_Quan/i2c/i2c_driver/i2c_register_based_driver.cpp>
+#include <AP_HAL_Quan/i2c/i2c_driver/i2c_read_write_driver.cpp>
 
 #if defined QUAN_I2C_DEBUG
 #include <AP_HAL_Quan/i2c/i2c_driver/i2c_debug.cpp>
