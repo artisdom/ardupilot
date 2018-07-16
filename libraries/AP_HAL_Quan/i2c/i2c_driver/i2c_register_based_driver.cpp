@@ -278,7 +278,7 @@ void Quan::i2c_register_based_driver_base::on_write_start_sent()
 #if defined QUAN_I2C_DEBUG
    capture_i2c_sr1_flags("on_write_start_sent",flags);
 #endif
-   if (flags & 1){ // sb
+   if (flags & 1U){ // sb
       Quan::i2c_periph::send_data(get_device_address());
       Quan::i2c_periph::set_event_handler(on_write_device_address_sent);
       Quan::i2c_periph::enable_event_interrupts(true);

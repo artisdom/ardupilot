@@ -5,6 +5,7 @@
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
 #if defined QUAN_AERFLITE_BOARD
 
+#include "i2c/i2c_driver/i2c_read_write_driver.hpp"
 #include "i2c/i2c_driver/i2c_register_based_driver.hpp"
 
 namespace Quan {
@@ -47,7 +48,7 @@ namespace Quan {
 
    // couple the sdp3x commands with the driver
    template <typename ID>
-   struct sdp3x_i2c : sdp3x_i2c_base, Quan::i2c_register_based_driver<ID> 
+   struct sdp3x_i2c : sdp3x_i2c_base, Quan::i2c_read_write_driver<ID> 
    {
    };
 
