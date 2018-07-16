@@ -4,7 +4,7 @@
 #include <cstdint>
 #include "i2c_driver.hpp"
 
-extern "C" bool is_valid_heap_memory(void * p);
+//extern "C" bool is_valid_heap_memory(void * p);
 
 namespace Quan{
 
