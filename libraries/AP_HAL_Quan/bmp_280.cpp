@@ -150,24 +150,12 @@ namespace {
       ctrl_meas.osrs_t = 0b010;   // temperature oversampling x2
       // todo incorporate into write
   
-      if( Quan::bmp280::write(Quan::bmp280::reg::ctrl_meas,ctrl_meas.value)){
-        return true;
-      }else{
-         hal.console->printf("bmp_280 start conv failed\n");
-         return false;
-      }
-      
+      return  Quan::bmp280::write(Quan::bmp280::reg::ctrl_meas,ctrl_meas.value);
    }
 
    bool bmp280_start_read()
    {
-      if ( Quan::bmp280::read(Quan::bmp280::reg::press_msb,result_values,6)){
-         return true;
-      }else{
-         hal.console->printf("bmp_280 read failed\n");
-         return false;
-      }
-  
+      return Quan::bmp280::read(Quan::bmp280::reg::press_msb,result_values,6);
    }
 
 } // ~namespace
@@ -196,14 +184,9 @@ namespace Quan{
    // must be > 930 usec after  baro_start_read
    bool baro_calculate()
    {
-      auto baro_queue = get_baro_queue_handle();
       detail::baro_args args;
       bmp280_calculate(args);
-      if ( uxQueueSpacesAvailable(baro_queue) != 0){
-       //  hal.console->printf("Sending baro data to queue\n");
-         xQueueSendToBack(baro_queue,&args,0);
-      }
+      xQueueOverwrite(get_baro_queue_handle(),&args);
       return true;
    }
 }
-

@@ -45,12 +45,18 @@ bool Quan::setup_compass()
    }
 
    return result;
-
 }
 
 namespace {
    uint8_t __attribute__ ((section (".dma_memory"))) result_values[8] ;
   
+}
+
+// total 10 values takes 10us *10 * 10  == 1 ms
+bool Quan::compass_start_read()
+{
+   // or the reg index with 0x80 for self increment of read registers
+   return Quan::lis3mdl_onboard::read(Quan::lis3mdl_onboard::reg::out_X_reg_L | 0x80 ,result_values,8);
 }
 
 // result is ready 5 ms after return
@@ -62,13 +68,6 @@ AN4602 2.3.1 Turn on time. In UHP mode data is ready after 6.65 ms after end of 
 bool Quan::compass_request_conversion()
 {
    return lis3mdl_onboard::write(Quan::lis3mdl_onboard::reg::ctrlreg3, 1U);
-}
-
-// total 10 values takes 10us *10 * 10  == 1 ms
-bool Quan::compass_start_read()
-{
-   // or the reg index with 0x80 for self increment of read registers
-   return Quan::lis3mdl_onboard::read(Quan::lis3mdl_onboard::reg::out_X_reg_L | 0x80 ,result_values,8);
 }
 
 namespace {
@@ -104,20 +103,16 @@ bool Quan::compass_calculate()
    constexpr float scale_mult = static_cast<float>(1.0/6.842);
    // todo add gains
    quan::three_d::vect<mgauss> field {
-
        mgauss{vect.x * scale_mult }   
       ,mgauss{-vect.y * scale_mult }  
       ,mgauss{vect.z * scale_mult }
    };
-   QueueHandle_t hCompassQueue = get_compass_queue_handle();
 
-   if ( uxQueueSpacesAvailable(hCompassQueue) != 0 ){
-      Quan::detail::compass_args args;
-      args.field = field;
-      args.time_us = AP_HAL::micros();
-      xQueueSendToBack(hCompassQueue,&args,0);
-   }
-
+   Quan::detail::compass_args args;
+   args.field = field;
+   args.time_us = AP_HAL::micros();
+   xQueueOverwrite(get_compass_queue_handle(),&args);
+   
    return true;
 }
 
