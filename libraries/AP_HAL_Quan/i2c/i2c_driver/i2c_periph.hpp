@@ -253,6 +253,7 @@ namespace Quan{
       static bool has_errored() { return m_errored;}
       static const char* get_last_error_c_str();
       static errno_t get_last_error(){ return m_last_error;}
+      static bool clear_i2c_bus();
    private:
 #if defined QUAN_I2C_TX_DMA
       friend void ::DMA_IRQ_Handler<1,4>() ;
@@ -284,12 +285,12 @@ namespace Quan{
       i2c_periph() = delete;
       i2c_periph(i2c_periph const & ) = delete;
       i2c_periph& operator = (i2c_periph&) = delete;
-    
+      
    };
 
    bool wait_for_bus_free_ms(uint32_t t_ms);
 
-   
+
 
 } // Quan
 #endif // QUAN_STM32_EEPROM_TEST_I2C_HPP_INCLUDED

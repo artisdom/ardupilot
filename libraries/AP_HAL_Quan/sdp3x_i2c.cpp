@@ -155,7 +155,7 @@ namespace Quan{
       }
        return true;
    }
-     
+
    bool sdp3_calculate()
    {
       // check crc
