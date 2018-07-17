@@ -11,6 +11,8 @@
 class AP_baro_driver;
 class AP_Baro;
 
+AP_Baro const & get_barometer();
+
 template <typename Board> AP_baro_driver * connect_baro_driver(AP_Baro & baro);
 
 class AP_Baro

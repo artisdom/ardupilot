@@ -31,3 +31,8 @@ Plane::Plane(void)
 }
 
 Plane plane;
+
+AP_Baro const &  get_barometer()
+{
+   return plane.get_barometer();
+}
