@@ -14,7 +14,7 @@
 extern const AP_HAL::HAL& hal;
 
 // constructor - fill in all the initial values
-Airspeed_Calibration::Airspeed_Calibration(const AP_Vehicle::FixedWing &parms) :
+Airspeed_Calibration::Airspeed_Calibration(uint16_t airspeed_max) :
     P(100,   0,         0,
       0,   100,         0,
       0,     0,  0.000001f),
@@ -22,7 +22,7 @@ Airspeed_Calibration::Airspeed_Calibration(const AP_Vehicle::FixedWing &parms) :
     Q1(0.0000005f),
     state(0, 0, 0),
     DT(1),
-    aparm(parms)
+    m_airspeed_max{airspeed_max}
 {
 }
 
@@ -101,8 +101,8 @@ float Airspeed_Calibration::update(float airspeed, const Vector3f &vg)
    P.b.y = max(P.b.y, 0.0f);
    P.c.z = max(P.c.z, 0.0f);
 
-   state.x = constrain_float(state.x, -aparm.airspeed_max, aparm.airspeed_max);
-   state.y = constrain_float(state.y, -aparm.airspeed_max, aparm.airspeed_max);
+   state.x = constrain_float(state.x, -m_airspeed_max, m_airspeed_max);
+   state.y = constrain_float(state.y, -m_airspeed_max, m_airspeed_max);
    state.z = constrain_float(state.z, 0.5f, 1.0f);
 
    return state.z;

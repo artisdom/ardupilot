@@ -588,7 +588,9 @@ void Quan::i2c_eeprom_driver_base::on_write_last_byte_transfer_complete()
 {
    Quan::i2c_periph::enable_event_interrupts(false);
    uint32_t const flags = Quan::i2c_periph::get_sr1();
-#if defined QUAN_I2C_DEBUG
+#if !defined QUAN_I2C_DEBUG
+   (void)flags;
+#else
    capture_i2c_sr1_flags("on_write_last_byte_transfer_complete",flags);
 #endif
    

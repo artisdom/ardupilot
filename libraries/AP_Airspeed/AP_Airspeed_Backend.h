@@ -30,6 +30,8 @@ public:
     // probe and initialise the sensor
    // virtual bool init(void) = 0;
 
+    virtual void update() = 0;
+
     // return the current differential_pressure in Pascal
     virtual bool get_differential_pressure(float &pressure)const = 0;
 

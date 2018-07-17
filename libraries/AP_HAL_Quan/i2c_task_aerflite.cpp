@@ -31,6 +31,9 @@ namespace {
 
    QueueHandle_t hCompassGainQueue = nullptr;
 
+#if defined QUAN_MIXER_TRANQUILITY
+   QueueHandle_t hAirspeedQueue = nullptr;
+#endif
 
    void wait_for_power_up();
 
@@ -68,28 +71,14 @@ namespace {
       Quan::i2c_periph::init();
 
 #if defined QUAN_MIXER_TRANQUILITY
-     if ( Quan::sdp3x_exist_test()){
-          hal.console->printf("sdp3x test succeeded\n");
-      }else{
-        hal.console->printf("sdp3x test failed\n");
+      if ( !Quan::sdp3_init()){
+        AP_HAL::panic("sdp3x init failed");
       }
 #endif
 
       if (!Quan::setup_baro()) {
          AP_HAL::panic("baro setup failed");
       }
-/*
-      add in here.
-      probe for external compass
-        get bus and install the ext compass device
-         try whoami
-         if timeout after n tries
-         device doesnt exist
-         reset the bus
-      if external compass found use it
-        Only search for HMC5883/ HMC5983
-      else use internal compass
-*/
 
       if (!Quan::setup_compass()) {
          AP_HAL::panic("compass setup failed");
@@ -101,8 +90,11 @@ namespace {
       task tasks [] = {
           {"baro : request conversion"    ,  1 ,   1, Quan::baro_request_conversion}
          ,{"compass : request conversion" ,  2 ,   1, Quan::compass_request_conversion}
+#if defined QUAN_MIXER_TRANQUILITY
           // 7 ms spare add Airspeed here
-    
+         ,{"airspeed : start read"        ,  4,    2, Quan::sdp3_start_read}
+         ,{"airspeed : calculate"         ,  7,    2, Quan::sdp3_calculate}
+#endif
          ,{"compass : start_read"         ,  10,   2, Quan::compass_start_read}
          ,{"compass_calculate"            ,  13 ,  1, Quan::compass_calculate}  
          ,{"eeprom : serv write buffer"   ,  14 ,  25, Quan::eeprom_service_write_buffer}
@@ -216,7 +208,11 @@ namespace Quan {
       hBaroQueue = xQueueCreate(1,sizeof(Quan::detail::baro_args));
       hCompassQueue = xQueueCreate(1,sizeof(Quan::detail::compass_args));
       hCompassGainQueue = xQueueCreate(1,sizeof(Quan::detail::compass_gain));
-     
+
+#if defined QUAN_MIXER_TRANQUILITY
+      hAirspeedQueue = xQueueCreate(1,sizeof(Quan::detail::airspeed_args));
+#endif
+
       if (! Quan::setup_eeprom()){
          AP_HAL::panic("eeprom setup failed");
       }
@@ -253,6 +249,17 @@ namespace Quan {
       }
       return hCompassGainQueue;
    }
+
+#if defined QUAN_MIXER_TRANQUILITY
+ QueueHandle_t get_airspeed_queue_handle()
+   {
+      if ( hAirspeedQueue == nullptr){
+         panic("Requesting null airspeed handle\n");
+      }
+      return hAirspeedQueue;
+   }
+#endif
+
 }
 
 #endif // #if defined QUAN_AERFLITE_BOARD

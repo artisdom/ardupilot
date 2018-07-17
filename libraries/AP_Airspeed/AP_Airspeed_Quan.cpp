@@ -2,7 +2,7 @@
 
 #include <AP_HAL/AP_HAL.h>
 
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+#if (CONFIG_HAL_BOARD == HAL_BOARD_QUAN)  && (!defined QUAN_MIXER_TRANQUILITY)
 
 #include "AP_Airspeed_Quan.h"
 
@@ -22,16 +22,7 @@ template <> AP_Airspeed_Backend * connect_airspeed_driver<Quan::tag_board>(AP_Ai
    return &airspeed_driver;
 }
 
-//bool AP_Airspeed_Quan::init()
-//{
-//   // give time for sensor to stabilise
-////   uint32_t now = AP_HAL::millis();
-////   if ( now < 5000){
-////         hal.scheduler->delay(5000 - now);
-////   }
-////   return true;
-//}
-
+void AP_Airspeed_Quan::update(){}
 // MPXV7002
 bool AP_Airspeed_Quan::get_differential_pressure(float &pressure)const
 {

@@ -303,7 +303,7 @@ private:
     AP_BattMonitor battery;
 
     // Airspeed Sensors
-    AP_Airspeed airspeed {aparm};
+    AP_Airspeed airspeed {static_cast<uint16_t>(aparm.airspeed_max)};
 
     // ACRO controller state
     struct {

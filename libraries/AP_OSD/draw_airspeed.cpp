@@ -15,8 +15,10 @@ void AP_OSD::draw_airspeed(
    pxp_type pos       {osd.airspeed_pos.x,
       (( get_video_mode() == video_mode::pal)?osd.airspeed_pos.y:osd.airspeed_pos.z)};
    char buf [30];
-   sprintf(buf,"IAS %5.1f m/s",static_cast<double>(info.airspeed.numeric_value()));
-   draw_text(buf,pos,Quan::FontID::MWOSD);
+   // convert to mph
+   quan::velocity_<double>::mi_per_h const aspd = info.airspeed;
+   sprintf(buf,"IAS %5.1f mph",aspd.numeric_value());
+   draw_text(buf,pos,Quan::FontID::OSD_Charset);
    
 }
 

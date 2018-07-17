@@ -9,7 +9,7 @@ class Airspeed_Calibration {
 public:
     friend class AP_Airspeed;
     // constructor
-    Airspeed_Calibration(const AP_Vehicle::FixedWing &parms);
+    Airspeed_Calibration(uint16_t airspeed_max);
 
     // initialise the calibration
     void init(float initial_ratio);
@@ -25,7 +25,7 @@ private:
     const float Q1; // process noise matrix bottom right element
     Vector3f state; // state vector
     const float DT; // time delta
-    const AP_Vehicle::FixedWing &aparm;
+    const uint16_t m_airspeed_max;
 };
 
 #endif // AERFPILOT_LIBRARIES_AP_AIRSPEEED_AIRSPEED_CALIBRATION_H_INCLUDED

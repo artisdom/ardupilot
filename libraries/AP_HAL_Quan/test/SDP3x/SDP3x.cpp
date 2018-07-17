@@ -6,7 +6,7 @@
 #include <AP_HAL/AP_HAL.h>
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-#include <AP_Compass/AP_Compass.h>
+#include <AP_Airspeed/AP_Airspeed.h>
 #include <AP_HAL_Quan/AP_HAL_Quan_Test_Main.h>
 #include <quantracker/osd/osd.hpp>
 #include <quan/min.hpp>
@@ -22,7 +22,7 @@ const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
 namespace {
 
-  Compass compass;
+  AP_Airspeed airspeed(50U);
 
   AP_HAL::UARTDriver * uart = nullptr;
 }
@@ -36,28 +36,39 @@ void setup() {
 
     hal.scheduler->delay(1000);
 
+    airspeed.init();
+
 }
 
 namespace {
-
+  uint32_t count = 0;
 }
 
 void quan::uav::osd::on_draw() 
 { 
-    //pxp_type pos{-140,100};
     draw_text("SDP3x lib Test",{-140,100},Quan::FontID::MWOSD);
-
 }
 
 void on_telemetry_transmitted(){}
 
 void loop()
 {
-   uart->println("test TODO");
-   hal.scheduler->delay(1000);
+
+   hal.scheduler->delay(20);
+
+   airspeed.update();
+
+   if (++count == 10U){
+      count = 0U;
+      float temp;
+      airspeed.get_temperature(temp);
+      hal.console->printf("airspeed = %f, temp = %f\n"
+         ,static_cast<double>(airspeed.get_airspeed())
+         ,static_cast<double>(temp)
+      );
+   }
    
 }
-
 
 namespace {
    uint32_t get_flags()

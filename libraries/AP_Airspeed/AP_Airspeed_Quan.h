@@ -13,6 +13,8 @@ public:
     // constructor
     AP_Airspeed_Quan() {}
 
+    void update() override;
+
     // return the current differential_pressure in Pascal
     bool get_differential_pressure(float &pressure)const;
 

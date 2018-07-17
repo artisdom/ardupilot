@@ -24,6 +24,10 @@ namespace Quan{
    void create_i2c_task();
    QueueHandle_t get_compass_queue_handle();
    QueueHandle_t get_baro_queue_handle();
+
+#if defined QUAN_MIXER_TRANQUILITY
+   QueueHandle_t get_airspeed_queue_handle();
+#endif
    
    namespace detail{
 
@@ -41,6 +45,13 @@ namespace Quan{
          quan::three_d::vect<float> field;
       };
 
+#if defined QUAN_MIXER_TRANQUILITY
+      struct airspeed_args{
+         quan::pressure_<float>::Pa         differential_pressure;
+         quan::temperature_<float>::K       temperature;
+      }; 
+
+#endif
    }
 
 #if defined QUAN_AERFLITE_BOARD
@@ -61,7 +72,9 @@ namespace Quan{
    bool baro_calculate();
 
 #if defined QUAN_MIXER_TRANQUILITY
-   bool sdp3x_exist_test();
+   bool sdp3_init();
+   bool sdp3_start_read();
+   bool sdp3_calculate();
 #endif
 
    

@@ -19,7 +19,7 @@ AP_Airspeed_Backend * connect_airspeed_driver(AP_Airspeed & airspeed);
 class AP_Airspeed{
 public:
     // constructor
-    AP_Airspeed(const AP_Vehicle::FixedWing &parms) :
+    AP_Airspeed(uint16_t airspeed_max) :
         m_backend{nullptr},
         _raw_airspeed{0.0f},
         _airspeed{0.0f},
@@ -29,7 +29,7 @@ public:
         _healthy{false},
         _hil_set{false},
         _last_update_ms{0},
-        _calibration{parms},
+        _calibration{airspeed_max},
         _last_saved_ratio{0.0f},
         _counter{0}
     {

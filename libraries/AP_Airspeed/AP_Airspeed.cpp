@@ -166,15 +166,24 @@ bool AP_Airspeed::get_temperature(float &temperature)const
 // the get_airspeed() interface can be used
 void AP_Airspeed::calibrate(bool in_startup)
 {
-    float sum = 0;
-    uint8_t count = 0;
     if (!_enable) {
         return;
     }
+#if defined(QUAN_MIXER_TRANQUILITY)
+    _airspeed = 0;
+    _raw_airspeed = 0;
+    _offset.set_and_save(0);
+    return;
+#else
+
+    float sum = 0;
+    uint8_t count = 0;
+
     if (in_startup && _skip_cal) {
         return;
     }
     // discard first reading
+
     get_pressure();
     for (uint8_t i = 0; i < 10; i++) {
         hal.scheduler->delay(100);
@@ -194,6 +203,9 @@ void AP_Airspeed::calibrate(bool in_startup)
     _offset.set_and_save(raw);
     _airspeed = 0;
     _raw_airspeed = 0;
+
+#endif
+
 }
 
 // update the airspeed sensor
@@ -202,10 +214,16 @@ void AP_Airspeed::update(void)
     if (!_enable) {
         return;
     }
-    float airspeed_pressure = get_pressure() - _offset;
+    m_backend->update();
 
+#if (defined QUAN_MIXER_TRANQUILITY)
+    // no offset
+    float airspeed_pressure = get_pressure() ;
+#else
+    float airspeed_pressure = get_pressure() - _offset;
+#endif
     // remember raw pressure for logging
-    _raw_pressure     = airspeed_pressure;
+    _raw_pressure  = airspeed_pressure;
 
     /*
       we support different pitot tube setups so user can choose if

@@ -1,7 +1,7 @@
 #LIBRARIES += AP_ADC
 #LIBRARIES += AP_ADC_AnalogSource
 #LIBRARIES += AP_AHRS
-#LIBRARIES += AP_Airspeed
+LIBRARIES += AP_Airspeed
 #LIBRARIES += AP_Baro
 #LIBRARIES += AP_BattMonitor
 LIBRARIES += AP_Common
