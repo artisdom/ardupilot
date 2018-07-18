@@ -63,8 +63,11 @@ namespace {
 
       hal.console->printf("starting i2c task\n");
 
-
+#if defined QUAN_MIXER_TRANQUILITY
+      if ( (hBaroQueue == nullptr) || (hCompassQueue == nullptr) || (hAirspeedQueue == nullptr) ){
+#else
       if ( (hBaroQueue == nullptr) || (hCompassQueue == nullptr) ){
+#endif
         AP_HAL::panic("create FreeRTOS queues failed in I2c task\n");
       }
       
@@ -72,7 +75,7 @@ namespace {
 
 #if defined QUAN_MIXER_TRANQUILITY
       if ( !Quan::sdp3_init()){
-        AP_HAL::panic("sdp3x init failed");
+          AP_HAL::panic("sdp3x init failed");
       }
 #endif
 
@@ -91,18 +94,14 @@ namespace {
           {"baro : request conversion"    ,  1 ,   1, Quan::baro_request_conversion}
          ,{"compass : request conversion" ,  2 ,   1, Quan::compass_request_conversion}
 #if defined QUAN_MIXER_TRANQUILITY
-          // 7 ms spare add Airspeed here
-         ,{"airspeed : start read"        ,  4,    2, Quan::sdp3_start_read}
+         ,{"airspeed : start read"        ,  3,    2, Quan::sdp3_start_read}
          ,{"airspeed : calculate"         ,  7,    2, Quan::sdp3_calculate}
 #endif
-         ,{"compass : start_read"         ,  10,   2, Quan::compass_start_read}
-         ,{"compass_calculate"            ,  13 ,  1, Quan::compass_calculate}  
-         ,{"eeprom : serv write buffer"   ,  14 ,  25, Quan::eeprom_service_write_buffer}
-        // ,{"eeprom : serv read req"       ,  26,  40, Quan::eeprom_service_read_requests}
-       //   ,{"test_write"                   ,  15 ,   1, test_write}
-       //   ,{"test_read"                    ,  25 ,  1, test_read}
+         ,{"compass : start_read"         ,  9,   2, Quan::compass_start_read}
+         ,{"compass_calculate"            ,  14 ,  1, Quan::compass_calculate}  
+         ,{"eeprom : serv write buffer"   ,  15 ,  25, Quan::eeprom_service_write_buffer}
          ,{"baro : start read"            ,  45 ,  2, Quan::baro_start_read}
-         ,{"baro : calculate"             ,  47 ,  1, Quan::baro_calculate}
+         ,{"baro : calculate"             ,  48 ,  1, Quan::baro_calculate}
       };
 
       constexpr uint32_t num_tasks = sizeof(tasks)/ sizeof(task);
@@ -119,43 +118,52 @@ namespace {
          for ( uint32_t i = 0; i < num_tasks ; ++i){
             // do any eeprom reads in a timely fashion, 
             // but allow the start conv requests to be started first
-            if ( i > 1) {// now the baro and compass request have been started
-#if defined QUAN_I2C_DEBUG
-               succeeded = Quan::eeprom_service_read_requests();
-               if( !succeeded){
-                  break;
-               }
+#if defined QUAN_MIXER_TRANQUILITY
+            static constexpr uint32_t first_tasks_started = 2U;
 #else
-               Quan::eeprom_service_read_requests();
+            static constexpr uint32_t first_tasks_started = 1U;
 #endif
+            if ( i > first_tasks_started) {// now the baro and compass request have been started
+               
+               if( ! Quan::eeprom_service_read_requests()){
+#if defined QUAN_I2C_DEBUG
+                  succeeded = false;
+                  break;
+#else
+                  Quan::i2c_periph::init();
+#endif
+              }
             }
             task & t = tasks[i];
             auto const time_since_task_started = millis() - loop_start_ms;
             if ( time_since_task_started < t.get_begin_ms()  ){
               vTaskDelay( t.get_begin_ms() - time_since_task_started);
             }
-#if defined QUAN_I2C_DEBUG
-            if ( !t.run()){
 
+            if ( !t.run()){
                hal.console->printf("i2c task %s failed\n",t.get_name());
+#if defined QUAN_I2C_DEBUG
                succeeded = false;
-               // reset I2c bus etc
                break;
-            }
 #else
-            t.run();
+               Quan::i2c_periph::init();
+#if defined QUAN_MIXER_TRANQUILITY
+               Quan::sdp3_init();
 #endif
+#endif
+            }
+
          }
 #if defined QUAN_I2C_DEBUG
          if (succeeded) { 
-            vTaskDelayUntil(&previous_waketime_ms, looptime_ms);
+#endif
+         vTaskDelayUntil(&previous_waketime_ms, looptime_ms);
+#if defined QUAN_I2C_DEBUG
          }else{
             break;
          }
-#else
-         vTaskDelayUntil(&previous_waketime_ms, looptime_ms);
 #endif
-      }
+      }  // ~task loop 
 #if defined QUAN_I2C_DEBUG
   // ----------------- get here on fail
    // todo we actually need to try to recover
