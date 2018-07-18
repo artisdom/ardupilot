@@ -120,15 +120,113 @@ bool Quan::wait_for_bus_free_ms(uint32_t t_ms)
    return true;
 }
 
+// TODO. However for now I solved this by initing the pins before the module
+/*
+https://my.st.com/public/STe2ecommunities/mcu/Lists/cortex_mx_stm32/Flat.aspx?RootFolder \
+=https%3a%2f%2fmy%2est%2ecom%2fpublic%2fSTe2ecommunities%2fmcu%2fLists%2fcortex%5fmx%5fstm32%2f\
+Proper%20Initialization%20of%20the%20I2C%20Peripheral&FolderCTID=0x01200200770978C69A1141439FE559EB\
+459D7580009C4E14902C3CDE46A77F0FFD06506F5B&currentviews=1824
+Over the years I have encountered several I2C peripherals that don't always reset correctly on power up.
+When I initialize the I2C controller, or after a timeout error, I disable the I2C on the STM32, put the I2C pins in GPIO open drain mode,
+and then toggle the SCK pin (at < 100KHz) until the SDA pin shows the bus is free.  Then I enable the I2C on the STM32 and start a new transaction.
+  Jack Peacock
+*/
+
+namespace {
+
+   void delay_10usec()
+   {
+       // around 10 usec
+       uint32_t count = 500;
+       while (count > 0){
+          -- count;
+          asm volatile ("nop":::);
+       }
+   }
+}
+
+bool Quan::i2c_periph::clear_i2c_bus()
+{
+   quan::stm32::module_enable<scl_pin::port_type>();
+   quan::stm32::module_enable<sda_pin::port_type>();
+   // disable the 
+   quan::stm32::apply<
+      scl_pin
+      ,quan::stm32::gpio::mode::output 
+      ,quan::stm32::gpio::otype::open_drain
+      ,quan::stm32::gpio::pupd::none         //  Use external pullup 5V tolerant pins
+      ,quan::stm32::gpio::ospeed::slow
+      ,quan::stm32::gpio::ostate::high
+   >();
+
+   // SDA is input high
+
+   quan::stm32::apply<
+      sda_pin
+      ,quan::stm32::gpio::mode::input 
+      ,quan::stm32::gpio::otype::open_drain
+      ,quan::stm32::gpio::pupd::none          //  Use external pullup 5V tolerant pins
+      ,quan::stm32::gpio::ospeed::slow
+   >();
+
+   // sanity check
+   // if bus not cleared in 100 clocks probably terminal
+   int clock_count = 100;
+
+   // if SDA is being held low by slave
+   while (!quan::stm32::get<sda_pin>() && (clock_count > 0)){
+
+      //send a clock pulse to clock the next bit through
+      quan::stm32::clear<scl_pin>();
+      delay_10usec();
+      quan::stm32::set<scl_pin>();
+      delay_10usec();
+      // if sda is now high
+      // try generating a Stop condition
+      // while clk is hi
+      // make sda an output and pull it low, then pull it high
+      if ( quan::stm32::get<sda_pin>()){
+         quan::stm32::apply<
+            sda_pin
+            ,quan::stm32::gpio::mode::output 
+            ,quan::stm32::gpio::otype::open_drain
+            ,quan::stm32::gpio::pupd::none         //  Use external pullup 5V tolerant pins
+            ,quan::stm32::gpio::ospeed::slow
+            ,quan::stm32::gpio::ostate::low
+         >();
+         delay_10usec();
+         // sda high input
+         quan::stm32::apply<
+            sda_pin
+            ,quan::stm32::gpio::mode::input 
+            ,quan::stm32::gpio::otype::open_drain
+            ,quan::stm32::gpio::pupd::none          //  Use external pullup 5V tolerant pins
+            ,quan::stm32::gpio::ospeed::slow
+         >();
+         -- clock_count;
+      }
+   }
+
+   if ( clock_count > 0){
+      m_bus_taken_token = false;
+      return true;
+   }else{
+      AP_HAL::panic("couldnt clear i2c bus");
+      return false;
+   }
+}
+
 /*
   set up the i2c bus
 */
 void Quan::i2c_periph::init()
 {
+   clear_i2c_bus();
    setup_usec_timer();
 
-   quan::stm32::module_enable<scl_pin::port_type>();
-   quan::stm32::module_enable<sda_pin::port_type>();
+  // done in clear bus
+  // quan::stm32::module_enable<scl_pin::port_type>();
+ //  quan::stm32::module_enable<sda_pin::port_type>();
    // TODO add check they are valid pins
    quan::stm32::apply<
       scl_pin
@@ -268,71 +366,8 @@ void Quan::i2c_periph::default_event_handler()
     AP_HAL::panic("i2c event default handler called");
 }
 
-// TODO. However for now I solved this by initing the pins before the module
-/*
-https://my.st.com/public/STe2ecommunities/mcu/Lists/cortex_mx_stm32/Flat.aspx?RootFolder \
-=https%3a%2f%2fmy%2est%2ecom%2fpublic%2fSTe2ecommunities%2fmcu%2fLists%2fcortex%5fmx%5fstm32%2f\
-Proper%20Initialization%20of%20the%20I2C%20Peripheral&FolderCTID=0x01200200770978C69A1141439FE559EB\
-459D7580009C4E14902C3CDE46A77F0FFD06506F5B&currentviews=1824
-Over the years I have encountered several I2C peripherals that don't always reset correctly on power up.
-When I initialize the I2C controller, or after a timeout error, I disable the I2C on the STM32, put the I2C pins in GPIO open drain mode,
-and then toggle the SCK pin (at < 100KHz) until the SDA pin shows the bus is free.  Then I enable the I2C on the STM32 and start a new transaction.
-  Jack Peacock
-*/
 
-namespace {
 
-   void delay_10usec()
-   {
-       // around 10 usec
-       uint32_t count = 500;
-       while (count > 0){
-          -- count;
-          asm volatile ("nop":::);
-       }
-   }
-
-   bool clear_i2c_bus()
-   {
-      quan::stm32::apply<
-         scl_pin
-         ,quan::stm32::gpio::mode::output 
-         ,quan::stm32::gpio::otype::open_drain
-         ,quan::stm32::gpio::pupd::none         //  Use external pullup 5V tolerant pins
-         ,quan::stm32::gpio::ospeed::slow
-         ,quan::stm32::gpio::ostate::high
-      >();
-
-      quan::stm32::apply<
-         sda_pin
-         ,quan::stm32::gpio::mode::input 
-         ,quan::stm32::gpio::otype::open_drain
-         ,quan::stm32::gpio::pupd::none          //  Use external pullup 5V tolerant pins
-         ,quan::stm32::gpio::ospeed::slow
-      >();
-
-      // sanity check
-      // if bus not cleared in 100 clocks probably terminal
-      int clock_count = 100;
-
-      while (!quan::stm32::get<sda_pin>() && (clock_count > 0)){
-
-         quan::stm32::clear<scl_pin>();
-         delay_10usec();
-         quan::stm32::set<scl_pin>();
-         delay_10usec();
-         -- clock_count;
-      }
-
-      if ( clock_count > 0){
-         return true;
-      }else{
-         AP_HAL::panic("couldnt clear i2c bus");
-         return false;
-      }
-   }
-
-}
 
 /*
   provide a 30 usec delay from time of call
