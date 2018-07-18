@@ -21,6 +21,7 @@
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
 #include <AP_Common/AP_Common.h>
+#include <AP_Baro/AP_Baro.h>
 #include "AP_Airspeed.h"
 #include "AP_Airspeed_Backend.h"
 
@@ -132,6 +133,7 @@ void AP_Airspeed::init()
 // read the airspeed sensor
 // FixMe!
 // in fact returns the pressure but with an offset
+
 float AP_Airspeed::get_pressure(void)
 {
     
@@ -146,6 +148,7 @@ float AP_Airspeed::get_pressure(void)
     if (m_backend != nullptr){
         float pressure = 0.f;
        _healthy = m_backend->get_differential_pressure(pressure);
+
         return pressure;
     }else{
        return 0.f;
@@ -247,7 +250,22 @@ void AP_Airspeed::update(void)
     }
     airspeed_pressure       = max(airspeed_pressure, 0.f);
     _last_pressure          = airspeed_pressure;
-    _raw_airspeed           = sqrtf(airspeed_pressure * _ratio);
+
+#if (defined QUAN_MIXER_TRANQUILITY)
+    // V = sqrt( 2 * dP / rho) where dP is differential pressure in Pa
+    // and rho is density in kg.m[-3]
+    // rho == 1.225 kg.m[-3] at sea level and 15 c
+   //  constexpr float rho = 1.225;
+     constexpr float gas_constant = 287.058f; // J.kg-1.K-1
+     float const abs_pressure = get_barometer().get_pressure(); // Pa
+     float temperature ;  // K
+     get_temperature(temperature); // use this rather than baro temperature, since it is off the board
+     temperature += 273.13f; // to Kelvin
+     float const rho = abs_pressure/(gas_constant * temperature);
+    _raw_airspeed           = sqrtf( airspeed_pressure * 2.f/rho  );
+#else
+     _raw_airspeed           = sqrtf( airspeed_pressure * _ratio  );
+#endif
     _airspeed               = 0.7f * _airspeed  +  0.3f * _raw_airspeed;
     _last_update_ms         = AP_HAL::millis();
 }
