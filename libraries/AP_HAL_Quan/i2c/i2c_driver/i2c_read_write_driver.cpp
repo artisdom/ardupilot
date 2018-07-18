@@ -36,7 +36,6 @@ bool Quan::i2c_read_write_driver_base::ll_read(uint8_t * data, uint32_t len)
    Quan::i2c_periph::enable_ack_bit(true);
    Quan::i2c_periph::enable_pos_bit(false);
 
-
    Quan::i2c_periph::request_start_condition();
 
    uint32_t const max_wait_ms = 1U + len / 10U + ((len % 10)?1:0);
@@ -50,7 +49,6 @@ bool Quan::i2c_read_write_driver_base::ll_read(uint8_t * data, uint32_t len)
       }
       return false;
    }
-   
 }
 
 // read handlers
@@ -146,13 +144,12 @@ void Quan::i2c_read_write_driver_base::on_read_single_byte_handler()
 #if defined QUAN_I2C_DEBUG
    capture_i2c_sr1_flags("on_read_single_byte_handler",flags);
 #endif
-   if ( flags & 64U){
+   if ( flags & 64U){ // 
       m_data.read_ptr[m_data_idx] = Quan::i2c_periph::receive_data();
       Quan::i2c_periph::set_default_handlers();
       Quan::i2c_periph::release_bus();
    }
 }
-
 
 void Quan::i2c_read_write_driver_base::on_read_error()
 {
@@ -195,7 +192,6 @@ bool Quan::i2c_read_write_driver_base::ll_write(uint8_t const * data, uint32_t l
       }
       return false;
    }
-
 }
 
 void Quan::i2c_read_write_driver_base::on_write_start_sent()

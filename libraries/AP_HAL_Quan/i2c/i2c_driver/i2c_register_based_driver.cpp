@@ -17,8 +17,6 @@ uint32_t Quan::i2c_register_based_driver_base::m_bytes_left = 0U;
 using AP_HAL::panic;
 extern const AP_HAL::HAL& hal;
 
-
-
 bool Quan::i2c_register_based_driver_base::ll_read(uint8_t register_index, uint8_t * data, uint32_t len)
 {
    m_data.read_ptr = data;
