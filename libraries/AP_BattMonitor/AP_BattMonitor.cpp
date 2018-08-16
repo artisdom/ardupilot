@@ -43,15 +43,25 @@ const AP_Param::GroupInfo AP_BattMonitor::var_info[] = {
     // @Description: Number of amps that a 1V reading on the current sensor corresponds to. On the APM2 or Pixhawk using the 3DR Power brick this should be set to 17. For the Pixhawk with the 3DR 4in1 ESC this should be 17.
     // @Units: Amps/Volt
     // @User: Standard
+#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+  #if (defined QUAN_MIXER_TRANQUILITY)
+// for tranquility ACS723 sensitivity is 400 mV / A, so ammp_per-volt = 2.5
+    AP_GROUPINFO("_AMP_PERVOLT", 4, AP_BattMonitor, _curr_amp_per_volt[0], 2.5f),
+#else
     AP_GROUPINFO("_AMP_PERVOLT", 4, AP_BattMonitor, _curr_amp_per_volt[0], AP_BATT_CURR_AMP_PERVOLT_DEFAULT),
-
+#endif
+#endif
     // @Param: _AMP_OFFSET
     // @DisplayName: AMP offset
     // @Description: Voltage offset at zero current on current sensor
     // @Units: Volts
     // @User: Standard
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-    AP_GROUPINFO("_AMP_OFFSET", 5, AP_BattMonitor, _curr_amp_offset[0], 0.6f),
+  #if (defined QUAN_MIXER_TRANQUILITY)
+    AP_GROUPINFO("_AMP_OFFSET", 5, AP_BattMonitor, _curr_amp_offset[0], 0.5f), // ACS723 has an offset of 0.1 * VCC (VCC == 5V)
+  #else
+    AP_GROUPINFO("_AMP_OFFSET", 5, AP_BattMonitor, _curr_amp_offset[0], 0.6f), // ACS758 has an offset of 0.6 V
+  #endif
 #else
     AP_GROUPINFO("_AMP_OFFSET", 5, AP_BattMonitor, _curr_amp_offset[0], 0),
 #endif
