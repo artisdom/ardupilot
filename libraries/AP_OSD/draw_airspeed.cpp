@@ -18,7 +18,7 @@ void AP_OSD::draw_airspeed(
    // convert to mph
    quan::velocity_<double>::mi_per_h const aspd = info.airspeed;
    sprintf(buf,"IAS %5.1f mph",aspd.numeric_value());
-   draw_text(buf,pos,Quan::FontID::OSD_Charset);
+   draw_text(buf,pos,Quan::FontID::MWOSD);
    
 }
 
