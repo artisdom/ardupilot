@@ -109,7 +109,13 @@ const AP_Param::GroupInfo Compass::var_info[] = {
     // @Param: ORIENT
     // @DisplayName: Compass orientation
 
-    // @Description: The orientation of the compass relative to the autopilot board. This will default to the right value for each board type, but can be changed if you have an external compass. See the documentation for your external compass for the right value. The correct orientation should give the X axis forward, the Y axis to the right and the Z axis down. So if your aircraft is pointing west it should show a positive value for the Y axis, and a value close to zero for the X axis. On a PX4 or Pixhawk with an external compass the correct value is zero if the compass is correctly oriented. NOTE: This orientation is combined with any AHRS_ORIENTATION setting.
+    // @Description: The orientation of the compass relative to the autopilot board. 
+//    This will default to the right value for each board type, but can be changed if you have an external compass. 
+//    See the documentation for your external compass for the right value. 
+//    The correct orientation should give the X axis forward, the Y axis to the right and the Z axis down. 
+//    So if your aircraft is pointing west it should show a positive value for the Y axis, and a value close to zero for the X axis. 
+//    On a PX4 or Pixhawk with an external compass the correct value is zero if the compass is correctly oriented.
+//    NOTE: This orientation is combined with any AHRS_ORIENTATION setting.
     // @Values:   
     // 0:None,1:Yaw45,2:Yaw90,3:Yaw135,
     // 4:Yaw180,5:Yaw225,6:Yaw270,7:Yaw315,
