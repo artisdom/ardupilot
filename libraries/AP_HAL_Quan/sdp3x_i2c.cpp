@@ -6,6 +6,8 @@
 #include <quan/pressure.hpp>
 #include <quan/temperature.hpp>
 
+#if (CONFIG_HAL_BOARD == HAL_BOARD_QUAN)  && (defined QUAN_MIXER_TRANQUILITY)
+
 #if defined QUAN_I2C_DEBUG
 #include <AP_HAL_Quan/i2c/i2c_driver/i2c_debug.hpp>
 #endif
@@ -191,6 +193,8 @@ namespace Quan{
    }
 
 }
+
+#endif
 
 
 
