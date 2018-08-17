@@ -14,17 +14,21 @@ namespace {
    float constexpr port_v_tail_dir = 1;
    float constexpr stbd_v_tail_dir = - port_v_tail_dir;
 
-   float constexpr up_ail_gain = 0.75f;
-   float constexpr down_ail_gain = 0.5f;
+   // up ail gain should be more than down
+   float constexpr up_ail_gain = 0.75f/2.f;
+   float constexpr down_ail_gain = 0.5f/2.f;
 
    float constexpr up_flap_gain = 0.1f;
    float constexpr down_flap_gain = 0.3f;
 
-   float constexpr rudder_roll_gain = -0.3f;
+   float constexpr rudder_roll_gain = -0.2f;
    float constexpr elev_flap_gain = 0.1f;
 
    float constexpr crow_gain = 0.715f;
    float constexpr elev_to_crow_gain = -0.2f;
+
+   float constexpr v_tail_pitch_gain = 0.6f;
+   float constexpr v_tail_yaw_gain = 0.4f;
 
    uint8_t constexpr num_outputs = 6;
    float output[num_outputs] = {0.f,0.f,0.f,0.f,0.f,0.f};
@@ -78,9 +82,9 @@ namespace {
      float const pitch = plane.get_pitch_demand();
      float const yaw = plane.get_yaw_demand();
   
-     output[port_v_tail_channel] = (pitch * 0.5f + yaw * 0.5f + roll_to_rudder + elev_to_flap + elev_to_crow ) * port_v_tail_dir;
+     output[port_v_tail_channel] = (pitch * v_tail_pitch_gain + yaw * v_tail_yaw_gain + roll_to_rudder + elev_to_flap + elev_to_crow ) * port_v_tail_dir;
     // output[stbd_v_tail] = -pitch * 0.5f + yaw * 0.5f + roll_to_rudder - elev_to_flap - elev_to_crow;
-     output[stbd_v_tail_channel] = (pitch * 0.5f - yaw * 0.5f - roll_to_rudder + elev_to_flap + elev_to_crow ) * stbd_v_tail_dir;
+     output[stbd_v_tail_channel] = (pitch * v_tail_pitch_gain - yaw * v_tail_yaw_gain - roll_to_rudder + elev_to_flap + elev_to_crow ) * stbd_v_tail_dir;
 
      for ( uint8_t i = 0; i < num_outputs; ++i){
          output_action(i);
