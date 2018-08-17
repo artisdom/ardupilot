@@ -171,9 +171,8 @@ extern "C" void TIM1_CC_IRQHandler() __attribute__ ( (interrupt ("IRQ")));
 extern "C" void TIM1_CC_IRQHandler()
 #endif
 {
-   rc_in_timer::get()->sr.set(0);
+   rc_in_timer::get()->sr.set(0); // clear flags
    on_edge();
-   // TODO overflow on no input
 }
 
 namespace {
