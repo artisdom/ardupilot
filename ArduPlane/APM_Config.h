@@ -33,6 +33,7 @@ airspeed_sensor.enabled  in AP_Airspeed.cpp
 #define FRSKY_TELEM_ENABLED      DISABLED
 #define OBC_FAILSAFE             DISABLED
 #define OPTFLOW                  DISABLED
+#define GEOFENCE_ENABLED         DISABLED
 
 #endif
 
