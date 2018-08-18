@@ -144,61 +144,63 @@ void Plane::rudder_arm_disarm_check()
 
 void Plane::read_radio()
 {
-   if (!hal.rcin->new_input()) {
+   // if have_valid_rc_input()
+   if (hal.rcin->new_input()) {
+
+      #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+      // update rc to osd
+      uint8_t const num_channels = hal.rcin->num_channels();
+      uint16_t chan_ar[6];
+      if ( num_channels > 12){
+         uint8_t const n = num_channels - 12;
+         for(uint8_t i = 0; i < 6; ++i){
+            chan_ar[i] = (i < n)? hal.rcin->read(i + 12):0;
+         }
+         AP_OSD::enqueue::rc_inputs_12_to_17(chan_ar,6);
+      }
+      if ( num_channels > 6){
+         uint8_t const n = num_channels - 6;
+         for(uint8_t i = 0; i < 6; ++i){
+            chan_ar[i] = (i < n)? hal.rcin->read(i + 6) :0;
+         }
+         AP_OSD::enqueue::rc_inputs_6_to_11(chan_ar,6);
+      }
+      if ( num_channels > 0){
+         for(uint8_t i = 0; i < 6; ++i){
+            chan_ar[i] = (i < num_channels)? hal.rcin->read(i) :0;
+         }
+         AP_OSD::enqueue::rc_inputs_0_to_5(chan_ar,6);
+      }
+    #endif
+
+      failsafe.last_valid_rc_ms = millis();
+
+      // sets up stick inputs to dynamic_channel inputs
+
+      joystick_roll.update();
+      joystick_pitch.update();
+      joystick_yaw.update();
+      joystick_thrust.update();
+
+      control_failsafe();
+      autopilot_thrust.set_js(joystick_thrust);
+      if (g.thrust_nudge && (autopilot_thrust.get() > 50_N)) {
+         float nudge = (autopilot_thrust.get() - 50_N).numeric_value() * 0.02f;
+         if (ahrs.airspeed_sensor_enabled()) {
+            airspeed_nudge_cm = (aparm.airspeed_max * 100 - g.airspeed_cruise_cm) * nudge;
+         } else {
+            thrust_nudge = (aparm.thrust_max - aparm.thrust_cruise) * nudge;
+         }
+      }else{
+         airspeed_nudge_cm = 0;
+         thrust_nudge = 0;
+      }
+      rudder_arm_disarm_check();
+      autopilot_yaw.set_js(joystick_yaw);
+   }else{
       control_failsafe();
       return;
    }
-
-   #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-   // update rc to osd
-   uint8_t const num_channels = hal.rcin->num_channels();
-   uint16_t chan_ar[6];
-   if ( num_channels > 12){
-      uint8_t const n = num_channels - 12;
-      for(uint8_t i = 0; i < 6; ++i){
-         chan_ar[i] = (i < n)? hal.rcin->read(i + 12):0;
-      }
-      AP_OSD::enqueue::rc_inputs_12_to_17(chan_ar,6);
-   }
-   if ( num_channels > 6){
-      uint8_t const n = num_channels - 6;
-      for(uint8_t i = 0; i < 6; ++i){
-         chan_ar[i] = (i < n)? hal.rcin->read(i + 6) :0;
-      }
-      AP_OSD::enqueue::rc_inputs_6_to_11(chan_ar,6);
-   }
-   if ( num_channels > 0){
-      for(uint8_t i = 0; i < 6; ++i){
-         chan_ar[i] = (i < num_channels)? hal.rcin->read(i) :0;
-      }
-      AP_OSD::enqueue::rc_inputs_0_to_5(chan_ar,6);
-   }
- #endif
-
-   failsafe.last_valid_rc_ms = millis();
-
-   // sets up stick inputs to dynamic_channel inputs
-
-   joystick_roll.update();
-   joystick_pitch.update();
-   joystick_yaw.update();
-   joystick_thrust.update();
-
-   control_failsafe();
-   autopilot_thrust.set_js(joystick_thrust);
-   if (g.thrust_nudge && (autopilot_thrust.get() > 50_N)) {
-      float nudge = (autopilot_thrust.get() - 50_N).numeric_value() * 0.02f;
-      if (ahrs.airspeed_sensor_enabled()) {
-         airspeed_nudge_cm = (aparm.airspeed_max * 100 - g.airspeed_cruise_cm) * nudge;
-      } else {
-         thrust_nudge = (aparm.thrust_max - aparm.thrust_cruise) * nudge;
-      }
-   }else{
-      airspeed_nudge_cm = 0;
-      thrust_nudge = 0;
-   }
-   rudder_arm_disarm_check();
-   autopilot_yaw.set_js(joystick_yaw);
 }
 
 /*
@@ -218,7 +220,7 @@ void Plane::control_failsafe()
 
       // we detect a failsafe from radio or
       // thrust has dropped below the mark
-      failsafe.ch3_counter++;
+      ++failsafe.ch3_counter;
       if (failsafe.ch3_counter == 10) {
          // n.b that thrust may be irrelevant if no rc input
          unsigned int const thrust_pwm = hal.rcin->read(joystick_thrust.get_rcin_index());  
@@ -292,9 +294,9 @@ bool Plane::setup_joystick_trims()
    usec roll_sum = init_trim_roll;
    usec yaw_sum = init_trim_yaw;
 
-   int count = 1;
-   auto now = millis();
-   while (( millis() - now ) < 1000){
+   int32_t count = 1;
+   auto const start_time = millis();
+   while (( millis() - start_time ) < 1000){
 
        hal.scheduler->delay(20); 
        read_radio();
@@ -323,14 +325,16 @@ bool Plane::setup_joystick_trims()
 
 }
 
-bool Plane::thrust_failsafe_state_detected()const
+//Try renaming to throttle_set_to_failsafe
+bool Plane::throttle_set_to_failsafe_value()const
 {
-   return (g.thrust_fs_enabled) && (joystick_thrust.as_usec() <= usec{g.thrust_fs_value.get()});
+   return g.thrust_fs_enabled && (joystick_thrust.as_usec() <= usec{g.thrust_fs_value.get()});
 }
 
+// try renaming to rc_input_in_last_ms(n);
 bool Plane::rcin_failsafe_state_detected() const
 {
-   return (millis() - failsafe.last_valid_rc_ms > 1000);
+   return (millis() - failsafe.last_valid_rc_ms) > 1000;
 }
 
 /*
@@ -341,5 +345,5 @@ bool Plane::rcin_failsafe_state_detected() const
  */
 bool Plane::failsafe_state_detected(void)
 {
-   return rcin_failsafe_state_detected() || thrust_failsafe_state_detected();
+   return rcin_failsafe_state_detected() || throttle_set_to_failsafe_value();
 }

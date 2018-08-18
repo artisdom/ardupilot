@@ -1,17 +1,27 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
-//#include <RC_Channel/RC_Channel.h>
 #include "Plane.h"
 
+namespace {
+   bool switch_debouncer = false;
+   uint8_t oldSwitchPosition = 254;
+
+}
+
+/*
+   Should only be called if Plane::have_rc_input() returns true
+*/
 void Plane::read_control_switch()
 {
-    static bool switch_debouncer;
+
+    // number 1 is the switch valid?
     uint8_t switchPosition = readSwitch();
 
     // If switchPosition = 255 this indicates that the mode control channel input was out of range
     // If we get this value we do not want to change modes.
     if(switchPosition == 255) return;
 
+// if no_user_control_input
     if (failsafe.ch3_failsafe || failsafe.ch3_counter > 0) {
         // when we are in ch3_failsafe mode then RC input is not
         // working, and we need to ignore the mode switch channel
@@ -72,34 +82,4 @@ void Plane::reset_control_switch()
 {
     oldSwitchPosition = 254;
     read_control_switch();
-}
-
-/*
-  called when entering autotune
- */
-void Plane::autotune_start(void)
-{
-    rollController.autotune_start();
-    pitchController.autotune_start();
-}
-
-/*
-  called when exiting autotune
- */
-void Plane::autotune_restore(void)
-{
-    rollController.autotune_restore();
-    pitchController.autotune_restore();
-}
-
-/*
-  enable/disable autotune for AUTO modes
- */
-void Plane::autotune_enable(bool enable)
-{
-    if (enable) {
-        autotune_start();
-    } else {
-        autotune_restore();
-    }
 }

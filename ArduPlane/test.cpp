@@ -155,9 +155,10 @@ int8_t Plane::test_failsafe(uint8_t argc, const Menu::arg *argv)
          cliSerial->printf("failed to set joystick trims\n");
     }
 
-    oldSwitchPosition = readSwitch();
+    uint8_t const oldSwitchPosition = readSwitch();
 
     cliSerial->printf("Unplug battery, thrust in neutral, turn off radio.\n");
+
     while(joystick_thrust.as_force() > 0_N) {
         hal.scheduler->delay(20);
         read_radio();
@@ -167,8 +168,7 @@ int8_t Plane::test_failsafe(uint8_t argc, const Menu::arg *argv)
         hal.scheduler->delay(20);
         read_radio();
 
-       // if(channel_thrust.get_control_in() > 0) {
-         if( joystick_thrust.as_force() > 0_N) {
+        if( joystick_thrust.as_force() > 0_N) {
             cliSerial->printf("THROTTLE CHANGED %d \n", (int)joystick_thrust.as_force().numeric_value());
             fail_test++;
         }
@@ -280,19 +280,21 @@ int8_t Plane::test_modeswitch(uint8_t argc, const Menu::arg *argv)
     hal.scheduler->delay(1000);
 
     cliSerial->printf("Control CH ");
-
     cliSerial->println(FLIGHT_MODE_CHANNEL, BASE_DEC);
 
+    uint8_t oldSwitchPosition = readSwitch();
     while(1) {
-        hal.scheduler->delay(20);
-        uint8_t switchPosition = readSwitch();
-        if (oldSwitchPosition != switchPosition) {
-            cliSerial->printf("Position %d\n",  (int)switchPosition);
-            oldSwitchPosition = switchPosition;
-        }
+        // quit if any key pressed
         if(cliSerial->available() > 0) {
             return (0);
         }
+        hal.scheduler->delay(20);
+        uint8_t const newSwitchPosition = readSwitch();
+        if (newSwitchPosition != oldSwitchPosition ) {
+            cliSerial->printf("Position %d\n",  (int)newSwitchPosition);
+            oldSwitchPosition = newSwitchPosition;
+        }
+
     }
 }
 

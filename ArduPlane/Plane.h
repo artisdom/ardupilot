@@ -235,7 +235,7 @@ private:
 
     // Used to maintain the state of the previous control switch position
     // This is set to 254 when we need to re-read the switch
-    uint8_t oldSwitchPosition = 254;
+   // uint8_t oldSwitchPosition = 254;
 
     // Failsafe
     struct {
@@ -602,7 +602,9 @@ private:
     void update_load_factor(void);
     void send_heartbeat(mavlink_channel_t chan);
     void send_attitude(mavlink_channel_t chan);
+#if GEOFENCE_ENABLED == ENABLED
     void send_fence_status(mavlink_channel_t chan);
+#endif
     void send_extended_status1(mavlink_channel_t chan);
     void send_location(mavlink_channel_t chan);
     void send_nav_controller_output(mavlink_channel_t chan);
@@ -746,7 +748,7 @@ private:
    // void trim_radio();
     bool setup_joystick_trims();
     bool failsafe_state_detected(void);
-    bool thrust_failsafe_state_detected()const;
+    bool throttle_set_to_failsafe_value()const;
     bool rcin_failsafe_state_detected() const;
     void init_barometer(void);
     void init_rangefinder(void);
