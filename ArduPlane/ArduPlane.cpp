@@ -414,10 +414,10 @@ void Plane::update_GPS_10Hz(void)
                 ground_start_count = 0;
             }
         }
-
+#if GEOFENCE_ENABLED == ENABLED
         // see if we've breached the geo-fence
         geofence_check(false);
-     
+ #endif
         if (!hal.util->get_soft_armed()) {
             update_home();
         }
@@ -764,8 +764,9 @@ void Plane::update_alt()
 
     // low pass the sink rate to take some of the noise out
     auto_state.sink_rate = 0.8f * auto_state.sink_rate + 0.2f*sink_rate;
-    
+#if GEOFENCE_ENABLED == ENABLED
     geofence_check(true);
+#endif
 
     update_flight_stage();
 }

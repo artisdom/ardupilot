@@ -159,9 +159,11 @@ void Plane::send_extended_status1(mavlink_channel_t chan)
         control_sensors_present |= MAV_SYS_STATUS_SENSOR_OPTICAL_FLOW;
     }
 #endif
+#if GEOFENCE_ENABLED == ENABLED
     if (geofence_present()) {
         control_sensors_present |= MAV_SYS_STATUS_GEOFENCE;
     }
+#endif
 
     // all present sensors enabled by default except rate control, attitude stabilization, yaw, altitude, position control, geofence and motor output which we will set individually
     control_sensors_enabled = control_sensors_present & (~MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL & ~MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION & ~MAV_SYS_STATUS_SENSOR_YAW_POSITION & ~MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL & ~MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL & ~MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS & ~MAV_SYS_STATUS_GEOFENCE);
@@ -169,11 +171,11 @@ void Plane::send_extended_status1(mavlink_channel_t chan)
     if (airspeed.enabled() && airspeed.use()) {
         control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_DIFFERENTIAL_PRESSURE;
     }
-
+#if GEOFENCE_ENABLED == ENABLED
     if (geofence_enabled()) {
         control_sensors_enabled |= MAV_SYS_STATUS_GEOFENCE;
     }
-
+#endif
     switch (control_mode) {
     case MANUAL:
         break;
@@ -1330,10 +1332,12 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
         case MAV_CMD_DO_FENCE_ENABLE:
             result = MAV_RESULT_ACCEPTED;
-            
+#if GEOFENCE_ENABLED == ENABLED
             if (!plane.geofence_present()) {
                 result = MAV_RESULT_FAILED;
-            } switch((uint16_t)packet.param1) {
+            } 
+
+            switch((uint16_t)packet.param1) {
                 case 0:
                     if (! plane.geofence_set_enabled(false, GCS_TOGGLED)) {
                         result = MAV_RESULT_FAILED;
@@ -1355,6 +1359,9 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                     result = MAV_RESULT_FAILED;
                     break;
             }
+#else
+            result = MAV_RESULT_FAILED;
+#endif
             break;
 
         case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES: {

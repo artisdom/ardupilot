@@ -458,7 +458,7 @@ bool Plane::geofence_breached(void)
 }
 
 
-#else // GEOFENCE_ENABLED
+//#else // GEOFENCE_ENABLED
 
 void Plane::geofence_check(bool altitude_check_only) {
 }

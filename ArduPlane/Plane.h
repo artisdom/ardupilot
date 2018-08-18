@@ -604,6 +604,18 @@ private:
     void send_attitude(mavlink_channel_t chan);
 #if GEOFENCE_ENABLED == ENABLED
     void send_fence_status(mavlink_channel_t chan);
+    void geofence_load(void);
+    bool geofence_present(void);
+    void geofence_update_pwm_enabled_state();
+    bool geofence_set_enabled(bool enable, GeofenceEnableReason r);
+    bool geofence_enabled(void);
+    bool geofence_set_floor_enabled(bool floor_enable);
+    bool geofence_check_minalt(void);
+    bool geofence_check_maxalt(void);
+    void geofence_check(bool altitude_check_only);
+    bool geofence_stickmixing(void);
+    void geofence_send_status(mavlink_channel_t chan);
+    bool geofence_breached(void);
 #endif
     void send_extended_status1(mavlink_channel_t chan);
     void send_location(mavlink_channel_t chan);
@@ -711,18 +723,7 @@ private:
     uint8_t max_fencepoints(void);
     Vector2l get_fence_point_with_index(unsigned i);
     void set_fence_point_with_index(Vector2l &point, unsigned i);
-    void geofence_load(void);
-    bool geofence_present(void);
-    void geofence_update_pwm_enabled_state();
-    bool geofence_set_enabled(bool enable, GeofenceEnableReason r);
-    bool geofence_enabled(void);
-    bool geofence_set_floor_enabled(bool floor_enable);
-    bool geofence_check_minalt(void);
-    bool geofence_check_maxalt(void);
-    void geofence_check(bool altitude_check_only);
-    bool geofence_stickmixing(void);
-    void geofence_send_status(mavlink_channel_t chan);
-    bool geofence_breached(void);
+
     bool verify_land();
     void disarm_if_autoland_complete();
     void setup_landing_glide_slope(void);
