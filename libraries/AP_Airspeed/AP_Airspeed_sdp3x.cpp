@@ -34,8 +34,10 @@ namespace {
 
    float constexpr m_c = 4.79e-7f ;  // kg.s-1 
    float constexpr delta_p_c = 101.f; // Pa
-   float constexpr hose_length = 0.3f;  // m
-   float constexpr hose_inner_dia = 0.0018f; // m
+   //    float constexpr hose_length = 0.1f;  // m
+   //    float constexpr hose_inner_dia = 0.002f; // m
+    // = hose_length / (hose_inner_dia ^4)
+   float constexpr hose_constant = 7499999832.0f;
 
     // return effective pressure
    quan::pressure::Pa get_sdp3x_pressure( quan::pressure::Pa const & delta_p_sensor, quan::temperature::K t_deg_K)
@@ -50,7 +52,8 @@ namespace {
        float const c1 = -64.f/ quan::constant_<float>::pi * n_air/ p_air * m_c / delta_p_sensor.numeric_value() * 
             ( safe_sqrt(1.f + 8.f * delta_p_sensor.numeric_value()/delta_p_c) - 1.f);
 
-       float const epsilon = c1 * hose_length / quan::pow<4>(hose_inner_dia); 
+      // float const epsilon = c1 * hose_length / quan::pow<4>(hose_inner_dia); 
+       float const epsilon = c1 * hose_constant; 
 
        return delta_p_sensor / (1.f + epsilon);
    }
