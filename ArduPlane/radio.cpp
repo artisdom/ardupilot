@@ -140,19 +140,34 @@ namespace {
 
 void Plane::on_invalid_rc_input()
 {
-   if ( !rcin_failsafe.in_failsafe){
+   if ( !in_rcin_failsafe()){
 
       set_control_surfaces_centre();
       joystick_thrust.set_min();
 
       if ((AP_HAL::millis() - rcin_failsafe.last_valid_rc_ms ) > rcin_failsafe_delay_ms){ ;
-      // Send a message to OSD that in rc failsafe
+
          set_mode(FlightMode::RTL);
          rcin_failsafe.in_failsafe = true;
+      #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+      // Send a message to OSD that in rc failsafe
+         AP_OSD::enqueue::rcin_failsafe(true);
+      #endif
       }
    }
 }
 
+bool Plane::is_throttle_set_to_failsafe_value()const
+{
+   return g.thrust_fs_enabled && (joystick_thrust.as_usec() <= usec{g.thrust_fs_value.get()});
+}
+
+bool Plane::in_rcin_failsafe()const
+{
+    return rcin_failsafe.in_failsafe == true;
+}
+
+// Task function
 void Plane::read_radio()
 {
    if (have_valid_rc_input()) {
@@ -160,8 +175,11 @@ void Plane::read_radio()
      // Test here if we were in failsafe
        // and get out if so! 
       if (in_rcin_failsafe()){
-      // Send a message to OSD that out of rc failsafe
          rcin_failsafe.in_failsafe = false;
+      #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+      // Send a message to OSD that out of rc failsafe
+         AP_OSD::enqueue::rcin_failsafe(false);
+      #endif
       }
       set_mode(readControlSwitch());
 
@@ -292,12 +310,4 @@ bool Plane::setup_joystick_trims()
 }
 
 
-bool Plane::is_throttle_set_to_failsafe_value()const
-{
-   return g.thrust_fs_enabled && (joystick_thrust.as_usec() <= usec{g.thrust_fs_value.get()});
-}
 
-bool Plane::in_rcin_failsafe()const
-{
-   return rcin_failsafe.in_failsafe == true;
-}

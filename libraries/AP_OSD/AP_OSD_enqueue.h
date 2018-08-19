@@ -32,6 +32,7 @@ namespace AP_OSD{ namespace enqueue{
    bool rc_inputs_12_to_17(uint16_t * arr, uint8_t n);
    bool control_mode( uint8_t value);  // see Arduplane/defines.h
    bool baro_alt(float const & value);
+   bool rcin_failsafe(bool value);
 }}
 
 #endif // AP_OSD_ENQUEUE_H_INCLUDED

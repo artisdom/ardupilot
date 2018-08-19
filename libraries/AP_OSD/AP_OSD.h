@@ -66,6 +66,7 @@ namespace AP_OSD{
       control_mode,                     // 10
       baro_alt,                         // 11
       battery_low_voltage,              // 12
+      rcin_failsafe,                     //13
       max_messages
    };
 

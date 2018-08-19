@@ -26,6 +26,7 @@ namespace AP_OSD { namespace dequeue{
       ,gps_status{0} // no gps
       ,gps_num_sats{0}
       ,home_is_set{false}
+      , in_rcin_failsafe{false}
       ,control_mode{16} // initialising
       {
       }
@@ -52,6 +53,7 @@ namespace AP_OSD { namespace dequeue{
       uint8_t                             gps_num_sats;
 
       bool                                home_is_set;
+      bool                                in_rcin_failsafe;
       uint8_t                             control_mode;
    };
 

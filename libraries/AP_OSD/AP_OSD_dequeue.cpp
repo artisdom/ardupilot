@@ -99,6 +99,11 @@ namespace{
    {
        info.baro_alt = quan::length_<float>::m{msg.value.f};
    }
+
+   void get_rcin_failsafe(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
+   {
+       info.in_rcin_failsafe = msg.value.b;
+   }
    
    typedef void(*fun_ptr)(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info);
 
@@ -116,7 +121,8 @@ namespace{
       get_rcin_12_to_17,   //   9
       get_control_mode,    //  10
       get_baro_alt,        //  11
-      get_battery_low_voltage  // 12
+      get_battery_low_voltage,  // 12
+      get_rcin_failsafe          //13
    };
 
    QueueHandle_t osd_queue = nullptr;

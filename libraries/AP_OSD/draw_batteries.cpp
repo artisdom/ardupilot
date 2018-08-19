@@ -89,7 +89,7 @@ void AP_OSD::draw_batteries(dequeue::osd_info_t const & info,OSD_params const & 
             }
          }else{  // show text
             if ( ++low_battery_count < 67){
-               pos.y -= 4 * font_size.y;
+               pos.y += 2 * font_size.y;
                pos.x -= 7 * font_size.x;
                draw_text("Low Battery",pos,font);
             }else{

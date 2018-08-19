@@ -90,6 +90,22 @@ namespace {
       }
    }
 
+   bool put_message( AP_OSD::msgID id, bool v)
+   {
+      if ( queue_ready_for_msg()){
+          AP_OSD::osd_message_t msg;
+          msg.id = id;
+          msg.value.b = v;  
+          xQueueSendToBack(osd_queue,&msg,0);
+          return true;
+      }else{
+         return false;
+      }
+   }
+
+
+
+
    bool put_message(AP_OSD::msgID id, uint16_t * ar, uint8_t n_in)
    {
       if ( queue_ready_for_msg()){
@@ -107,6 +123,11 @@ namespace {
       }
    }
 
+}
+
+bool AP_OSD::enqueue::rcin_failsafe(bool value)
+{
+   return put_message(AP_OSD::msgID::rcin_failsafe,value);
 }
    
 bool AP_OSD::enqueue::attitude(quan::three_d::vect<float> const & in)
