@@ -8,20 +8,6 @@
 #endif
 #include <quan/length.hpp>
 
-//Function that will read the radio data, limit servos and trigger a failsafe
-// ----------------------------------------------------------------------------
-
-void Plane::set_control_channels(void)
-{
-/*
-  allow for runtime change of control channel ordering
-   should do if ( get_joystick_channel !=
- */
-//    channel_roll.set_angle();
-//    channel_pitch.set_angle();
-//    channel_yaw.set_angle();
-//    channel_thrust.set_range();
-}
 
 /*
   initialise RC input channels
@@ -142,10 +128,44 @@ void Plane::rudder_arm_disarm_check()
 	}
 }
 
+bool Plane::have_valid_rc_input()
+{
+   // read the radio input which is destructive (ie a read immediately after returns false)
+   return hal.rcin->new_input() && !is_throttle_set_to_failsafe_value();
+}
+
+namespace {
+    uint32_t constexpr rcin_failsafe_delay_ms = 500U;
+}
+
+void Plane::on_invalid_rc_input()
+{
+   if ( !rcin_failsafe.in_failsafe){
+
+      set_control_surfaces_centre();
+      joystick_thrust.set_min();
+
+      if ((AP_HAL::millis() - rcin_failsafe.last_valid_rc_ms ) > rcin_failsafe_delay_ms){ ;
+      // Send a message to OSD that in rc failsafe
+         set_mode(RTL);
+         rcin_failsafe.in_failsafe = true;
+      }
+   }
+}
+
 void Plane::read_radio()
 {
-   // if have_valid_rc_input()
-   if (hal.rcin->new_input()) {
+   if (have_valid_rc_input()) {
+
+     // Test here if we were in failsafe
+       // and get out if so! 
+      if (in_rcin_failsafe()){
+      // Send a message to OSD that out of rc failsafe
+         rcin_failsafe.in_failsafe = false;
+      }
+      set_mode((FlightMode)readSwitch());
+
+      rcin_failsafe.last_valid_rc_ms = AP_HAL::millis();
 
       #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
       // update rc to osd
@@ -173,16 +193,11 @@ void Plane::read_radio()
       }
     #endif
 
-      failsafe.last_valid_rc_ms = millis();
-
-      // sets up stick inputs to dynamic_channel inputs
-
       joystick_roll.update();
       joystick_pitch.update();
       joystick_yaw.update();
       joystick_thrust.update();
 
-      control_failsafe();
       autopilot_thrust.set_js(joystick_thrust);
       if (g.thrust_nudge && (autopilot_thrust.get() > 50_N)) {
          float nudge = (autopilot_thrust.get() - 50_N).numeric_value() * 0.02f;
@@ -197,57 +212,8 @@ void Plane::read_radio()
       }
       rudder_arm_disarm_check();
       autopilot_yaw.set_js(joystick_yaw);
-   }else{
-      control_failsafe();
-      return;
-   }
-}
-
-/*
-called in the main loop to check for failsafe
- Logic here is wrong. 2 type of failsafe
- thrust below some min and no rc input
-  Seem to be confused below
-*/
-void Plane::control_failsafe()
-{
-   // check for no rcin for some time or thrust failsafe
-   if (failsafe_state_detected()) {
-      // we do not have valid RC input or thrust failsafe is on
-     //  Set all primary control inputs to the trim value
-      set_control_surfaces_centre();
-      joystick_thrust.set_min();
-
-      // we detect a failsafe from radio or
-      // thrust has dropped below the mark
-      ++failsafe.ch3_counter;
-      if (failsafe.ch3_counter == 10) {
-         // n.b that thrust may be irrelevant if no rc input
-         unsigned int const thrust_pwm = hal.rcin->read(joystick_thrust.get_rcin_index());  
-         gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS ON %u", thrust_pwm);
-         failsafe.ch3_failsafe = true;
-         AP_Notify::flags.failsafe_radio = true;
-      }
-      if (failsafe.ch3_counter > 10) {
-         failsafe.ch3_counter = 10;
-      }
-   }else {
-      if(failsafe.ch3_counter > 0) {
-         // we are no longer in failsafe condition
-         // but we need to recover quickly
-         failsafe.ch3_counter--;
-         if (failsafe.ch3_counter > 3) {
-            failsafe.ch3_counter = 3;
-         }
-         if (failsafe.ch3_counter == 1) {
-            // n.b that thrust is be irrelevant if no rc input
-            unsigned int const thrust_pwm = hal.rcin->read(joystick_thrust.get_rcin_index());
-            gcs_send_text_fmt(MAV_SEVERITY_WARNING, "MSG FS OFF %u", thrust_pwm);
-         } else if(failsafe.ch3_counter == 0) {
-            failsafe.ch3_failsafe = false;
-            AP_Notify::flags.failsafe_radio = false;
-         }
-      }
+   }else{  // invalid rc input
+      on_invalid_rc_input();
    }
 }
 
@@ -325,25 +291,13 @@ bool Plane::setup_joystick_trims()
 
 }
 
-//Try renaming to throttle_set_to_failsafe
-bool Plane::throttle_set_to_failsafe_value()const
+
+bool Plane::is_throttle_set_to_failsafe_value()const
 {
    return g.thrust_fs_enabled && (joystick_thrust.as_usec() <= usec{g.thrust_fs_value.get()});
 }
 
-// try renaming to rc_input_in_last_ms(n);
-bool Plane::rcin_failsafe_state_detected() const
+bool Plane::in_rcin_failsafe()const
 {
-   return (millis() - failsafe.last_valid_rc_ms) > 1000;
-}
-
-/*
-  return true if thrust level is below thrust failsafe threshold
-  or RC input is invalid
-  change to failsafe_detected
-  split to thrust_failsafe_detected no_rc_in_failsafe_detected
- */
-bool Plane::failsafe_state_detected(void)
-{
-   return rcin_failsafe_state_detected() || throttle_set_to_failsafe_value();
+   return rcin_failsafe.in_failsafe == true;
 }

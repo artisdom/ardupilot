@@ -26,6 +26,7 @@
  */
 void Plane::adjust_altitude_target()
 {
+    auto const control_mode = get_control_mode();
     if (control_mode == FLY_BY_WIRE_B ||
         control_mode == CRUISE) {
         return;
@@ -68,7 +69,7 @@ void Plane::setup_glide_slope(void)
       work out if we will gradually change altitude, or try to get to
       the new altitude as quickly as possible.
      */
-    switch (control_mode) {
+    switch (get_control_mode()) {
     case RTL:
     case GUIDED:
         /* glide down slowly if above target altitude, but ascend more

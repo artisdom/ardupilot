@@ -154,6 +154,7 @@ void Plane::takeoff_calc_pitch(void)
  */
 int8_t Plane::takeoff_tail_hold(void)
 {
+    auto const control_mode = get_control_mode();
     bool in_takeoff = ((control_mode == AUTO && !auto_state.takeoff_complete) ||
                        (control_mode == FLY_BY_WIRE_A && auto_state.fbwa_tdrag_takeoff_mode));
     if (!in_takeoff) {

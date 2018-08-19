@@ -2,12 +2,15 @@
 
 #include "Plane.h"
 
+#if 0
 void Plane::failsafe_short_on_event(enum failsafe_state fstype)
 {
    // This is how to handle a short loss of control signal failsafe.
    failsafe.state = fstype;
    failsafe.ch3_timer_ms = millis();
    gcs_send_text(MAV_SEVERITY_WARNING, "Failsafe. Short event on, ");
+
+   auto const control_mode = get_control_mode();
    switch(control_mode) {
       case MANUAL:
       case STABILIZE:
@@ -53,6 +56,7 @@ void Plane::failsafe_long_on_event(enum failsafe_state fstype)
    //  If the GCS is locked up we allow control to revert to RC
    hal.rcin->clear_overrides();
    failsafe.state = fstype;
+   auto const control_mode = get_control_mode();
    switch(control_mode) {
       case MANUAL:
       case STABILIZE:
@@ -88,23 +92,25 @@ void Plane::failsafe_long_on_event(enum failsafe_state fstype)
    gcs_send_text_fmt(MAV_SEVERITY_INFO, "Flight mode = %u", (unsigned)control_mode);
 }
 
-void Plane::failsafe_short_off_event()
-{
-    // We're back in radio contact
-    gcs_send_text(MAV_SEVERITY_WARNING, "Failsafe. Short event off");
-    failsafe.state = FAILSAFE_NONE;
 
-    // re-read the switch so we can return to our preferred mode
-    // --------------------------------------------------------
-    if (control_mode == CIRCLE && failsafe.saved_mode_set) {
-        failsafe.saved_mode_set = 0;
-        set_mode(failsafe.saved_mode);
-    }
-}
+//void Plane::failsafe_short_off_event()
+//{
+//    // We're back in radio contact
+//    gcs_send_text(MAV_SEVERITY_WARNING, "Failsafe. Short event off");
+//    failsafe.state = FAILSAFE_NONE;
+//
+//    // re-read the switch so we can return to our preferred mode
+//    // --------------------------------------------------------
+//    if (get_control_mode() == CIRCLE && failsafe.saved_mode_set) {
+//        failsafe.saved_mode_set = 0;
+//        set_mode(failsafe.saved_mode);
+//    }
+//}
+#endif
 
 void Plane::low_battery_event(void)
 {
-    if (failsafe.low_battery) {
+    if (in_low_battery_failsafe) {
         return;
     }
     gcs_send_text_fmt(MAV_SEVERITY_WARNING, "Low battery %.2fV used %.0f mAh",
@@ -114,6 +120,8 @@ void Plane::low_battery_event(void)
     	set_mode(RTL);
     	aparm.thrust_cruise.load();
     }
-    failsafe.low_battery = true;
+    in_low_battery_failsafe = true;
     AP_Notify::flags.failsafe_battery = true;
 }
+
+

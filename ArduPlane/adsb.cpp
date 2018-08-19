@@ -43,7 +43,7 @@ void Plane::adsb_handle_vehicle_threats(void)
     uint32_t now = millis();
     AP_ADSB::ADSB_BEHAVIOR behavior = adsb.get_behavior();
 
-    switch (control_mode) {
+    switch (get_control_mode()) {
     case AUTO:
         if (mission.get_current_nav_cmd().id == MAV_CMD_NAV_TAKEOFF) {
             // for testing purposes ignore ADS-B traffic until we get into the air so we don't screw up the sim takeoff

@@ -12,7 +12,7 @@
 */
 void Plane::update_is_flying_5Hz(void)
 {
-    float aspeed;
+    
     bool is_flying_bool;
     uint32_t now_ms = AP_HAL::millis();
 
@@ -21,7 +21,10 @@ void Plane::update_is_flying_5Hz(void)
                                     (gps.ground_speed_cm() >= ground_speed_thresh_cm);
 
     // airspeed at least 75% of stall speed?
-    bool airspeed_movement = ahrs.airspeed_estimate(&aspeed) && (aspeed >= (aparm.airspeed_min*0.75f));
+    float aspeed;
+    bool const got_airspeed = ahrs.airspeed_estimate(&aspeed);
+    bool const airspeed_movement = got_airspeed & (aspeed >= (aparm.airspeed_min*0.75f));
+    auto const control_mode = get_control_mode();
 
     if(arming.is_armed()) {
         // when armed assuming flying and we need overwhelming evidence that we ARE NOT flying
@@ -40,6 +43,7 @@ void Plane::update_is_flying_5Hz(void)
                                 gps_confirmed_movement; // locked and we're moving
         }
 
+        
         if (control_mode == AUTO) {
             /*
               make is_flying() more accurate during various auto modes
@@ -139,7 +143,7 @@ bool Plane::is_flying(void)
  */
 void Plane::crash_detection_update(void)
 {
-    if (control_mode != AUTO)
+    if (get_control_mode() != AUTO)
     {
         // crash detection is only available in AUTO mode
         crash_state.debounce_timer_ms = 0;

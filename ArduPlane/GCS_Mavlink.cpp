@@ -25,11 +25,12 @@ void Plane::send_heartbeat(mavlink_channel_t chan)
 {
     uint8_t base_mode = MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
     uint8_t system_status;
-    uint32_t custom_mode = control_mode;
-    
-    if (failsafe.state != FAILSAFE_NONE) {
-        system_status = MAV_STATE_CRITICAL;
-    } else if (plane.crash_state.is_crashed) {
+
+//    if (failsafe.state != FAILSAFE_NONE) {
+//        system_status = MAV_STATE_CRITICAL;
+//    } else 
+
+if (plane.crash_state.is_crashed) {
         system_status = MAV_STATE_EMERGENCY;
     } else if (is_flying()) {
         system_status = MAV_STATE_ACTIVE;
@@ -45,6 +46,8 @@ void Plane::send_heartbeat(mavlink_channel_t chan)
     // only get useful information from the custom_mode, which maps to
     // the APM flight mode and has a well defined meaning in the
     // ArduPlane documentation
+
+    auto const control_mode = get_control_mode();
     switch (control_mode) {
     case MANUAL:
     case TRAINING:
@@ -108,7 +111,7 @@ void Plane::send_heartbeat(mavlink_channel_t chan)
         MAV_TYPE_FIXED_WING,
         MAV_AUTOPILOT_ARDUPILOTMEGA,
         base_mode,
-        custom_mode,
+        control_mode,
         system_status);
 }
 
@@ -176,7 +179,7 @@ void Plane::send_extended_status1(mavlink_channel_t chan)
         control_sensors_enabled |= MAV_SYS_STATUS_GEOFENCE;
     }
 #endif
-    switch (control_mode) {
+    switch (get_control_mode()) {
     case MANUAL:
         break;
 
@@ -270,7 +273,7 @@ void Plane::send_extended_status1(mavlink_channel_t chan)
     }
 #endif
 
-    if (millis() - failsafe.last_valid_rc_ms < 200) {
+    if (millis() - rcin_failsafe.last_valid_rc_ms < 200) {
         control_sensors_health |= MAV_SYS_STATUS_SENSOR_RC_RECEIVER;
     } else {
         control_sensors_health &= ~MAV_SYS_STATUS_SENSOR_RC_RECEIVER;
@@ -649,7 +652,7 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         break;
 
     case MSG_NAV_CONTROLLER_OUTPUT:
-        if (plane.control_mode != MANUAL) {
+        if (plane.get_control_mode() != MANUAL) {
             CHECK_PAYLOAD_SIZE(NAV_CONTROLLER_OUTPUT);
             plane.send_nav_controller_output(chan);
         }
@@ -1032,7 +1035,7 @@ GCS_MAVLINK::data_stream_send(void)
         send_message(MSG_ATTITUDE);
         send_message(MSG_SIMSTATE);
         send_message(MSG_RPM);
-        if (plane.control_mode != MANUAL) {
+        if (plane.get_control_mode() != MANUAL) {
             send_message(MSG_PID_TUNING);
         }
     }
@@ -1072,7 +1075,7 @@ GCS_MAVLINK::data_stream_send(void)
  */
 void GCS_MAVLINK::handle_guided_request(AP_Mission::Mission_Command &cmd)
 {
-    if (plane.control_mode != GUIDED) {
+    if (plane.get_control_mode() != GUIDED) {
         // only accept position updates when in GUIDED mode
         return;
     }
@@ -1491,7 +1494,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         // prevent unexpected flight paths
         plane.auto_state.next_wp_no_crosstrack = true;
         handle_mission_set_current(plane.mission, msg);
-        if (plane.control_mode == AUTO && plane.mission.state() == AP_Mission::MISSION_STOPPED) {
+        if (plane.get_control_mode() == AUTO && plane.mission.state() == AP_Mission::MISSION_STOPPED) {
             plane.mission.resume();
         }
         break;
@@ -1636,12 +1639,12 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         v[7] = packet.chan8_raw;
 
         if (hal.rcin->set_overrides(v, 8)) {
-            plane.failsafe.last_valid_rc_ms = AP_HAL::millis();
+            plane.rcin_failsafe.last_valid_rc_ms = AP_HAL::millis();
         }
 
         // a RC override message is consiered to be a 'heartbeat' from
         // the ground station for failsafe purposes
-        plane.failsafe.last_heartbeat_ms = AP_HAL::millis();
+        plane.last_mavlink_heartbeat_ms = AP_HAL::millis();
         break;
     }
 
@@ -1650,7 +1653,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         // We keep track of the last time we received a heartbeat from
         // our GCS for failsafe purposes
         if (msg->sysid != plane.g.sysid_my_gcs) break;
-        plane.failsafe.last_heartbeat_ms = AP_HAL::millis();
+        plane.last_mavlink_heartbeat_ms = AP_HAL::millis();
         break;
     }
 

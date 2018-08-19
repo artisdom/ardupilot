@@ -81,11 +81,12 @@ void Plane::navigate()
 
 void Plane::calc_airspeed_errors()
 {
-    float aspeed_cm = airspeed.get_airspeed_cm();
+    float const aspeed_cm = airspeed.get_airspeed_cm();
 
     // Normal airspeed target
     target_airspeed_cm = g.airspeed_cruise_cm;
 
+    auto const control_mode = get_control_mode();
     // FBW_B airspeed target
     if (control_mode == FLY_BY_WIRE_B || 
         control_mode == CRUISE) {
@@ -99,7 +100,7 @@ void Plane::calc_airspeed_errors()
     // but only when this is faster than the target airspeed commanded
     // above.
     if (control_mode >= FLY_BY_WIRE_B && (g.min_gndspeed_cm > 0)) {
-        int32_t min_gnd_target_airspeed = aspeed_cm + groundspeed_undershoot;
+        int32_t const min_gnd_target_airspeed = aspeed_cm + groundspeed_undershoot;
         if (min_gnd_target_airspeed > target_airspeed_cm)
             target_airspeed_cm = min_gnd_target_airspeed;
     }
@@ -137,7 +138,7 @@ void Plane::update_loiter()
     int16_t radius = abs(g.loiter_radius);
 
     if (loiter.start_time_ms == 0 &&
-        control_mode == AUTO &&
+        get_control_mode() == AUTO &&
         !auto_state.no_crosstrack &&
         get_distance(current_loc, next_WP_loc) > radius*2) {
         // if never reached loiter point and using crosstrack and somewhat far away from loiter point

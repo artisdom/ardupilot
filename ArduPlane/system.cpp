@@ -108,7 +108,7 @@ void Plane::init_ardupilot()
     // allow servo set on all channels except first 4
 //    ServoRelayEvents.set_channel_mask(0xFFF0);
 
-    set_control_channels();
+   // set_control_channels();
 
     // keep a record of how many resets have happened. This can be
     // used to detect in-flight resets
@@ -184,8 +184,6 @@ void Plane::init_ardupilot()
 
 //    relay.init();
 
-
-
 #if FENCE_TRIGGERED_PIN > 0
     hal.gpio->pinMode(FENCE_TRIGGERED_PIN, HAL_GPIO_OUTPUT);
     hal.gpio->write(FENCE_TRIGGERED_PIN, 0);
@@ -227,7 +225,9 @@ void Plane::init_ardupilot()
 //
 //    // set the correct flight mode
 //    // ---------------------------
-    reset_control_switch();
+  //  reset_control_switch();
+
+ //    read_control_switch();
 
     // initialise sensor
 #if OPTFLOW == ENABLED
@@ -297,7 +297,7 @@ void Plane::startup_ground(void)
 
     // reset last heartbeat time, so we don't trigger failsafe on slow
     // startup
-    failsafe.last_heartbeat_ms = millis();
+    last_mavlink_heartbeat_ms = millis();
 
     // we don't want writes to the serial port to cause us to pause
     // mid-flight, so set the serial ports non-blocking once we are
@@ -322,251 +322,60 @@ void Plane::startup_ground(void)
 //    }
 }
 
-enum FlightMode Plane::get_previous_mode() {
-    return previous_mode; 
-}
 
-void Plane::set_mode(enum FlightMode mode)
-{
-    if(control_mode == mode) {
-        // don't switch modes if we are already in the correct mode.
-        return;
-    }
 
-/*
-    We should do this on a special command only
-    if(g.auto_trim > 0 && control_mode == MANUAL){
-        trim_control_surfaces();
-    }
-*/
-    // perform any cleanup required for prev flight mode
-    exit_mode(control_mode);
+//void Plane::check_long_failsafe()
+//{
+//    uint32_t tnow = millis();
+//    // only act on changes
+//    // -------------------
+//    if(failsafe.state != FAILSAFE_LONG && failsafe.state != FAILSAFE_GCS && flight_stage != AP_SpdHgtControl::FLIGHT_LAND_FINAL &&
+//            flight_stage != AP_SpdHgtControl::FLIGHT_LAND_APPROACH) {
+//        if (failsafe.state == FAILSAFE_SHORT &&
+//                   (tnow - failsafe.ch3_timer_ms) > g.long_fs_timeout*1000) {
+//            failsafe_long_on_event(FAILSAFE_LONG);
+//        } else if (g.gcs_heartbeat_fs_enabled == GCS_FAILSAFE_HB_AUTO && get_control_mode() == AUTO &&
+//                   last_mavlink_heartbeat_ms != 0 &&
+//                   (tnow - last_mavlink_heartbeat_ms) > g.long_fs_timeout*1000) {
+//            failsafe_long_on_event(FAILSAFE_GCS);
+//        } else if (g.gcs_heartbeat_fs_enabled == GCS_FAILSAFE_HEARTBEAT &&
+//                   last_mavlink_heartbeat_ms != 0 &&
+//                   (tnow - last_mavlink_heartbeat_ms) > g.long_fs_timeout*1000) {
+//            failsafe_long_on_event(FAILSAFE_GCS);
+//        } else if (g.gcs_heartbeat_fs_enabled == GCS_FAILSAFE_HB_RSSI && 
+//                   gcs[0].last_radio_status_remrssi_ms != 0 &&
+//                   (tnow - gcs[0].last_radio_status_remrssi_ms) > g.long_fs_timeout*1000) {
+//            failsafe_long_on_event(FAILSAFE_GCS);
+//        }
+//    } else {
+//        // We do not change state but allow for user to change mode
+//        if (failsafe.state == FAILSAFE_GCS && 
+//            (tnow - last_mavlink_heartbeat_ms) < g.short_fs_timeout*1000) {
+//            failsafe.state = FAILSAFE_NONE;
+//        } else if (failsafe.state == FAILSAFE_LONG && 
+//                   !failsafe.ch3_failsafe) {
+//            failsafe.state = FAILSAFE_NONE;
+//        }
+//    }
+//}
 
-    // cancel inverted flight
-    auto_state.inverted_flight = false;
-
-    // don't cross-track when starting a mission
-    auto_state.next_wp_no_crosstrack = true;
-
-    // reset landing check
-    auto_state.checked_for_autoland = false;
-
-    // reset go around command
-    auto_state.commanded_go_around = false;
-
-    // zero locked course
-    steer_state.locked_course_err = 0;
-
-    // reset crash detection
-    crash_state.is_crashed = false;
-
-    // set mode
-    previous_mode = control_mode;
-    control_mode = mode;
-
-    if (previous_mode == AUTOTUNE && control_mode != AUTOTUNE) {
-        // restore last gains
-        autotune_restore();
-    }
-
-    // zero initial pitch and highest airspeed on mode change
-    auto_state.highest_airspeed = 0;
-    auto_state.initial_pitch_cd = ahrs.pitch_sensor;
-
-    // disable taildrag takeoff on mode change
-    auto_state.fbwa_tdrag_takeoff_mode = false;
-
-    // start with previous WP at current location
-    prev_WP_loc = current_loc;
-
-    // new mode means new loiter
-    loiter.start_time_ms = 0;
-
-    switch(control_mode)
-    {
-    case INITIALISING:
-        auto_thrust_mode = true;
-        break;
-
-    case MANUAL:
-       //     hal.console->printf("Manual activated\n");
-    case STABILIZE:
-    case TRAINING:
-    case FLY_BY_WIRE_A:
-        auto_thrust_mode = false;
-        break;
-
-    case AUTOTUNE:
-        auto_thrust_mode = false;
-        autotune_start();
-        break;
-
-    case ACRO:
-        auto_thrust_mode = false;
-        acro_state.locked_roll = false;
-        acro_state.locked_pitch = false;
-        break;
-
-    case CRUISE:
-        auto_thrust_mode = true;
-        cruise_state.locked_heading = false;
-        cruise_state.lock_timer_ms = 0;
-        set_target_altitude_current();
-        break;
-
-    case FLY_BY_WIRE_B:
-        auto_thrust_mode = true;
-        set_target_altitude_current();
-        break;
-
-    case CIRCLE:
-        // the altitude to circle at is taken from the current altitude
-        auto_thrust_mode = true;
-        next_WP_loc.alt = current_loc.alt;
-        break;
-
-    case AUTO:
-     //   hal.console->printf("Auto activated\n");
-        auto_thrust_mode = true;
-        next_WP_loc = prev_WP_loc = current_loc;
-        // start or resume the mission, based on MIS_AUTORESET
-        mission.start_or_resume();
-        break;
-
-    case RTL:
-        // hal.console->printf("RTL activated\n");
-        auto_thrust_mode = true;
-        prev_WP_loc = current_loc;
-        do_RTL();
-        break;
-
-    case LOITER:
-        auto_thrust_mode = true;
-        do_loiter_at_location();
-        break;
-
-    case GUIDED:
-        auto_thrust_mode = true;
-        guided_thrust_passthru = false;
-        /*
-          when entering guided mode we set the target as the current
-          location. This matches the behaviour of the copter code
-        */
-        guided_WP_loc = current_loc;
-        set_guided_WP();
-        break;
-    }
-#if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
-    AP_OSD::enqueue::control_mode(mode);
-#endif 
-
-    // start with thrust suppressed in auto_thrust modes
-    thrust_suppressed = auto_thrust_mode;
-
-    if (should_log(MASK_LOG_MODE)){
-        DataFlash.Log_Write_Mode(control_mode);
-    }
-    // reset attitude integrators on mode change
-    rollController.reset_I();
-    pitchController.reset_I();
-    yawController.reset_I();    
-    steerController.reset_I();    
-}
-
-/*
-  set_mode() wrapper for MAVLink SET_MODE
- */
-bool Plane::mavlink_set_mode(uint8_t mode)
-{
-    switch (mode) {
-    case MANUAL:
-    case CIRCLE:
-    case STABILIZE:
-    case TRAINING:
-    case ACRO:
-    case FLY_BY_WIRE_A:
-    case AUTOTUNE:
-    case FLY_BY_WIRE_B:
-    case CRUISE:
-    case GUIDED:
-    case AUTO:
-    case RTL:
-    case LOITER:
-        set_mode((enum FlightMode)mode);
-        return true;
-    }
-    return false;
-}
-
-// exit_mode - perform any cleanup required when leaving a flight mode
-void Plane::exit_mode(enum FlightMode mode)
-{
-    // stop mission when we leave auto
-    if (mode == AUTO) {
-        if (mission.state() == AP_Mission::MISSION_RUNNING) {
-            mission.stop();
-
-            if (mission.get_current_nav_cmd().id == MAV_CMD_NAV_LAND)
-            {
-                restart_landing_sequence();
-            }
-        }
-        auto_state.started_flying_in_auto_ms = 0;
-    }
-}
-
-void Plane::check_long_failsafe()
-{
-    uint32_t tnow = millis();
-    // only act on changes
-    // -------------------
-    if(failsafe.state != FAILSAFE_LONG && failsafe.state != FAILSAFE_GCS && flight_stage != AP_SpdHgtControl::FLIGHT_LAND_FINAL &&
-            flight_stage != AP_SpdHgtControl::FLIGHT_LAND_APPROACH) {
-        if (failsafe.state == FAILSAFE_SHORT &&
-                   (tnow - failsafe.ch3_timer_ms) > g.long_fs_timeout*1000) {
-            failsafe_long_on_event(FAILSAFE_LONG);
-        } else if (g.gcs_heartbeat_fs_enabled == GCS_FAILSAFE_HB_AUTO && control_mode == AUTO &&
-                   failsafe.last_heartbeat_ms != 0 &&
-                   (tnow - failsafe.last_heartbeat_ms) > g.long_fs_timeout*1000) {
-            failsafe_long_on_event(FAILSAFE_GCS);
-        } else if (g.gcs_heartbeat_fs_enabled == GCS_FAILSAFE_HEARTBEAT &&
-                   failsafe.last_heartbeat_ms != 0 &&
-                   (tnow - failsafe.last_heartbeat_ms) > g.long_fs_timeout*1000) {
-            failsafe_long_on_event(FAILSAFE_GCS);
-        } else if (g.gcs_heartbeat_fs_enabled == GCS_FAILSAFE_HB_RSSI && 
-                   gcs[0].last_radio_status_remrssi_ms != 0 &&
-                   (tnow - gcs[0].last_radio_status_remrssi_ms) > g.long_fs_timeout*1000) {
-            failsafe_long_on_event(FAILSAFE_GCS);
-        }
-    } else {
-        // We do not change state but allow for user to change mode
-        if (failsafe.state == FAILSAFE_GCS && 
-            (tnow - failsafe.last_heartbeat_ms) < g.short_fs_timeout*1000) {
-            failsafe.state = FAILSAFE_NONE;
-        } else if (failsafe.state == FAILSAFE_LONG && 
-                   !failsafe.ch3_failsafe) {
-            failsafe.state = FAILSAFE_NONE;
-        }
-    }
-}
-
-void Plane::check_short_failsafe()
-{
-    // only act on changes
-    // -------------------
-    if(failsafe.state == FAILSAFE_NONE && (flight_stage != AP_SpdHgtControl::FLIGHT_LAND_FINAL &&
-            flight_stage != AP_SpdHgtControl::FLIGHT_LAND_APPROACH)) {
-        if(failsafe.ch3_failsafe) { // The condition is checked and the flag ch3_failsafe is set in radio.pde
-            failsafe_short_on_event(FAILSAFE_SHORT);
-        }
-    }
-
-    if(failsafe.state == FAILSAFE_SHORT) {
-        if(!failsafe.ch3_failsafe) {
-            failsafe_short_off_event();
-        }
-    }
-}
+//void Plane::check_short_failsafe()
+//{
+//    // only act on changes
+//    // -------------------
+//    if(failsafe.state == FAILSAFE_NONE && (flight_stage != AP_SpdHgtControl::FLIGHT_LAND_FINAL &&
+//            flight_stage != AP_SpdHgtControl::FLIGHT_LAND_APPROACH)) {
+//        if(failsafe.ch3_failsafe) { // The condition is checked and the flag ch3_failsafe is set in radio.pde
+//            failsafe_short_on_event(FAILSAFE_SHORT);
+//        }
+//    }
+//
+//    if(failsafe.state == FAILSAFE_SHORT) {
+//        if(!failsafe.ch3_failsafe) {
+//            failsafe_short_off_event();
+//        }
+//    }
+//}
 
 
 void Plane::startup_INS_ground(void)
@@ -739,7 +548,7 @@ bool Plane::should_log(uint32_t mask)
 /*
   return thrust percentage from 0 to 100
  */
-uint8_t Plane::thrust_percentage(void)
+uint8_t Plane::thrust_percentage()const
 {
     // to get the real thrust we need to use norm_output() which
     // returns a number from -1 to 1.
@@ -785,7 +594,7 @@ bool Plane::disarm_motors(void)
       //  channel_thrust.disable_out(); 
        output_thrust.disable(); 
     }
-    if (control_mode != AUTO) {
+    if (get_control_mode() != AUTO) {
         // reset the mission on disarm if we are not in auto
         mission.reset();
     }

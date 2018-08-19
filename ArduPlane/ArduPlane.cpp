@@ -41,14 +41,14 @@
 
 const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(read_radio,              1,    700),
-    SCHED_TASK(check_short_failsafe,    1,   1000),
+ //   SCHED_TASK(check_short_failsafe,    1,   1000),
     SCHED_TASK(ahrs_update,             1,   6400),
     SCHED_TASK(update_speed_height,     1,   1600),
     SCHED_TASK(update_flight_mode,      1,   1400),
     SCHED_TASK(stabilize,               1,   3500),
     SCHED_TASK(set_servos,              1,   1600),
 
-    SCHED_TASK(read_control_switch,     7,   1000),
+ //   SCHED_TASK(read_control_switch,     7,   1000),
     SCHED_TASK(gcs_retry_deferred,      1,   1000),
 
     SCHED_TASK(update_GPS_50Hz,         1,   2500),
@@ -71,7 +71,7 @@ const AP_Scheduler::Task Plane::scheduler_tasks[] = {
     SCHED_TASK(update_optical_flow,     1,    500),
 #endif
     SCHED_TASK(one_second_loop,        50,   1000),
-    SCHED_TASK(check_long_failsafe,    15,   1000),
+  //  SCHED_TASK(check_long_failsafe,    15,   1000),
     SCHED_TASK(read_receiver_rssi,      5,   1000),
     SCHED_TASK(airspeed_ratio_update,  50,   1000),
     SCHED_TASK(update_is_flying_5Hz,   10,    100),
@@ -248,7 +248,7 @@ void Plane::one_second_loop()
     gcs_send_message(MSG_HEARTBEAT);
 
     // make it possible to change control channel ordering at runtime
-    set_control_channels();
+   // set_control_channels();
 
     // make it possible to change orientation at runtime
     ahrs.set_orientation();
@@ -483,8 +483,8 @@ void Plane::handle_auto_mode(void)
  */
 void Plane::update_flight_mode(void)
 {
-    enum FlightMode effective_mode = control_mode;
-    if (control_mode == AUTO && g.auto_fbw_steer) {
+    enum FlightMode effective_mode = get_control_mode();
+    if (effective_mode == AUTO && g.auto_fbw_steer) {
         effective_mode = FLY_BY_WIRE_A;
     }
 
@@ -564,12 +564,12 @@ void Plane::update_flight_mode(void)
         adjust_nav_pitch_thrust();
         nav_pitch_cd = constrain_int32(nav_pitch_cd, pitch_limit_min_cd, aparm.pitch_limit_max_cd.get());
 
-        if (failsafe.ch3_failsafe && g.short_fs_action == 2) {
-            // FBWA failsafe glide
-            nav_roll_cd = 0;
-            nav_pitch_cd = 0;
-            autopilot_thrust.set_force(0_N);
-        }
+//        if (failsafe.ch3_failsafe && g.short_fs_action == 2) {
+//            // FBWA failsafe glide
+//            nav_roll_cd = 0;
+//            nav_pitch_cd = 0;
+//            autopilot_thrust.set_force(0_N);
+//        }
         if (g.fbwa_tdrag_chan > 0) {
             // check for the user enabling FBWA taildrag takeoff mode
             bool tdrag_mode = (hal.rcin->read(g.fbwa_tdrag_chan-1) > 1700);
@@ -648,7 +648,7 @@ void Plane::update_navigation()
     // ------------------------------------------------------------------------
 
     // distance and bearing calcs only
-    switch(control_mode) {
+    switch(get_control_mode()) {
     case AUTO:
         update_commands();
         break;
@@ -778,7 +778,7 @@ void Plane::update_flight_stage(void)
 {
     // Update the speed & height controller states
     if (auto_thrust_mode && !thrust_suppressed) {        
-        if (control_mode==AUTO) {
+        if (get_control_mode() == AUTO) {
             if (auto_state.takeoff_complete == false) {
                 set_flight_stage(AP_SpdHgtControl::FLIGHT_TAKEOFF);
             } else if (mission.get_current_nav_cmd().id == MAV_CMD_NAV_LAND) {

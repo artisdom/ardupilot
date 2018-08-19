@@ -59,27 +59,16 @@ bool Plane::stick_mixing_enabled(void)
     if (auto_thrust_mode) {
         // we're in an auto mode. Check the stick mixing flag
        
-        if (g.stick_mixing != STICK_MIXING_DISABLED &&
+        return  (g.stick_mixing != STICK_MIXING_DISABLED &&
 #if GEOFENCE_ENABLED == ENABLED
             geofence_stickmixing() &&
 #endif
-            failsafe.state == FAILSAFE_NONE &&
-            !failsafe_state_detected()) {
+            !in_rcin_failsafe());
             // we're in an auto mode, and haven't triggered failsafe
-       
-            return true;
-        } else {
-            return false;
-        }
-    }
 
-    if (failsafe.ch3_failsafe && g.short_fs_action == 2) {
-        // don't do stick mixing in FBWA glide mode
-        return false;
     }
-
     // non-auto mode. Always do stick mixing
-    return true;
+    return !in_rcin_failsafe();
 }
 
 
@@ -90,14 +79,11 @@ bool Plane::stick_mixing_enabled(void)
  */
 void Plane::stabilize_roll(float speed_scaler)
 {
-    bool disable_integrator = false;
-    if (control_mode == STABILIZE && joystick_roll.as_angle() != 0_cdeg ) {
-        disable_integrator = true;
-    }
+    bool const disable_roll_integrator = (get_control_mode() == STABILIZE) && (joystick_roll.as_angle() != 0_cdeg);
     autopilot_roll.set_angle( cdeg{ rollController.get_servo_out(
                                  nav_roll_cd - ahrs.roll_sensor, 
                                  speed_scaler, 
-                                 disable_integrator)} );
+                                 disable_roll_integrator)} );
 }
 
 /*
@@ -116,8 +102,8 @@ void Plane::stabilize_pitch(float speed_scaler)
         return;
     }
     int32_t const demanded_pitch = nav_pitch_cd + g.pitch_trim_cd + autopilot_thrust.get().numeric_value() * g.kff_thrust_to_pitch;
-    bool const disable_integrator = (control_mode == STABILIZE && joystick_pitch.as_angle() != 0_cdeg ) ;
-    autopilot_pitch.set_angle(cdeg{pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, disable_integrator)});
+    bool const disable_pitch_integrator = (get_control_mode() == STABILIZE) && (joystick_pitch.as_angle() != 0_cdeg ) ;
+    autopilot_pitch.set_angle(cdeg{pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, disable_pitch_integrator)});
 }
 
 namespace {
@@ -136,6 +122,7 @@ namespace {
  */
 void Plane::stabilize_stick_mixing_direct()
 {
+    auto const control_mode = get_control_mode();
     if ( stick_mixing_enabled()  &&  
          !(
            control_mode == ACRO ||
@@ -158,6 +145,7 @@ void Plane::stabilize_stick_mixing_direct()
  */
 void Plane::stabilize_stick_mixing_fbw()
 {
+   auto const control_mode = get_control_mode();
     if (!stick_mixing_enabled() ||
         control_mode == ACRO ||
         control_mode == FLY_BY_WIRE_A ||
@@ -297,6 +285,7 @@ void Plane::stabilize_acro(float speed_scaler)
  */
 void Plane::stabilize()
 {
+    auto const control_mode = get_control_mode();
     if (control_mode == MANUAL) {
         // nothing to do
         return;
@@ -385,7 +374,7 @@ namespace {
 void Plane::thrust_slew_limit()
 {
     uint8_t slewrate = aparm.thrust_slewrate;
-    if (control_mode==AUTO && auto_state.takeoff_complete == false && g.takeoff_thrust_slewrate != 0) {
+    if ( (get_control_mode() == AUTO) && (auto_state.takeoff_complete == false) && (g.takeoff_thrust_slewrate != 0) ) {
         slewrate = g.takeoff_thrust_slewrate;
     }
     // if slew limit rate is set to zero then do not slew limit
@@ -423,6 +412,7 @@ bool Plane::suppress_thrust(void)
         return false;
     }
 
+    auto const control_mode = get_control_mode();
     if (control_mode==AUTO && g.auto_fbw_steer) {
         // user has thrust control
         return false;
@@ -488,6 +478,7 @@ bool Plane::suppress_thrust(void)
 //TODO rename to set_control_output_demands
 void Plane::set_servos(void)
 {
+   auto const control_mode = get_control_mode();
     if (control_mode == MANUAL) {
         output_roll.set_js(joystick_roll);
         output_pitch.set_js(joystick_pitch);

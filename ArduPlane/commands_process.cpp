@@ -6,7 +6,7 @@
 // --------------------
 void Plane::update_commands(void)
 {
-    if(control_mode == AUTO) {
+    if(get_control_mode() == AUTO) {
         if (home_is_set != HOME_UNSET) {
             if(mission.state() == AP_Mission::MISSION_RUNNING) {
                 mission.update();

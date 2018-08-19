@@ -469,7 +469,7 @@ bool Plane::geofence_enabled(void) {
     return false;
 }
 
-bool Plane::geofence_present(void) {
+bool Plane::geofence_present(void) const {
     return false;
 }
 

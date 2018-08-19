@@ -152,7 +152,7 @@ int8_t Plane::test_failsafe(uint8_t argc, const Menu::arg *argv)
   //  trim_radio();
 
     if (!setup_joystick_trims()){
-         cliSerial->printf("failed to set joystick trims\n");
+       cliSerial->printf("failed to set joystick trims\n");
     }
 
     uint8_t const oldSwitchPosition = readSwitch();
@@ -168,19 +168,20 @@ int8_t Plane::test_failsafe(uint8_t argc, const Menu::arg *argv)
         hal.scheduler->delay(20);
         read_radio();
 
-        if( joystick_thrust.as_force() > 0_N) {
-            cliSerial->printf("THROTTLE CHANGED %d \n", (int)joystick_thrust.as_force().numeric_value());
+        auto const thrust_force = joystick_thrust.as_force();
+        if( thrust_force > 0_N) {
+            cliSerial->printf("THROTTLE CHANGED %d \n", (int)thrust_force.numeric_value());
             fail_test++;
         }
-
-        if(oldSwitchPosition != readSwitch()) {
+        auto const new_switch_position = readSwitch();
+        if(new_switch_position != oldSwitchPosition) {
             cliSerial->printf("CONTROL MODE CHANGED: ");
-            print_flight_mode(cliSerial, readSwitch());
+            print_flight_mode(cliSerial, new_switch_position);
             cliSerial->println();
             fail_test++;
         }
 
-        if(failsafe_state_detected()) {
+        if(in_rcin_failsafe()) {
             cliSerial->printf("THROTTLE FAILSAFE ACTIVATED: %d, ", (int)joystick_thrust.as_usec().numeric_value());
             print_flight_mode(cliSerial, readSwitch());
             cliSerial->println();

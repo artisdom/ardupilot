@@ -98,9 +98,9 @@ public:
     // weight towards min whatever
     float get_airspeed_cruise() const { return (aparm.airspeed_min * 3 + aparm.airspeed_max *2)/5.f;}
 
-    FlightMode get_control_mode()const { return control_mode;}
+    FlightMode get_control_mode()const { return m_control_mode;}
 
-    AP_Baro const & get_barometer() { return barometer;}
+    AP_Baro const & get_barometer() const { return barometer;}
 private:
     // key aircraft parameters passed to multiple libraries
     AP_Vehicle::FixedWing aparm;
@@ -230,13 +230,27 @@ private:
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
-    enum FlightMode control_mode = INITIALISING;
-    enum FlightMode previous_mode = INITIALISING;
+    enum FlightMode m_control_mode = INITIALISING;
+    enum FlightMode m_previous_mode = INITIALISING;
 
     // Used to maintain the state of the previous control switch position
     // This is set to 254 when we need to re-read the switch
    // uint8_t oldSwitchPosition = 254;
 
+    struct {
+        uint32_t last_valid_rc_ms = 0U;
+                // saved flight mode
+       // enum FlightMode saved_mode;
+        bool in_failsafe = false;
+
+    }rcin_failsafe;
+
+            // the time when the last HEARTBEAT message arrived from a GCS
+    uint32_t last_mavlink_heartbeat_ms;
+
+    bool in_low_battery_failsafe = false;
+    
+/*
     // Failsafe
     struct {
         // Used to track if the value on channel 3 (throtttle) has fallen below the failsafe threshold
@@ -267,7 +281,7 @@ private:
         
         uint32_t last_valid_rc_ms;
     } failsafe;
-
+*/
     // A counter used to count down valid gps fixes to allow the gps estimate to settle
     // before recording our home position (and executing a ground start if we booted with an air start)
     uint8_t ground_start_count = 5;
@@ -596,6 +610,9 @@ private:
     // time that rudder arming has been running
     uint32_t rudder_arm_timer;
 
+    bool have_valid_rc_input();
+    void on_invalid_rc_input();
+
     bool create_mixer();
     void demo_servos(uint8_t i);
     void adjust_nav_pitch_thrust(void);
@@ -605,7 +622,7 @@ private:
 #if GEOFENCE_ENABLED == ENABLED
     void send_fence_status(mavlink_channel_t chan);
     void geofence_load(void);
-    bool geofence_present(void);
+    bool geofence_present() const;
     void geofence_update_pwm_enabled_state();
     bool geofence_set_enabled(bool enable, GeofenceEnableReason r);
     bool geofence_enabled(void);
@@ -617,6 +634,7 @@ private:
     void geofence_send_status(mavlink_channel_t chan);
     bool geofence_breached(void);
 #endif
+
     void send_extended_status1(mavlink_channel_t chan);
     void send_location(mavlink_channel_t chan);
     void send_nav_controller_output(mavlink_channel_t chan);
@@ -708,15 +726,15 @@ private:
     void exit_mission_callback();
     void update_commands(void);
     void mavlink_delay(uint32_t ms);
-    void read_control_switch();
+  //  void read_control_switch();
     uint8_t readSwitch(void);
-    void reset_control_switch();
+ //   void reset_control_switch();
     void autotune_start(void);
     void autotune_restore(void);
     void autotune_enable(bool enable);
-    void failsafe_short_on_event(enum failsafe_state fstype);
-    void failsafe_long_on_event(enum failsafe_state fstype);
-    void failsafe_short_off_event();
+   // void failsafe_short_on_event(enum failsafe_state fstype);
+   // void failsafe_long_on_event(enum failsafe_state fstype);
+  //  void failsafe_short_off_event();
     void low_battery_event(void);
     void thrust_off();
     void set_control_surfaces_centre();
@@ -739,18 +757,18 @@ private:
     void update_cruise();
     void update_fbwb_speed_height(void);
     void setup_turn_angle(void);
-    void set_control_channels(void);
+   // void set_control_channels(void);
     void init_rc_in();
     void init_rc_out();
     void rudder_arm_disarm_check();
     void read_radio();
-    void control_failsafe();
+   // void control_failsafe();
    // void trim_control_surfaces();
    // void trim_radio();
     bool setup_joystick_trims();
-    bool failsafe_state_detected(void);
-    bool throttle_set_to_failsafe_value()const;
-    bool rcin_failsafe_state_detected() const;
+    bool in_rcin_failsafe()const;
+    bool is_throttle_set_to_failsafe_value()const;
+   // bool rcinput_lost() const;
     void init_barometer(void);
     void init_rangefinder(void);
     void read_rangefinder(void);
@@ -785,7 +803,7 @@ private:
   //  void servo_write(uint8_t ch, uint16_t pwm);
     bool should_log(uint32_t mask);
     void frsky_telemetry_send(void);
-    uint8_t thrust_percentage(void);
+    uint8_t thrust_percentage() const;
     void change_arm_state(void);
     bool disarm_motors(void);
     bool arm_motors(AP_Arming::ArmingMethod method);
