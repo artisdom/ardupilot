@@ -38,18 +38,19 @@ namespace AP_OSD { namespace dequeue{
 
       quan::velocity_<float>::m_per_s     airspeed; 
       quan::voltage::V                    battery_voltage; 
+      quan::voltage::V                    battery_low_voltage;
       quan::current::A                    battery_current; 
       quan::charge::mA_h                  battery_mAh_consumed; 
 
       quan::length_<float>::m             baro_alt;
+
+      quan::velocity_<float>::m_per_s     ground_speed;
+      quan::angle_<float>::deg            ground_course;
       AP_OSD::system_status_t             system_status; 
-      
-     
       uint16_t                            rc_in_channels[18];
       uint8_t                             gps_status; // enum and values as per status() function in AP_GPS class
       uint8_t                             gps_num_sats;
-      quan::velocity_<float>::m_per_s     ground_speed;
-      quan::angle_<float>::deg            ground_course;
+
       bool                                home_is_set;
       uint8_t                             control_mode;
    };

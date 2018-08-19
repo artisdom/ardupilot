@@ -14,7 +14,7 @@ namespace AP_OSD{
        demo servos
    */
 
-   enum class system_status_t{
+   enum class system_status_t {
       starting = 0
      , in_cli
      , initialising
@@ -65,6 +65,7 @@ namespace AP_OSD{
       rcin_12_to_17,                    // 9
       control_mode,                     // 10
       baro_alt,                         // 11
+      battery_low_voltage,              // 12
       max_messages
    };
 

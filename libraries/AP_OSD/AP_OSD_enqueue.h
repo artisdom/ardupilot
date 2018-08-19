@@ -9,7 +9,7 @@
 
 namespace AP_OSD{ namespace enqueue{
 
-   // the sendre inits when ready to start sending
+   // the sender inits when ready to start sending
    void initialise();
 
    // x = pitch in degrees, y = roll in degrees, z = yaw in degress
@@ -25,6 +25,7 @@ namespace AP_OSD{ namespace enqueue{
    bool airspeed(float m_per_s);
    
    bool battery(quan::three_d::vect<float> const & in); // Voltage, Current, MaH
+   bool battery_low_voltage(float low_voltage);
    bool system_status(AP_OSD::system_status_t status); // status, numsats
    bool rc_inputs_0_to_5(uint16_t * arr, uint8_t n);
    bool rc_inputs_6_to_11(uint16_t * arr, uint8_t n);

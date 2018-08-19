@@ -44,7 +44,7 @@ void Plane::update_is_flying_5Hz(void)
         }
 
         
-        if (control_mode == AUTO) {
+        if (control_mode == FlightMode::AUTO) {
             /*
               make is_flying() more accurate during various auto modes
              */
@@ -81,7 +81,7 @@ void Plane::update_is_flying_5Hz(void)
         // when disarmed assume not flying and need overwhelming evidence that we ARE flying
         is_flying_bool = airspeed_movement && gps_confirmed_movement;
 
-        if ((control_mode == AUTO) &&
+        if ((control_mode == FlightMode::AUTO) &&
             ((flight_stage == AP_SpdHgtControl::FLIGHT_TAKEOFF) ||
              (flight_stage == AP_SpdHgtControl::FLIGHT_LAND_FINAL)) ) {
             is_flying_bool = false;
@@ -108,7 +108,7 @@ void Plane::update_is_flying_5Hz(void)
             started_flying_ms = now_ms;
         }
 
-        if ((control_mode == AUTO) &&
+        if ((control_mode == FlightMode::AUTO) &&
             ((auto_state.started_flying_in_auto_ms == 0) || !previous_is_flying) ) {
 
             // We just started flying, note that time also
@@ -143,7 +143,7 @@ bool Plane::is_flying(void)
  */
 void Plane::crash_detection_update(void)
 {
-    if (get_control_mode() != AUTO)
+    if (get_control_mode() != FlightMode::AUTO)
     {
         // crash detection is only available in AUTO mode
         crash_state.debounce_timer_ms = 0;

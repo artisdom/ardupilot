@@ -44,7 +44,7 @@ void Plane::adsb_handle_vehicle_threats(void)
     AP_ADSB::ADSB_BEHAVIOR behavior = adsb.get_behavior();
 
     switch (get_control_mode()) {
-    case AUTO:
+    case FlightMode::AUTO:
         if (mission.get_current_nav_cmd().id == MAV_CMD_NAV_TAKEOFF) {
             // for testing purposes ignore ADS-B traffic until we get into the air so we don't screw up the sim takeoff
             break;
@@ -60,7 +60,7 @@ void Plane::adsb_handle_vehicle_threats(void)
                 adsb.set_is_evading_threat(true);
                 gcs_send_text(MAV_SEVERITY_CRITICAL, "ADS-B threat found, performing LOITER");
                 adsb_state.prev_wp = prev_WP_loc;
-                set_mode(LOITER);
+                set_mode(FlightMode::LOITER);
                 if (behavior == AP_ADSB::ADSB_BEHAVIOR_LOITER_AND_DESCEND) {
                     adsb_state.time_last_alt_change_ms = now;
                 }
@@ -68,7 +68,7 @@ void Plane::adsb_handle_vehicle_threats(void)
         } // switch behavior
         break; // case auto
 
-    case LOITER:
+    case FlightMode::LOITER:
         switch(behavior) {
         case AP_ADSB::ADSB_BEHAVIOR_NONE:
             // TODO: recover from this
@@ -81,7 +81,7 @@ void Plane::adsb_handle_vehicle_threats(void)
                 if (!adsb.get_another_vehicle_within_radius()) {
                     adsb.set_is_evading_threat(false);
                     gcs_send_text(MAV_SEVERITY_CRITICAL, "ADS-B threat gone, continuing mission");
-                    set_mode(AUTO);
+                    set_mode(FlightMode::AUTO);
                     prev_WP_loc = adsb_state.prev_wp;
                     auto_state.no_crosstrack = false;
                 } else if (behavior == AP_ADSB::ADSB_BEHAVIOR_LOITER_AND_DESCEND &&

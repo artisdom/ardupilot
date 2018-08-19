@@ -79,7 +79,7 @@ bool Plane::stick_mixing_enabled(void)
  */
 void Plane::stabilize_roll(float speed_scaler)
 {
-    bool const disable_roll_integrator = (get_control_mode() == STABILIZE) && (joystick_roll.as_angle() != 0_cdeg);
+    bool const disable_roll_integrator = (get_control_mode() == FlightMode::STABILIZE) && (joystick_roll.as_angle() != 0_cdeg);
     autopilot_roll.set_angle( cdeg{ rollController.get_servo_out(
                                  nav_roll_cd - ahrs.roll_sensor, 
                                  speed_scaler, 
@@ -102,7 +102,7 @@ void Plane::stabilize_pitch(float speed_scaler)
         return;
     }
     int32_t const demanded_pitch = nav_pitch_cd + g.pitch_trim_cd + autopilot_thrust.get().numeric_value() * g.kff_thrust_to_pitch;
-    bool const disable_pitch_integrator = (get_control_mode() == STABILIZE) && (joystick_pitch.as_angle() != 0_cdeg ) ;
+    bool const disable_pitch_integrator = (get_control_mode() == FlightMode::STABILIZE) && (joystick_pitch.as_angle() != 0_cdeg ) ;
     autopilot_pitch.set_angle(cdeg{pitchController.get_servo_out(demanded_pitch - ahrs.pitch_sensor, speed_scaler, disable_pitch_integrator)});
 }
 
@@ -125,12 +125,12 @@ void Plane::stabilize_stick_mixing_direct()
     auto const control_mode = get_control_mode();
     if ( stick_mixing_enabled()  &&  
          !(
-           control_mode == ACRO ||
-           control_mode == FLY_BY_WIRE_A ||
-           control_mode == AUTOTUNE ||
-           control_mode == FLY_BY_WIRE_B ||
-           control_mode == CRUISE ||
-           control_mode == TRAINING
+           control_mode == FlightMode::ACRO ||
+           control_mode == FlightMode::FLY_BY_WIRE_A ||
+           control_mode == FlightMode::AUTOTUNE ||
+           control_mode == FlightMode::FLY_BY_WIRE_B ||
+           control_mode == FlightMode::CRUISE ||
+           control_mode == FlightMode::TRAINING
          )
     )
     {
@@ -147,13 +147,13 @@ void Plane::stabilize_stick_mixing_fbw()
 {
    auto const control_mode = get_control_mode();
     if (!stick_mixing_enabled() ||
-        control_mode == ACRO ||
-        control_mode == FLY_BY_WIRE_A ||
-        control_mode == AUTOTUNE ||
-        control_mode == FLY_BY_WIRE_B ||
-        control_mode == CRUISE ||
-        control_mode == TRAINING ||
-        (control_mode == AUTO && g.auto_fbw_steer)) {
+        control_mode == FlightMode:: ACRO ||
+        control_mode == FlightMode::FLY_BY_WIRE_A ||
+        control_mode == FlightMode::AUTOTUNE ||
+        control_mode == FlightMode::FLY_BY_WIRE_B ||
+        control_mode == FlightMode::CRUISE ||
+        control_mode == FlightMode::TRAINING ||
+       (control_mode == FlightMode::AUTO && g.auto_fbw_steer)) {
         return;
     }
     // do FBW style stick mixing. We don't treat it linearly
@@ -286,27 +286,26 @@ void Plane::stabilize_acro(float speed_scaler)
 void Plane::stabilize()
 {
     auto const control_mode = get_control_mode();
-    if (control_mode == MANUAL) {
+    if (control_mode == FlightMode::MANUAL) {
         // nothing to do
         return;
     }
     // works out some scaling according to airspeed
     float const speed_scaler = get_speed_scaler();
 
-    if (control_mode == TRAINING) {
+    if (control_mode == FlightMode::TRAINING) {
         stabilize_training(speed_scaler);
-    } else if (control_mode == ACRO) {
+    } else if (control_mode == FlightMode::ACRO) {
         stabilize_acro(speed_scaler);
     } else {
-        if (g.stick_mixing == STICK_MIXING_FBW && control_mode != STABILIZE) {
+        if (g.stick_mixing == STICK_MIXING_FBW && control_mode != FlightMode::STABILIZE) {
             stabilize_stick_mixing_fbw();
         }
         stabilize_roll(speed_scaler);
         stabilize_pitch(speed_scaler);
-        if (g.stick_mixing == STICK_MIXING_DIRECT || control_mode == STABILIZE) {
+        if (g.stick_mixing == STICK_MIXING_DIRECT || control_mode == FlightMode::STABILIZE) {
             stabilize_stick_mixing_direct();
         }
-
     }
 
     /*
@@ -374,7 +373,7 @@ namespace {
 void Plane::thrust_slew_limit()
 {
     uint8_t slewrate = aparm.thrust_slewrate;
-    if ( (get_control_mode() == AUTO) && (auto_state.takeoff_complete == false) && (g.takeoff_thrust_slewrate != 0) ) {
+    if ( (get_control_mode() == FlightMode::AUTO) && (auto_state.takeoff_complete == false) && (g.takeoff_thrust_slewrate != 0) ) {
         slewrate = g.takeoff_thrust_slewrate;
     }
     // if slew limit rate is set to zero then do not slew limit
@@ -413,14 +412,14 @@ bool Plane::suppress_thrust(void)
     }
 
     auto const control_mode = get_control_mode();
-    if (control_mode==AUTO && g.auto_fbw_steer) {
+    if (control_mode == FlightMode::AUTO && g.auto_fbw_steer) {
         // user has thrust control
         return false;
     }
 
     bool gps_movement = (gps.status() >= AP_GPS::GPS_OK_FIX_2D && gps.ground_speed() >= 5);
     
-    if (control_mode==AUTO && 
+    if (control_mode == FlightMode::AUTO && 
         auto_state.takeoff_complete == false) {
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
    using quan::max;
@@ -479,7 +478,7 @@ bool Plane::suppress_thrust(void)
 void Plane::set_servos(void)
 {
    auto const control_mode = get_control_mode();
-    if (control_mode == MANUAL) {
+    if (control_mode == FlightMode::MANUAL) {
         output_roll.set_js(joystick_roll);
         output_pitch.set_js(joystick_pitch);
         output_thrust.set_js(joystick_thrust);
@@ -490,10 +489,10 @@ void Plane::set_servos(void)
         output_yaw.set_ap(autopilot_yaw);
         uint8_t min_thrust = aparm.thrust_min.get();
         uint8_t max_thrust = aparm.thrust_max.get();
-        if (control_mode == AUTO && flight_stage == AP_SpdHgtControl::FLIGHT_LAND_FINAL) {
+        if (control_mode == FlightMode::AUTO && flight_stage == AP_SpdHgtControl::FLIGHT_LAND_FINAL) {
             min_thrust = 0;
         }
-        if (control_mode == AUTO &&
+        if (control_mode == FlightMode::AUTO &&
             (flight_stage == AP_SpdHgtControl::FLIGHT_TAKEOFF || flight_stage == AP_SpdHgtControl::FLIGHT_LAND_ABORT)) {
             if(aparm.takeoff_thrust_max != 0) {
                 max_thrust = aparm.takeoff_thrust_max;
@@ -514,15 +513,15 @@ void Plane::set_servos(void)
                 output_thrust.set_ap(autopilot_thrust);         
             }
         } else if (g.thrust_passthru_stabilize && 
-                   (control_mode == STABILIZE || 
-                    control_mode == TRAINING ||
-                    control_mode == ACRO ||
-                    control_mode == FLY_BY_WIRE_A ||
-                    control_mode == AUTOTUNE)) {
+                   (control_mode == FlightMode::STABILIZE || 
+                    control_mode == FlightMode::TRAINING ||
+                    control_mode == FlightMode::ACRO ||
+                    control_mode == FlightMode::FLY_BY_WIRE_A ||
+                    control_mode == FlightMode::AUTOTUNE)) {
             // manual pass through of thrust while in FBWA or
             // STABILIZE mode with THR_PASS_STAB set
             output_thrust.set_js(joystick_thrust);
-        } else if (control_mode == GUIDED && 
+        } else if (control_mode == FlightMode::GUIDED && 
                    guided_thrust_passthru) {
             // manual pass through of thrust while in GUIDED
             output_thrust.set_js(joystick_thrust);
@@ -532,13 +531,13 @@ void Plane::set_servos(void)
         }
     }
 
-    if (control_mode >= FLY_BY_WIRE_B) {
+    if (control_mode >= FlightMode::FLY_BY_WIRE_B) {
         /* only do thrust slew limiting in modes where thrust
          *  control is automatic */
         thrust_slew_limit();
     }
 
-    if (control_mode == TRAINING) {
+    if (control_mode == FlightMode::TRAINING) {
         // copy rudder in training mode
        output_yaw.set_js(joystick_yaw);
     }

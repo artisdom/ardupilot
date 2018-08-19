@@ -9,6 +9,11 @@
 
 using namespace quan::uav::osd;
 
+namespace {
+   uint8_t low_battery_count = 0;
+   bool    low_battery_text_on = false;
+}
+
 void AP_OSD::draw_batteries(dequeue::osd_info_t const & info,OSD_params const & osd)
 {
    pxp_type  pos = 
@@ -75,6 +80,26 @@ void AP_OSD::draw_batteries(dequeue::osd_info_t const & info,OSD_params const & 
       pos.y += font_size.y;
       sprintf(buf,"%4.1fA",static_cast<double>(info.battery_current.numeric_value()));
       draw_text(buf,pos,font);
-      
+
+      if ( info.battery_voltage < info.battery_low_voltage){
+         if ( low_battery_text_on == false){
+            if ( ++low_battery_count < 33){
+               low_battery_count = 0;
+               low_battery_text_on = true;
+            }
+         }else{  // show text
+            if ( ++low_battery_count < 67){
+               pos.y -= 4 * font_size.y;
+               pos.x -= 7 * font_size.x;
+               draw_text("Low Battery",pos,font);
+            }else{
+               low_battery_count = 0;
+               low_battery_text_on = false;
+            }
+         }
+      }else{
+         low_battery_count = 0;
+         low_battery_text_on = false;
+      }
    }
 }

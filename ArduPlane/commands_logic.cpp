@@ -74,7 +74,7 @@ bool Plane::start_command(const AP_Mission::Mission_Command& cmd)
         break;
 
     case MAV_CMD_NAV_RETURN_TO_LAUNCH:
-        set_mode(RTL);
+        set_mode(FlightMode::RTL);
         break;
 
     case MAV_CMD_NAV_CONTINUE_AND_CHANGE_ALT:
@@ -276,7 +276,7 @@ void Plane::do_RTL(void)
     setup_turn_angle();
 
     if (should_log(MASK_LOG_MODE))
-        DataFlash.Log_Write_Mode(get_control_mode());
+        DataFlash.Log_Write_Mode(static_cast<uint8_t>(get_control_mode()));
 }
 
 void Plane::do_takeoff(const AP_Mission::Mission_Command& cmd)
@@ -866,7 +866,7 @@ void Plane::log_picture()
 //      we double check that the flight mode is AUTO to avoid the possibility of ap-mission triggering actions while we're not in AUTO mode
 bool Plane::start_command_callback(const AP_Mission::Mission_Command &cmd)
 {
-    if (get_control_mode() == AUTO) {
+    if (get_control_mode() == FlightMode::AUTO) {
         return start_command(cmd);
     }
     return true;
@@ -876,7 +876,7 @@ bool Plane::start_command_callback(const AP_Mission::Mission_Command &cmd)
 //      we double check that the flight mode is AUTO to avoid the possibility of ap-mission triggering actions while we're not in AUTO mode
 bool Plane::verify_command_callback(const AP_Mission::Mission_Command& cmd)
 {
-    if (get_control_mode() == AUTO) {
+    if (get_control_mode() == FlightMode::AUTO) {
         bool cmd_complete = verify_command(cmd);
 
         // send message to GCS
@@ -893,7 +893,7 @@ bool Plane::verify_command_callback(const AP_Mission::Mission_Command& cmd)
 //      we double check that the flight mode is AUTO to avoid the possibility of ap-mission triggering actions while we're not in AUTO mode
 void Plane::exit_mission_callback()
 {
-    if (get_control_mode() == AUTO) {
+    if (get_control_mode() == FlightMode::AUTO) {
         gcs_send_text_fmt(MAV_SEVERITY_INFO, "Returning to HOME");
         memset(&auto_rtl_command, 0, sizeof(auto_rtl_command));
         auto_rtl_command.content.location = 

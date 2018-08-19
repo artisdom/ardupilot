@@ -119,11 +119,11 @@ void Plane::read_battery(void)
     AP_OSD::enqueue::battery({battery.voltage(),battery.current_amps(),battery.current_total_mah()});
 #endif 
 
-    if (!usb_connected && 
-        hal.util->get_soft_armed() &&
-        battery.exhausted(g.fs_batt_voltage, g.fs_batt_mah)) {
-        low_battery_event();
-    }
+//    if (!usb_connected && 
+//        hal.util->get_soft_armed() &&
+//        battery.exhausted(g.fs_batt_voltage, g.fs_batt_mah)) {
+//        low_battery_event();
+//    }
 }
 
 // read the receiver RSSI as an 8 bit number for MAVLink

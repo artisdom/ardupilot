@@ -17,7 +17,7 @@ namespace {
 void AP_OSD::draw_altitude_scale(dequeue::osd_info_t const & info,OSD_params const & osd)
 {
    auto const font_size = get_size( get_font(Quan::FontID::MWOSD));
-   quan::length::m const aircraft_altitude = info.aircraft_position.alt;
+   quan::length::m const aircraft_altitude = info.aircraft_position.alt - info.home_position.alt;
 
    pxp_type pos{ osd.alt_scale_pos.x, (( quan::uav::osd::get_video_mode() == quan::uav::osd::video_mode::pal)
        ?osd.alt_scale_pos.y

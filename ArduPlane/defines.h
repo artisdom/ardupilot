@@ -2,6 +2,7 @@
 
 #ifndef _DEFINES_H
 #define _DEFINES_H
+#include <cstdint>
 
 // Internal defines, don't edit and expect things to work
 // -------------------------------------------------------
@@ -49,7 +50,7 @@ enum gcs_failsafe {
 #define T6 1000000
 #define T7 10000000
 
-enum FlightMode {
+enum class FlightMode : uint8_t {
     MANUAL        = 0,
     CIRCLE        = 1,
     STABILIZE     = 2,

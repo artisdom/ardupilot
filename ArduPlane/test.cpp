@@ -155,7 +155,7 @@ int8_t Plane::test_failsafe(uint8_t argc, const Menu::arg *argv)
        cliSerial->printf("failed to set joystick trims\n");
     }
 
-    uint8_t const oldSwitchPosition = readSwitch();
+    FlightMode const oldSwitchPosition = readControlSwitch();
 
     cliSerial->printf("Unplug battery, thrust in neutral, turn off radio.\n");
 
@@ -173,17 +173,17 @@ int8_t Plane::test_failsafe(uint8_t argc, const Menu::arg *argv)
             cliSerial->printf("THROTTLE CHANGED %d \n", (int)thrust_force.numeric_value());
             fail_test++;
         }
-        auto const new_switch_position = readSwitch();
+        auto const new_switch_position = readControlSwitch();
         if(new_switch_position != oldSwitchPosition) {
             cliSerial->printf("CONTROL MODE CHANGED: ");
-            print_flight_mode(cliSerial, new_switch_position);
+            print_flight_mode(cliSerial, static_cast<uint8_t>(new_switch_position));
             cliSerial->println();
             fail_test++;
         }
 
         if(in_rcin_failsafe()) {
             cliSerial->printf("THROTTLE FAILSAFE ACTIVATED: %d, ", (int)joystick_thrust.as_usec().numeric_value());
-            print_flight_mode(cliSerial, readSwitch());
+            print_flight_mode(cliSerial, static_cast<uint8_t>(readControlSwitch()));
             cliSerial->println();
             fail_test++;
         }
@@ -283,14 +283,14 @@ int8_t Plane::test_modeswitch(uint8_t argc, const Menu::arg *argv)
     cliSerial->printf("Control CH ");
     cliSerial->println(FLIGHT_MODE_CHANNEL, BASE_DEC);
 
-    uint8_t oldSwitchPosition = readSwitch();
+    FlightMode oldSwitchPosition = readControlSwitch();
     while(1) {
         // quit if any key pressed
         if(cliSerial->available() > 0) {
             return (0);
         }
         hal.scheduler->delay(20);
-        uint8_t const newSwitchPosition = readSwitch();
+        auto const newSwitchPosition = readControlSwitch();
         if (newSwitchPosition != oldSwitchPosition ) {
             cliSerial->printf("Position %d\n",  (int)newSwitchPosition);
             oldSwitchPosition = newSwitchPosition;

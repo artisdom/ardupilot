@@ -230,8 +230,8 @@ private:
 
     // This is the state of the flight control system
     // There are multiple states defined such as MANUAL, FBW-A, AUTO
-    enum FlightMode m_control_mode = INITIALISING;
-    enum FlightMode m_previous_mode = INITIALISING;
+    FlightMode m_control_mode = FlightMode::INITIALISING;
+    FlightMode m_previous_mode = FlightMode::INITIALISING;
 
     // Used to maintain the state of the previous control switch position
     // This is set to 254 when we need to re-read the switch
@@ -727,7 +727,7 @@ private:
     void update_commands(void);
     void mavlink_delay(uint32_t ms);
   //  void read_control_switch();
-    uint8_t readSwitch(void);
+    FlightMode readControlSwitch()const;
  //   void reset_control_switch();
     void autotune_start(void);
     void autotune_restore(void);
@@ -735,7 +735,7 @@ private:
    // void failsafe_short_on_event(enum failsafe_state fstype);
    // void failsafe_long_on_event(enum failsafe_state fstype);
   //  void failsafe_short_off_event();
-    void low_battery_event(void);
+  //  void low_battery_event(void);
     void thrust_off();
     void set_control_surfaces_centre();
     uint8_t max_fencepoints(void);

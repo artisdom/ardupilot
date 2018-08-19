@@ -35,7 +35,7 @@ namespace {
 
    void mixer_eval()
    {
-     bool const manual_mode = plane.get_control_mode() == MANUAL;
+     bool const manual_mode = plane.get_control_mode() == FlightMode::MANUAL;
      bool const crow_mode = manual_mode && (hal.rcin->read(6) > 1750);
      bool const crow_active = crow_mode && (plane.get_thrust_demand() < 0.f);
 

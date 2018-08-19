@@ -59,6 +59,11 @@ namespace{
       info.battery_mAh_consumed = quan::charge_<float>::mA_h{msg.value.vect3df.z};
    }
 
+   void get_battery_low_voltage(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
+   {
+      info.battery_low_voltage = quan::voltage_<float>::V{msg.value.f};
+   }
+
    void get_system_status(AP_OSD::osd_message_t const & msg, AP_OSD::dequeue::osd_info_t & info)
    {
       info.system_status = msg.value.sys_status;
@@ -110,7 +115,8 @@ namespace{
       get_rcin_6_to_11,    //   8
       get_rcin_12_to_17,   //   9
       get_control_mode,    //  10
-      get_baro_alt         //  11
+      get_baro_alt,        //  11
+      get_battery_low_voltage  // 12
    };
 
    QueueHandle_t osd_queue = nullptr;

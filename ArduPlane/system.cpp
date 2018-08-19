@@ -245,7 +245,7 @@ void Plane::startup_ground(void)
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     AP_OSD::enqueue::system_status(AP_OSD::system_status_t::initialising);
 #endif
-    set_mode(INITIALISING);
+    set_mode(FlightMode::INITIALISING);
 
     gcs_send_text(MAV_SEVERITY_INFO,"<startup_ground> Ground start");
 
@@ -447,44 +447,45 @@ void Plane::check_usb_mux(void)
 
 void Plane::print_flight_mode(AP_HAL::BetterStream *port, uint8_t mode)
 {
-    switch (mode) {
-    case MANUAL:
+    FlightMode const flight_mode = static_cast<FlightMode>(mode);
+    switch (flight_mode) {
+    case FlightMode::MANUAL:
         port->print("Manual");
         break;
-    case CIRCLE:
+    case FlightMode::CIRCLE:
         port->print("Circle");
         break;
-    case STABILIZE:
+    case FlightMode::STABILIZE:
         port->print("Stabilize");
         break;
-    case TRAINING:
+    case FlightMode::TRAINING:
         port->print("Training");
         break;
-    case ACRO:
+    case FlightMode::ACRO:
         port->print("ACRO");
         break;
-    case FLY_BY_WIRE_A:
+    case FlightMode::FLY_BY_WIRE_A:
         port->print("FBW_A");
         break;
-    case AUTOTUNE:
+    case FlightMode::AUTOTUNE:
         port->print("AUTOTUNE");
         break;
-    case FLY_BY_WIRE_B:
+    case FlightMode::FLY_BY_WIRE_B:
         port->print("FBW_B");
         break;
-    case CRUISE:
+    case FlightMode::CRUISE:
         port->print("CRUISE");
         break;
-    case AUTO:
+    case FlightMode::AUTO:
         port->print("AUTO");
         break;
-    case RTL:
+    case FlightMode::RTL:
         port->print("RTL");
         break;
-    case LOITER:
+    case FlightMode::LOITER:
         port->print("Loiter");
         break;
-    case GUIDED:
+    case FlightMode::GUIDED:
         port->print("Guided");
         break;
     default:
@@ -594,7 +595,7 @@ bool Plane::disarm_motors(void)
       //  channel_thrust.disable_out(); 
        output_thrust.disable(); 
     }
-    if (get_control_mode() != AUTO) {
+    if (get_control_mode() != FlightMode::AUTO) {
         // reset the mission on disarm if we are not in auto
         mission.reset();
     }

@@ -88,8 +88,8 @@ void Plane::calc_airspeed_errors()
 
     auto const control_mode = get_control_mode();
     // FBW_B airspeed target
-    if (control_mode == FLY_BY_WIRE_B || 
-        control_mode == CRUISE) {
+    if (control_mode == FlightMode::FLY_BY_WIRE_B || 
+        control_mode == FlightMode::CRUISE) {
         target_airspeed_cm 
             = ((int32_t)(aparm.airspeed_max - aparm.airspeed_min) * 
                joystick_thrust.as_force().numeric_value()) + 
@@ -99,14 +99,14 @@ void Plane::calc_airspeed_errors()
     // Set target to current airspeed + ground speed undershoot,
     // but only when this is faster than the target airspeed commanded
     // above.
-    if (control_mode >= FLY_BY_WIRE_B && (g.min_gndspeed_cm > 0)) {
+    if (control_mode >= FlightMode::FLY_BY_WIRE_B && (g.min_gndspeed_cm > 0)) {
         int32_t const min_gnd_target_airspeed = aspeed_cm + groundspeed_undershoot;
         if (min_gnd_target_airspeed > target_airspeed_cm)
             target_airspeed_cm = min_gnd_target_airspeed;
     }
 
     // Bump up the target airspeed based on thrust nudging
-    if (control_mode >= AUTO && airspeed_nudge_cm > 0) {
+    if (control_mode >= FlightMode::AUTO && airspeed_nudge_cm > 0) {
         target_airspeed_cm += airspeed_nudge_cm;
     }
 
@@ -138,7 +138,7 @@ void Plane::update_loiter()
     int16_t radius = abs(g.loiter_radius);
 
     if (loiter.start_time_ms == 0 &&
-        get_control_mode() == AUTO &&
+        get_control_mode() == FlightMode::AUTO &&
         !auto_state.no_crosstrack &&
         get_distance(current_loc, next_WP_loc) > radius*2) {
         // if never reached loiter point and using crosstrack and somewhat far away from loiter point

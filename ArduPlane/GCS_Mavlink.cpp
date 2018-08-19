@@ -49,30 +49,30 @@ if (plane.crash_state.is_crashed) {
 
     auto const control_mode = get_control_mode();
     switch (control_mode) {
-    case MANUAL:
-    case TRAINING:
-    case ACRO:
+    case FlightMode::MANUAL:
+    case FlightMode::TRAINING:
+    case FlightMode::ACRO:
         base_mode = MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
         break;
-    case STABILIZE:
-    case FLY_BY_WIRE_A:
-    case AUTOTUNE:
-    case FLY_BY_WIRE_B:
-    case CRUISE:
+    case FlightMode::STABILIZE:
+    case FlightMode::FLY_BY_WIRE_A:
+    case FlightMode::AUTOTUNE:
+    case FlightMode::FLY_BY_WIRE_B:
+    case FlightMode::CRUISE:
         base_mode = MAV_MODE_FLAG_STABILIZE_ENABLED;
         break;
-    case AUTO:
-    case RTL:
-    case LOITER:
-    case GUIDED:
-    case CIRCLE:
+    case FlightMode::AUTO:
+    case FlightMode::RTL:
+    case FlightMode::LOITER:
+    case FlightMode::GUIDED:
+    case FlightMode::CIRCLE:
         base_mode = MAV_MODE_FLAG_GUIDED_ENABLED |
                     MAV_MODE_FLAG_STABILIZE_ENABLED;
         // note that MAV_MODE_FLAG_AUTO_ENABLED does not match what
         // APM does in any mode, as that is defined as "system finds its own goal
         // positions", which APM does not currently do
         break;
-    case INITIALISING:
+    case FlightMode::INITIALISING:
         system_status = MAV_STATE_CALIBRATING;
         break;
     }
@@ -81,12 +81,12 @@ if (plane.crash_state.is_crashed) {
         base_mode |= MAV_MODE_FLAG_STABILIZE_ENABLED;        
     }
 
-    if (control_mode != MANUAL && control_mode != INITIALISING) {
+    if (control_mode != FlightMode::MANUAL && control_mode != FlightMode::INITIALISING) {
         // stabiliser of some form is enabled
         base_mode |= MAV_MODE_FLAG_STABILIZE_ENABLED;
     }
 
-    if (g.stick_mixing != STICK_MIXING_DISABLED && control_mode != INITIALISING) {
+    if (g.stick_mixing != STICK_MIXING_DISABLED && control_mode != FlightMode::INITIALISING) {
         // all modes except INITIALISING have some form of manual
         // override if stick mixing is enabled
         base_mode |= MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
@@ -99,7 +99,7 @@ if (plane.crash_state.is_crashed) {
 #endif
 
     // we are armed if we are not initialising
-    if (control_mode != INITIALISING && hal.util->get_soft_armed()) {
+    if (control_mode != FlightMode::INITIALISING && hal.util->get_soft_armed()) {
         base_mode |= MAV_MODE_FLAG_SAFETY_ARMED;
     }
 
@@ -111,7 +111,7 @@ if (plane.crash_state.is_crashed) {
         MAV_TYPE_FIXED_WING,
         MAV_AUTOPILOT_ARDUPILOTMEGA,
         base_mode,
-        control_mode,
+        static_cast<uint32_t>(control_mode),
         system_status);
 }
 
@@ -180,38 +180,38 @@ void Plane::send_extended_status1(mavlink_channel_t chan)
     }
 #endif
     switch (get_control_mode()) {
-    case MANUAL:
+    case FlightMode::MANUAL:
         break;
 
-    case ACRO:
+    case FlightMode::ACRO:
         control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL; // 3D angular rate control
         break;
 
-    case STABILIZE:
-    case FLY_BY_WIRE_A:
-    case AUTOTUNE:
-        control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL; // 3D angular rate control
-        control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION; // attitude stabilisation
-        break;
-
-    case FLY_BY_WIRE_B:
-    case CRUISE:
+    case FlightMode::STABILIZE:
+    case FlightMode::FLY_BY_WIRE_A:
+    case FlightMode::AUTOTUNE:
         control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL; // 3D angular rate control
         control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION; // attitude stabilisation
         break;
 
-    case TRAINING:
+    case FlightMode::FLY_BY_WIRE_B:
+    case FlightMode::CRUISE:
+        control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL; // 3D angular rate control
+        control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION; // attitude stabilisation
+        break;
+
+    case FlightMode::TRAINING:
         if (!training_manual_roll || !training_manual_pitch) {
             control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL; // 3D angular rate control
             control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION; // attitude stabilisation        
         }
         break;
 
-    case AUTO:
-    case RTL:
-    case LOITER:
-    case GUIDED:
-    case CIRCLE:
+    case FlightMode::AUTO:
+    case FlightMode::RTL:
+    case FlightMode::LOITER:
+    case FlightMode::GUIDED:
+    case FlightMode::CIRCLE:
         control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL; // 3D angular rate control
         control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION; // attitude stabilisation
         control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_YAW_POSITION; // yaw position
@@ -219,7 +219,7 @@ void Plane::send_extended_status1(mavlink_channel_t chan)
         control_sensors_enabled |= MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL; // X/Y position control
         break;
 
-    case INITIALISING:
+    case FlightMode::INITIALISING:
         break;
     }
 
@@ -652,7 +652,7 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         break;
 
     case MSG_NAV_CONTROLLER_OUTPUT:
-        if (plane.get_control_mode() != MANUAL) {
+        if (plane.get_control_mode() != FlightMode::MANUAL) {
             CHECK_PAYLOAD_SIZE(NAV_CONTROLLER_OUTPUT);
             plane.send_nav_controller_output(chan);
         }
@@ -1035,7 +1035,7 @@ GCS_MAVLINK::data_stream_send(void)
         send_message(MSG_ATTITUDE);
         send_message(MSG_SIMSTATE);
         send_message(MSG_RPM);
-        if (plane.get_control_mode() != MANUAL) {
+        if (plane.get_control_mode() != FlightMode::MANUAL) {
             send_message(MSG_PID_TUNING);
         }
     }
@@ -1075,7 +1075,7 @@ GCS_MAVLINK::data_stream_send(void)
  */
 void GCS_MAVLINK::handle_guided_request(AP_Mission::Mission_Command &cmd)
 {
-    if (plane.get_control_mode() != GUIDED) {
+    if (plane.get_control_mode() != FlightMode::GUIDED) {
         // only accept position updates when in GUIDED mode
         return;
     }
@@ -1138,12 +1138,12 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
             break;
 
         case MAV_CMD_NAV_LOITER_UNLIM:
-            plane.set_mode(LOITER);
+            plane.set_mode(FlightMode::LOITER);
             result = MAV_RESULT_ACCEPTED;
             break;
 
         case MAV_CMD_NAV_RETURN_TO_LAUNCH:
-            plane.set_mode(RTL);
+            plane.set_mode(FlightMode::RTL);
             result = MAV_RESULT_ACCEPTED;
             break;
 
@@ -1152,7 +1152,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
             break;
 
         case MAV_CMD_MISSION_START:
-            plane.set_mode(AUTO);
+            plane.set_mode(FlightMode::AUTO);
             result = MAV_RESULT_ACCEPTED;
             break;
 
@@ -1253,19 +1253,19 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
             switch ((uint16_t)packet.param1) {
             case MAV_MODE_MANUAL_ARMED:
             case MAV_MODE_MANUAL_DISARMED:
-                plane.set_mode(MANUAL);
+                plane.set_mode(FlightMode::MANUAL);
                 result = MAV_RESULT_ACCEPTED;
                 break;
 
             case MAV_MODE_AUTO_ARMED:
             case MAV_MODE_AUTO_DISARMED:
-                plane.set_mode(AUTO);
+                plane.set_mode(FlightMode::AUTO);
                 result = MAV_RESULT_ACCEPTED;
                 break;
 
             case MAV_MODE_STABILIZE_DISARMED:
             case MAV_MODE_STABILIZE_ARMED:
-                plane.set_mode(FLY_BY_WIRE_A);
+                plane.set_mode(FlightMode::FLY_BY_WIRE_A);
                 result = MAV_RESULT_ACCEPTED;
                 break;
 
@@ -1494,7 +1494,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         // prevent unexpected flight paths
         plane.auto_state.next_wp_no_crosstrack = true;
         handle_mission_set_current(plane.mission, msg);
-        if (plane.get_control_mode() == AUTO && plane.mission.state() == AP_Mission::MISSION_STOPPED) {
+        if (plane.get_control_mode() == FlightMode::AUTO && plane.mission.state() == AP_Mission::MISSION_STOPPED) {
             plane.mission.resume();
         }
         break;

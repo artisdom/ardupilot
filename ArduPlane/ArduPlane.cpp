@@ -88,6 +88,7 @@ void Plane::setup()
 {
  #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     AP_OSD::enqueue::initialise();
+    AP_OSD::enqueue::battery_low_voltage(g.fs_batt_voltage);
 #endif
     cliSerial = hal.console;
 
@@ -483,30 +484,30 @@ void Plane::handle_auto_mode(void)
  */
 void Plane::update_flight_mode(void)
 {
-    enum FlightMode effective_mode = get_control_mode();
-    if (effective_mode == AUTO && g.auto_fbw_steer) {
-        effective_mode = FLY_BY_WIRE_A;
+    FlightMode effective_mode = get_control_mode();
+    if (effective_mode == FlightMode::AUTO && g.auto_fbw_steer) {
+        effective_mode = FlightMode::FLY_BY_WIRE_A;
     }
 
-    if (effective_mode != AUTO) {
+    if (effective_mode != FlightMode::AUTO) {
         // hold_course is only used in takeoff and landing
         steer_state.hold_course_cd = -1;
     }
 
     switch (effective_mode)  {
-    case AUTO:
+    case FlightMode::AUTO:
         handle_auto_mode();
         break;
 
-    case RTL:
-    case LOITER:
-    case GUIDED:
+    case FlightMode::RTL:
+    case FlightMode::LOITER:
+    case FlightMode::GUIDED:
         calc_nav_roll();
         calc_nav_pitch();
         calc_thrust();
         break;
         
-    case TRAINING: {
+    case FlightMode::TRAINING: {
         training_manual_roll = false;
         training_manual_pitch = false;
         update_load_factor();
@@ -535,7 +536,7 @@ void Plane::update_flight_mode(void)
         break;
     }
 
-    case ACRO: {
+    case FlightMode::ACRO: {
         // handle locked/unlocked control
         if (acro_state.locked_roll) {
             nav_roll_cd = acro_state.locked_roll_err;
@@ -550,8 +551,8 @@ void Plane::update_flight_mode(void)
         break;
     }
 
-    case AUTOTUNE:
-    case FLY_BY_WIRE_A: {
+    case FlightMode::AUTOTUNE:
+    case FlightMode::FLY_BY_WIRE_A: {
         // set nav_roll and nav_pitch using sticks
         nav_roll_cd = joystick_roll.as_float() * roll_limit_cd;
         update_load_factor();
@@ -583,7 +584,7 @@ void Plane::update_flight_mode(void)
         break;
     }
 
-    case FLY_BY_WIRE_B:
+    case FlightMode::FLY_BY_WIRE_B:
         // Thanks to Yury MonZon for the altitude limit code!
         nav_roll_cd = joystick_roll.as_float() * roll_limit_cd;
         nav_roll_cd = constrain_int32(nav_roll_cd, -roll_limit_cd, roll_limit_cd);
@@ -591,7 +592,7 @@ void Plane::update_flight_mode(void)
         update_fbwb_speed_height();
         break;
         
-    case CRUISE:
+    case FlightMode::CRUISE:
         /*
           in CRUISE mode we use the navigation code to control
           roll when heading is locked. Heading becomes unlocked on
@@ -613,13 +614,13 @@ void Plane::update_flight_mode(void)
         update_fbwb_speed_height();
         break;
         
-    case STABILIZE:
+    case FlightMode::STABILIZE:
         nav_roll_cd = 0;
         nav_pitch_cd = 0;
         // thrust is passthrough
         break;
         
-    case CIRCLE:
+    case FlightMode::CIRCLE:
         // we have no GPS installed and have lost radio contact
         // or we just want to fly around in a gentle circle w/o GPS,
         // holding altitude at the altitude we set when we
@@ -630,13 +631,13 @@ void Plane::update_flight_mode(void)
         calc_thrust();
         break;
 
-    case MANUAL:
+    case FlightMode::MANUAL:
          autopilot_roll.set_js(joystick_roll);
          autopilot_pitch.set_js(joystick_pitch);
          autopilot_yaw.set_js(joystick_yaw);
         break;
         
-    case INITIALISING:
+    case FlightMode::INITIALISING:
         // handled elsewhere
         break;
     }
@@ -649,11 +650,11 @@ void Plane::update_navigation()
 
     // distance and bearing calcs only
     switch(get_control_mode()) {
-    case AUTO:
+    case FlightMode::AUTO:
         update_commands();
         break;
             
-    case RTL:
+    case FlightMode::RTL:
         if (g.rtl_autoland == 1 &&
             !auto_state.checked_for_autoland &&
             nav_controller->reached_loiter_target() && 
@@ -675,8 +676,8 @@ void Plane::update_navigation()
             auto_state.checked_for_autoland = true;
         }
         // fall through to LOITER
-    case LOITER:
-    case GUIDED:
+    case FlightMode::LOITER:
+    case FlightMode::GUIDED:
         // allow loiter direction to be changed in flight
         if (g.loiter_radius < 0) {
             loiter.direction = -1;
@@ -686,19 +687,19 @@ void Plane::update_navigation()
         update_loiter();
         break;
 
-    case CRUISE:
+    case FlightMode::CRUISE:
         update_cruise();
         break;
 
-    case MANUAL:
-    case STABILIZE:
-    case TRAINING:
-    case INITIALISING:
-    case ACRO:
-    case FLY_BY_WIRE_A:
-    case AUTOTUNE:
-    case FLY_BY_WIRE_B:
-    case CIRCLE:
+    case FlightMode::MANUAL:
+    case FlightMode::STABILIZE:
+    case FlightMode::TRAINING:
+    case FlightMode::INITIALISING:
+    case FlightMode::ACRO:
+    case FlightMode::FLY_BY_WIRE_A:
+    case FlightMode::AUTOTUNE:
+    case FlightMode::FLY_BY_WIRE_B:
+    case FlightMode::CIRCLE:
         // nothing to do
         break;
     }
@@ -778,7 +779,7 @@ void Plane::update_flight_stage(void)
 {
     // Update the speed & height controller states
     if (auto_thrust_mode && !thrust_suppressed) {        
-        if (get_control_mode() == AUTO) {
+        if (get_control_mode() == FlightMode::AUTO) {
             if (auto_state.takeoff_complete == false) {
                 set_flight_stage(AP_SpdHgtControl::FLIGHT_TAKEOFF);
             } else if (mission.get_current_nav_cmd().id == MAV_CMD_NAV_LAND) {

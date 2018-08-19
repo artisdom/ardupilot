@@ -27,8 +27,8 @@
 void Plane::adjust_altitude_target()
 {
     auto const control_mode = get_control_mode();
-    if (control_mode == FLY_BY_WIRE_B ||
-        control_mode == CRUISE) {
+    if (control_mode == FlightMode::FLY_BY_WIRE_B ||
+        control_mode == FlightMode::CRUISE) {
         return;
     }
     if (flight_stage == AP_SpdHgtControl::FLIGHT_LAND_FINAL) {
@@ -70,8 +70,8 @@ void Plane::setup_glide_slope(void)
       the new altitude as quickly as possible.
      */
     switch (get_control_mode()) {
-    case RTL:
-    case GUIDED:
+    case FlightMode::RTL:
+    case FlightMode::GUIDED:
         /* glide down slowly if above target altitude, but ascend more
            rapidly if below it. See
            https://github.com/diydrones/ardupilot/issues/39
@@ -83,7 +83,7 @@ void Plane::setup_glide_slope(void)
         }
         break;
 
-    case AUTO:
+    case FlightMode::AUTO:
         // we only do glide slide handling in AUTO when above 20m or
         // when descending. The 20 meter threshold is arbitrary, and
         // is basically to prevent situations where we try to slowly

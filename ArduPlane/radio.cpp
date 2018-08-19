@@ -147,7 +147,7 @@ void Plane::on_invalid_rc_input()
 
       if ((AP_HAL::millis() - rcin_failsafe.last_valid_rc_ms ) > rcin_failsafe_delay_ms){ ;
       // Send a message to OSD that in rc failsafe
-         set_mode(RTL);
+         set_mode(FlightMode::RTL);
          rcin_failsafe.in_failsafe = true;
       }
    }
@@ -163,7 +163,7 @@ void Plane::read_radio()
       // Send a message to OSD that out of rc failsafe
          rcin_failsafe.in_failsafe = false;
       }
-      set_mode((FlightMode)readSwitch());
+      set_mode(readControlSwitch());
 
       rcin_failsafe.last_valid_rc_ms = AP_HAL::millis();
 
