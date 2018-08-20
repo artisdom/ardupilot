@@ -55,19 +55,16 @@ int8_t Plane::test_radio_pwm(uint8_t argc, const Menu::arg *argv)
         // ----------------------------------------------------------
         read_radio();
 
-        cliSerial->printf("IN:\t1: %d\t2: %d\t3: %d\t4: %d\n",
-                       // (int)channel_roll.get_joystick_in_usec(),
-                        static_cast<int>(joystick_roll.as_usec().numeric_value()),
-                       // (int)channel_pitch.get_joystick_in_usec(),
-                        static_cast<int>(joystick_pitch.as_usec().numeric_value()),
-                      //  (int)channel_thrust.get_joystick_in_usec(),
-                        static_cast<int>(joystick_pitch.as_usec().numeric_value()),
-                      //  (int)channel_yaw.get_joystick_in_usec());
-                        static_cast<int>(joystick_pitch.as_usec().numeric_value()));
+        cliSerial->printf("roll: %3u pitch: %3u yaw: %3u thrust: %3u\n",
+                        static_cast<unsigned>(joystick_roll.as_usec().numeric_value()),
+                        static_cast<unsigned>(joystick_pitch.as_usec().numeric_value()),
+                        static_cast<unsigned>(joystick_yaw.as_usec().numeric_value()),
+                        static_cast<unsigned>(joystick_thrust.as_usec().numeric_value())
+       );
 
-           if(cliSerial->available() > 0) {
-               return (0);
-           }
+       if(cliSerial->available() > 0) {
+         return (0);
+       }
     }
 }
 
