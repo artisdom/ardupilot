@@ -88,7 +88,6 @@ void Plane::setup()
 {
  #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     AP_OSD::enqueue::initialise();
-    AP_OSD::enqueue::battery_low_voltage(g.fs_batt_voltage);
 #endif
     cliSerial = hal.console;
 

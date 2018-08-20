@@ -91,7 +91,12 @@ void Plane::init_ardupilot()
 #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
     AP_OSD::enqueue::system_status(AP_OSD::system_status_t::initialising);
 #endif
-    // parameteers loaded
+    // parameters loaded
+
+ #if CONFIG_HAL_BOARD == HAL_BOARD_QUAN
+    // load startup params to OSD
+    AP_OSD::enqueue::battery_low_voltage(g.fs_batt_voltage.get());
+#endif
 
 #if HIL_SUPPORT
     if (g.hil_mode == 1) {
