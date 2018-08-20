@@ -151,14 +151,16 @@ failed:
  * return true if a geo-fence has been uploaded and
  * FENCE_ACTION is 1 (not necessarily enabled)
  */
-bool Plane::geofence_present(void)
+bool Plane::geofence_present(void)const
 {
     //require at least a return point and a triangle
     //to define a geofence area:
-    if (g.fence_action == FENCE_ACTION_NONE || g.fence_total < MIN_GEOFENCE_POINTS) {
-        return false;
-    }
-    return true;
+//    if (g.fence_action == FENCE_ACTION_NONE || g.fence_total < MIN_GEOFENCE_POINTS) {
+//        return false;
+//    }
+//    return true;
+
+     return (g.fence_action != FENCE_ACTION_NONE ) && (g.fence_total >= MIN_GEOFENCE_POINTS);
 }
 
 /*
@@ -286,10 +288,10 @@ void Plane::geofence_check(bool altitude_check_only)
         // GUIDED to the return point
         if (geofence_state != NULL &&
             (g.fence_action == FENCE_ACTION_GUIDED || g.fence_action == FENCE_ACTION_GUIDED_THR_PASS) &&
-            control_mode == GUIDED &&
+            get_control_mode() == FlightMode::GUIDED &&
             geofence_present() &&
             geofence_state->boundary_uptodate &&
-            geofence_state->old_switch_position == oldSwitchPosition &&
+           // geofence_state->old_switch_position == oldSwitchPosition &&
             guided_WP_loc.lat == geofence_state->guided_lat &&
             guided_WP_loc.lng == geofence_state->guided_lng) {
             geofence_state->old_switch_position = 254;
@@ -349,7 +351,7 @@ void Plane::geofence_check(bool altitude_check_only)
 
     // we are outside the fence
     if (geofence_state->fence_triggered &&
-        (control_mode == GUIDED || g.fence_action == FENCE_ACTION_REPORT)) {
+        (get_control_mode() == FlightMode::GUIDED || g.fence_action == FENCE_ACTION_REPORT)) {
         // we have already triggered, don't trigger again until the
         // user disables/re-enables using the fence channel switch
         return;
@@ -379,7 +381,7 @@ void Plane::geofence_check(bool altitude_check_only)
         // make sure we don't auto trim the surfaces on this mode change
         int8_t saved_auto_trim = g.auto_trim;
         g.auto_trim.set(0);
-        set_mode(GUIDED);
+        set_mode(FlightMode::GUIDED);
         g.auto_trim.set(saved_auto_trim);
 
         if (g.fence_ret_rally != 0) { //return to a rally point
@@ -403,7 +405,7 @@ void Plane::geofence_check(bool altitude_check_only)
         }
         geofence_state->guided_lat = guided_WP_loc.lat;
         geofence_state->guided_lng = guided_WP_loc.lng;
-        geofence_state->old_switch_position = oldSwitchPosition;
+     //   geofence_state->old_switch_position = oldSwitchPosition;
 
         setup_terrain_target_alt(guided_WP_loc);
 
@@ -427,7 +429,7 @@ bool Plane::geofence_stickmixing(void) {
     if (geofence_enabled() &&
         geofence_state != NULL &&
         geofence_state->fence_triggered &&
-        control_mode == GUIDED) {
+        get_control_mode() == FlightMode::GUIDED) {
         // don't mix in user input
         return false;
     }
@@ -460,29 +462,29 @@ bool Plane::geofence_breached(void)
 
 //#else // GEOFENCE_ENABLED
 
-void Plane::geofence_check(bool altitude_check_only) {
-}
-bool Plane::geofence_stickmixing(void) {
-    return true;
-}
-bool Plane::geofence_enabled(void) {
-    return false;
-}
-
-bool Plane::geofence_present(void) const {
-    return false;
-}
-
-bool Plane::geofence_set_enabled(bool enable, GeofenceEnableReason r) {
-    return false;
-}
-
-bool Plane::geofence_set_floor_enabled(bool floor_enable) {
-    return false;
-}
-
-bool geofence_breached(void) {
-    return false;
-}
+//void Plane::geofence_check(bool altitude_check_only) {
+//}
+//bool Plane::geofence_stickmixing(void) {
+//    return true;
+//}
+//bool Plane::geofence_enabled(void) {
+//    return false;
+//}
+//
+//bool Plane::geofence_present(void) const {
+//    return false;
+//}
+//
+//bool Plane::geofence_set_enabled(bool enable, GeofenceEnableReason r) {
+//    return false;
+//}
+//
+//bool Plane::geofence_set_floor_enabled(bool floor_enable) {
+//    return false;
+//}
+//
+//bool geofence_breached(void) {
+//    return false;
+//}
 
 #endif // GEOFENCE_ENABLED

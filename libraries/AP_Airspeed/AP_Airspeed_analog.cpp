@@ -38,6 +38,11 @@ template <> AP_Airspeed_Backend * connect_airspeed_driver<HALSITL::tag_board>(AP
    return &airspeed_driver;
 }
 
+void AP_Airspeed_Analog::update()
+{
+   ;
+}
+
 // scaling for 3DR analog airspeed sensor
 #define VOLTS_TO_PASCAL 819
 

@@ -1614,7 +1614,7 @@ Vector3f AP_InertialSensor::get_vibration_levels(uint8_t instance) const
 }
 
 // check for vibration movement. Return true if all axis show nearly zero movement
-bool AP_InertialSensor::is_still()
+bool AP_InertialSensor::is_still()const
 {
     Vector3f vibe = get_vibration_levels();
     return (vibe.x < _still_threshold) &&

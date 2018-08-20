@@ -180,7 +180,9 @@ public:
     bool use_accel(uint8_t instance) const;
     // gyro accel ?
     float get_temperature() const { return get_temperature(0); }
-private:
+    // check for vibration movement. True when all axis show nearly zero movement
+    bool is_still() const;
+
     const Vector3f &get_gyro_offsets(uint8_t i) const { return _gyro_offset[i]; }
 
     const Vector3f &get_accel_offsets(uint8_t i) const { return _accel_offset[i]; }
@@ -209,19 +211,14 @@ private:
     /* get_delta_time returns the time period in seconds
      * overwhich the sensor data was collected
      */
-
-
-
-    // calculate vibration levels and check for accelerometer clipping (called by a backends)
-    void calc_vibration_and_clipping(uint8_t instance, const Vector3f &accel, float dt);
-
     Vector3f get_vibration_levels(uint8_t instance) const;
 
     // retrieve and clear accelerometer clipping count
     uint32_t get_accel_clip_count(uint8_t instance) const;
+private:
 
-    // check for vibration movement. True when all axis show nearly zero movement
-    bool is_still();
+    // calculate vibration levels and check for accelerometer clipping (called by a backends)
+    void calc_vibration_and_clipping(uint8_t instance, const Vector3f &accel, float dt);
 
     /*
       HIL set functions. The minimum for HIL is set_accel() and
@@ -235,8 +232,6 @@ private:
     void set_delta_angle(uint8_t instance, const Vector3f &deltaa);
 
     void detect_backends(void);
-
-private:
 
     // load backend drivers
     void _add_backend(AP_InertialSensor_Backend *backend);

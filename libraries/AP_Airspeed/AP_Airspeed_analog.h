@@ -11,13 +11,14 @@
 #include <AP_HAL/AnalogIn.h>
 #include "AP_Airspeed_Backend.h"
 
-class AP_Airspeed_Analog : public AP_Airspeed_Backend
+class AP_Airspeed_Analog final : public  AP_Airspeed_Backend
 {
 public:
     AP_Airspeed_Analog() : 
         _source(NULL)
     {}
 
+    void update();
     // return the current differential_pressure in Pascal
     bool get_differential_pressure(float &pressure)const;
 
