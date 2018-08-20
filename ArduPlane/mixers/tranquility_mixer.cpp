@@ -76,7 +76,7 @@ namespace {
      output[port_aileron_channel] = (port_aileron - flap - ail_crow) * port_aileron_dir;
      output[stbd_aileron_channel] = (stbd_aileron - flap - ail_crow) * stbd_aileron_dir;
 
-     float const elev_to_flap = (up_flap?up_flap_gain:down_flap_gain) * elev_flap_gain * flap;
+     float const elev_to_flap = flap * elev_flap_gain;
      float const roll_to_rudder = roll * rudder_roll_gain;
      float const elev_to_crow = elev_to_crow_gain * crow;
      float const pitch = plane.get_pitch_demand();
